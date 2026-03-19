@@ -61,26 +61,26 @@
     .brand {
       min-width: 0;
       display: grid;
-      grid-template-columns: 48px 1fr;
+      grid-template-columns: 52px 1fr;
       gap: 10px;
       align-items: center;
     }
     .logo {
-      width: 48px;
-      height: 48px;
-      border-radius: 16px;
-      background: linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.04));
-      border: 1px solid var(--line);
+      width: 52px;
+      height: 52px;
       display: grid;
       place-items: center;
-      box-shadow: var(--shadow);
-      overflow: hidden;
+      overflow: visible;
+      background: transparent;
+      border: 0;
+      box-shadow: none;
     }
     .logo img {
-      width: 40px;
-      height: 40px;
+      width: 50px;
+      height: 50px;
       object-fit: contain;
       display: block;
+      filter: none;
     }
     .brand h1 {
       margin: 0;
@@ -177,21 +177,6 @@
       font-weight: 900;
       letter-spacing: -0.05em;
     }
-    .hero-sub {
-      margin-top: 8px;
-      color: rgba(255,255,255,0.86);
-      font-size: 16px;
-      line-height: 1.15;
-    }
-    .hero-sub .muted-line {
-      display: block;
-      margin-top: 2px;
-      color: rgba(255,255,255,0.62);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      font-size: 15px;
-    }
     .hero-stats {
       margin-top: 8px;
       display: grid;
@@ -230,7 +215,7 @@
       grid-template-columns: 68px 1fr;
       gap: 8px;
     }
-    .mini-btn, .hero-btn, .ctl {
+    .mini-btn, .hero-btn, .ctl, .sheet-btn, .picker-preview {
       border: 1px solid rgba(255,255,255,0.08);
       color: white;
       cursor: pointer;
@@ -257,7 +242,6 @@
       box-shadow: 0 12px 28px rgba(255, 132, 40, 0.34);
     }
     .hero-btn .ic { font-size: 23px; }
-
     .grid {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -276,9 +260,7 @@
       gap: 10px;
       align-items: end;
     }
-    .card-head {
-      min-width: 0;
-    }
+    .card-head { min-width: 0; }
     .card-title {
       margin: 0;
       font-size: 16px;
@@ -323,7 +305,7 @@
       line-height: 1;
       box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
     }
-        .sheet {
+    .sheet {
       position: fixed;
       left: 0;
       right: 0;
@@ -346,6 +328,8 @@
       border-radius: 28px;
       box-shadow: 0 26px 70px rgba(0,0,0,0.48);
       padding: 16px 14px 14px;
+      max-height: min(88vh, 820px);
+      overflow: auto;
     }
     .sheet-handle {
       width: 50px;
@@ -354,7 +338,6 @@
       background: rgba(255,255,255,0.16);
       margin: 0 auto 12px;
     }
-    
     .settings-head {
       display: grid;
       grid-template-columns: 1fr auto;
@@ -362,11 +345,7 @@
       align-items: center;
       margin-bottom: 10px;
     }
-    .sheet-title {
-      font-size: 20px;
-      font-weight: 900;
-      margin: 0;
-    }
+    .sheet-title { font-size: 20px; font-weight: 900; margin: 0; }
     .sheet-close {
       width: 42px;
       height: 42px;
@@ -379,7 +358,6 @@
       cursor: pointer;
       line-height: 1;
     }
-
     .setting {
       display: grid;
       grid-template-columns: 1fr auto;
@@ -389,17 +367,9 @@
       border-top: 1px solid rgba(255,255,255,0.06);
     }
     .setting:first-of-type { border-top: none; }
-    .setting h3 {
-      margin: 0 0 2px;
-      font-size: 15px;
-      font-weight: 800;
-    }
-    .setting p {
-      margin: 0;
-      color: rgba(255,255,255,0.58);
-      font-size: 12px;
-      line-height: 1.25;
-    }
+    .setting h3 { margin: 0 0 2px; font-size: 15px; font-weight: 800; }
+    .setting p { margin: 0; color: rgba(255,255,255,0.58); font-size: 12px; line-height: 1.25; }
+    .setting.block { grid-template-columns: 1fr; }
     .switch {
       width: 60px;
       height: 34px;
@@ -432,6 +402,7 @@
       flex-wrap: wrap;
       justify-content: flex-end;
     }
+    .chips.left { justify-content: flex-start; margin-top: 8px; }
     .chip {
       min-height: 36px;
       padding: 8px 12px;
@@ -448,21 +419,34 @@
       border-color: transparent;
       color: white;
     }
+    .picker-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: start;
+      margin-top: 8px;
+    }
+    .picker-preview {
+      min-height: 40px;
+      min-width: 48px;
+      padding: 0 14px;
+      border-radius: 14px;
+      background: rgba(255,255,255,0.06);
+      font-size: 14px;
+      font-weight: 900;
+    }
     .sheet-actions {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: repeat(3, 1fr);
       gap: 8px;
       margin-top: 12px;
     }
     .sheet-btn {
       min-height: 44px;
       border-radius: 16px;
-      border: 1px solid rgba(255,255,255,0.08);
       background: rgba(255,255,255,0.06);
-      color: white;
       font-size: 13px;
       font-weight: 800;
-      cursor: pointer;
     }
     .overlay {
       position: fixed;
@@ -473,11 +457,7 @@
       transition: opacity 0.2s ease;
       z-index: 45;
     }
-    .overlay.open {
-      opacity: 1;
-      pointer-events: auto;
-    }
-
+    .overlay.open { opacity: 1; pointer-events: auto; }
     .cue-overlay {
       position: fixed;
       inset: 0;
@@ -491,10 +471,7 @@
       transition: opacity 0.18s ease;
       backdrop-filter: blur(6px);
     }
-    .cue-overlay.open {
-      opacity: 1;
-      pointer-events: auto;
-    }
+    .cue-overlay.open { opacity: 1; pointer-events: auto; }
     .cue-panel {
       width: min(92vw, 360px);
       border-radius: 30px;
@@ -525,7 +502,6 @@
       font-size: 14px;
       line-height: 1.2;
     }
-
     button { user-select: none; }
     .disabled { opacity: 0.48; pointer-events: none; }
     @media (max-width: 380px) {
@@ -536,6 +512,7 @@
       .mini-btn, .hero-btn { height: 60px; }
       .card { padding: 10px; grid-template-columns: minmax(0,1fr) 58px; }
       .ctl { min-height: 48px; }
+      .sheet-actions { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -559,7 +536,7 @@
     <section class="hero" id="heroCard">
       <div class="hero-top">
         <div class="state-badge" id="stateBadge">ГОТОВ</div>
-        <div class="round-badge" id="roundBadge">Раунд 0 из 5</div>
+        <div class="round-badge" id="roundBadge">Раунд 1 из 5</div>
       </div>
       <div class="hero-time" id="heroTime">03:00</div>
       <div class="hero-stats">
@@ -641,7 +618,7 @@
       <div class="setting">
         <div>
           <h3>Звук</h3>
-          <p>Громкие спортивные сигналы и метроном</p>
+          <p>Громкие сигналы и метроном</p>
         </div>
         <button class="switch" id="soundToggle"></button>
       </div>
@@ -649,7 +626,7 @@
       <div class="setting">
         <div>
           <h3>Вибрация</h3>
-          <p>Короткий отклик на гонг и предупреждения</p>
+          <p>Короткий отклик на сигналы</p>
         </div>
         <button class="switch" id="vibrationToggle"></button>
       </div>
@@ -657,31 +634,56 @@
       <div class="setting">
         <div>
           <h3>Старт этапа</h3>
-          <p>Обратный отсчёт перед стартом раунда и отдыха</p>
+          <p>Обратный отсчёт перед раундом и отдыхом</p>
         </div>
         <div class="chips" id="startCueChips"></div>
+      </div>
+
+      <div class="setting block">
+        <div>
+          <h3>Мелодия старта</h3>
+          <p>Выбор mp3 для обратного отсчёта начала</p>
+        </div>
+        <div class="picker-row">
+          <div class="chips left" id="startSoundChips"></div>
+          <button class="picker-preview" id="previewStartBtn">▶</button>
+        </div>
       </div>
 
       <div class="setting">
         <div>
           <h3>Конец этапа</h3>
-          <p>За сколько секунд до конца запускать предупреждение</p>
+          <p>За сколько секунд до конца включать предупреждение</p>
         </div>
         <div class="chips" id="countdownChips"></div>
       </div>
 
-      <div class="setting">
+      <div class="setting block">
         <div>
-          <h3>Звук гонга</h3>
-          <p>Можно использовать сэмплы из папки <code>sounds/</code></p>
+          <h3>Мелодия последних секунд</h3>
+          <p>Можно выбрать обычные сигналы или mp3 на последние 10 секунд</p>
         </div>
-        <div class="chips" id="gongChips"></div>
+        <div class="picker-row">
+          <div class="chips left" id="warningSoundChips"></div>
+          <button class="picker-preview" id="previewWarningBtn">▶</button>
+        </div>
+      </div>
+
+      <div class="setting block">
+        <div>
+          <h3>Финишный сигнал</h3>
+          <p>Звук завершения раунда, отдыха и тренировки</p>
+        </div>
+        <div class="picker-row">
+          <div class="chips left" id="finishSoundChips"></div>
+          <button class="picker-preview" id="previewFinishBtn">▶</button>
+        </div>
       </div>
 
       <div class="setting">
         <div>
           <h3>Режим метронома</h3>
-          <p><b>accent</b> — только акцент, <b>pulse</b> — акцент + тихий пульс</p>
+          <p><b>accent</b> — акцент, <b>pulse</b> — акцент + тихий пульс</p>
         </div>
         <div class="chips" id="metroModeChips"></div>
       </div>
@@ -695,8 +697,9 @@
       </div>
 
       <div class="sheet-actions">
-        <button class="sheet-btn" id="previewShortBtn">Тест короткий</button>
-        <button class="sheet-btn" id="previewLongBtn">Тест длинный</button>
+        <button class="sheet-btn" id="previewMetroAccentBtn">Тест Accent</button>
+        <button class="sheet-btn" id="previewMetroPulseBtn">Тест Pulse</button>
+        <button class="sheet-btn" id="resetPresetBtn">Сброс пресета</button>
       </div>
     </div>
   </section>
@@ -710,39 +713,57 @@
   </section>
 
   <script>
-    const STORAGE_KEY = 'fighttech_boxer_timer_v11';
+    const STORAGE_KEY = 'fighttech_boxer_timer_v12';
     const STEP_SEC = 5;
     const TABS = ['A', 'B', 'C', 'D'];
-    const GONGS = {
-      gym: { label: 'Gym Beep', short: './sounds/gym-beep.wav', long: './sounds/classic-gong.wav' },
-      bell: { label: 'Sharp Bell', short: './sounds/sharp-bell.wav', long: './sounds/sharp-bell.wav' },
-      gong: { label: 'Classic Gong', short: './sounds/gym-beep.wav', long: './sounds/classic-gong.wav' },
+    const START_SOUND_OPTIONS = [
+      { value: 'rsf1', label: '1', path: './sounds/uploads/round_start_finish_1.mp3' },
+      { value: 'rsf2', label: '2', path: './sounds/uploads/round_start_finish_2.mp3' },
+      { value: 'rsf3', label: '3', path: './sounds/uploads/round_start_finish_3.mp3' },
+      { value: 'rsf4', label: '4', path: './sounds/uploads/round_start_finish_4.mp3' },
+      { value: 'rsf5', label: '5', path: './sounds/uploads/round_start_finish_5.mp3' },
+    ];
+    const WARNING_SOUND_OPTIONS = [
+      { value: 'default', label: 'Обычный', path: null },
+      { value: 'last10', label: '10 сек MP3', path: './sounds/uploads/Last_10_sec_fifnish_round.mp3' },
+    ];
+    const FINISH_SOUND_OPTIONS = [
+      { value: 'rsf1', label: '1', path: './sounds/uploads/round_start_finish_1.mp3' },
+      { value: 'rsf2', label: '2', path: './sounds/uploads/round_start_finish_2.mp3' },
+      { value: 'rsf3', label: '3', path: './sounds/uploads/round_start_finish_3.mp3' },
+      { value: 'rsf4', label: '4', path: './sounds/uploads/round_start_finish_4.mp3' },
+      { value: 'rsf5', label: '5', path: './sounds/uploads/round_start_finish_5.mp3' },
+    ];
+    const FALLBACK_WAVS = {
+      short: './sounds/gym-beep.wav',
+      alt: './sounds/sharp-bell.wav',
+      long: './sounds/classic-gong.wav',
+    };
+
+    const DEFAULT_PRESETS = {
+      A: { roundDurationSec: 180, restDurationSec: 60, roundCount: 5, metronomeBpm: 20 },
+      B: { roundDurationSec: 120, restDurationSec: 60, roundCount: 5, metronomeBpm: 0 },
+      C: { roundDurationSec: 60, restDurationSec: 60, roundCount: 5, metronomeBpm: 0 },
+      D: { roundDurationSec: 20, restDurationSec: 20, roundCount: 24, metronomeBpm: 0 },
     };
 
     const state = {
-      presets: {
-        A: { roundDurationSec: 180, restDurationSec: 60, roundCount: 5, metronomeBpm: 20 },
-        B: { roundDurationSec: 120, restDurationSec: 60, roundCount: 5, metronomeBpm: 0 },
-        C: { roundDurationSec: 60, restDurationSec: 60, roundCount: 5, metronomeBpm: 0 },
-        D: { roundDurationSec: 20, restDurationSec: 20, roundCount: 24, metronomeBpm: 0 },
-      },
+      presets: JSON.parse(JSON.stringify(DEFAULT_PRESETS)),
       activeTab: 'A',
       soundEnabled: true,
       vibrationEnabled: true,
       startCueSec: 3,
-      countdownWarningSec: 10,
-      gongType: 'gym',
+      endWarningSec: 10,
+      startSound: 'rsf1',
+      warningSound: 'last10',
+      finishSound: 'rsf1',
       metronomeMode: 'pulse',
       metronomeScope: 'rounds',
       machine: {
         status: 'IDLE',
-        phase: 'READY', // READY | ROUND | REST | FINISHED
+        phase: 'READY',
         roundIndex: 0,
-        phaseDurationSec: 0,
         phaseRemainingMs: 0,
-        startedAtMs: 0,
-        pauseStartedAtMs: 0,
-        pausedAccumulatedMs: 0,
         nextTransitionAtMs: 0,
         totalRemainingMs: 0,
         warnedMarks: [],
@@ -750,19 +771,15 @@
         cueTimeouts: [],
         activeCueToken: 0,
         cueDisplayText: '3',
-        cueDisplayPhase: 'РАУНД',
+        cueDisplayPhase: 'ГОТОВЬСЯ: РАУНД',
       },
       audio: {
         ctx: null,
         unlocked: false,
         assets: {},
         metronomeTimer: null,
-        nextBeatAt: 0,
-        nextPulseAt: 0,
       },
-      ui: {
-        settingsOpen: false,
-      }
+      ui: { settingsOpen: false },
     };
 
     const el = {
@@ -788,17 +805,26 @@
       vibrationToggle: document.getElementById('vibrationToggle'),
       startCueChips: document.getElementById('startCueChips'),
       countdownChips: document.getElementById('countdownChips'),
-      gongChips: document.getElementById('gongChips'),
+      startSoundChips: document.getElementById('startSoundChips'),
+      warningSoundChips: document.getElementById('warningSoundChips'),
+      finishSoundChips: document.getElementById('finishSoundChips'),
       metroModeChips: document.getElementById('metroModeChips'),
       metroScopeChips: document.getElementById('metroScopeChips'),
-      previewShortBtn: document.getElementById('previewShortBtn'),
-      previewLongBtn: document.getElementById('previewLongBtn'),
+      previewStartBtn: document.getElementById('previewStartBtn'),
+      previewWarningBtn: document.getElementById('previewWarningBtn'),
+      previewFinishBtn: document.getElementById('previewFinishBtn'),
+      previewMetroAccentBtn: document.getElementById('previewMetroAccentBtn'),
+      previewMetroPulseBtn: document.getElementById('previewMetroPulseBtn'),
       settingsCloseTopBtn: document.getElementById('settingsCloseTopBtn'),
       resetTopBtn: document.getElementById('resetTopBtn'),
+      resetPresetBtn: document.getElementById('resetPresetBtn'),
       cueOverlay: document.getElementById('cueOverlay'),
       cuePhase: document.getElementById('cuePhase'),
       cueCount: document.getElementById('cueCount'),
     };
+
+    function getPreset() { return state.presets[state.activeTab]; }
+    function cloneDefaultsForTab(tab) { return JSON.parse(JSON.stringify(DEFAULT_PRESETS[tab])); }
 
     function saveState() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
@@ -807,8 +833,10 @@
         soundEnabled: state.soundEnabled,
         vibrationEnabled: state.vibrationEnabled,
         startCueSec: state.startCueSec,
-        countdownWarningSec: state.countdownWarningSec,
-        gongType: state.gongType,
+        endWarningSec: state.endWarningSec,
+        startSound: state.startSound,
+        warningSound: state.warningSound,
+        finishSound: state.finishSound,
         metronomeMode: state.metronomeMode,
         metronomeScope: state.metronomeScope,
       }));
@@ -819,13 +847,15 @@
         const raw = localStorage.getItem(STORAGE_KEY);
         if (!raw) return;
         const parsed = JSON.parse(raw);
-        Object.assign(state.presets, parsed.presets || {});
-        if (parsed.activeTab && TABS.includes(parsed.activeTab)) state.activeTab = parsed.activeTab;
+        if (parsed.presets) state.presets = Object.assign(JSON.parse(JSON.stringify(DEFAULT_PRESETS)), parsed.presets);
+        if (TABS.includes(parsed.activeTab)) state.activeTab = parsed.activeTab;
         if (typeof parsed.soundEnabled === 'boolean') state.soundEnabled = parsed.soundEnabled;
         if (typeof parsed.vibrationEnabled === 'boolean') state.vibrationEnabled = parsed.vibrationEnabled;
         if ([3,5,10].includes(parsed.startCueSec)) state.startCueSec = parsed.startCueSec;
-        if ([0,3,5,10].includes(parsed.countdownWarningSec)) state.countdownWarningSec = parsed.countdownWarningSec;
-        if (parsed.gongType && GONGS[parsed.gongType]) state.gongType = parsed.gongType;
+        if ([0,3,5,10].includes(parsed.endWarningSec)) state.endWarningSec = parsed.endWarningSec;
+        if (START_SOUND_OPTIONS.some(o => o.value === parsed.startSound)) state.startSound = parsed.startSound;
+        if (WARNING_SOUND_OPTIONS.some(o => o.value === parsed.warningSound)) state.warningSound = parsed.warningSound;
+        if (FINISH_SOUND_OPTIONS.some(o => o.value === parsed.finishSound)) state.finishSound = parsed.finishSound;
         if (['accent','pulse'].includes(parsed.metronomeMode)) state.metronomeMode = parsed.metronomeMode;
         if (['rounds','always'].includes(parsed.metronomeScope)) state.metronomeScope = parsed.metronomeScope;
       } catch (e) {
@@ -839,21 +869,32 @@
       const r = (s % 60).toString().padStart(2, '0');
       return `${m}:${r}`;
     }
-
-    function fmtMs(ms) {
-      return fmt(Math.ceil(Math.max(0, ms) / 1000));
-    }
-
-    function getPreset() { return state.presets[state.activeTab]; }
+    function fmtMs(ms) { return fmt(Math.ceil(Math.max(0, ms) / 1000)); }
 
     function getTotalDurationSec() {
       const p = getPreset();
       return p.roundCount * p.roundDurationSec + Math.max(0, p.roundCount - 1) * p.restDurationSec;
     }
 
+    function currentRemainingMs() {
+      if (state.machine.status === 'IDLE') return getTotalDurationSec() * 1000;
+      if (state.machine.status === 'FINISHED') return 0;
+      return Math.max(0, state.machine.totalRemainingMs || 0);
+    }
 
-    function cuePhaseText(phase) {
-      return phase === 'REST' ? 'ГОТОВЬСЯ: ОТДЫХ' : 'ГОТОВЬСЯ: РАУНД';
+    function cuePhaseText(phase) { return phase === 'REST' ? 'ГОТОВЬСЯ: ОТДЫХ' : 'ГОТОВЬСЯ: РАУНД'; }
+    function phaseLabel(phase) {
+      if (phase === 'ROUND') return 'РАУНД';
+      if (phase === 'REST') return 'ОТДЫХ';
+      if (phase === 'FINISHED') return 'ГОТОВО';
+      return 'ГОТОВ';
+    }
+    function statusLabel() {
+      if (state.machine.status === 'PAUSED') return 'ПАУЗА';
+      if (state.machine.status === 'RUNNING') return phaseLabel(state.machine.phase);
+      if (state.machine.status === 'CUE') return 'ГОТОВЬСЯ';
+      if (state.machine.status === 'FINISHED') return 'ЗАВЕРШЕНО';
+      return 'ГОТОВ';
     }
 
     function renderCueOverlay() {
@@ -863,19 +904,6 @@
         el.cuePhase.textContent = state.machine.cueDisplayPhase;
         el.cueCount.textContent = state.machine.cueDisplayText;
       }
-    }
-
-    function phaseLabel(phase) {
-      return phase === 'ROUND' ? 'РАУНД' : phase === 'REST' ? 'ОТДЫХ' : phase === 'FINISHED' ? 'ГОТОВО' : 'ГОТОВ';
-    }
-
-    function statusLabel() {
-      const s = state.machine.status;
-      if (s === 'PAUSED') return 'ПАУЗА';
-      if (s === 'RUNNING') return phaseLabel(state.machine.phase);
-      if (s === 'CUE') return 'ГОТОВ';
-      if (s === 'FINISHED') return 'ЗАВЕРШЕНО';
-      return 'ГОТОВ';
     }
 
     function updateTabButtons() {
@@ -888,6 +916,7 @@
           if (['RUNNING','PAUSED','CUE'].includes(state.machine.status)) return;
           state.activeTab = tab;
           saveState();
+          setMachineToIdle();
           render();
         });
         el.tabs.appendChild(b);
@@ -908,17 +937,6 @@
         b.addEventListener('click', () => onPick(item.value));
         container.appendChild(b);
       });
-    }
-
-    function currentRemainingMs() {
-      if (state.machine.status === 'IDLE') return getTotalDurationSec() * 1000;
-      if (state.machine.status === 'FINISHED') return 0;
-      return Math.max(0, state.machine.totalRemainingMs);
-    }
-      if (state.machine.phase === 'REST') {
-        return `Дальше: раунд ${state.machine.roundIndex + 1} • ${fmt(p.roundDurationSec)}`;
-      }
-      return 'Дальше: старт тренировки';
     }
 
     function lockControls() {
@@ -946,21 +964,17 @@
       else if (machine.status === 'FINISHED') displayedMs = 0;
       else displayedMs = machine.phaseRemainingMs;
       el.heroTime.textContent = fmtMs(displayedMs);
-
       el.stateBadge.textContent = statusLabel();
-      el.roundBadge.textContent = `Раунд ${Math.min(machine.roundIndex, p.roundCount)} из ${p.roundCount}`;
+      const shownRound = machine.status === 'IDLE' ? 1 : Math.max(1, Math.min(machine.roundIndex, p.roundCount));
+      el.roundBadge.textContent = `Раунд ${shownRound} из ${p.roundCount}`;
 
-      const isPaused = machine.status === 'PAUSED';
-      const isRunning = machine.status === 'RUNNING';
-      const isCue = machine.status === 'CUE';
-      const isFinished = machine.status === 'FINISHED';
-      if (isRunning || isCue) {
+      if (machine.status === 'RUNNING' || machine.status === 'CUE') {
         el.heroActionIcon.textContent = '⏸';
         el.heroActionText.textContent = 'Пауза';
-      } else if (isPaused) {
+      } else if (machine.status === 'PAUSED') {
         el.heroActionIcon.textContent = '▶';
         el.heroActionText.textContent = 'Продолжить';
-      } else if (isFinished) {
+      } else if (machine.status === 'FINISHED') {
         el.heroActionIcon.textContent = '▶';
         el.heroActionText.textContent = 'Заново';
       } else {
@@ -970,23 +984,13 @@
 
       setSwitch(el.soundToggle, state.soundEnabled, () => { state.soundEnabled = !state.soundEnabled; saveState(); render(); });
       setSwitch(el.vibrationToggle, state.vibrationEnabled, () => { state.vibrationEnabled = !state.vibrationEnabled; saveState(); render(); });
-
-      renderChips(el.startCueChips, [3,5,10].map(v => ({value:v, label:String(v)})), state.startCueSec, (v) => {
-        state.startCueSec = v; saveState(); render();
-      });
-      renderChips(el.countdownChips, [0,3,5,10].map(v => ({value:v, label:v === 0 ? 'Выкл' : String(v)})), state.countdownWarningSec, (v) => {
-        state.countdownWarningSec = v; saveState(); render();
-      });
-      renderChips(el.gongChips, Object.entries(GONGS).map(([value, cfg]) => ({value, label: cfg.label})), state.gongType, (v) => {
-        state.gongType = v; saveState(); render();
-      });
-      renderChips(el.metroModeChips, [{value:'accent',label:'Accent'},{value:'pulse',label:'Pulse'}], state.metronomeMode, (v) => {
-        state.metronomeMode = v; saveState(); render();
-      });
-      renderChips(el.metroScopeChips, [{value:'rounds',label:'Только раунды'},{value:'always',label:'Всегда'}], state.metronomeScope, (v) => {
-        state.metronomeScope = v; saveState(); render();
-      });
-
+      renderChips(el.startCueChips, [3,5,10].map(v => ({value:v, label:String(v)})), state.startCueSec, v => { state.startCueSec = v; saveState(); render(); });
+      renderChips(el.countdownChips, [0,3,5,10].map(v => ({value:v, label:v === 0 ? 'Выкл' : String(v)})), state.endWarningSec, v => { state.endWarningSec = v; saveState(); render(); });
+      renderChips(el.startSoundChips, START_SOUND_OPTIONS.map(o => ({value:o.value, label:o.label})), state.startSound, v => { state.startSound = v; saveState(); render(); });
+      renderChips(el.warningSoundChips, WARNING_SOUND_OPTIONS.map(o => ({value:o.value, label:o.label})), state.warningSound, v => { state.warningSound = v; saveState(); render(); });
+      renderChips(el.finishSoundChips, FINISH_SOUND_OPTIONS.map(o => ({value:o.value, label:o.label})), state.finishSound, v => { state.finishSound = v; saveState(); render(); });
+      renderChips(el.metroModeChips, [{value:'accent',label:'Accent'},{value:'pulse',label:'Pulse'}], state.metronomeMode, v => { state.metronomeMode = v; saveState(); render(); });
+      renderChips(el.metroScopeChips, [{value:'rounds',label:'Только раунды'},{value:'always',label:'Всегда'}], state.metronomeScope, v => { state.metronomeScope = v; saveState(); render(); });
       renderCueOverlay();
     }
 
@@ -1002,7 +1006,8 @@
     }
 
     async function loadAudioAsset(url) {
-      if (state.audio.assets[url]) return state.audio.assets[url];
+      if (!url) return null;
+      if (state.audio.assets[url] !== undefined) return state.audio.assets[url];
       const ctx = ensureAudio();
       if (!ctx) return null;
       try {
@@ -1020,9 +1025,9 @@
     }
 
     async function playBuffer(url, gainValue = 1.0) {
-      if (!state.soundEnabled) return;
+      if (!state.soundEnabled || !url) return false;
       const ctx = ensureAudio();
-      if (!ctx) return;
+      if (!ctx) return false;
       const buf = await loadAudioAsset(url);
       if (!buf) return false;
       const src = ctx.createBufferSource();
@@ -1057,7 +1062,7 @@
       if (!ctx) return;
       const now = ctx.currentTime;
       const master = ctx.createGain();
-      master.gain.value = 0.85;
+      master.gain.value = 0.95;
       master.connect(ctx.destination);
       const freqs = [220, 330, 446, 592, 883, 1231];
       freqs.forEach((f, i) => {
@@ -1066,7 +1071,7 @@
         osc.type = i % 2 ? 'triangle' : 'sine';
         osc.frequency.setValueAtTime(f, now);
         const life = 1.1 + i * 0.12;
-        g.gain.setValueAtTime(0.42 / (1 + i * 0.35), now);
+        g.gain.setValueAtTime(0.44 / (1 + i * 0.35), now);
         g.gain.exponentialRampToValueAtTime(0.0001, now + life);
         osc.connect(g).connect(master);
         osc.start(now);
@@ -1074,20 +1079,35 @@
       });
     }
 
-    async function playShort() {
-      if (!state.soundEnabled) return;
-      const cfg = GONGS[state.gongType];
-      const ok = await playBuffer(cfg.short, 1.0);
-      if (!ok) synthBeep({freq: 1800, duration: 0.11, gainValue: 1.0});
+    function optionByValue(list, value) { return list.find(x => x.value === value) || null; }
+    async function playStartSelection() {
+      const pick = optionByValue(START_SOUND_OPTIONS, state.startSound);
+      const ok = pick ? await playBuffer(pick.path, 1.0) : false;
+      if (!ok) {
+        const wavOk = await playBuffer(FALLBACK_WAVS.short, 1.0);
+        if (!wavOk) synthBeep({freq: 1800, duration: 0.11, gainValue: 1.0});
+      }
       vibrate([30]);
     }
-
-    async function playLong() {
-      if (!state.soundEnabled) return;
-      const cfg = GONGS[state.gongType];
-      const ok = await playBuffer(cfg.long, 1.0);
-      if (!ok) synthGong();
+    async function playFinishSelection() {
+      const pick = optionByValue(FINISH_SOUND_OPTIONS, state.finishSound);
+      const ok = pick ? await playBuffer(pick.path, 1.0) : false;
+      if (!ok) {
+        const wavOk = await playBuffer(FALLBACK_WAVS.long, 1.0);
+        if (!wavOk) synthGong();
+      }
       vibrate([80, 40, 80]);
+    }
+    async function playWarningSelection() {
+      if (state.warningSound === 'last10') {
+        const pick = optionByValue(WARNING_SOUND_OPTIONS, 'last10');
+        const ok = pick ? await playBuffer(pick.path, 1.0) : false;
+        if (ok) return true;
+      }
+      const wavOk = await playBuffer(FALLBACK_WAVS.short, 1.0);
+      if (!wavOk) synthBeep({freq: 1800, duration: 0.11, gainValue: 1.0});
+      vibrate([30]);
+      return false;
     }
 
     function playMetronomeAccent() {
@@ -1100,13 +1120,12 @@
       osc.type = 'square';
       osc.frequency.setValueAtTime(1450, t0);
       g.gain.setValueAtTime(0.0001, t0);
-      g.gain.exponentialRampToValueAtTime(0.85, t0 + 0.003);
+      g.gain.exponentialRampToValueAtTime(0.88, t0 + 0.003);
       g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.10);
       osc.connect(g).connect(ctx.destination);
       osc.start(t0);
       osc.stop(t0 + 0.12);
     }
-
     function playMetronomePulse() {
       if (!state.soundEnabled) return;
       const ctx = ensureAudio();
@@ -1133,21 +1152,18 @@
       state.machine.cueTimeouts = [];
       state.machine.activeCueToken += 1;
     }
-
     function stopMetronomeLoop() {
       if (state.audio.metronomeTimer) {
         clearInterval(state.audio.metronomeTimer);
         state.audio.metronomeTimer = null;
       }
     }
-
     function shouldMetronomeRun() {
       if (!getPreset().metronomeBpm) return false;
       if (state.machine.status !== 'RUNNING') return false;
       if (state.metronomeScope === 'always') return true;
       return state.machine.phase === 'ROUND';
     }
-
     function startMetronomeLoop() {
       stopMetronomeLoop();
       if (!shouldMetronomeRun()) return;
@@ -1170,7 +1186,6 @@
         }
       }, 20);
     }
-
     function cancelRunTimers() {
       clearCueTimeouts();
       stopMetronomeLoop();
@@ -1181,44 +1196,39 @@
       state.machine.status = 'IDLE';
       state.machine.phase = 'READY';
       state.machine.roundIndex = 0;
-      state.machine.phaseDurationSec = getPreset().roundDurationSec;
       state.machine.phaseRemainingMs = getPreset().roundDurationSec * 1000;
-      state.machine.startedAtMs = 0;
-      state.machine.pauseStartedAtMs = 0;
-      state.machine.pausedAccumulatedMs = 0;
       state.machine.nextTransitionAtMs = 0;
       state.machine.totalRemainingMs = getTotalDurationSec() * 1000;
       state.machine.warnedMarks = [];
       state.machine.customWarningPlayed = false;
-      state.machine.cueDisplayText = '3';
+      state.machine.cueDisplayText = String(state.startCueSec);
       state.machine.cueDisplayPhase = 'ГОТОВЬСЯ: РАУНД';
-      render();
     }
 
     function updateSummaryRemaining() {
       const p = getPreset();
-      let phaseR = Math.max(0, state.machine.phaseRemainingMs);
-      let remain = phaseR;
-      if (state.machine.phase === 'ROUND') {
-        const currentRound = state.machine.roundIndex;
-        const roundsLeftAfterCurrent = Math.max(0, p.roundCount - currentRound);
-        remain += roundsLeftAfterCurrent * p.roundDurationSec * 1000;
-        remain += roundsLeftAfterCurrent * p.restDurationSec * 1000;
-        if (currentRound === p.roundCount) remain -= p.restDurationSec * 1000;
-      } else if (state.machine.phase === 'REST') {
-        const roundsLeft = Math.max(0, p.roundCount - state.machine.roundIndex);
-        remain += roundsLeft * p.roundDurationSec * 1000;
-        remain += Math.max(0, roundsLeft - 1) * p.restDurationSec * 1000;
-      } else if (state.machine.status === 'IDLE') {
+      let remain = 0;
+      if (state.machine.status === 'IDLE') {
         remain = getTotalDurationSec() * 1000;
       } else if (state.machine.status === 'FINISHED') {
         remain = 0;
+      } else if (state.machine.phase === 'ROUND') {
+        const currentRound = state.machine.roundIndex;
+        const roundsAfterCurrent = Math.max(0, p.roundCount - currentRound);
+        remain = Math.max(0, state.machine.phaseRemainingMs);
+        if (currentRound < p.roundCount) remain += p.restDurationSec * 1000;
+        remain += roundsAfterCurrent * p.roundDurationSec * 1000;
+        remain += Math.max(0, roundsAfterCurrent - 1) * p.restDurationSec * 1000;
+      } else if (state.machine.phase === 'REST') {
+        const roundsLeft = Math.max(0, p.roundCount - state.machine.roundIndex);
+        remain = Math.max(0, state.machine.phaseRemainingMs);
+        remain += roundsLeft * p.roundDurationSec * 1000;
+        remain += Math.max(0, roundsLeft - 1) * p.restDurationSec * 1000;
       }
       state.machine.totalRemainingMs = Math.max(0, remain);
     }
 
-    
-    async function runCueThen(startPhase, upcomingPhase = 'ROUND') {
+    async function runCueThen(onStart, upcomingPhase = 'ROUND') {
       clearCueTimeouts();
       stopMetronomeLoop();
       const token = ++state.machine.activeCueToken;
@@ -1227,50 +1237,37 @@
       state.machine.cueDisplayPhase = cuePhaseText(upcomingPhase);
       state.machine.cueDisplayText = String(cueSec);
       render();
-
+      playStartSelection();
       for (let n = cueSec; n >= 1; n--) {
         const delay = (cueSec - n) * 1000;
         const id = setTimeout(() => {
           if (token !== state.machine.activeCueToken) return;
           state.machine.cueDisplayText = String(n);
           render();
-          playShort();
         }, delay);
         state.machine.cueTimeouts.push(id);
       }
-
       const startDelay = cueSec * 1000;
       const startId = setTimeout(() => {
         if (token !== state.machine.activeCueToken) return;
         state.machine.cueDisplayText = 'СТАРТ';
         render();
-        playLong();
       }, startDelay);
       state.machine.cueTimeouts.push(startId);
-
       const starter = setTimeout(() => {
         if (token !== state.machine.activeCueToken) return;
         clearCueTimeouts();
-        startPhase();
+        onStart();
       }, startDelay + 700);
       state.machine.cueTimeouts.push(starter);
-    }
-
-    async function playUploadedEndWarning() {
-      const ok = await playBuffer('./sounds/uploads/Last_10_sec_fifnish_round.mp3', 1.0);
-      return !!ok;
     }
 
     function beginPhase(phase) {
       const p = getPreset();
       state.machine.status = 'RUNNING';
       state.machine.phase = phase;
-      state.machine.phaseDurationSec = phase === 'ROUND' ? p.roundDurationSec : p.restDurationSec;
-      state.machine.phaseRemainingMs = state.machine.phaseDurationSec * 1000;
-      state.machine.startedAtMs = performance.now();
-      state.machine.pausedAccumulatedMs = 0;
-      state.machine.pauseStartedAtMs = 0;
-      state.machine.nextTransitionAtMs = state.machine.startedAtMs + state.machine.phaseDurationSec * 1000;
+      state.machine.phaseRemainingMs = (phase === 'ROUND' ? p.roundDurationSec : p.restDurationSec) * 1000;
+      state.machine.nextTransitionAtMs = performance.now() + state.machine.phaseRemainingMs;
       state.machine.warnedMarks = [];
       state.machine.customWarningPlayed = false;
       updateSummaryRemaining();
@@ -1280,18 +1277,15 @@
 
     async function startTraining() {
       ensureAudio();
-      const p = getPreset();
       state.machine.roundIndex = 1;
-      state.machine.phase = 'ROUND';
       await runCueThen(() => beginPhase('ROUND'), 'ROUND');
     }
 
     function pauseTraining() {
-      if (!['RUNNING', 'CUE'].includes(state.machine.status)) return;
+      if (!['RUNNING','CUE'].includes(state.machine.status)) return;
       clearCueTimeouts();
       stopMetronomeLoop();
       state.machine.status = 'PAUSED';
-      state.machine.pauseStartedAtMs = performance.now();
       render();
     }
 
@@ -1302,9 +1296,9 @@
         return;
       }
       state.machine.status = 'RUNNING';
-      state.machine.startedAtMs = performance.now();
-      state.machine.nextTransitionAtMs = state.machine.startedAtMs + state.machine.phaseRemainingMs;
+      state.machine.nextTransitionAtMs = performance.now() + state.machine.phaseRemainingMs;
       state.machine.warnedMarks = [];
+      state.machine.customWarningPlayed = false;
       startMetronomeLoop();
       render();
     }
@@ -1316,13 +1310,13 @@
       state.machine.phaseRemainingMs = 0;
       state.machine.totalRemainingMs = 0;
       render();
-      await playLong();
+      await playFinishSelection();
     }
 
     async function nextPhase() {
       const p = getPreset();
-      await playLong();
       stopMetronomeLoop();
+      await playFinishSelection();
       if (state.machine.phase === 'ROUND') {
         if (state.machine.roundIndex >= p.roundCount) {
           finishTraining();
@@ -1342,26 +1336,17 @@
       const remain = Math.max(0, m.nextTransitionAtMs - now);
       m.phaseRemainingMs = remain;
       updateSummaryRemaining();
-
-      const warn = state.countdownWarningSec;
+      const warn = state.endWarningSec;
       if (warn > 0) {
-        if (warn === 10 && !m.customWarningPlayed && remain <= 10080 && remain >= 9800) {
+        if (warn === 10 && state.warningSound === 'last10' && !m.customWarningPlayed && remain <= 10080 && remain >= 9600) {
           m.customWarningPlayed = true;
-          playUploadedEndWarning().then((ok) => {
-            if (!ok) {
-              for (let s = warn; s >= 1; s--) {
-                if (!m.warnedMarks.includes(s)) m.warnedMarks.push(s);
-              }
-            }
-          });
-        }
-        if (!(warn === 10 && m.customWarningPlayed)) {
+          playWarningSelection();
+        } else if (!(warn === 10 && state.warningSound === 'last10' && m.customWarningPlayed)) {
           for (let s = warn; s >= 1; s--) {
-            const thresholdLow = s * 1000;
-            const thresholdHigh = thresholdLow + 80;
-            if (remain <= thresholdHigh && remain >= thresholdLow - 80 && !m.warnedMarks.includes(s)) {
+            const target = s * 1000;
+            if (remain <= target + 80 && remain >= target - 80 && !m.warnedMarks.includes(s)) {
               m.warnedMarks.push(s);
-              playShort();
+              playWarningSelection();
             }
           }
         }
@@ -1385,13 +1370,16 @@
       render();
     }
 
-    function skipPhase() {
-      if (!['RUNNING','PAUSED'].includes(state.machine.status)) return;
-      nextPhase();
-    }
-
     function resetTraining() {
       setMachineToIdle();
+      render();
+    }
+    function resetActivePreset() {
+      if (['RUNNING','PAUSED','CUE'].includes(state.machine.status)) return;
+      state.presets[state.activeTab] = cloneDefaultsForTab(state.activeTab);
+      saveState();
+      setMachineToIdle();
+      render();
     }
 
     function toggleMainAction() {
@@ -1399,7 +1387,7 @@
       if (state.machine.status === 'IDLE') startTraining();
       else if (state.machine.status === 'RUNNING' || state.machine.status === 'CUE') pauseTraining();
       else if (state.machine.status === 'PAUSED') resumeTraining();
-      else if (state.machine.status === 'FINISHED') { setMachineToIdle(); startTraining(); }
+      else if (state.machine.status === 'FINISHED') { setMachineToIdle(); render(); startTraining(); }
     }
 
     function openSettings() {
@@ -1407,7 +1395,6 @@
       el.settingsSheet.classList.add('open');
       el.overlay.classList.add('open');
     }
-
     function closeSettings() {
       state.ui.settingsOpen = false;
       el.settingsSheet.classList.remove('open');
@@ -1434,17 +1421,18 @@
         if (e.target.closest('button')) return;
         toggleMainAction();
       });
-      el.gearBtn.addEventListener('click', openSettings);
+      el.gearBtn.addEventListener('click', (e) => { e.stopPropagation(); openSettings(); });
       el.settingsCloseTopBtn.addEventListener('click', closeSettings);
       el.overlay.addEventListener('click', closeSettings);
-      el.previewShortBtn.addEventListener('click', () => { ensureAudio(); playShort(); });
-      el.previewLongBtn.addEventListener('click', () => { ensureAudio(); playLong(); });
       el.resetTopBtn.addEventListener('click', (e) => { e.stopPropagation(); resetTraining(); });
-      document.addEventListener('visibilitychange', () => {
-        if (document.hidden) return;
-        render();
-      });
+      el.resetPresetBtn.addEventListener('click', resetActivePreset);
+      el.previewStartBtn.addEventListener('click', () => { ensureAudio(); playStartSelection(); });
+      el.previewWarningBtn.addEventListener('click', () => { ensureAudio(); playWarningSelection(); });
+      el.previewFinishBtn.addEventListener('click', () => { ensureAudio(); playFinishSelection(); });
+      el.previewMetroAccentBtn.addEventListener('click', () => { ensureAudio(); playMetronomeAccent(); });
+      el.previewMetroPulseBtn.addEventListener('click', () => { ensureAudio(); playMetronomeAccent(); setTimeout(playMetronomePulse, 180); setTimeout(playMetronomePulse, 360); });
       document.addEventListener('pointerdown', ensureAudio, { once: true });
+      document.addEventListener('visibilitychange', () => { if (!document.hidden) render(); });
     }
 
     loadState();
