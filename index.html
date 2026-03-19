@@ -171,7 +171,7 @@
       white-space: nowrap;
     }
     .hero-time {
-      margin-top: 6px;
+      margin-top: 4px;
       font-size: clamp(48px, 12vw, 74px);
       line-height: 0.95;
       font-weight: 900;
@@ -192,11 +192,43 @@
       text-overflow: ellipsis;
       font-size: 15px;
     }
-    .hero-actions {
-      margin-top: 10px;
+    .hero-stats {
+      margin-top: 8px;
       display: grid;
-      grid-template-columns: 78px 1fr;
-      gap: 10px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+    .hero-stat {
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.04);
+      padding: 8px 10px;
+      min-width: 0;
+    }
+    .hero-stat .label {
+      display: block;
+      color: rgba(255,255,255,0.62);
+      font-size: 10px;
+      line-height: 1;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    .hero-stat .value {
+      display: block;
+      font-size: 18px;
+      line-height: 1;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .hero-actions {
+      margin-top: 8px;
+      display: grid;
+      grid-template-columns: 68px 1fr;
+      gap: 8px;
     }
     .mini-btn, .hero-btn, .ctl {
       border: 1px solid rgba(255,255,255,0.08);
@@ -205,16 +237,16 @@
       -webkit-tap-highlight-color: transparent;
     }
     .mini-btn {
-      height: 78px;
-      border-radius: 22px;
+      height: 64px;
+      border-radius: 18px;
       background: rgba(255,255,255,0.04);
       font-size: 26px;
       font-weight: 700;
       box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
     }
     .hero-btn {
-      height: 78px;
-      border-radius: 24px;
+      height: 64px;
+      border-radius: 22px;
       background: linear-gradient(180deg, #ff9d3f 0%, var(--accent) 100%);
       font-size: 19px;
       font-weight: 900;
@@ -291,57 +323,7 @@
       line-height: 1;
       box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
     }
-    .footer-bar {
-      display: grid;
-      grid-template-columns: 1fr 74px 74px;
-      gap: 10px;
-      align-items: stretch;
-      margin-bottom: 4px;
-    }
-    .summary {
-      background: linear-gradient(180deg, rgba(16,26,55,0.95), rgba(13,22,47,0.98));
-      border-radius: 22px;
-      border: 1px solid rgba(255,255,255,0.08);
-      box-shadow: var(--shadow);
-      padding: 10px 12px;
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 8px;
-    }
-    .summary .label {
-      display: block;
-      color: rgba(255,255,255,0.64);
-      font-size: 11px;
-      line-height: 1.05;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      margin-bottom: 4px;
-    }
-    .summary .value {
-      font-size: 18px;
-      font-weight: 900;
-      line-height: 1;
-      letter-spacing: -0.03em;
-      white-space: nowrap;
-    }
-    .sq {
-      border-radius: 22px;
-      border: 1px solid rgba(255,255,255,0.08);
-      background: rgba(255,255,255,0.04);
-      color: white;
-      font-size: 28px;
-      font-weight: 700;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
-      cursor: pointer;
-    }
-    .hint {
-      margin-top: 8px;
-      color: rgba(255,255,255,0.64);
-      text-align: center;
-      font-size: 12px;
-      line-height: 1.2;
-    }
-    .sheet {
+        .sheet {
       position: fixed;
       left: 0;
       right: 0;
@@ -550,11 +532,10 @@
       .app { padding-left: 10px; padding-right: 10px; }
       .gear { width: 54px; height: 54px; font-size: 27px; }
       .tab { height: 52px; font-size: 20px; }
-      .hero-actions { grid-template-columns: 70px 1fr; }
-      .mini-btn, .hero-btn { height: 72px; }
+      .hero-actions { grid-template-columns: 62px 1fr; }
+      .mini-btn, .hero-btn { height: 60px; }
       .card { padding: 10px; grid-template-columns: minmax(0,1fr) 58px; }
       .ctl { min-height: 48px; }
-      .footer-bar { grid-template-columns: 1fr 68px 68px; }
     }
   </style>
 </head>
@@ -581,9 +562,15 @@
         <div class="round-badge" id="roundBadge">Раунд 0 из 5</div>
       </div>
       <div class="hero-time" id="heroTime">03:00</div>
-      <div class="hero-sub">
-        <span id="nextLabel">Дальше: старт тренировки</span>
-        <span class="muted-line" id="stateLine">Состояние: IDLE</span>
+      <div class="hero-stats">
+        <div class="hero-stat">
+          <span class="label">Всего</span>
+          <span class="value" id="totalDuration">19:00</span>
+        </div>
+        <div class="hero-stat">
+          <span class="label">Осталось</span>
+          <span class="value" id="remainingValue">19:00</span>
+        </div>
       </div>
       <div class="hero-actions">
         <button class="mini-btn" id="resetTopBtn" title="Сброс">↺</button>
@@ -640,23 +627,6 @@
         </div>
       </article>
     </section>
-
-    <section class="footer-bar">
-      <div class="summary">
-        <div>
-          <span class="label">Всего</span>
-          <span class="value" id="totalDuration">19:00</span>
-        </div>
-        <div>
-          <span class="label">Осталось</span>
-          <span class="value" id="remainingValue">19:00</span>
-        </div>
-      </div>
-      <button class="sq" id="skipBtn" title="Пропустить этап">⏭</button>
-      <button class="sq" id="resetBottomBtn" title="Сброс">↺</button>
-    </section>
-
-    <div class="hint">Верхний блок управляет стартом, паузой и продолжением.</div>
   </div>
 
   <div class="overlay" id="overlay"></div>
@@ -686,8 +656,16 @@
 
       <div class="setting">
         <div>
-          <h3>Обратный отсчёт</h3>
-          <p>За сколько секунд до конца подавать короткие сигналы</p>
+          <h3>Старт этапа</h3>
+          <p>Обратный отсчёт перед стартом раунда и отдыха</p>
+        </div>
+        <div class="chips" id="startCueChips"></div>
+      </div>
+
+      <div class="setting">
+        <div>
+          <h3>Конец этапа</h3>
+          <p>За сколько секунд до конца запускать предупреждение</p>
         </div>
         <div class="chips" id="countdownChips"></div>
       </div>
@@ -732,7 +710,7 @@
   </section>
 
   <script>
-    const STORAGE_KEY = 'fighttech_boxer_timer_v8';
+    const STORAGE_KEY = 'fighttech_boxer_timer_v11';
     const STEP_SEC = 5;
     const TABS = ['A', 'B', 'C', 'D'];
     const GONGS = {
@@ -751,7 +729,8 @@
       activeTab: 'A',
       soundEnabled: true,
       vibrationEnabled: true,
-      countdownWarningSec: 3,
+      startCueSec: 3,
+      countdownWarningSec: 10,
       gongType: 'gym',
       metronomeMode: 'pulse',
       metronomeScope: 'rounds',
@@ -767,6 +746,7 @@
         nextTransitionAtMs: 0,
         totalRemainingMs: 0,
         warnedMarks: [],
+        customWarningPlayed: false,
         cueTimeouts: [],
         activeCueToken: 0,
         cueDisplayText: '3',
@@ -790,8 +770,6 @@
       stateBadge: document.getElementById('stateBadge'),
       roundBadge: document.getElementById('roundBadge'),
       heroTime: document.getElementById('heroTime'),
-      nextLabel: document.getElementById('nextLabel'),
-      stateLine: document.getElementById('stateLine'),
       heroActionBtn: document.getElementById('heroActionBtn'),
       heroActionIcon: document.getElementById('heroActionIcon'),
       heroActionText: document.getElementById('heroActionText'),
@@ -808,6 +786,7 @@
       overlay: document.getElementById('overlay'),
       soundToggle: document.getElementById('soundToggle'),
       vibrationToggle: document.getElementById('vibrationToggle'),
+      startCueChips: document.getElementById('startCueChips'),
       countdownChips: document.getElementById('countdownChips'),
       gongChips: document.getElementById('gongChips'),
       metroModeChips: document.getElementById('metroModeChips'),
@@ -816,8 +795,6 @@
       previewLongBtn: document.getElementById('previewLongBtn'),
       settingsCloseTopBtn: document.getElementById('settingsCloseTopBtn'),
       resetTopBtn: document.getElementById('resetTopBtn'),
-      resetBottomBtn: document.getElementById('resetBottomBtn'),
-      skipBtn: document.getElementById('skipBtn'),
       cueOverlay: document.getElementById('cueOverlay'),
       cuePhase: document.getElementById('cuePhase'),
       cueCount: document.getElementById('cueCount'),
@@ -829,6 +806,7 @@
         activeTab: state.activeTab,
         soundEnabled: state.soundEnabled,
         vibrationEnabled: state.vibrationEnabled,
+        startCueSec: state.startCueSec,
         countdownWarningSec: state.countdownWarningSec,
         gongType: state.gongType,
         metronomeMode: state.metronomeMode,
@@ -845,7 +823,8 @@
         if (parsed.activeTab && TABS.includes(parsed.activeTab)) state.activeTab = parsed.activeTab;
         if (typeof parsed.soundEnabled === 'boolean') state.soundEnabled = parsed.soundEnabled;
         if (typeof parsed.vibrationEnabled === 'boolean') state.vibrationEnabled = parsed.vibrationEnabled;
-        if ([3,5,10].includes(parsed.countdownWarningSec)) state.countdownWarningSec = parsed.countdownWarningSec;
+        if ([3,5,10].includes(parsed.startCueSec)) state.startCueSec = parsed.startCueSec;
+        if ([0,3,5,10].includes(parsed.countdownWarningSec)) state.countdownWarningSec = parsed.countdownWarningSec;
         if (parsed.gongType && GONGS[parsed.gongType]) state.gongType = parsed.gongType;
         if (['accent','pulse'].includes(parsed.metronomeMode)) state.metronomeMode = parsed.metronomeMode;
         if (['rounds','always'].includes(parsed.metronomeScope)) state.metronomeScope = parsed.metronomeScope;
@@ -936,15 +915,6 @@
       if (state.machine.status === 'FINISHED') return 0;
       return Math.max(0, state.machine.totalRemainingMs);
     }
-
-    function nextLabelText() {
-      const p = getPreset();
-      if (state.machine.status === 'IDLE') return 'Дальше: старт тренировки';
-      if (state.machine.status === 'FINISHED') return 'Дальше: завершено';
-      if (state.machine.phase === 'ROUND') {
-        if (state.machine.roundIndex >= p.roundCount) return 'Дальше: завершение';
-        return `Дальше: отдых • ${fmt(p.restDurationSec)}`;
-      }
       if (state.machine.phase === 'REST') {
         return `Дальше: раунд ${state.machine.roundIndex + 1} • ${fmt(p.roundDurationSec)}`;
       }
@@ -979,8 +949,6 @@
 
       el.stateBadge.textContent = statusLabel();
       el.roundBadge.textContent = `Раунд ${Math.min(machine.roundIndex, p.roundCount)} из ${p.roundCount}`;
-      el.nextLabel.textContent = nextLabelText();
-      el.stateLine.textContent = `Состояние: ${machine.status === 'RUNNING' ? machine.phase + '_ACTIVE' : machine.status}`;
 
       const isPaused = machine.status === 'PAUSED';
       const isRunning = machine.status === 'RUNNING';
@@ -1003,7 +971,10 @@
       setSwitch(el.soundToggle, state.soundEnabled, () => { state.soundEnabled = !state.soundEnabled; saveState(); render(); });
       setSwitch(el.vibrationToggle, state.vibrationEnabled, () => { state.vibrationEnabled = !state.vibrationEnabled; saveState(); render(); });
 
-      renderChips(el.countdownChips, [3,5,10].map(v => ({value:v, label:String(v)})), state.countdownWarningSec, (v) => {
+      renderChips(el.startCueChips, [3,5,10].map(v => ({value:v, label:String(v)})), state.startCueSec, (v) => {
+        state.startCueSec = v; saveState(); render();
+      });
+      renderChips(el.countdownChips, [0,3,5,10].map(v => ({value:v, label:v === 0 ? 'Выкл' : String(v)})), state.countdownWarningSec, (v) => {
         state.countdownWarningSec = v; saveState(); render();
       });
       renderChips(el.gongChips, Object.entries(GONGS).map(([value, cfg]) => ({value, label: cfg.label})), state.gongType, (v) => {
@@ -1218,6 +1189,7 @@
       state.machine.nextTransitionAtMs = 0;
       state.machine.totalRemainingMs = getTotalDurationSec() * 1000;
       state.machine.warnedMarks = [];
+      state.machine.customWarningPlayed = false;
       state.machine.cueDisplayText = '3';
       state.machine.cueDisplayPhase = 'ГОТОВЬСЯ: РАУНД';
       render();
@@ -1245,38 +1217,48 @@
       state.machine.totalRemainingMs = Math.max(0, remain);
     }
 
+    
     async function runCueThen(startPhase, upcomingPhase = 'ROUND') {
       clearCueTimeouts();
       stopMetronomeLoop();
       const token = ++state.machine.activeCueToken;
+      const cueSec = state.startCueSec;
       state.machine.status = 'CUE';
       state.machine.cueDisplayPhase = cuePhaseText(upcomingPhase);
-      state.machine.cueDisplayText = '3';
+      state.machine.cueDisplayText = String(cueSec);
       render();
 
-      const sequence = [
-        { delay: 0, text: '3', sound: 'short' },
-        { delay: 500, text: '2', sound: 'short' },
-        { delay: 1000, text: '1', sound: 'short' },
-        { delay: 1500, text: 'СТАРТ', sound: 'long' },
-      ];
-
-      sequence.forEach((step) => {
+      for (let n = cueSec; n >= 1; n--) {
+        const delay = (cueSec - n) * 1000;
         const id = setTimeout(() => {
           if (token !== state.machine.activeCueToken) return;
-          state.machine.cueDisplayText = step.text;
+          state.machine.cueDisplayText = String(n);
           render();
-          if (step.sound === 'short') playShort(); else playLong();
-        }, step.delay);
+          playShort();
+        }, delay);
         state.machine.cueTimeouts.push(id);
-      });
+      }
+
+      const startDelay = cueSec * 1000;
+      const startId = setTimeout(() => {
+        if (token !== state.machine.activeCueToken) return;
+        state.machine.cueDisplayText = 'СТАРТ';
+        render();
+        playLong();
+      }, startDelay);
+      state.machine.cueTimeouts.push(startId);
 
       const starter = setTimeout(() => {
         if (token !== state.machine.activeCueToken) return;
         clearCueTimeouts();
         startPhase();
-      }, 1850);
+      }, startDelay + 700);
       state.machine.cueTimeouts.push(starter);
+    }
+
+    async function playUploadedEndWarning() {
+      const ok = await playBuffer('./sounds/uploads/Last_10_sec_fifnish_round.mp3', 1.0);
+      return !!ok;
     }
 
     function beginPhase(phase) {
@@ -1290,6 +1272,7 @@
       state.machine.pauseStartedAtMs = 0;
       state.machine.nextTransitionAtMs = state.machine.startedAtMs + state.machine.phaseDurationSec * 1000;
       state.machine.warnedMarks = [];
+      state.machine.customWarningPlayed = false;
       updateSummaryRemaining();
       startMetronomeLoop();
       render();
@@ -1361,12 +1344,26 @@
       updateSummaryRemaining();
 
       const warn = state.countdownWarningSec;
-      for (let s = warn; s >= 1; s--) {
-        const thresholdLow = s * 1000;
-        const thresholdHigh = thresholdLow + 80;
-        if (remain <= thresholdHigh && remain >= thresholdLow - 80 && !m.warnedMarks.includes(s)) {
-          m.warnedMarks.push(s);
-          playShort();
+      if (warn > 0) {
+        if (warn === 10 && !m.customWarningPlayed && remain <= 10080 && remain >= 9800) {
+          m.customWarningPlayed = true;
+          playUploadedEndWarning().then((ok) => {
+            if (!ok) {
+              for (let s = warn; s >= 1; s--) {
+                if (!m.warnedMarks.includes(s)) m.warnedMarks.push(s);
+              }
+            }
+          });
+        }
+        if (!(warn === 10 && m.customWarningPlayed)) {
+          for (let s = warn; s >= 1; s--) {
+            const thresholdLow = s * 1000;
+            const thresholdHigh = thresholdLow + 80;
+            if (remain <= thresholdHigh && remain >= thresholdLow - 80 && !m.warnedMarks.includes(s)) {
+              m.warnedMarks.push(s);
+              playShort();
+            }
+          }
         }
       }
       if (remain <= 0) {
@@ -1443,8 +1440,6 @@
       el.previewShortBtn.addEventListener('click', () => { ensureAudio(); playShort(); });
       el.previewLongBtn.addEventListener('click', () => { ensureAudio(); playLong(); });
       el.resetTopBtn.addEventListener('click', (e) => { e.stopPropagation(); resetTraining(); });
-      el.resetBottomBtn.addEventListener('click', resetTraining);
-      el.skipBtn.addEventListener('click', skipPhase);
       document.addEventListener('visibilitychange', () => {
         if (document.hidden) return;
         render();
