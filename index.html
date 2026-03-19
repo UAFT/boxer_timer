@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Таймер боксёра</title>
+  <style>
+    :root {
+      --bg: #0f1115;
+      --panel: #171a21;
+      --panel-2: #1e2330;
+      --text: #f5f7fb;
+      --muted: #a5adbd;
+      --accent: #f04d23;
+      --accent-2: #ff7a1a;
+      --ok: #18c37e;
+      --warn: #ffd24d;
+      --danger: #ff5b5b;
+      --border: rgba(255,255,255,0.08);
+      --shadow: 0 16px 40px rgba(0,0,0,0.35);
+      --radius: 22px;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: radial-gradient(circle at top, #1a2230 0%, var(--bg) 55%); color: var(--text); font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    body { min-height: 100vh; }
+
+    .app {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 16px 16px 28px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .title {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .title h1 {
+      margin: 0;
+      font-size: 24px;
+      line-height: 1.15;
+      letter-spacing: 0.2px;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .icon-btn {
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.04);
+      color: var(--text);
+      border-radius: 16px;
+      padding: 12px 14px;
+      font-size: 18px;
+      cursor: pointer;
+      min-width: 52px;
+    }
+
+    .tabs {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .tab {
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.04);
+      color: var(--text);
+      border-radius: 16px;
+      padding: 12px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .tab.active {
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      border-color: transparent;
+      color: white;
+    }
+
+    .status-card,
+    .card,
+    .summary,
+    .controls,
+    .settings-sheet {
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.045);
+      backdrop-filter: blur(10px);
+      box-shadow: var(--shadow);
+      border-radius: var(--radius);
+    }
+
+    .status-card {
+      padding: 18px;
+      margin-bottom: 14px;
+      background: linear-gradient(180deg, rgba(240,77,35,0.13), rgba(255,255,255,0.04));
+    }
+
+    .period-line {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: baseline;
+      margin-bottom: 10px;
+    }
+
+    .period-badge {
+      font-size: 13px;
+      color: var(--warn);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+    }
+
+    .round-label {
+      color: var(--muted);
+      font-size: 14px;
+      text-align: right;
+    }
+
+    .main-timer {
+      font-size: clamp(54px, 14vw, 92px);
+      line-height: 0.95;
+      font-weight: 800;
+      letter-spacing: -2px;
+      margin: 8px 0 10px;
+    }
+
+    .next-line, .remain-line {
+      color: var(--muted);
+      font-size: 14px;
+      margin-top: 4px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .card {
+      padding: 16px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
+    }
+
+    .card-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .card-title {
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .card-sub {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    .value-row {
+      display: grid;
+      grid-template-columns: 64px 1fr 64px;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .value {
+      text-align: center;
+      font-size: clamp(28px, 8vw, 40px);
+      font-weight: 800;
+      letter-spacing: -0.04em;
+    }
+
+    .adjust {
+      border: 1px solid var(--border);
+      background: var(--panel-2);
+      color: var(--text);
+      border-radius: 18px;
+      height: 56px;
+      font-size: 28px;
+      cursor: pointer;
+    }
+
+    .summary {
+      padding: 14px 16px;
+      margin-bottom: 14px;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+
+    .summary-item {
+      background: rgba(255,255,255,0.035);
+      border-radius: 16px;
+      padding: 12px 14px;
+      min-height: 74px;
+    }
+
+    .summary-label {
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 6px;
+    }
+
+    .summary-value {
+      font-size: 22px;
+      font-weight: 800;
+    }
+
+    .controls {
+      padding: 14px;
+      display: grid;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .primary-row,
+    .secondary-row {
+      display: grid;
+      gap: 10px;
+    }
+
+    .primary-row { grid-template-columns: 1fr; }
+    .secondary-row { grid-template-columns: repeat(2, 1fr); }
+
+    .btn {
+      border: none;
+      border-radius: 18px;
+      padding: 16px 18px;
+      font-size: 16px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .btn.primary { background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: white; }
+    .btn.secondary { background: var(--panel-2); color: white; border: 1px solid var(--border); }
+    .btn.ghost { background: rgba(255,255,255,0.05); color: white; border: 1px solid var(--border); }
+    .btn:disabled, .adjust:disabled, .tab:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .hint {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.4;
+      margin-top: 8px;
+    }
+
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(5, 7, 11, 0.62);
+      display: none;
+      align-items: end;
+      justify-content: center;
+      padding: 0;
+      z-index: 30;
+    }
+
+    .overlay.open { display: flex; }
+
+    .settings-sheet {
+      width: 100%;
+      max-width: 760px;
+      border-bottom-left-radius: 0;
+      border-bottom-right-radius: 0;
+      padding: 16px;
+      background: #121722;
+    }
+
+    .sheet-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .sheet-title { font-size: 20px; font-weight: 800; }
+
+    .setting-block {
+      padding: 14px 0;
+      border-top: 1px solid var(--border);
+    }
+
+    .setting-block:first-of-type { border-top: none; }
+
+    .setting-label { font-size: 15px; font-weight: 700; }
+    .setting-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+    .toggle-row, .chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .chip {
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.05);
+      color: var(--text);
+      border-radius: 999px;
+      padding: 10px 14px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .chip.active { background: linear-gradient(135deg, var(--accent), var(--accent-2)); border-color: transparent; }
+
+    .footer-note {
+      color: var(--muted);
+      text-align: center;
+      font-size: 12px;
+      margin-top: 12px;
+    }
+
+    @media (min-width: 680px) {
+      .grid { grid-template-columns: repeat(2, 1fr); }
+      .grid .card:nth-child(3), .grid .card:nth-child(4) { grid-column: span 1; }
+      .controls { padding: 16px; }
+      .primary-row { grid-template-columns: 1.2fr 0.8fr; }
+      .secondary-row { grid-template-columns: repeat(3, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="topbar">
+      <div class="title">
+        <h1>🥊 Таймер боксёра</h1>
+        <div class="subtitle">Mini App MVP • 3 пресета • звук • вибрация • метроном</div>
+      </div>
+      <button class="icon-btn" id="settingsBtn" aria-label="Настройки">⚙️</button>
+    </div>
+
+    <div class="tabs" id="tabs"></div>
+
+    <section class="status-card">
+      <div class="period-line">
+        <div class="period-badge" id="periodBadge">Готов</div>
+        <div class="round-label" id="roundLabel">Раунд 0 из 0</div>
+      </div>
+      <div class="main-timer" id="mainTimer">03:00</div>
+      <div class="next-line" id="nextLine">Дальше: старт тренировки</div>
+      <div class="remain-line" id="remainLine">Осталось всего: 00:00</div>
+    </section>
+
+    <section class="grid">
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <div class="card-title">Длина раунда</div>
+            <div class="card-sub">Шаг 5 секунд</div>
+          </div>
+        </div>
+        <div class="value-row">
+          <button class="adjust" data-action="decRound">−</button>
+          <div class="value" id="roundDurationValue">03:00</div>
+          <button class="adjust" data-action="incRound">+</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <div class="card-title">Время отдыха</div>
+            <div class="card-sub">Шаг 5 секунд</div>
+          </div>
+        </div>
+        <div class="value-row">
+          <button class="adjust" data-action="decRest">−</button>
+          <div class="value" id="restDurationValue">01:00</div>
+          <button class="adjust" data-action="incRest">+</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <div class="card-title">Раунды</div>
+            <div class="card-sub">От 1 до 99</div>
+          </div>
+        </div>
+        <div class="value-row">
+          <button class="adjust" data-action="decCount">−</button>
+          <div class="value" id="roundCountValue">5</div>
+          <button class="adjust" data-action="incCount">+</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <div class="card-title">Метроном</div>
+            <div class="card-sub">0 = выкл, только в раундах</div>
+          </div>
+        </div>
+        <div class="value-row">
+          <button class="adjust" data-action="decBpm">−</button>
+          <div class="value" id="metronomeValue">0</div>
+          <button class="adjust" data-action="incBpm">+</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="summary">
+      <div class="summary-item">
+        <div class="summary-label">Общая длительность</div>
+        <div class="summary-value" id="totalDurationValue">19:00</div>
+      </div>
+      <div class="summary-item">
+        <div class="summary-label">Состояние</div>
+        <div class="summary-value" id="stateValue">IDLE</div>
+      </div>
+    </section>
+
+    <section class="controls">
+      <div class="primary-row">
+        <button class="btn primary" id="startPauseBtn">Старт</button>
+        <button class="btn secondary" id="skipBtn">Пропустить этап</button>
+      </div>
+      <div class="secondary-row">
+        <button class="btn ghost" id="resetBtn">Сброс</button>
+        <button class="btn ghost" id="soundBtn">🔊 Звук: ON</button>
+        <button class="btn ghost" id="vibrationBtn">📳 Вибрация: ON</button>
+      </div>
+      <div class="hint">
+        Это single-file MVP. Тайминг и звук работают в браузере/Telegram Mini App. В фоне и при жёсткой блокировке экрана поведение зависит от ограничений клиента и ОС.
+      </div>
+    </section>
+
+    <div class="footer-note">Для старта в Telegram достаточно HTTPS-ссылки на этот файл.</div>
+  </div>
+
+  <div class="overlay" id="settingsOverlay">
+    <div class="settings-sheet">
+      <div class="sheet-head">
+        <div class="sheet-title">Настройки</div>
+        <button class="icon-btn" id="closeSettingsBtn" aria-label="Закрыть">✕</button>
+      </div>
+
+      <div class="setting-block">
+        <div class="setting-label">Предупреждение до конца периода</div>
+        <div class="setting-sub">Когда давать короткие сигналы до финального длинного</div>
+        <div class="chip-row" id="warningChips"></div>
+      </div>
+
+      <div class="setting-block">
+        <div class="setting-label">Звук</div>
+        <div class="setting-sub">Выключение всех сигналов и метронома</div>
+        <div class="toggle-row">
+          <button class="chip" data-toggle="sound" data-value="1">Вкл</button>
+          <button class="chip" data-toggle="sound" data-value="0">Выкл</button>
+        </div>
+      </div>
+
+      <div class="setting-block">
+        <div class="setting-label">Вибрация</div>
+        <div class="setting-sub">Если устройство и Telegram разрешают вибрацию</div>
+        <div class="toggle-row">
+          <button class="chip" data-toggle="vibration" data-value="1">Вкл</button>
+          <button class="chip" data-toggle="vibration" data-value="0">Выкл</button>
+        </div>
+      </div>
+
+      <div class="setting-block">
+        <div class="setting-label">Метроном</div>
+        <div class="setting-sub">В MVP работает только во время раундов</div>
+        <div class="chip-row" id="bpmPresetChips"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'uaft_boxer_timer_v1';
+    const DEFAULT_PRESET = {
+      roundDurationSec: 180,
+      restDurationSec: 60,
+      roundCount: 5,
+      metronomeBpm: 0,
+    };
+    const DEFAULT_SETTINGS = {
+      soundEnabled: true,
+      vibrationEnabled: true,
+      countdownWarningSec: 3,
+      lastTab: 'A',
+      metronomeMode: 'round_only',
+    };
+
+    const WARNING_OPTIONS = [3, 5, 10];
+    const BPM_PRESETS = [0, 20, 25, 30, 40, 50, 60];
+    const TABS = ['A', 'B', 'C'];
+
+    const State = {
+      IDLE: 'IDLE',
+      PRE_START_CUE: 'PRE_START_CUE',
+      ROUND_ACTIVE: 'ROUND_ACTIVE',
+      REST_ACTIVE: 'REST_ACTIVE',
+      PAUSED: 'PAUSED',
+      FINISHED: 'FINISHED',
+    };
+
+    const appState = {
+      presets: { A: {...DEFAULT_PRESET}, B: {...DEFAULT_PRESET}, C: {...DEFAULT_PRESET} },
+      settings: { ...DEFAULT_SETTINGS },
+      activeTab: 'A',
+      session: null,
+      state: State.IDLE,
+      pausedFrom: null,
+      rafId: null,
+      cueTimers: [],
+      metronomeIntervalId: null,
+      audioContext: null,
+      audioUnlocked: false,
+    };
+
+    const el = {
+      tabs: document.getElementById('tabs'),
+      settingsBtn: document.getElementById('settingsBtn'),
+      closeSettingsBtn: document.getElementById('closeSettingsBtn'),
+      settingsOverlay: document.getElementById('settingsOverlay'),
+      warningChips: document.getElementById('warningChips'),
+      bpmPresetChips: document.getElementById('bpmPresetChips'),
+      mainTimer: document.getElementById('mainTimer'),
+      periodBadge: document.getElementById('periodBadge'),
+      roundLabel: document.getElementById('roundLabel'),
+      nextLine: document.getElementById('nextLine'),
+      remainLine: document.getElementById('remainLine'),
+      roundDurationValue: document.getElementById('roundDurationValue'),
+      restDurationValue: document.getElementById('restDurationValue'),
+      roundCountValue: document.getElementById('roundCountValue'),
+      metronomeValue: document.getElementById('metronomeValue'),
+      totalDurationValue: document.getElementById('totalDurationValue'),
+      stateValue: document.getElementById('stateValue'),
+      startPauseBtn: document.getElementById('startPauseBtn'),
+      skipBtn: document.getElementById('skipBtn'),
+      resetBtn: document.getElementById('resetBtn'),
+      soundBtn: document.getElementById('soundBtn'),
+      vibrationBtn: document.getElementById('vibrationBtn'),
+      adjustButtons: () => document.querySelectorAll('.adjust'),
+      settingToggles: () => document.querySelectorAll('[data-toggle]'),
+    };
+
+    function deepClone(v) { return JSON.parse(JSON.stringify(v)); }
+
+    function loadStorage() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+        const parsed = JSON.parse(raw);
+        if (parsed.presets) {
+          for (const tab of TABS) {
+            appState.presets[tab] = { ...DEFAULT_PRESET, ...(parsed.presets[tab] || {}) };
+          }
+        }
+        if (parsed.settings) appState.settings = { ...DEFAULT_SETTINGS, ...parsed.settings };
+        appState.activeTab = TABS.includes(appState.settings.lastTab) ? appState.settings.lastTab : 'A';
+      } catch (e) {
+        console.warn('loadStorage failed', e);
+      }
+    }
+
+    function saveStorage() {
+      appState.settings.lastTab = appState.activeTab;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ presets: appState.presets, settings: appState.settings }));
+    }
+
+    function mmss(sec) {
+      const safe = Math.max(0, Math.round(sec));
+      const m = Math.floor(safe / 60);
+      const s = safe % 60;
+      return String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+    }
+
+    function clamp(value, min, max) { return Math.min(max, Math.max(min, value)); }
+
+    function currentPreset() { return appState.presets[appState.activeTab]; }
+
+    function totalWorkoutSec(preset) {
+      return preset.roundCount * preset.roundDurationSec + Math.max(0, preset.roundCount - 1) * preset.restDurationSec;
+    }
+
+    function buildTimeline(preset) {
+      const arr = [];
+      for (let i = 1; i <= preset.roundCount; i++) {
+        arr.push({ type: 'ROUND', roundNumber: i, durationSec: preset.roundDurationSec });
+        if (i < preset.roundCount) {
+          arr.push({ type: 'REST', roundNumber: i, durationSec: preset.restDurationSec });
+        }
+      }
+      return arr;
+    }
+
+    function isLocked() {
+      return [State.PRE_START_CUE, State.ROUND_ACTIVE, State.REST_ACTIVE, State.PAUSED].includes(appState.state);
+    }
+
+    function renderTabs() {
+      el.tabs.innerHTML = '';
+      for (const tab of TABS) {
+        const btn = document.createElement('button');
+        btn.className = 'tab' + (appState.activeTab === tab ? ' active' : '');
+        btn.textContent = tab;
+        btn.disabled = isLocked() && appState.activeTab !== tab;
+        btn.addEventListener('click', () => {
+          if (isLocked() && appState.activeTab !== tab) return;
+          appState.activeTab = tab;
+          saveStorage();
+          render();
+        });
+        el.tabs.appendChild(btn);
+      }
+    }
+
+    function renderSettingsChips() {
+      el.warningChips.innerHTML = '';
+      for (const sec of WARNING_OPTIONS) {
+        const chip = document.createElement('button');
+        chip.className = 'chip' + (appState.settings.countdownWarningSec === sec ? ' active' : '');
+        chip.textContent = sec + ' сек';
+        chip.addEventListener('click', () => {
+          appState.settings.countdownWarningSec = sec;
+          saveStorage();
+          render();
+        });
+        el.warningChips.appendChild(chip);
+      }
+
+      el.bpmPresetChips.innerHTML = '';
+      for (const bpm of BPM_PRESETS) {
+        const chip = document.createElement('button');
+        chip.className = 'chip' + (currentPreset().metronomeBpm === bpm ? ' active' : '');
+        chip.textContent = bpm === 0 ? 'Выкл' : bpm + ' BPM';
+        chip.addEventListener('click', () => {
+          if (isLocked()) return;
+          currentPreset().metronomeBpm = bpm;
+          saveStorage();
+          render();
+        });
+        el.bpmPresetChips.appendChild(chip);
+      }
+
+      for (const btn of el.settingToggles()) {
+        const key = btn.dataset.toggle;
+        const value = btn.dataset.value === '1';
+        const active = key === 'sound' ? appState.settings.soundEnabled === value : appState.settings.vibrationEnabled === value;
+        btn.classList.toggle('active', active);
+        btn.onclick = () => {
+          if (key === 'sound') appState.settings.soundEnabled = value;
+          if (key === 'vibration') appState.settings.vibrationEnabled = value;
+          saveStorage();
+          render();
+        };
+      }
+    }
+
+    function renderIdleView(preset) {
+      el.mainTimer.textContent = mmss(preset.roundDurationSec);
+      el.periodBadge.textContent = appState.state === State.FINISHED ? 'Завершено' : 'Готов';
+      el.roundLabel.textContent = `Раунд 0 из ${preset.roundCount}`;
+      el.nextLine.textContent = appState.state === State.FINISHED ? 'Тренировка завершена' : 'Дальше: старт тренировки';
+      el.remainLine.textContent = 'Осталось всего: ' + mmss(totalWorkoutSec(preset));
+    }
+
+    function renderSessionView() {
+      const s = appState.session;
+      const phase = s.timeline[s.phaseIndex];
+      const left = s.phaseRemainingSec;
+      el.mainTimer.textContent = mmss(left);
+      el.periodBadge.textContent = appState.state === State.PRE_START_CUE ? 'Подготовка' : (phase.type === 'ROUND' ? 'Раунд' : 'Отдых');
+      el.roundLabel.textContent = phase.type === 'ROUND'
+        ? `Раунд ${phase.roundNumber} из ${s.preset.roundCount}`
+        : `Отдых после раунда ${phase.roundNumber}`;
+
+      if (appState.state === State.PRE_START_CUE) {
+        const targetType = s.pendingStartType;
+        const rnum = s.pendingRoundNumber || 1;
+        el.nextLine.textContent = targetType === 'ROUND'
+          ? `Стартует раунд ${rnum}`
+          : `Стартует отдых ${rnum}`;
+      } else {
+        const next = s.timeline[s.phaseIndex + 1];
+        if (next) {
+          el.nextLine.textContent = next.type === 'ROUND'
+            ? `Дальше: раунд ${next.roundNumber} • ${mmss(next.durationSec)}`
+            : `Дальше: отдых • ${mmss(next.durationSec)}`;
+        } else {
+          el.nextLine.textContent = 'Дальше: завершение тренировки';
+        }
+      }
+      el.remainLine.textContent = 'Осталось всего: ' + mmss(s.totalRemainingSec);
+    }
+
+    function renderButtons() {
+      let label = 'Старт';
+      if (appState.state === State.PAUSED) label = 'Продолжить';
+      if ([State.PRE_START_CUE, State.ROUND_ACTIVE, State.REST_ACTIVE].includes(appState.state)) label = 'Пауза';
+      if (appState.state === State.FINISHED) label = 'Старт заново';
+      el.startPauseBtn.textContent = label;
+
+      el.skipBtn.disabled = ![State.PRE_START_CUE, State.ROUND_ACTIVE, State.REST_ACTIVE, State.PAUSED].includes(appState.state);
+      const lock = isLocked();
+      for (const btn of el.adjustButtons()) btn.disabled = lock;
+      el.soundBtn.textContent = appState.settings.soundEnabled ? '🔊 Звук: ON' : '🔇 Звук: OFF';
+      el.vibrationBtn.textContent = appState.settings.vibrationEnabled ? '📳 Вибрация: ON' : '📳 Вибрация: OFF';
+      el.stateValue.textContent = appState.state;
+    }
+
+    function renderPresetValues() {
+      const p = currentPreset();
+      el.roundDurationValue.textContent = mmss(p.roundDurationSec);
+      el.restDurationValue.textContent = mmss(p.restDurationSec);
+      el.roundCountValue.textContent = String(p.roundCount);
+      el.metronomeValue.textContent = String(p.metronomeBpm);
+      el.totalDurationValue.textContent = mmss(totalWorkoutSec(p));
+    }
+
+    function render() {
+      renderTabs();
+      renderPresetValues();
+      renderButtons();
+      renderSettingsChips();
+      if (appState.session && [State.PRE_START_CUE, State.ROUND_ACTIVE, State.REST_ACTIVE, State.PAUSED].includes(appState.state)) {
+        renderSessionView();
+      } else {
+        renderIdleView(currentPreset());
+      }
+    }
+
+    function ensureAudio() {
+      if (!appState.audioContext) {
+        const Ctx = window.AudioContext || window.webkitAudioContext;
+        if (Ctx) appState.audioContext = new Ctx();
+      }
+      if (appState.audioContext && appState.audioContext.state === 'suspended') {
+        appState.audioContext.resume().catch(() => {});
+      }
+      appState.audioUnlocked = !!appState.audioContext;
+    }
+
+    function vibrate(pattern) {
+      if (!appState.settings.vibrationEnabled) return;
+      if (navigator.vibrate) navigator.vibrate(pattern);
+    }
+
+    function beep({ freq = 880, duration = 120, type = 'sine', gain = 0.04 } = {}) {
+      if (!appState.settings.soundEnabled) return;
+      ensureAudio();
+      if (!appState.audioContext) return;
+      const ctx = appState.audioContext;
+      const osc = ctx.createOscillator();
+      const vol = ctx.createGain();
+      osc.type = type;
+      osc.frequency.value = freq;
+      vol.gain.value = gain;
+      osc.connect(vol);
+      vol.connect(ctx.destination);
+      const now = ctx.currentTime;
+      vol.gain.setValueAtTime(0.0001, now);
+      vol.gain.exponentialRampToValueAtTime(gain, now + 0.01);
+      vol.gain.exponentialRampToValueAtTime(0.0001, now + duration / 1000);
+      osc.start(now);
+      osc.stop(now + duration / 1000 + 0.02);
+    }
+
+    function shortBeep() {
+      beep({ freq: 1080, duration: 100, type: 'square', gain: 0.03 });
+      vibrate(40);
+    }
+
+    function longBeep() {
+      beep({ freq: 620, duration: 520, type: 'sine', gain: 0.05 });
+      vibrate([90, 40, 120]);
+    }
+
+    function metronomeTick() {
+      if (!appState.settings.soundEnabled) return;
+      beep({ freq: 1400, duration: 40, type: 'triangle', gain: 0.018 });
+    }
+
+    function clearCueTimers() {
+      for (const id of appState.cueTimers) clearTimeout(id);
+      appState.cueTimers = [];
+    }
+
+    function stopMetronome() {
+      if (appState.metronomeIntervalId) clearInterval(appState.metronomeIntervalId);
+      appState.metronomeIntervalId = null;
+    }
+
+    function startMetronome() {
+      stopMetronome();
+      const s = appState.session;
+      if (!s) return;
+      const bpm = s.preset.metronomeBpm;
+      if (!bpm || bpm <= 0) return;
+      if (appState.state !== State.ROUND_ACTIVE) return;
+      const intervalMs = Math.round(60000 / bpm);
+      appState.metronomeIntervalId = setInterval(() => {
+        if (appState.state === State.ROUND_ACTIVE) metronomeTick();
+      }, intervalMs);
+    }
+
+    function stopAllActivity() {
+      if (appState.rafId) cancelAnimationFrame(appState.rafId);
+      appState.rafId = null;
+      clearCueTimers();
+      stopMetronome();
+    }
+
+    function phaseStateFor(type) {
+      return type === 'ROUND' ? State.ROUND_ACTIVE : State.REST_ACTIVE;
+    }
+
+    function startCueForCurrentPhase() {
+      stopMetronome();
+      clearCueTimers();
+      const s = appState.session;
+      if (!s) return;
+      const phase = s.timeline[s.phaseIndex];
+      appState.state = State.PRE_START_CUE;
+      appState.pausedFrom = null;
+      s.pendingStartType = phase.type;
+      s.pendingRoundNumber = phase.roundNumber;
+      s.phaseRemainingSec = phase.durationSec;
+      render();
+
+      const t0 = setTimeout(() => shortBeep(), 0);
+      const t1 = setTimeout(() => shortBeep(), 350);
+      const t2 = setTimeout(() => shortBeep(), 700);
+      const t3 = setTimeout(() => {
+        longBeep();
+        appState.state = phaseStateFor(phase.type);
+        s.phaseStartAtMs = performance.now();
+        s.phaseEndAtMs = s.phaseStartAtMs + phase.durationSec * 1000;
+        s.lastWholeRemainingSec = Math.ceil(phase.durationSec);
+        render();
+        if (appState.state === State.ROUND_ACTIVE) startMetronome();
+        startLoop();
+      }, 1100);
+      appState.cueTimers.push(t0, t1, t2, t3);
+    }
+
+    function startNewSession() {
+      const preset = deepClone(currentPreset());
+      const timeline = buildTimeline(preset);
+      appState.session = {
+        preset,
+        timeline,
+        phaseIndex: 0,
+        phaseStartAtMs: 0,
+        phaseEndAtMs: 0,
+        phaseRemainingSec: timeline[0].durationSec,
+        totalRemainingSec: totalWorkoutSec(preset),
+        pendingStartType: 'ROUND',
+        pendingRoundNumber: 1,
+        lastWholeRemainingSec: Math.ceil(timeline[0].durationSec),
+      };
+      startCueForCurrentPhase();
+    }
+
+    function finishWorkout() {
+      stopAllActivity();
+      longBeep();
+      appState.state = State.FINISHED;
+      if (appState.session) {
+        appState.session.totalRemainingSec = 0;
+        appState.session.phaseRemainingSec = 0;
+      }
+      render();
+    }
+
+    function advancePhase() {
+      const s = appState.session;
+      if (!s) return;
+      s.phaseIndex += 1;
+      if (s.phaseIndex >= s.timeline.length) {
+        finishWorkout();
+        return;
+      }
+      const next = s.timeline[s.phaseIndex];
+      s.phaseRemainingSec = next.durationSec;
+      s.lastWholeRemainingSec = Math.ceil(next.durationSec);
+      startCueForCurrentPhase();
+    }
+
+    function startLoop() {
+      if (appState.rafId) cancelAnimationFrame(appState.rafId);
+      const loop = (now) => {
+        if (![State.ROUND_ACTIVE, State.REST_ACTIVE].includes(appState.state)) return;
+        const s = appState.session;
+        if (!s) return;
+        const phase = s.timeline[s.phaseIndex];
+        const msLeft = Math.max(0, s.phaseEndAtMs - now);
+        const secLeftPrecise = msLeft / 1000;
+        const wholeRemaining = Math.ceil(secLeftPrecise);
+        s.phaseRemainingSec = secLeftPrecise;
+        const remainingFutureDur = s.timeline.slice(s.phaseIndex + 1).reduce((acc, item) => acc + item.durationSec, 0);
+        s.totalRemainingSec = secLeftPrecise + remainingFutureDur;
+
+        const warning = appState.settings.countdownWarningSec;
+        if (wholeRemaining !== s.lastWholeRemainingSec) {
+          if (wholeRemaining > 0 && wholeRemaining <= warning) {
+            shortBeep();
+          }
+          s.lastWholeRemainingSec = wholeRemaining;
+        }
+
+        render();
+
+        if (msLeft <= 0) {
+          stopMetronome();
+          longBeep();
+          setTimeout(() => advancePhase(), 250);
+          return;
+        }
+        appState.rafId = requestAnimationFrame(loop);
+      };
+      appState.rafId = requestAnimationFrame(loop);
+    }
+
+    function pauseSession() {
+      if (![State.PRE_START_CUE, State.ROUND_ACTIVE, State.REST_ACTIVE].includes(appState.state)) return;
+      const s = appState.session;
+      if (!s) return;
+      stopAllActivity();
+      if ([State.ROUND_ACTIVE, State.REST_ACTIVE].includes(appState.state)) {
+        s.phaseRemainingSec = Math.max(0, (s.phaseEndAtMs - performance.now()) / 1000);
+      }
+      appState.pausedFrom = appState.state;
+      appState.state = State.PAUSED;
+      render();
+    }
+
+    function resumeSession() {
+      const s = appState.session;
+      if (!s || appState.state !== State.PAUSED) return;
+      if (appState.pausedFrom === State.PRE_START_CUE) {
+        startCueForCurrentPhase();
+        return;
+      }
+      const phase = s.timeline[s.phaseIndex];
+      appState.state = phaseStateFor(phase.type);
+      s.phaseStartAtMs = performance.now();
+      s.phaseEndAtMs = s.phaseStartAtMs + s.phaseRemainingSec * 1000;
+      s.lastWholeRemainingSec = Math.ceil(s.phaseRemainingSec);
+      render();
+      if (appState.state === State.ROUND_ACTIVE) startMetronome();
+      startLoop();
+    }
+
+    function resetSession() {
+      stopAllActivity();
+      appState.session = null;
+      appState.state = State.IDLE;
+      appState.pausedFrom = null;
+      render();
+    }
+
+    function skipCurrentPhase() {
+      if (![State.PRE_START_CUE, State.ROUND_ACTIVE, State.REST_ACTIVE, State.PAUSED].includes(appState.state)) return;
+      stopAllActivity();
+      if (appState.state !== State.PAUSED) longBeep();
+      setTimeout(() => advancePhase(), 120);
+    }
+
+    function handleStartPause() {
+      ensureAudio();
+      if (appState.state === State.IDLE || appState.state === State.FINISHED) {
+        startNewSession();
+        return;
+      }
+      if ([State.PRE_START_CUE, State.ROUND_ACTIVE, State.REST_ACTIVE].includes(appState.state)) {
+        pauseSession();
+        return;
+      }
+      if (appState.state === State.PAUSED) {
+        resumeSession();
+      }
+    }
+
+    function adjustPreset(action) {
+      if (isLocked()) return;
+      const p = currentPreset();
+      switch (action) {
+        case 'incRound': p.roundDurationSec = clamp(p.roundDurationSec + 5, 5, 3595); break;
+        case 'decRound': p.roundDurationSec = clamp(p.roundDurationSec - 5, 5, 3595); break;
+        case 'incRest': p.restDurationSec = clamp(p.restDurationSec + 5, 5, 3595); break;
+        case 'decRest': p.restDurationSec = clamp(p.restDurationSec - 5, 5, 3595); break;
+        case 'incCount': p.roundCount = clamp(p.roundCount + 1, 1, 99); break;
+        case 'decCount': p.roundCount = clamp(p.roundCount - 1, 1, 99); break;
+        case 'incBpm': p.metronomeBpm = clamp(p.metronomeBpm + 1, 0, 240); break;
+        case 'decBpm': p.metronomeBpm = clamp(p.metronomeBpm - 1, 0, 240); break;
+      }
+      saveStorage();
+      render();
+    }
+
+    function openSettings() { el.settingsOverlay.classList.add('open'); }
+    function closeSettings() { el.settingsOverlay.classList.remove('open'); }
+
+    function bind() {
+      el.settingsBtn.addEventListener('click', openSettings);
+      el.closeSettingsBtn.addEventListener('click', closeSettings);
+      el.settingsOverlay.addEventListener('click', (e) => {
+        if (e.target === el.settingsOverlay) closeSettings();
+      });
+      document.querySelectorAll('.adjust').forEach((btn) => {
+        btn.addEventListener('click', () => adjustPreset(btn.dataset.action));
+      });
+      el.startPauseBtn.addEventListener('click', handleStartPause);
+      el.skipBtn.addEventListener('click', skipCurrentPhase);
+      el.resetBtn.addEventListener('click', resetSession);
+      el.soundBtn.addEventListener('click', () => {
+        appState.settings.soundEnabled = !appState.settings.soundEnabled;
+        saveStorage();
+        render();
+      });
+      el.vibrationBtn.addEventListener('click', () => {
+        appState.settings.vibrationEnabled = !appState.settings.vibrationEnabled;
+        saveStorage();
+        render();
+      });
+
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible' && [State.ROUND_ACTIVE, State.REST_ACTIVE].includes(appState.state)) {
+          render();
+        }
+      });
+
+      document.body.addEventListener('pointerdown', () => ensureAudio(), { once: true });
+    }
+
+    loadStorage();
+    bind();
+    render();
+  </script>
+</body>
+</html>
