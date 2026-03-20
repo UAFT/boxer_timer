@@ -778,6 +778,7 @@
         unlocked: false,
         assets: {},
         metronomeTimer: null,
+        activeNodes: [],
       },
       ui: { settingsOpen: false },
     };
@@ -1024,6 +1025,25 @@
       }
     }
 
+    function registerActiveNode(node, endsAtMs = null) {
+      if (!node) return;
+      state.audio.activeNodes.push(node);
+      const cleanup = () => {
+        state.audio.activeNodes = state.audio.activeNodes.filter(n => n !== node);
+      };
+      try { node.onended = cleanup; } catch (e) {}
+      if (endsAtMs != null) setTimeout(cleanup, Math.max(0, endsAtMs));
+    }
+
+    function stopAllActiveAudio() {
+      state.audio.activeNodes.forEach(node => {
+        try { if (typeof node.stop === 'function') node.stop(0); } catch (e) {}
+        try { if (typeof node.disconnect === 'function') node.disconnect(); } catch (e) {}
+      });
+      state.audio.activeNodes = [];
+      if (navigator.vibrate) navigator.vibrate(0);
+    }
+
     async function playBuffer(url, gainValue = 1.0) {
       if (!state.soundEnabled || !url) return false;
       const ctx = ensureAudio();
@@ -1035,6 +1055,7 @@
       gain.gain.value = gainValue;
       src.buffer = buf;
       src.connect(gain).connect(ctx.destination);
+      registerActiveNode(src, Math.ceil((buf.duration + 0.1) * 1000));
       src.start();
       return true;
     }
@@ -1052,6 +1073,7 @@
       g.gain.exponentialRampToValueAtTime(gainValue, t0 + 0.004);
       g.gain.exponentialRampToValueAtTime(0.0001, t0 + duration + decay);
       osc.connect(g).connect(ctx.destination);
+      registerActiveNode(osc, Math.ceil((duration + decay + 0.05) * 1000));
       osc.start(t0);
       osc.stop(t0 + duration + decay + 0.02);
     }
@@ -1074,6 +1096,7 @@
         g.gain.setValueAtTime(0.44 / (1 + i * 0.35), now);
         g.gain.exponentialRampToValueAtTime(0.0001, now + life);
         osc.connect(g).connect(master);
+        registerActiveNode(osc, Math.ceil((life + 0.1) * 1000));
         osc.start(now);
         osc.stop(now + life + 0.05);
       });
@@ -1123,6 +1146,7 @@
       g.gain.exponentialRampToValueAtTime(0.88, t0 + 0.003);
       g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.10);
       osc.connect(g).connect(ctx.destination);
+      registerActiveNode(osc, 180);
       osc.start(t0);
       osc.stop(t0 + 0.12);
     }
@@ -1139,6 +1163,7 @@
       g.gain.exponentialRampToValueAtTime(0.22, t0 + 0.003);
       g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.06);
       osc.connect(g).connect(ctx.destination);
+      registerActiveNode(osc, 120);
       osc.start(t0);
       osc.stop(t0 + 0.08);
     }
@@ -1189,6 +1214,7 @@
     function cancelRunTimers() {
       clearCueTimeouts();
       stopMetronomeLoop();
+      stopAllActiveAudio();
     }
 
     function setMachineToIdle() {
@@ -1285,6 +1311,7 @@
       if (!['RUNNING','CUE'].includes(state.machine.status)) return;
       clearCueTimeouts();
       stopMetronomeLoop();
+      stopAllActiveAudio();
       state.machine.status = 'PAUSED';
       render();
     }
@@ -1322,10 +1349,10 @@
           finishTraining();
           return;
         }
-        runCueThen(() => beginPhase('REST'), 'REST');
+        beginPhase('REST');
       } else if (state.machine.phase === 'REST') {
         state.machine.roundIndex += 1;
-        runCueThen(() => beginPhase('ROUND'), 'ROUND');
+        beginPhase('ROUND');
       }
     }
 
