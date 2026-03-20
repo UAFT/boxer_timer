@@ -1206,8 +1206,9 @@
       const bpm = getPreset().metronomeBpm;
       const beatMs = 60000 / bpm;
       const pulseMs = beatMs / 4;
-      let nextAccentAt = performance.now() + 80;
-      let nextPulseAt = nextAccentAt + pulseMs;
+      const startAt = performance.now();
+      let nextAccentAt = startAt + beatMs;
+      let nextPulseAt = state.metronomeMode === 'pulse' ? startAt + pulseMs : Infinity;
       state.audio.metronomeTimer = setInterval(() => {
         if (!shouldMetronomeRun()) { stopMetronomeLoop(); return; }
         const now = performance.now();
