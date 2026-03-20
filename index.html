@@ -658,13 +658,21 @@
         <div class="chips" id="countdownChips"></div>
       </div>
 
+      <div class="setting">
+        <div>
+          <h3>10-секундный MP3</h3>
+          <p>Только для режима конца этапа = 10 сек. Иначе не используется.</p>
+        </div>
+        <button class="switch" id="warningMp3Toggle"></button>
+      </div>
+
       <div class="setting block">
         <div>
-          <h3>Мелодия последних секунд</h3>
-          <p>Можно выбрать обычные сигналы или mp3 на последние 10 секунд</p>
+          <h3>Предпрослушивание последних секунд</h3>
+          <p>Проверка текущего режима: либо обычные сигналы, либо 10-секундный MP3</p>
         </div>
         <div class="picker-row">
-          <div class="chips left" id="warningSoundChips"></div>
+          <div class="chips left"><span class="chip active" id="warningPreviewLabel">Текущий режим</span></div>
           <button class="picker-preview" id="previewWarningBtn">▶</button>
         </div>
       </div>
@@ -755,7 +763,7 @@
       startCueSec: 3,
       endWarningSec: 10,
       startSound: 'rsf1',
-      warningSound: 'last10',
+      warningMp3Enabled: true,
       finishSound: 'rsf1',
       metronomeMode: 'pulse',
       metronomeScope: 'rounds',
@@ -807,7 +815,8 @@
       startCueChips: document.getElementById('startCueChips'),
       countdownChips: document.getElementById('countdownChips'),
       startSoundChips: document.getElementById('startSoundChips'),
-      warningSoundChips: document.getElementById('warningSoundChips'),
+      warningMp3Toggle: document.getElementById('warningMp3Toggle'),
+      warningPreviewLabel: document.getElementById('warningPreviewLabel'),
       finishSoundChips: document.getElementById('finishSoundChips'),
       metroModeChips: document.getElementById('metroModeChips'),
       metroScopeChips: document.getElementById('metroScopeChips'),
@@ -836,7 +845,7 @@
         startCueSec: state.startCueSec,
         endWarningSec: state.endWarningSec,
         startSound: state.startSound,
-        warningSound: state.warningSound,
+        warningMp3Enabled: state.warningMp3Enabled,
         finishSound: state.finishSound,
         metronomeMode: state.metronomeMode,
         metronomeScope: state.metronomeScope,
@@ -855,7 +864,8 @@
         if ([3,5,10].includes(parsed.startCueSec)) state.startCueSec = parsed.startCueSec;
         if ([0,3,5,10].includes(parsed.endWarningSec)) state.endWarningSec = parsed.endWarningSec;
         if (START_SOUND_OPTIONS.some(o => o.value === parsed.startSound)) state.startSound = parsed.startSound;
-        if (WARNING_SOUND_OPTIONS.some(o => o.value === parsed.warningSound)) state.warningSound = parsed.warningSound;
+        if (typeof parsed.warningMp3Enabled === 'boolean') state.warningMp3Enabled = parsed.warningMp3Enabled;
+        else if (WARNING_SOUND_OPTIONS.some(o => o.value === parsed.warningSound)) state.warningMp3Enabled = parsed.warningSound === 'last10';
         if (FINISH_SOUND_OPTIONS.some(o => o.value === parsed.finishSound)) state.finishSound = parsed.finishSound;
         if (['accent','pulse'].includes(parsed.metronomeMode)) state.metronomeMode = parsed.metronomeMode;
         if (['rounds','always'].includes(parsed.metronomeScope)) state.metronomeScope = parsed.metronomeScope;
@@ -988,7 +998,8 @@
       renderChips(el.startCueChips, [3,5,10].map(v => ({value:v, label:String(v)})), state.startCueSec, v => { state.startCueSec = v; saveState(); render(); });
       renderChips(el.countdownChips, [0,3,5,10].map(v => ({value:v, label:v === 0 ? 'Выкл' : String(v)})), state.endWarningSec, v => { state.endWarningSec = v; saveState(); render(); });
       renderChips(el.startSoundChips, START_SOUND_OPTIONS.map(o => ({value:o.value, label:o.label})), state.startSound, v => { state.startSound = v; saveState(); render(); });
-      renderChips(el.warningSoundChips, WARNING_SOUND_OPTIONS.map(o => ({value:o.value, label:o.label})), state.warningSound, v => { state.warningSound = v; saveState(); render(); });
+      setSwitch(el.warningMp3Toggle, state.warningMp3Enabled, () => { state.warningMp3Enabled = !state.warningMp3Enabled; saveState(); render(); });
+      if (el.warningPreviewLabel) el.warningPreviewLabel.textContent = state.warningMp3Enabled ? '10 сек MP3' : 'Обычные сигналы';
       renderChips(el.finishSoundChips, FINISH_SOUND_OPTIONS.map(o => ({value:o.value, label:o.label})), state.finishSound, v => { state.finishSound = v; saveState(); render(); });
       renderChips(el.metroModeChips, [{value:'accent',label:'Accent'},{value:'pulse',label:'Pulse'}], state.metronomeMode, v => { state.metronomeMode = v; saveState(); render(); });
       renderChips(el.metroScopeChips, [{value:'rounds',label:'Только раунды'},{value:'always',label:'Всегда'}], state.metronomeScope, v => { state.metronomeScope = v; saveState(); render(); });
@@ -1122,7 +1133,7 @@
       vibrate([80, 40, 80]);
     }
     async function playWarningSelection() {
-      if (state.warningSound === 'last10') {
+      if (state.warningMp3Enabled && state.endWarningSec === 10) {
         const pick = optionByValue(WARNING_SOUND_OPTIONS, 'last10');
         const ok = pick ? await playBuffer(pick.path, 1.0) : false;
         if (ok) return true;
@@ -1365,10 +1376,10 @@
       updateSummaryRemaining();
       const warn = state.endWarningSec;
       if (warn > 0) {
-        if (warn === 10 && state.warningSound === 'last10' && !m.customWarningPlayed && remain <= 10080 && remain >= 9600) {
+        if (warn === 10 && state.warningMp3Enabled && !m.customWarningPlayed && remain <= 10080 && remain >= 9600) {
           m.customWarningPlayed = true;
           playWarningSelection();
-        } else if (!(warn === 10 && state.warningSound === 'last10' && m.customWarningPlayed)) {
+        } else if (!(warn === 10 && state.warningMp3Enabled && m.customWarningPlayed)) {
           for (let s = warn; s >= 1; s--) {
             const target = s * 1000;
             if (remain <= target + 80 && remain >= target - 80 && !m.warnedMarks.includes(s)) {
