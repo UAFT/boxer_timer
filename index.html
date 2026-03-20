@@ -680,7 +680,7 @@
       <div class="setting block">
         <div>
           <h3>Финишный сигнал</h3>
-          <p>Звук завершения раунда, отдыха и тренировки</p>
+          <p>Только конечный сигнал этапа. Без стартового отсчёта.</p>
         </div>
         <div class="picker-row">
           <div class="chips left" id="finishSoundChips"></div>
@@ -736,11 +736,9 @@
       { value: 'last10', label: '10 сек MP3', path: './sounds/uploads/Last_10_sec_fifnish_round.mp3' },
     ];
     const FINISH_SOUND_OPTIONS = [
-      { value: 'rsf1', label: '1', path: './sounds/uploads/round_start_finish_1.mp3' },
-      { value: 'rsf2', label: '2', path: './sounds/uploads/round_start_finish_2.mp3' },
-      { value: 'rsf3', label: '3', path: './sounds/uploads/round_start_finish_3.mp3' },
-      { value: 'rsf4', label: '4', path: './sounds/uploads/round_start_finish_4.mp3' },
-      { value: 'rsf5', label: '5', path: './sounds/uploads/round_start_finish_5.mp3' },
+      { value: 'gong', label: 'Гонг', path: './sounds/classic-gong.wav' },
+      { value: 'bell', label: 'Белл', path: './sounds/sharp-bell.wav' },
+      { value: 'beep', label: 'Бип', path: './sounds/gym-beep.wav' },
     ];
     const FALLBACK_WAVS = {
       short: './sounds/gym-beep.wav',
@@ -764,7 +762,7 @@
       endWarningSec: 10,
       startSound: 'rsf1',
       warningMp3Enabled: true,
-      finishSound: 'rsf1',
+      finishSound: 'gong',
       metronomeMode: 'pulse',
       metronomeScope: 'rounds',
       machine: {
@@ -867,6 +865,7 @@
         if (typeof parsed.warningMp3Enabled === 'boolean') state.warningMp3Enabled = parsed.warningMp3Enabled;
         else if (WARNING_SOUND_OPTIONS.some(o => o.value === parsed.warningSound)) state.warningMp3Enabled = parsed.warningSound === 'last10';
         if (FINISH_SOUND_OPTIONS.some(o => o.value === parsed.finishSound)) state.finishSound = parsed.finishSound;
+        else if (['rsf1','rsf2','rsf3','rsf4','rsf5'].includes(parsed.finishSound)) state.finishSound = 'gong';
         if (['accent','pulse'].includes(parsed.metronomeMode)) state.metronomeMode = parsed.metronomeMode;
         if (['rounds','always'].includes(parsed.metronomeScope)) state.metronomeScope = parsed.metronomeScope;
       } catch (e) {
