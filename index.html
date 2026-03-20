@@ -599,7 +599,7 @@
       <article class="card">
         <div class="card-head">
           <h3 class="card-title"><span>Метроном</span></h3>
-          <div class="card-note" id="metronomeNote">20 BPM • pulse • только раунды</div>
+          <div class="card-note" id="metronomeNote">20 уд/мин • Пульс • только раунды</div>
           <div class="card-value" id="metronomeValue">20</div>
         </div>
         <div class="controls-vert">
@@ -717,8 +717,8 @@
       </div>
 
       <div class="sheet-actions">
-        <button class="sheet-btn" id="previewMetroAccentBtn">Тест Accent</button>
-        <button class="sheet-btn" id="previewMetroPulseBtn">Тест Pulse</button>
+        <button class="sheet-btn" id="previewMetroAccentBtn">Тест Акцент</button>
+        <button class="sheet-btn" id="previewMetroPulseBtn">Тест Пульс</button>
         <button class="sheet-btn" id="resetPresetBtn">Сброс пресета</button>
       </div>
     </div>
@@ -736,6 +736,7 @@
     const STORAGE_KEY = 'fighttech_boxer_timer_v12';
     const STEP_SEC = 5;
     const TABS = ['A', 'B', 'C', 'D'];
+    const TAB_LABELS = { A: '3′', B: '2′', C: '1′', D: '⚡' };
     const START_SOUND_OPTIONS = [
       { value: 'rsf1', label: '1', path: './sounds/uploads/round_start_finish_1.mp3' },
       { value: 'rsf2', label: '2', path: './sounds/uploads/round_start_finish_2.mp3' },
@@ -943,7 +944,7 @@
       TABS.forEach(tab => {
         const b = document.createElement('button');
         b.className = 'tab' + (tab === state.activeTab ? ' active' : '');
-        b.textContent = tab;
+        b.textContent = TAB_LABELS[tab] || tab;
         b.addEventListener('click', () => {
           if (['RUNNING','PAUSED','CUE'].includes(state.machine.status)) return;
           state.activeTab = tab;
@@ -987,10 +988,12 @@
       el.restDurationValue.textContent = fmt(p.restDurationSec);
       el.roundCountValue.textContent = p.roundCount;
       const metroEnabled = p.metronomeEnabled !== false;
+      const metroModeLabel = state.metronomeMode === 'pulse' ? 'Пульс' : 'Акцент';
+      const metroScopeLabel = state.metronomeScope === 'rounds' ? 'только раунды' : 'раунды + отдых';
       el.metronomeValue.textContent = p.metronomeBpm;
       el.metronomeNote.textContent = metroEnabled
-        ? `${p.metronomeBpm} BPM • ${state.metronomeMode} • ${state.metronomeScope === 'rounds' ? 'только раунды' : 'раунды + отдых'}`
-        : `Выкл • ${p.metronomeBpm} BPM • ${state.metronomeScope === 'rounds' ? 'только раунды' : 'раунды + отдых'}`;
+        ? `${p.metronomeBpm} уд/мин • ${metroModeLabel} • ${metroScopeLabel}`
+        : `Выкл • ${p.metronomeBpm} уд/мин • ${metroScopeLabel}`;
       el.totalDuration.textContent = fmt(getTotalDurationSec());
       el.remainingValue.textContent = fmtMs(currentRemainingMs());
 
@@ -1032,7 +1035,7 @@
       setSwitch(el.warningMp3Toggle, state.warningMp3Enabled, () => { state.warningMp3Enabled = !state.warningMp3Enabled; saveState(); render(); });
       if (el.warningPreviewLabel) el.warningPreviewLabel.textContent = state.warningMp3Enabled ? '10 сек MP3' : 'Обычные сигналы';
       renderChips(el.finishSoundChips, FINISH_SOUND_OPTIONS.map(o => ({value:o.value, label:o.label})), state.finishSound, v => { state.finishSound = v; saveState(); render(); });
-      renderChips(el.metroModeChips, [{value:'accent',label:'Accent'},{value:'pulse',label:'Pulse'}], state.metronomeMode, v => { state.metronomeMode = v; saveState(); render(); });
+      renderChips(el.metroModeChips, [{value:'accent',label:'Акцент'},{value:'pulse',label:'Пульс'}], state.metronomeMode, v => { state.metronomeMode = v; saveState(); render(); });
       renderChips(el.metroScopeChips, [{value:'rounds',label:'Только раунды'},{value:'always',label:'Всегда'}], state.metronomeScope, v => { state.metronomeScope = v; saveState(); render(); });
       renderCueOverlay();
     }
