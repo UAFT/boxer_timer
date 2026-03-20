@@ -599,8 +599,8 @@
       <article class="card">
         <div class="card-head">
           <h3 class="card-title"><span>Метроном</span></h3>
-          <div class="card-note" id="metronomeNote">20 уд/мин • Пульс • только раунды</div>
-          <div class="card-value" id="metronomeValue">20</div>
+          <div class="card-note" id="metronomeNote">12 уд/мин • Дробный • только раунды</div>
+          <div class="card-value" id="metronomeValue">12</div>
         </div>
         <div class="controls-vert">
           <button class="ctl" data-action="metroInc">+</button>
@@ -717,8 +717,8 @@
       </div>
 
       <div class="sheet-actions">
-        <button class="sheet-btn" id="previewMetroAccentBtn">Тест Акцент</button>
-        <button class="sheet-btn" id="previewMetroPulseBtn">Тест Пульс</button>
+        <button class="sheet-btn" id="previewMetroAccentBtn">Тест Одиночный</button>
+        <button class="sheet-btn" id="previewMetroPulseBtn">Тест Дробный</button>
         <button class="sheet-btn" id="resetPresetBtn">Сброс пресета</button>
       </div>
     </div>
@@ -760,10 +760,10 @@
     };
 
     const DEFAULT_PRESETS = {
-      A: { roundDurationSec: 180, restDurationSec: 60, roundCount: 5, metronomeBpm: 20, metronomeEnabled: true },
-      B: { roundDurationSec: 120, restDurationSec: 60, roundCount: 5, metronomeBpm: 20, metronomeEnabled: true },
-      C: { roundDurationSec: 60, restDurationSec: 60, roundCount: 5, metronomeBpm: 20, metronomeEnabled: true },
-      D: { roundDurationSec: 20, restDurationSec: 20, roundCount: 24, metronomeBpm: 20, metronomeEnabled: true },
+      A: { roundDurationSec: 180, restDurationSec: 60, roundCount: 5, metronomeBpm: 12, metronomeEnabled: true },
+      B: { roundDurationSec: 120, restDurationSec: 60, roundCount: 5, metronomeBpm: 12, metronomeEnabled: true },
+      C: { roundDurationSec: 60, restDurationSec: 60, roundCount: 5, metronomeBpm: 12, metronomeEnabled: true },
+      D: { roundDurationSec: 20, restDurationSec: 20, roundCount: 24, metronomeBpm: 12, metronomeEnabled: true },
     };
 
     const state = {
@@ -776,7 +776,7 @@
       startSound: 'rsf1',
       warningMp3Enabled: true,
       finishSound: 'gong',
-      metronomeMode: 'pulse',
+      metronomeMode: 'fractional',
       metronomeScope: 'rounds',
       machine: {
         status: 'IDLE',
@@ -889,7 +889,7 @@
         else if (WARNING_SOUND_OPTIONS.some(o => o.value === parsed.warningSound)) state.warningMp3Enabled = parsed.warningSound === 'last10';
         if (FINISH_SOUND_OPTIONS.some(o => o.value === parsed.finishSound)) state.finishSound = parsed.finishSound;
         else if (['rsf1','rsf2','rsf3','rsf4','rsf5'].includes(parsed.finishSound)) state.finishSound = 'gong';
-        if (['accent','pulse'].includes(parsed.metronomeMode)) state.metronomeMode = parsed.metronomeMode;
+        if (['single','fractional'].includes(parsed.metronomeMode)) state.metronomeMode = parsed.metronomeMode;
         if (['rounds','always'].includes(parsed.metronomeScope)) state.metronomeScope = parsed.metronomeScope;
       } catch (e) {
         console.warn('loadState failed', e);
@@ -988,7 +988,7 @@
       el.restDurationValue.textContent = fmt(p.restDurationSec);
       el.roundCountValue.textContent = p.roundCount;
       const metroEnabled = p.metronomeEnabled !== false;
-      const metroModeLabel = state.metronomeMode === 'pulse' ? 'Пульс' : 'Акцент';
+      const metroModeLabel = state.metronomeMode === 'fractional' ? 'Дробный' : 'Одиночный';
       const metroScopeLabel = state.metronomeScope === 'rounds' ? 'только раунды' : 'раунды + отдых';
       el.metronomeValue.textContent = p.metronomeBpm;
       el.metronomeNote.textContent = metroEnabled
@@ -1035,7 +1035,7 @@
       setSwitch(el.warningMp3Toggle, state.warningMp3Enabled, () => { state.warningMp3Enabled = !state.warningMp3Enabled; saveState(); render(); });
       if (el.warningPreviewLabel) el.warningPreviewLabel.textContent = state.warningMp3Enabled ? '10 сек MP3' : 'Обычные сигналы';
       renderChips(el.finishSoundChips, FINISH_SOUND_OPTIONS.map(o => ({value:o.value, label:o.label})), state.finishSound, v => { state.finishSound = v; saveState(); render(); });
-      renderChips(el.metroModeChips, [{value:'accent',label:'Акцент'},{value:'pulse',label:'Пульс'}], state.metronomeMode, v => { state.metronomeMode = v; saveState(); render(); });
+      renderChips(el.metroModeChips, [{value:'single',label:'Одиночный'},{value:'fractional',label:'Дробный'}], state.metronomeMode, v => { state.metronomeMode = v; saveState(); render(); });
       renderChips(el.metroScopeChips, [{value:'rounds',label:'Только раунды'},{value:'always',label:'Всегда'}], state.metronomeScope, v => { state.metronomeScope = v; saveState(); render(); });
       renderCueOverlay();
     }
@@ -1244,7 +1244,7 @@
       const pulseMs = beatMs / 4;
       const startAt = performance.now();
       let nextAccentAt = startAt + beatMs;
-      let nextPulseAt = state.metronomeMode === 'pulse' ? startAt + pulseMs : Infinity;
+      let nextPulseAt = state.metronomeMode === 'fractional' ? startAt + pulseMs : Infinity;
       state.audio.metronomeTimer = setInterval(() => {
         if (!shouldMetronomeRun()) { stopMetronomeLoop(); return; }
         const now = performance.now();
@@ -1253,7 +1253,7 @@
           nextAccentAt += beatMs;
           nextPulseAt = nextAccentAt - beatMs + pulseMs;
         }
-        if (state.metronomeMode === 'pulse' && now >= nextPulseAt && nextPulseAt < nextAccentAt) {
+        if (state.metronomeMode === 'fractional' && now >= nextPulseAt && nextPulseAt < nextAccentAt) {
           playMetronomePulse();
           nextPulseAt += pulseMs;
         }
