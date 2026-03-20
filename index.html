@@ -1330,14 +1330,14 @@
       render();
     }
 
-    async function finishTraining() {
+    async function finishTraining({ playSignal = false } = {}) {
       cancelRunTimers();
       state.machine.status = 'FINISHED';
       state.machine.phase = 'FINISHED';
       state.machine.phaseRemainingMs = 0;
       state.machine.totalRemainingMs = 0;
       render();
-      await playFinishSelection();
+      if (playSignal) await playFinishSelection();
     }
 
     async function nextPhase() {
@@ -1346,7 +1346,7 @@
       await playFinishSelection();
       if (state.machine.phase === 'ROUND') {
         if (state.machine.roundIndex >= p.roundCount) {
-          finishTraining();
+          await finishTraining({ playSignal: false });
           return;
         }
         beginPhase('REST');
