@@ -13,6 +13,8 @@ export function getDomRefs() {
     metricRemaining: document.getElementById('metricRemaining'),
     metricMetronome: document.getElementById('metricMetronome'),
     metronomeStatus: document.getElementById('metronomeStatus'),
+    metronomeToggleBtn: document.getElementById('metronomeToggleBtn'),
+    metronomeModeButtons: [...document.querySelectorAll('.mode-chip')],
 
     startBtn: document.getElementById('startBtn'),
     resetBtn: document.getElementById('resetBtn'),
@@ -29,6 +31,7 @@ export function getDomRefs() {
     audioEnabledInput: document.getElementById('audioEnabledInput'),
     metronomeEnabledInput: document.getElementById('metronomeEnabledInput'),
     metronomeBpmInput: document.getElementById('metronomeBpmInput'),
+    metronomeModeInput: document.getElementById('metronomeModeInput'),
 
     presetTabs: [...document.querySelectorAll('.preset-tab')],
     stepperButtons: [...document.querySelectorAll('.stepper-btn')]

@@ -38,10 +38,11 @@
         <div class="card-topline">
           <div class="phase-heading" id="phaseLabel">Готов</div>
           <div class="round-heading" id="roundLabel">Раунд 0 из 0</div>
+          <div class="topline-spacer" aria-hidden="true"></div>
         </div>
 
         <div class="main-time" id="mainTime">03:00</div>
-        <div class="phase-caption" id="phaseCaption">Следующий этап не запущен</div>
+        <div class="phase-caption" id="phaseCaption"></div>
         <div class="countdown-caption" id="countdownCaption"></div>
 
         <div class="summary-grid">
@@ -108,16 +109,24 @@
           </div>
         </article>
 
-        <article class="param-card panel">
-          <div class="param-head">
-            <div class="param-copy">
+        <article class="param-card panel metronome-card">
+          <div class="param-head metronome-head">
+            <div class="param-copy metronome-copy">
               <div class="param-title">Метроном</div>
-              <div class="param-subtitle" id="metronomeStatus">Выкл</div>
-              <div class="param-value" id="metricMetronome">20</div>
+              <div class="param-subtitle" id="metronomeStatus">Выкл · Прямой</div>
+              <div class="metro-mode-row" role="tablist" aria-label="Режим метронома">
+                <button class="mode-chip is-active" type="button" data-metronome-mode="direct">Прямой</button>
+                <button class="mode-chip" type="button" data-metronome-mode="subdivided">Дробный</button>
+              </div>
             </div>
-            <div class="stepper-col">
-              <button class="stepper-btn" type="button" data-adjust-target="metronomeBpm" data-adjust-direction="up">＋</button>
-              <button class="stepper-btn" type="button" data-adjust-target="metronomeBpm" data-adjust-direction="down">－</button>
+            <div class="metro-pad" aria-label="Управление метрономом">
+              <div class="metro-bpm-box">
+                <div class="metro-bpm-value" id="metricMetronome">20</div>
+                <div class="metro-bpm-unit">уд/мин</div>
+              </div>
+              <button class="stepper-btn metro-pad-btn" type="button" data-adjust-target="metronomeBpm" data-adjust-direction="up" aria-label="Увеличить удары в минуту">＋</button>
+              <button class="power-btn" type="button" id="metronomeToggleBtn" aria-label="Включить или выключить метроном">⏻</button>
+              <button class="stepper-btn metro-pad-btn" type="button" data-adjust-target="metronomeBpm" data-adjust-direction="down" aria-label="Уменьшить удары в минуту">－</button>
             </div>
           </div>
         </article>
@@ -150,6 +159,14 @@
           <label class="field">
             <span class="field-label">Метроном (уд/мин)</span>
             <input class="field-input" type="number" id="metronomeBpmInput" min="0" max="300" step="1" />
+          </label>
+
+          <label class="field">
+            <span class="field-label">Режим метронома</span>
+            <select class="field-input" id="metronomeModeInput">
+              <option value="direct">Прямой</option>
+              <option value="subdivided">Дробный</option>
+            </select>
           </label>
 
           <label class="checkbox-field">

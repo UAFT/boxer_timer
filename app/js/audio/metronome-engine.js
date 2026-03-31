@@ -4,14 +4,17 @@ export class MetronomeEngine {
   constructor() {
     this.enabled = false;
     this.bpm = 20;
+    this.mode = 'direct';
     this.context = null;
     this.intervalId = null;
     this.running = false;
+    this.subStep = 0;
   }
 
-  setConfig({ enabled, bpm }) {
+  setConfig({ enabled, bpm, mode }) {
     this.enabled = Boolean(enabled);
     this.bpm = Math.max(0, Number.isFinite(bpm) ? bpm : 0);
+    this.mode = mode === 'subdivided' ? 'subdivided' : 'direct';
     if (!this.enabled || this.bpm <= 0) {
       this.stop();
     } else if (this.running) {
@@ -35,31 +38,50 @@ export class MetronomeEngine {
     return this.context;
   }
 
-  async tick() {
+  async tick({ accented = true } = {}) {
     const ctx = await this.ensureContext();
     if (!ctx) return;
     const now = ctx.currentTime;
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
-    osc.type = 'square';
-    osc.frequency.value = 1260;
+
+    osc.type = accented ? 'square' : 'sine';
+    osc.frequency.value = accented ? 1260 : 860;
+
     gain.gain.setValueAtTime(0.0001, now);
-    gain.gain.exponentialRampToValueAtTime(0.08, now + 0.003);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.05);
+    gain.gain.exponentialRampToValueAtTime(accented ? 0.08 : 0.018, now + 0.003);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + (accented ? 0.05 : 0.035));
+
     osc.connect(gain);
     gain.connect(ctx.destination);
     osc.start(now);
-    osc.stop(now + 0.06);
+    osc.stop(now + (accented ? 0.06 : 0.04));
+  }
+
+  getStepMs() {
+    const beatMs = Math.max(80, Math.round(60000 / this.bpm));
+    if (this.mode === 'subdivided') return Math.max(60, Math.round(beatMs / 2));
+    return beatMs;
+  }
+
+  async step() {
+    if (this.mode === 'subdivided') {
+      await this.tick({ accented: this.subStep === 0 });
+      this.subStep = this.subStep === 0 ? 1 : 0;
+      return;
+    }
+
+    await this.tick({ accented: true });
   }
 
   async start() {
     if (!this.enabled || this.bpm <= 0 || this.running) return;
     this.running = true;
-    await this.tick();
-    const intervalMs = Math.max(80, Math.round(60000 / this.bpm));
+    this.subStep = 0;
+    await this.step();
     this.intervalId = window.setInterval(() => {
-      this.tick();
-    }, intervalMs);
+      this.step();
+    }, this.getStepMs());
   }
 
   stop() {
@@ -68,6 +90,7 @@ export class MetronomeEngine {
       this.intervalId = null;
     }
     this.running = false;
+    this.subStep = 0;
   }
 
   restart() {

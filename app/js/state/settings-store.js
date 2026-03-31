@@ -1,6 +1,10 @@
 import { STORAGE_KEY } from '../core/constants.js';
 import { clampInt } from '../core/time.js';
 
+function normalizeMetronomeMode(rawMode, fallbackMode) {
+  return rawMode === 'subdivided' ? 'subdivided' : (fallbackMode === 'subdivided' ? 'subdivided' : 'direct');
+}
+
 export function normalizeSettings(raw, fallback) {
   return {
     rounds: clampInt(raw?.rounds, 1, 99, fallback.rounds),
@@ -10,7 +14,8 @@ export function normalizeSettings(raw, fallback) {
     warning10Enabled: Boolean(raw?.warning10Enabled),
     audioEnabled: raw?.audioEnabled !== false,
     metronomeEnabled: Boolean(raw?.metronomeEnabled),
-    metronomeBpm: clampInt(raw?.metronomeBpm, 0, 300, fallback.metronomeBpm ?? 20)
+    metronomeBpm: clampInt(raw?.metronomeBpm, 0, 300, fallback.metronomeBpm ?? 20),
+    metronomeMode: normalizeMetronomeMode(raw?.metronomeMode, fallback.metronomeMode)
   };
 }
 

@@ -12,6 +12,13 @@ export function bindControls(els, handlers) {
   els.settingsBtn.addEventListener('click', handlers.onOpenSettings);
   els.closeSettingsBtn.addEventListener('click', handlers.onCloseSettings);
   els.saveSettingsBtn.addEventListener('click', handlers.onSaveSettings);
+  els.metronomeToggleBtn.addEventListener('click', handlers.onToggleMetronome);
+
+  els.metronomeModeButtons.forEach((button) => {
+    button.addEventListener('click', () => {
+      handlers.onSelectMetronomeMode(button.dataset.metronomeMode);
+    });
+  });
 
   els.stepperButtons.forEach((button) => {
     button.addEventListener('click', () => {

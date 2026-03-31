@@ -9,7 +9,8 @@ export const PRESETS = {
     warning10Enabled: true,
     audioEnabled: true,
     metronomeEnabled: false,
-    metronomeBpm: 20
+    metronomeBpm: 20,
+    metronomeMode: 'direct'
   },
   classic2: {
     id: 'classic2',
@@ -21,7 +22,8 @@ export const PRESETS = {
     warning10Enabled: true,
     audioEnabled: true,
     metronomeEnabled: false,
-    metronomeBpm: 20
+    metronomeBpm: 20,
+    metronomeMode: 'direct'
   },
   classic1: {
     id: 'classic1',
@@ -33,7 +35,8 @@ export const PRESETS = {
     warning10Enabled: false,
     audioEnabled: true,
     metronomeEnabled: false,
-    metronomeBpm: 20
+    metronomeBpm: 20,
+    metronomeMode: 'direct'
   },
   tabata2020x24: {
     id: 'tabata2020x24',
@@ -45,7 +48,8 @@ export const PRESETS = {
     warning10Enabled: false,
     audioEnabled: true,
     metronomeEnabled: false,
-    metronomeBpm: 20
+    metronomeBpm: 20,
+    metronomeMode: 'direct'
   }
 };
 

@@ -22,6 +22,10 @@ function roundLabelText(state) {
   return `Раунд ${state.roundIndex} из ${state.totalRounds}`;
 }
 
+function metronomeModeLabel(mode) {
+  return mode === 'subdivided' ? 'Дробный' : 'Прямой';
+}
+
 function totalDurationSec(config) {
   return (config.rounds * config.workSec) + (Math.max(0, config.rounds - 1) * config.restSec);
 }
@@ -58,7 +62,7 @@ export function renderTimer(els, state) {
   els.mainTime.textContent = formatTime(state.remainingSec);
   els.phaseLabel.textContent = phaseLabelText(state);
   els.roundLabel.textContent = roundLabelText(state);
-  els.phaseCaption.textContent = state.nextLabel || '—';
+  els.phaseCaption.textContent = '';
   els.countdownCaption.textContent = state.countdownText || '';
   els.progressFill.style.width = `${state.progress || 0}%`;
 
@@ -69,8 +73,17 @@ export function renderTimer(els, state) {
   els.metricTotal.textContent = formatTime(totalDurationSec(state.config));
   els.metricRemaining.textContent = formatTime(remainingTotalSec(state));
   els.metronomeStatus.textContent = state.config.metronomeEnabled
-    ? `${state.config.metronomeBpm} уд/мин`
-    : 'Выкл';
+    ? `${metronomeModeLabel(state.config.metronomeMode)} · Вкл`
+    : `${metronomeModeLabel(state.config.metronomeMode)} · Выкл`;
+
+  els.metronomeToggleBtn.classList.toggle('is-on', Boolean(state.config.metronomeEnabled));
+  els.metronomeToggleBtn.setAttribute('aria-pressed', state.config.metronomeEnabled ? 'true' : 'false');
+
+  els.metronomeModeButtons.forEach((button) => {
+    const isActive = button.dataset.metronomeMode === state.config.metronomeMode;
+    button.classList.toggle('is-active', isActive);
+    button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+  });
 
   if (state.phase === PHASES.IDLE || state.phase === PHASES.FINISHED) {
     els.startBtn.textContent = 'Старт';
@@ -90,6 +103,7 @@ export function setSettingsForm(els, settings) {
   els.audioEnabledInput.checked = settings.audioEnabled;
   els.metronomeEnabledInput.checked = settings.metronomeEnabled;
   els.metronomeBpmInput.value = settings.metronomeBpm;
+  els.metronomeModeInput.value = settings.metronomeMode || 'direct';
 }
 
 export function readSettingsForm(els) {
@@ -101,7 +115,8 @@ export function readSettingsForm(els) {
     warning10Enabled: els.warning10EnabledInput.checked,
     audioEnabled: els.audioEnabledInput.checked,
     metronomeEnabled: els.metronomeEnabledInput.checked,
-    metronomeBpm: Number(els.metronomeBpmInput.value)
+    metronomeBpm: Number(els.metronomeBpmInput.value),
+    metronomeMode: els.metronomeModeInput.value || 'direct'
   };
 }
 

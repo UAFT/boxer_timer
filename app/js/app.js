@@ -22,6 +22,7 @@ const STEP_RULES = {
   rounds: { step: 1, min: 1, max: 99 },
   metronomeBpm: { step: 1, min: 0, max: 300 }
 };
+const DEFAULT_METRONOME_BPM = 20;
 
 const els = getDomRefs();
 const audio = new AudioEngine();
@@ -73,24 +74,26 @@ const timer = new TimerEngine({
   }
 });
 
+function syncMetronome() {
+  metronome.setConfig({
+    enabled: activeSettings.metronomeEnabled,
+    bpm: activeSettings.metronomeBpm,
+    mode: activeSettings.metronomeMode
+  });
+}
+
 function applySettings(nextSettings) {
   activeSettings = normalizeSettings(nextSettings, clonePreset(activePresetId));
   saveSettings(activeSettings);
   audio.setEnabled(activeSettings.audioEnabled);
-  metronome.setConfig({
-    enabled: activeSettings.metronomeEnabled,
-    bpm: activeSettings.metronomeBpm
-  });
+  syncMetronome();
   timer.applyConfig(activeSettings);
   setSettingsForm(els, activeSettings);
 }
 
 async function handleToggleRun() {
   await audio.preloadAll();
-  metronome.setConfig({
-    enabled: activeSettings.metronomeEnabled,
-    bpm: activeSettings.metronomeBpm
-  });
+  syncMetronome();
 
   if (timer.isPaused) {
     timer.start();
@@ -139,12 +142,23 @@ function handleAdjustValue({ target, direction }) {
   applySettings(draft);
 }
 
+function handleToggleMetronome() {
+  const draft = { ...activeSettings };
+  draft.metronomeEnabled = !draft.metronomeEnabled;
+  if (draft.metronomeEnabled && (!draft.metronomeBpm || draft.metronomeBpm <= 0)) {
+    draft.metronomeBpm = DEFAULT_METRONOME_BPM;
+  }
+  applySettings(draft);
+}
+
+function handleSelectMetronomeMode(mode) {
+  if (!mode) return;
+  applySettings({ ...activeSettings, metronomeMode: mode });
+}
+
 function bootstrap() {
   audio.setEnabled(activeSettings.audioEnabled);
-  metronome.setConfig({
-    enabled: activeSettings.metronomeEnabled,
-    bpm: activeSettings.metronomeBpm
-  });
+  syncMetronome();
   setActivePreset(els, activePresetId);
   setSettingsForm(els, activeSettings);
   timer.applyConfig(activeSettings);
@@ -155,7 +169,9 @@ function bootstrap() {
     onOpenSettings: () => openSettings(els),
     onCloseSettings: () => closeSettings(els),
     onSaveSettings: handleSaveSettings,
-    onAdjustValue: handleAdjustValue
+    onAdjustValue: handleAdjustValue,
+    onToggleMetronome: handleToggleMetronome,
+    onSelectMetronomeMode: handleSelectMetronomeMode
   });
 }
 
