@@ -68,58 +68,58 @@
       <section class="param-grid">
         <article class="param-card panel">
           <div class="param-head">
-            <div>
+            <div class="param-copy">
               <div class="param-title">Длина раунда</div>
               <div class="param-subtitle">Шаг 5 секунд</div>
+              <div class="param-value" id="metricWork">03:00</div>
             </div>
             <div class="stepper-col">
               <button class="stepper-btn" type="button" data-adjust-target="workSec" data-adjust-direction="up">＋</button>
               <button class="stepper-btn" type="button" data-adjust-target="workSec" data-adjust-direction="down">－</button>
             </div>
           </div>
-          <div class="param-value" id="metricWork">03:00</div>
         </article>
 
         <article class="param-card panel">
           <div class="param-head">
-            <div>
+            <div class="param-copy">
               <div class="param-title">Время отдыха</div>
               <div class="param-subtitle">Шаг 5 секунд</div>
+              <div class="param-value" id="metricRest">01:00</div>
             </div>
             <div class="stepper-col">
               <button class="stepper-btn" type="button" data-adjust-target="restSec" data-adjust-direction="up">＋</button>
               <button class="stepper-btn" type="button" data-adjust-target="restSec" data-adjust-direction="down">－</button>
             </div>
           </div>
-          <div class="param-value" id="metricRest">01:00</div>
         </article>
 
         <article class="param-card panel">
           <div class="param-head">
-            <div>
+            <div class="param-copy">
               <div class="param-title">Раунды</div>
               <div class="param-subtitle">От 1 до 99</div>
+              <div class="param-value" id="metricRounds">5</div>
             </div>
             <div class="stepper-col">
               <button class="stepper-btn" type="button" data-adjust-target="rounds" data-adjust-direction="up">＋</button>
               <button class="stepper-btn" type="button" data-adjust-target="rounds" data-adjust-direction="down">－</button>
             </div>
           </div>
-          <div class="param-value" id="metricRounds">5</div>
         </article>
 
         <article class="param-card panel">
           <div class="param-head">
-            <div>
+            <div class="param-copy">
               <div class="param-title">Метроном</div>
               <div class="param-subtitle" id="metronomeStatus">Выкл</div>
+              <div class="param-value" id="metricMetronome">20</div>
             </div>
             <div class="stepper-col">
               <button class="stepper-btn" type="button" data-adjust-target="metronomeBpm" data-adjust-direction="up">＋</button>
               <button class="stepper-btn" type="button" data-adjust-target="metronomeBpm" data-adjust-direction="down">－</button>
             </div>
           </div>
-          <div class="param-value" id="metricMetronome">20</div>
         </article>
       </section>
     </main>
@@ -148,7 +148,7 @@
           </label>
 
           <label class="field">
-            <span class="field-label">Метроном (BPM)</span>
+            <span class="field-label">Метроном (уд/мин)</span>
             <input class="field-input" type="number" id="metronomeBpmInput" min="0" max="300" step="1" />
           </label>
 

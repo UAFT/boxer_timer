@@ -69,7 +69,7 @@ export function renderTimer(els, state) {
   els.metricTotal.textContent = formatTime(totalDurationSec(state.config));
   els.metricRemaining.textContent = formatTime(remainingTotalSec(state));
   els.metronomeStatus.textContent = state.config.metronomeEnabled
-    ? `${state.config.metronomeBpm} BPM`
+    ? `${state.config.metronomeBpm} уд/мин`
     : 'Выкл';
 
   if (state.phase === PHASES.IDLE || state.phase === PHASES.FINISHED) {
