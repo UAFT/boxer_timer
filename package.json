@@ -1,0 +1,20 @@
+{
+  "name": "boxer-timer",
+  "version": "0.2.0",
+  "private": true,
+  "description": "Offline boxer timer prepared for Capacitor Android shell",
+  "scripts": {
+    "clean": "rm -rf dist",
+    "build": "bash ./scripts/build.sh",
+    "cap:add:android": "npx cap add android",
+    "cap:copy": "npx cap copy android",
+    "cap:sync": "npx cap sync android",
+    "cap:open": "npx cap open android",
+    "android:run": "npx cap run android"
+  },
+  "devDependencies": {
+    "@capacitor/android": "^7.0.0",
+    "@capacitor/cli": "^7.0.0",
+    "@capacitor/core": "^7.0.0"
+  }
+}

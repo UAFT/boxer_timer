@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>Andar Fight Timer</title>
+    <meta
+      name="description"
+      content="Offline boxer timer. Local logic. Local audio. No API."
+    />
+    <link rel="icon" href="./favicon.ico" />
+    <link rel="stylesheet" href="./styles/main.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="panel hero">
+        <div class="hero-head">
+          <div class="eyebrow">Andar Fight Timer / Offline Core</div>
+          <h1 class="hero-title">Таймер боксёра</h1>
+          <p class="hero-subtitle">
+            Boxed-app contract: local logic, local audio, zero API, zero network
+            dependency at runtime.
+          </p>
+        </div>
+
+        <div class="preset-tabs" role="tablist" aria-label="Пресеты таймера">
+          <button class="preset-tab is-active" type="button" data-preset="classic3">3′</button>
+          <button class="preset-tab" type="button" data-preset="classic2">2′</button>
+          <button class="preset-tab" type="button" data-preset="classic1">1′</button>
+          <button class="preset-tab" type="button" data-preset="tabata2020x24">⚡</button>
+        </div>
+      </section>
+
+      <section class="panel section-grid">
+        <div class="phase-row">
+          <span class="phase-chip" id="phaseLabel">Готов</span>
+          <span class="round-chip" id="roundLabel">Раунд 0 / 0</span>
+        </div>
+
+        <div class="time-wrap">
+          <div class="main-time" id="mainTime">03:00</div>
+          <div class="phase-caption" id="phaseCaption">Следующий этап не запущен</div>
+          <div class="countdown-caption" id="countdownCaption"></div>
+        </div>
+
+        <div class="progress-track" aria-hidden="true">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+
+        <div class="metrics-grid">
+          <div class="metric">
+            <div class="metric-label">Работа</div>
+            <div class="metric-value" id="metricWork">03:00</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Отдых</div>
+            <div class="metric-value" id="metricRest">01:00</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Раундов</div>
+            <div class="metric-value" id="metricRounds">12</div>
+          </div>
+        </div>
+
+        <div class="controls-grid">
+          <button class="action-btn action-primary" type="button" id="startBtn">Старт</button>
+          <button class="action-btn" type="button" id="pauseBtn" disabled>Пауза</button>
+          <button class="action-btn action-danger" type="button" id="resetBtn">Сброс</button>
+          <button class="action-btn" type="button" id="settingsBtn">Настройки</button>
+        </div>
+      </section>
+
+      <section class="panel settings-panel" id="settingsPanel" hidden>
+        <div class="settings-head">
+          <h2>Настройки</h2>
+          <button class="link-btn" type="button" id="closeSettingsBtn">Закрыть</button>
+        </div>
+
+        <div class="settings-grid">
+          <label class="field">
+            <span class="field-label">Раундов</span>
+            <input class="field-input" type="number" id="roundsInput" min="1" max="99" step="1" />
+          </label>
+
+          <label class="field">
+            <span class="field-label">Работа (сек)</span>
+            <input class="field-input" type="number" id="workSecInput" min="1" max="3600" step="1" />
+          </label>
+
+          <label class="field">
+            <span class="field-label">Отдых (сек)</span>
+            <input class="field-input" type="number" id="restSecInput" min="0" max="3600" step="1" />
+          </label>
+
+          <label class="checkbox-field">
+            <input type="checkbox" id="countdownEnabledInput" />
+            <span>Включить предстартовый 3-2-1</span>
+          </label>
+
+          <label class="checkbox-field">
+            <input type="checkbox" id="warning10EnabledInput" />
+            <span>Включить warning за 10 секунд</span>
+          </label>
+
+          <label class="checkbox-field">
+            <input type="checkbox" id="audioEnabledInput" />
+            <span>Включить звук</span>
+          </label>
+        </div>
+
+        <p class="note">
+          Канон: countdown и cue разделены.
+          <code>3 / 2 / 1</code> — отдельные файлы.
+          Cue на нуле — отдельное событие.
+        </p>
+
+        <div class="controls-grid">
+          <button class="action-btn action-primary" type="button" id="saveSettingsBtn">Сохранить</button>
+        </div>
+      </section>
+
+      <section class="panel section-grid">
+        <div class="section-head">
+          <h2>Локальные аудио-ассеты</h2>
+          <span class="badge badge-ok" id="audioStatusBadge">placeholder mode</span>
+        </div>
+
+        <ul class="asset-list">
+          <li><code>assets/audio/countdown/count_3.mp3</code></li>
+          <li><code>assets/audio/countdown/count_2.mp3</code></li>
+          <li><code>assets/audio/countdown/count_1.mp3</code></li>
+          <li><code>assets/audio/cues/cue_round_start_single.mp3</code></li>
+          <li><code>assets/audio/cues/cue_round_end_single.mp3</code></li>
+          <li><code>assets/audio/cues/cue_rest_end_double.mp3</code></li>
+          <li><code>assets/audio/cues/cue_warning_10s.mp3</code></li>
+          <li><code>assets/audio/cues/cue_workout_end_long.mp3</code></li>
+        </ul>
+
+        <div class="debug-box" id="debugBox">boot: pending</div>
+      </section>
+    </main>
+
+    <script type="module" src="./js/app.js"></script>
+  </body>
+</html>
