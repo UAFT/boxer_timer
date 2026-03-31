@@ -8,7 +8,9 @@ export function normalizeSettings(raw, fallback) {
     restSec: clampInt(raw?.restSec, 0, 3600, fallback.restSec),
     countdownEnabled: Boolean(raw?.countdownEnabled),
     warning10Enabled: Boolean(raw?.warning10Enabled),
-    audioEnabled: raw?.audioEnabled !== false
+    audioEnabled: raw?.audioEnabled !== false,
+    metronomeEnabled: Boolean(raw?.metronomeEnabled),
+    metronomeBpm: clampInt(raw?.metronomeBpm, 0, 300, fallback.metronomeBpm ?? 20)
   };
 }
 

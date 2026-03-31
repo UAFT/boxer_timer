@@ -2,14 +2,13 @@ import { AUDIO_KEYS } from './core/constants.js';
 import { clonePreset } from './state/presets.js';
 import { loadSettings, normalizeSettings, saveSettings } from './state/settings-store.js';
 import { AudioEngine } from './audio/audio-engine.js';
+import { MetronomeEngine } from './audio/metronome-engine.js';
 import { TimerEngine } from './timer/timer-engine.js';
 import { getDomRefs } from './ui/dom.js';
 import {
   closeSettings,
   openSettings,
   readSettingsForm,
-  renderAudioStatus,
-  renderDebug,
   renderTimer,
   setActivePreset,
   setSettingsForm
@@ -17,8 +16,16 @@ import {
 import { bindControls, bindPresetTabs } from './ui/bindings.js';
 
 const DEFAULT_PRESET_ID = 'classic3';
+const STEP_RULES = {
+  workSec: { step: 5, min: 5, max: 3600 },
+  restSec: { step: 5, min: 0, max: 3600 },
+  rounds: { step: 1, min: 1, max: 99 },
+  metronomeBpm: { step: 1, min: 0, max: 300 }
+};
+
 const els = getDomRefs();
 const audio = new AudioEngine();
+const metronome = new MetronomeEngine();
 
 const COUNTDOWN_EVENT_TO_AUDIO = {
   'prestart-count-3': AUDIO_KEYS.COUNT_3,
@@ -46,56 +53,44 @@ let activeSettings = loadSettings(clonePreset(DEFAULT_PRESET_ID));
 const timer = new TimerEngine({
   onTick: (state) => {
     renderTimer(els, state);
+    metronome.syncPhase(state);
   },
   onStateChange: (state) => {
     renderTimer(els, state);
+    metronome.syncPhase(state);
   },
   onEvent: async (event) => {
     const countdownAudioKey = COUNTDOWN_EVENT_TO_AUDIO[event.type];
     if (countdownAudioKey) {
       await audio.play(countdownAudioKey);
-      updateAudioDebug();
       return;
     }
 
     const zeroAudioKey = ZERO_EVENT_TO_AUDIO[event.type];
     if (zeroAudioKey) {
       await audio.play(zeroAudioKey);
-      updateAudioDebug();
     }
   }
 });
-
-function updateAudioDebug() {
-  const missing = audio.getMissingAudioKeys();
-  renderAudioStatus(els, {
-    enabled: activeSettings.audioEnabled,
-    missingCount: missing.length
-  });
-
-  renderDebug(
-    els,
-    [
-      `preset: ${activePresetId}`,
-      `audioEnabled: ${activeSettings.audioEnabled}`,
-      `missingAudio: ${missing.length ? missing.join(', ') : 'none'}`,
-      `contract: countdown=3/2/1, zero-cue=separate event, local-only runtime`
-    ].join('\n')
-  );
-}
 
 function applySettings(nextSettings) {
   activeSettings = normalizeSettings(nextSettings, clonePreset(activePresetId));
   saveSettings(activeSettings);
   audio.setEnabled(activeSettings.audioEnabled);
+  metronome.setConfig({
+    enabled: activeSettings.metronomeEnabled,
+    bpm: activeSettings.metronomeBpm
+  });
   timer.applyConfig(activeSettings);
   setSettingsForm(els, activeSettings);
-  updateAudioDebug();
 }
 
 async function handleStart() {
   await audio.preloadAll();
-  updateAudioDebug();
+  metronome.setConfig({
+    enabled: activeSettings.metronomeEnabled,
+    bpm: activeSettings.metronomeBpm
+  });
   timer.start();
 }
 
@@ -105,6 +100,7 @@ function handlePause() {
 
 function handleReset() {
   timer.reset();
+  metronome.stop();
 }
 
 function handleSelectPreset(presetId) {
@@ -119,8 +115,29 @@ function handleSaveSettings() {
   closeSettings(els);
 }
 
+function handleAdjustValue({ target, direction }) {
+  const rule = STEP_RULES[target];
+  if (!rule) return;
+  const sign = direction === 'down' ? -1 : 1;
+  const next = Math.min(rule.max, Math.max(rule.min, (activeSettings[target] ?? 0) + sign * rule.step));
+  const draft = { ...activeSettings, [target]: next };
+
+  if (target === 'metronomeBpm' && next === 0) {
+    draft.metronomeEnabled = false;
+  }
+  if (target === 'metronomeBpm' && next > 0 && !draft.metronomeEnabled) {
+    draft.metronomeEnabled = true;
+  }
+
+  applySettings(draft);
+}
+
 function bootstrap() {
   audio.setEnabled(activeSettings.audioEnabled);
+  metronome.setConfig({
+    enabled: activeSettings.metronomeEnabled,
+    bpm: activeSettings.metronomeBpm
+  });
   setActivePreset(els, activePresetId);
   setSettingsForm(els, activeSettings);
   timer.applyConfig(activeSettings);
@@ -131,9 +148,9 @@ function bootstrap() {
     onReset: handleReset,
     onOpenSettings: () => openSettings(els),
     onCloseSettings: () => closeSettings(els),
-    onSaveSettings: handleSaveSettings
+    onSaveSettings: handleSaveSettings,
+    onAdjustValue: handleAdjustValue
   });
-  updateAudioDebug();
 }
 
 bootstrap();

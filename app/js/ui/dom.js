@@ -9,8 +9,10 @@ export function getDomRefs() {
     metricWork: document.getElementById('metricWork'),
     metricRest: document.getElementById('metricRest'),
     metricRounds: document.getElementById('metricRounds'),
-    audioStatusBadge: document.getElementById('audioStatusBadge'),
-    debugBox: document.getElementById('debugBox'),
+    metricTotal: document.getElementById('metricTotal'),
+    metricRemaining: document.getElementById('metricRemaining'),
+    metricMetronome: document.getElementById('metricMetronome'),
+    metronomeStatus: document.getElementById('metronomeStatus'),
 
     startBtn: document.getElementById('startBtn'),
     pauseBtn: document.getElementById('pauseBtn'),
@@ -19,14 +21,17 @@ export function getDomRefs() {
     closeSettingsBtn: document.getElementById('closeSettingsBtn'),
     saveSettingsBtn: document.getElementById('saveSettingsBtn'),
 
-    settingsPanel: document.getElementById('settingsPanel'),
+    settingsModal: document.getElementById('settingsModal'),
     roundsInput: document.getElementById('roundsInput'),
     workSecInput: document.getElementById('workSecInput'),
     restSecInput: document.getElementById('restSecInput'),
     countdownEnabledInput: document.getElementById('countdownEnabledInput'),
     warning10EnabledInput: document.getElementById('warning10EnabledInput'),
     audioEnabledInput: document.getElementById('audioEnabledInput'),
+    metronomeEnabledInput: document.getElementById('metronomeEnabledInput'),
+    metronomeBpmInput: document.getElementById('metronomeBpmInput'),
 
-    presetTabs: [...document.querySelectorAll('.preset-tab')]
+    presetTabs: [...document.querySelectorAll('.preset-tab')],
+    stepperButtons: [...document.querySelectorAll('.stepper-btn')]
   };
 }
