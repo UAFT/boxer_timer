@@ -35,7 +35,8 @@ body {
 }
 
 body {
-  min-height: 100vh;
+  min-height: 100dvh;
+  overflow-x: hidden;
 }
 
 button,
@@ -55,12 +56,14 @@ img {
 }
 
 .app-shell {
-  width: min(100%, 720px);
+  width: min(100%, 420px);
   margin: 0 auto;
   padding:
-    max(18px, env(safe-area-inset-top))
-    14px
-    max(18px, env(safe-area-inset-bottom));
+    max(10px, env(safe-area-inset-top))
+    10px
+    max(10px, env(safe-area-inset-bottom));
+  display: grid;
+  gap: 10px;
 }
 
 .panel {
@@ -76,8 +79,7 @@ img {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 16px 18px;
-  margin-bottom: 14px;
+  padding: 14px 16px;
 }
 
 .brand-left {
@@ -88,8 +90,8 @@ img {
 }
 
 .brand-logo {
-  width: 74px;
-  height: 74px;
+  width: 62px;
+  height: 62px;
   object-fit: contain;
 }
 
@@ -98,27 +100,27 @@ img {
 }
 
 .brand-title {
-  font-size: clamp(28px, 6vw, 42px);
+  font-size: clamp(24px, 6vw, 34px);
   line-height: 0.96;
   font-weight: 800;
 }
 
 .brand-subtitle {
-  margin-top: 6px;
+  margin-top: 4px;
   color: rgba(255,255,255,0.72);
   text-transform: uppercase;
-  letter-spacing: 0.18em;
-  font-size: 14px;
+  letter-spacing: 0.14em;
+  font-size: 11px;
 }
 
 .gear-btn {
-  width: 72px;
-  height: 72px;
-  border-radius: 24px;
+  width: 58px;
+  height: 58px;
+  border-radius: 20px;
   color: var(--text);
   background: rgba(27, 39, 94, 0.88);
   border: 1px solid rgba(255,255,255,0.08);
-  font-size: 34px;
+  font-size: 28px;
   display: grid;
   place-items: center;
   flex: 0 0 auto;
@@ -127,17 +129,16 @@ img {
 .preset-row {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
-  margin-bottom: 14px;
+  gap: 10px;
 }
 
 .preset-tab {
-  min-height: 82px;
-  border-radius: 26px;
+  min-height: 58px;
+  border-radius: 20px;
   background: rgba(18, 29, 84, 0.7);
   color: var(--text);
   border: 1px solid rgba(255,255,255,0.07);
-  font-size: clamp(28px, 6vw, 40px);
+  font-size: clamp(24px, 5vw, 32px);
   font-weight: 800;
   box-shadow: inset 0 0 0 1px rgba(255,255,255,0.02);
 }
@@ -148,8 +149,7 @@ img {
 }
 
 .timer-card {
-  padding: 18px 18px 16px;
-  margin-bottom: 14px;
+  padding: 14px;
 }
 
 .card-topline {
@@ -161,7 +161,7 @@ img {
 
 .phase-heading,
 .round-heading {
-  font-size: 18px;
+  font-size: 14px;
   color: rgba(255,255,255,0.9);
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -173,8 +173,8 @@ img {
 }
 
 .main-time {
-  margin-top: 10px;
-  font-size: clamp(78px, 18vw, 126px);
+  margin-top: 8px;
+  font-size: clamp(60px, 16vw, 96px);
   line-height: 0.9;
   font-weight: 900;
   letter-spacing: -0.06em;
@@ -182,8 +182,8 @@ img {
 
 .phase-caption,
 .countdown-caption {
-  min-height: 22px;
-  font-size: 16px;
+  min-height: 18px;
+  font-size: 13px;
   color: var(--muted);
 }
 
@@ -194,14 +194,14 @@ img {
 .summary-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-  margin-top: 14px;
+  gap: 10px;
+  margin-top: 10px;
 }
 
 .summary-box,
 .param-card {
-  padding: 16px;
-  border-radius: 24px;
+  padding: 12px;
+  border-radius: 20px;
   background: rgba(14, 24, 67, 0.75);
   border: 1px solid rgba(255,255,255,0.06);
 }
@@ -209,19 +209,19 @@ img {
 .summary-label {
   color: var(--muted);
   text-transform: uppercase;
-  letter-spacing: 0.16em;
-  font-size: 13px;
+  letter-spacing: 0.12em;
+  font-size: 11px;
 }
 
 .summary-value {
-  margin-top: 6px;
-  font-size: clamp(30px, 8vw, 42px);
+  margin-top: 4px;
+  font-size: clamp(24px, 7vw, 34px);
   font-weight: 800;
 }
 
 .progress-track {
-  height: 10px;
-  margin-top: 14px;
+  height: 8px;
+  margin-top: 10px;
   border-radius: 999px;
   background: rgba(255,255,255,0.08);
   overflow: hidden;
@@ -236,9 +236,9 @@ img {
 
 .primary-actions {
   display: grid;
-  grid-template-columns: 88px 1fr 150px;
-  gap: 12px;
-  margin-top: 16px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
 }
 
 .reset-btn,
@@ -246,20 +246,20 @@ img {
 .ghost-btn,
 .stepper-btn,
 .link-btn {
-  min-height: 72px;
-  border-radius: 22px;
+  min-height: 60px;
+  border-radius: 18px;
   color: var(--text);
 }
 
 .reset-btn {
   background: rgba(20, 33, 82, 0.92);
-  font-size: 40px;
+  font-size: 28px;
 }
 
 .primary-btn {
   background: linear-gradient(180deg, var(--orange-2) 0%, var(--orange) 100%);
   color: #fff8ee;
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 800;
 }
 
@@ -277,7 +277,7 @@ img {
 .param-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
+  gap: 10px;
 }
 
 .param-head {
@@ -288,20 +288,20 @@ img {
 }
 
 .param-title {
-  font-size: 18px;
+  font-size: 15px;
   font-weight: 700;
   line-height: 1.05;
 }
 
 .param-subtitle {
-  margin-top: 4px;
-  font-size: 14px;
+  margin-top: 2px;
+  font-size: 11px;
   color: var(--muted);
 }
 
 .param-value {
-  margin-top: 18px;
-  font-size: clamp(42px, 10vw, 58px);
+  margin-top: 12px;
+  font-size: clamp(28px, 8vw, 42px);
   line-height: 0.95;
   font-weight: 800;
   letter-spacing: -0.05em;
@@ -309,14 +309,14 @@ img {
 
 .stepper-col {
   display: grid;
-  gap: 10px;
-  flex: 0 0 68px;
+  gap: 8px;
+  flex: 0 0 48px;
 }
 
 .stepper-btn {
-  min-height: 60px;
+  min-height: 44px;
   background: rgba(31, 42, 95, 0.98);
-  font-size: 34px;
+  font-size: 24px;
   display: grid;
   place-items: center;
 }
@@ -402,59 +402,254 @@ img {
   margin-top: 16px;
 }
 
+
 @media (max-width: 640px) {
+  .app-shell {
+    width: min(100%, 400px);
+    padding:
+      max(8px, env(safe-area-inset-top))
+      8px
+      max(8px, env(safe-area-inset-bottom));
+    gap: 8px;
+  }
+
+  .brand-shell {
+    padding: 12px;
+  }
+
+  .brand-left {
+    gap: 10px;
+  }
+
   .brand-logo {
-    width: 58px;
-    height: 58px;
+    width: 50px;
+    height: 50px;
   }
 
   .brand-title {
-    font-size: 32px;
+    font-size: 24px;
   }
 
   .brand-subtitle {
-    font-size: 12px;
+    font-size: 10px;
+    letter-spacing: 0.12em;
   }
 
   .gear-btn {
-    width: 62px;
-    height: 62px;
-    font-size: 28px;
+    width: 52px;
+    height: 52px;
+    font-size: 24px;
+    border-radius: 18px;
+  }
+
+  .preset-row {
+    gap: 8px;
   }
 
   .preset-tab {
-    min-height: 70px;
-    border-radius: 22px;
-    font-size: 28px;
+    min-height: 52px;
+    border-radius: 18px;
+    font-size: 22px;
+  }
+
+  .timer-card {
+    padding: 12px;
+  }
+
+  .card-topline {
+    gap: 8px;
+  }
+
+  .phase-heading,
+  .round-heading {
+    font-size: 12px;
+  }
+
+  .main-time {
+    font-size: clamp(52px, 15vw, 78px);
+  }
+
+  .phase-caption,
+  .countdown-caption {
+    font-size: 12px;
+    min-height: 16px;
+  }
+
+  .summary-grid {
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .summary-box {
+    padding: 10px;
+    border-radius: 16px;
+  }
+
+  .summary-label {
+    font-size: 10px;
+  }
+
+  .summary-value {
+    font-size: clamp(22px, 6.5vw, 28px);
+  }
+
+  .progress-track {
+    margin-top: 8px;
+    height: 6px;
   }
 
   .primary-actions {
-    grid-template-columns: 80px 1fr;
+    gap: 8px;
+    margin-top: 10px;
   }
 
-  .ghost-btn {
-    grid-column: 1 / -1;
-    min-height: 60px;
+  .reset-btn,
+  .primary-btn {
+    min-height: 52px;
+    border-radius: 16px;
+  }
+
+  .primary-btn {
+    font-size: 18px;
   }
 
   .param-grid {
-    gap: 12px;
+    gap: 8px;
+  }
+
+  .param-card {
+    padding: 10px;
+    border-radius: 16px;
   }
 
   .param-title {
-    font-size: 16px;
+    font-size: 14px;
+  }
+
+  .param-subtitle {
+    font-size: 10px;
   }
 
   .param-value {
-    font-size: 44px;
+    margin-top: 10px;
+    font-size: clamp(24px, 7vw, 34px);
   }
 
   .stepper-col {
-    flex-basis: 56px;
+    flex-basis: 42px;
+    gap: 6px;
   }
 
   .stepper-btn {
-    min-height: 52px;
-    font-size: 28px;
+    min-height: 38px;
+    font-size: 20px;
+    border-radius: 14px;
+  }
+
+  .settings-modal {
+    padding: 14px;
+    border-radius: 18px;
+  }
+
+  .settings-head h2 {
+    font-size: 24px;
+  }
+
+  .field-input,
+  .checkbox-field {
+    min-height: 46px;
   }
 }
+
+@media (max-width: 430px), (max-height: 860px) {
+  .app-shell {
+    width: min(100%, 392px);
+    padding:
+      max(6px, env(safe-area-inset-top))
+      6px
+      max(6px, env(safe-area-inset-bottom));
+    gap: 6px;
+  }
+
+  .brand-shell {
+    padding: 10px;
+  }
+
+  .brand-logo {
+    width: 42px;
+    height: 42px;
+  }
+
+  .brand-title {
+    font-size: 21px;
+  }
+
+  .brand-subtitle {
+    margin-top: 2px;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+  }
+
+  .gear-btn {
+    width: 46px;
+    height: 46px;
+    font-size: 20px;
+    border-radius: 16px;
+  }
+
+  .preset-tab {
+    min-height: 46px;
+    font-size: 20px;
+    border-radius: 16px;
+  }
+
+  .timer-card {
+    padding: 10px;
+  }
+
+  .main-time {
+    font-size: clamp(46px, 14vw, 68px);
+  }
+
+  .summary-box,
+  .param-card {
+    padding: 9px;
+  }
+
+  .summary-value {
+    font-size: 20px;
+  }
+
+  .reset-btn,
+  .primary-btn {
+    min-height: 46px;
+    border-radius: 14px;
+  }
+
+  .primary-btn {
+    font-size: 17px;
+  }
+
+  .param-title {
+    font-size: 13px;
+  }
+
+  .param-subtitle {
+    font-size: 9px;
+  }
+
+  .param-value {
+    margin-top: 8px;
+    font-size: clamp(22px, 6.5vw, 30px);
+  }
+
+  .stepper-col {
+    flex-basis: 38px;
+  }
+
+  .stepper-btn {
+    min-height: 34px;
+    font-size: 18px;
+  }
+}
+
