@@ -7,8 +7,7 @@ export function bindPresetTabs(els, onSelectPreset) {
 }
 
 export function bindControls(els, handlers) {
-  els.startBtn.addEventListener('click', handlers.onStart);
-  els.pauseBtn.addEventListener('click', handlers.onPause);
+  els.startBtn.addEventListener('click', handlers.onToggleRun);
   els.resetBtn.addEventListener('click', handlers.onReset);
   els.settingsBtn.addEventListener('click', handlers.onOpenSettings);
   els.closeSettingsBtn.addEventListener('click', handlers.onCloseSettings);

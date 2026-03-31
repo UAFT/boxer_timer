@@ -7,7 +7,9 @@ const DEFAULT_CONFIG = {
   restSec: 60,
   countdownEnabled: true,
   warning10Enabled: true,
-  audioEnabled: true
+  audioEnabled: true,
+  metronomeEnabled: false,
+  metronomeBpm: 20
 };
 
 function createIdleState(config) {
@@ -67,7 +69,9 @@ export class TimerEngine {
       restSec: clampInt(nextConfig?.restSec, 0, 3600, DEFAULT_CONFIG.restSec),
       countdownEnabled: Boolean(nextConfig?.countdownEnabled),
       warning10Enabled: Boolean(nextConfig?.warning10Enabled),
-      audioEnabled: nextConfig?.audioEnabled !== false
+      audioEnabled: nextConfig?.audioEnabled !== false,
+      metronomeEnabled: Boolean(nextConfig?.metronomeEnabled),
+      metronomeBpm: clampInt(nextConfig?.metronomeBpm, 0, 300, DEFAULT_CONFIG.metronomeBpm)
     };
     this.reset();
   }

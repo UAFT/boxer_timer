@@ -85,17 +85,24 @@ function applySettings(nextSettings) {
   setSettingsForm(els, activeSettings);
 }
 
-async function handleStart() {
+async function handleToggleRun() {
   await audio.preloadAll();
   metronome.setConfig({
     enabled: activeSettings.metronomeEnabled,
     bpm: activeSettings.metronomeBpm
   });
-  timer.start();
-}
 
-function handlePause() {
-  timer.pause();
+  if (timer.isPaused) {
+    timer.start();
+    return;
+  }
+
+  if (timer.state?.phase && timer.state.phase !== 'idle' && timer.state.phase !== 'finished') {
+    timer.pause();
+    return;
+  }
+
+  timer.start();
 }
 
 function handleReset() {
@@ -143,8 +150,7 @@ function bootstrap() {
   timer.applyConfig(activeSettings);
   bindPresetTabs(els, handleSelectPreset);
   bindControls(els, {
-    onStart: handleStart,
-    onPause: handlePause,
+    onToggleRun: handleToggleRun,
     onReset: handleReset,
     onOpenSettings: () => openSettings(els),
     onCloseSettings: () => closeSettings(els),

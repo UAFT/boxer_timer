@@ -15,7 +15,6 @@ export function getDomRefs() {
     metronomeStatus: document.getElementById('metronomeStatus'),
 
     startBtn: document.getElementById('startBtn'),
-    pauseBtn: document.getElementById('pauseBtn'),
     resetBtn: document.getElementById('resetBtn'),
     settingsBtn: document.getElementById('settingsBtn'),
     closeSettingsBtn: document.getElementById('closeSettingsBtn'),

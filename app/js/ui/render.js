@@ -65,15 +65,20 @@ export function renderTimer(els, state) {
   els.metricWork.textContent = formatTime(state.config.workSec);
   els.metricRest.textContent = formatTime(state.config.restSec);
   els.metricRounds.textContent = String(state.config.rounds);
-  els.metricMetronome.textContent = String(state.config.metronomeBpm);
+  els.metricMetronome.textContent = String(state.config.metronomeBpm ?? 0);
   els.metricTotal.textContent = formatTime(totalDurationSec(state.config));
   els.metricRemaining.textContent = formatTime(remainingTotalSec(state));
   els.metronomeStatus.textContent = state.config.metronomeEnabled
     ? `${state.config.metronomeBpm} BPM`
     : 'Выкл';
 
-  els.startBtn.textContent = state.isPaused ? 'Продолжить' : 'Старт';
-  els.pauseBtn.disabled = state.phase === PHASES.IDLE || state.phase === PHASES.FINISHED || state.isPaused;
+  if (state.phase === PHASES.IDLE || state.phase === PHASES.FINISHED) {
+    els.startBtn.textContent = 'Старт';
+  } else if (state.isPaused) {
+    els.startBtn.textContent = 'Продолжить';
+  } else {
+    els.startBtn.textContent = 'Пауза';
+  }
 }
 
 export function setSettingsForm(els, settings) {
