@@ -6,10 +6,12 @@ export class MetronomeEngine {
     this.enabled = false;
     this.bpm = 20;
     this.mode = 'direct';
-    this.intervalId = null;
+    this.timeoutId = null;
     this.running = false;
     this.subStep = 0;
     this.suppressUntilMs = 0;
+    this.runToken = 0;
+    this.lastState = null;
   }
 
   setConfig({ enabled, bpm, mode }) {
@@ -32,41 +34,75 @@ export class MetronomeEngine {
     this.stop();
   }
 
-  async playStepKey(key) {
-    await this.audio.play(key, { tag: 'metronome', volume: 1.6 });
+  canRun(state = this.lastState) {
+    return Boolean(
+      state &&
+      this.enabled &&
+      this.bpm > 0 &&
+      !state.isPaused &&
+      state.phase === PHASES.WORK &&
+      Date.now() >= this.suppressUntilMs
+    );
+  }
+
+  async playStepKey(key, volume = 1.6) {
+    await this.audio.play(key, { tag: 'metronome', volume });
+  }
+
+  getBeatMs() {
+    return Math.max(80, Math.round(60000 / this.bpm));
   }
 
   getStepMs() {
-    const beatMs = Math.max(80, Math.round(60000 / this.bpm));
+    const beatMs = this.getBeatMs();
     if (this.mode === 'subdivided') return Math.max(60, Math.round(beatMs / 2));
     return beatMs;
   }
 
   async step() {
     if (this.mode === 'subdivided') {
-      await this.playStepKey(this.subStep === 0 ? 'metronome_direct' : 'metronome_subdivided');
-      this.subStep = this.subStep === 0 ? 1 : 0;
+      if (this.subStep === 0) {
+        await this.playStepKey('metronome_direct', 1.85);
+        this.subStep = 1;
+      } else {
+        await this.playStepKey('metronome_subdivided', 0.75);
+        this.subStep = 0;
+      }
       return;
     }
 
-    await this.playStepKey('metronome_direct');
+    await this.playStepKey('metronome_direct', 1.85);
+  }
+
+  scheduleNext(token) {
+    if (!this.running || token != this.runToken) return;
+    const delay = this.getStepMs();
+    this.timeoutId = window.setTimeout(async () => {
+      if (!this.running || token != this.runToken || !this.canRun()) {
+        return;
+      }
+      await this.step();
+      this.scheduleNext(token);
+    }, delay);
   }
 
   async start() {
-    if (!this.enabled || this.bpm <= 0 || this.running) return;
-    if (Date.now() < this.suppressUntilMs) return;
+    if (!this.canRun() || this.running) return;
+    const token = ++this.runToken;
     this.running = true;
     this.subStep = 0;
     await this.step();
-    this.intervalId = window.setInterval(() => {
-      void this.step();
-    }, this.getStepMs());
+    if (!this.running || token != this.runToken || !this.canRun()) {
+      return;
+    }
+    this.scheduleNext(token);
   }
 
   stop() {
-    if (this.intervalId) {
-      window.clearInterval(this.intervalId);
-      this.intervalId = null;
+    this.runToken += 1;
+    if (this.timeoutId) {
+      window.clearTimeout(this.timeoutId);
+      this.timeoutId = null;
     }
     this.audio.stopTag('metronome');
     this.running = false;
@@ -79,13 +115,10 @@ export class MetronomeEngine {
   }
 
   syncPhase(state) {
-    const shouldRun =
-      this.enabled &&
-      this.bpm > 0 &&
-      !state.isPaused &&
-      state.phase === PHASES.WORK;
+    this.lastState = state;
+    const shouldRun = this.canRun(state);
 
-    if (!shouldRun || Date.now() < this.suppressUntilMs) {
+    if (!shouldRun) {
       this.stop();
       return;
     }

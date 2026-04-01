@@ -1,4 +1,4 @@
-export const STORAGE_KEY = 'andar.fight.timer.settings.v6';
+export const STORAGE_KEY = 'andar.fight.timer.settings.v8';
 
 export const PHASES = {
   IDLE: 'idle',
