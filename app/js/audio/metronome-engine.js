@@ -74,12 +74,17 @@ export class MetronomeEngine {
 
   shouldMuteForWarning(state = this.lastState) {
     const remainingSec = Number(state?.remainingSec ?? 0);
-    const warningSeconds = Number(state?.config?.warningSeconds ?? 0);
+    const configuredWarningSeconds = Number(state?.config?.warningSeconds ?? 0);
+    const countdownEnabled = state?.config?.countdownEnabled !== false;
+    const effectiveWarningSeconds =
+      state?.phase === PHASES.WORK
+        ? (countdownEnabled ? 4 : 0)
+        : configuredWarningSeconds;
     return Boolean(
       state?.phase === PHASES.WORK &&
-      warningSeconds > 0 &&
+      effectiveWarningSeconds > 0 &&
       remainingSec > 0 &&
-      remainingSec <= warningSeconds
+      remainingSec <= effectiveWarningSeconds
     );
   }
 

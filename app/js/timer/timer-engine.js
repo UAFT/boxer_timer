@@ -1,6 +1,8 @@
 import { PHASES } from '../core/constants.js';
 import { clampInt } from '../core/time.js';
 
+const WORK_WARNING_SECONDS = 4;
+
 const DEFAULT_CONFIG = {
   rounds: 12,
   workSec: 180,
@@ -24,6 +26,14 @@ function createIdleState(config) {
     countdownText: '',
     progress: 0
   };
+}
+
+
+function effectiveWarningSecondsForPhase(config, phase) {
+  if (config?.countdownEnabled === false) return 0;
+  if (phase === PHASES.WORK) return WORK_WARNING_SECONDS;
+  const value = Number(config?.warningSeconds ?? 0);
+  return Number.isFinite(value) ? value : 0;
 }
 
 function countdownTextForPhase(phase, remainingSec, warningSeconds) {
@@ -153,8 +163,8 @@ export class TimerEngine {
       totalRounds: this.config.rounds,
       remainingSec: this.config.workSec,
       phaseDurationSec: Math.max(1, this.config.workSec),
-      nextLabel: nextLabelForPhase(PHASES.WORK, this.config.workSec, this.config.warningSeconds),
-      countdownText: countdownTextForPhase(PHASES.WORK, this.config.workSec, this.config.warningSeconds),
+      nextLabel: nextLabelForPhase(PHASES.WORK, this.config.workSec, effectiveWarningSecondsForPhase(this.config, PHASES.WORK)),
+      countdownText: countdownTextForPhase(PHASES.WORK, this.config.workSec, effectiveWarningSecondsForPhase(this.config, PHASES.WORK)),
       progress: 0
     };
 
@@ -171,8 +181,8 @@ export class TimerEngine {
       totalRounds: this.config.rounds,
       remainingSec: this.config.restSec,
       phaseDurationSec: Math.max(1, this.config.restSec),
-      nextLabel: nextLabelForPhase(PHASES.REST, this.config.restSec, this.config.warningSeconds),
-      countdownText: countdownTextForPhase(PHASES.REST, this.config.restSec, this.config.warningSeconds),
+      nextLabel: nextLabelForPhase(PHASES.REST, this.config.restSec, effectiveWarningSecondsForPhase(this.config, PHASES.REST)),
+      countdownText: countdownTextForPhase(PHASES.REST, this.config.restSec, effectiveWarningSecondsForPhase(this.config, PHASES.REST)),
       progress: 0
     };
 
@@ -271,32 +281,36 @@ export class TimerEngine {
       this.state.progress = this.computeProgress();
 
       if (this.state.phase === PHASES.WORK || this.state.phase === PHASES.REST) {
+        const effectiveWarningSeconds = effectiveWarningSecondsForPhase(this.config, this.state.phase);
         this.state.nextLabel = nextLabelForPhase(
           this.state.phase,
           nextRemainingSec,
-          this.config.warningSeconds
+          effectiveWarningSeconds
         );
         this.state.countdownText = countdownTextForPhase(
           this.state.phase,
           nextRemainingSec,
-          this.config.warningSeconds
+          effectiveWarningSeconds
         );
       }
 
       this.emitTick();
 
-      if (
-        (this.state.phase === PHASES.WORK || this.state.phase === PHASES.REST) &&
-        this.config.warningSeconds > 0 &&
-        nextRemainingSec >= 1 &&
-        nextRemainingSec <= this.config.warningSeconds
-      ) {
-        this.onEvent({
-          type: 'warning-tick',
-          roundIndex: this.state.roundIndex,
-          phase: this.state.phase,
-          remainingSec: nextRemainingSec
-        });
+      {
+        const effectiveWarningSeconds = effectiveWarningSecondsForPhase(this.config, this.state.phase);
+        if (
+          (this.state.phase === PHASES.WORK || this.state.phase === PHASES.REST) &&
+          effectiveWarningSeconds > 0 &&
+          nextRemainingSec >= 1 &&
+          nextRemainingSec <= effectiveWarningSeconds
+        ) {
+          this.onEvent({
+            type: 'warning-tick',
+            roundIndex: this.state.roundIndex,
+            phase: this.state.phase,
+            remainingSec: nextRemainingSec
+          });
+        }
       }
 
       if (this.state.phase === PHASES.COUNTDOWN && nextRemainingSec >= 1 && nextRemainingSec <= 3) {
