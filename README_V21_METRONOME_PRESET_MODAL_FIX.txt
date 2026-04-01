@@ -1,0 +1,1 @@
+V21 fixes: preserve sound settings across preset tabs; timer state now carries metronomeMode so open panel lights Direct green; settings modal centered with internal scroll; v2 audio cues refreshed from latest uploads.

@@ -9,7 +9,8 @@ const DEFAULT_CONFIG = {
   warningSeconds: 10,
   audioEnabled: true,
   metronomeEnabled: false,
-  metronomeBpm: 20
+  metronomeBpm: 20,
+  metronomeMode: 'direct'
 };
 
 function createIdleState(config) {
@@ -87,7 +88,8 @@ export class TimerEngine {
       warningSeconds: normalizeWarningSeconds(nextConfig?.warningSeconds),
       audioEnabled: nextConfig?.audioEnabled !== false,
       metronomeEnabled: Boolean(nextConfig?.metronomeEnabled),
-      metronomeBpm: clampInt(nextConfig?.metronomeBpm, 0, 300, DEFAULT_CONFIG.metronomeBpm)
+      metronomeBpm: clampInt(nextConfig?.metronomeBpm, 0, 300, DEFAULT_CONFIG.metronomeBpm),
+      metronomeMode: nextConfig?.metronomeMode === 'subdivided' ? 'subdivided' : 'direct'
     };
     this.reset();
   }

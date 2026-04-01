@@ -23,7 +23,7 @@ const STEP_RULES = {
   metronomeBpm: { step: 1, min: 0, max: 300 }
 };
 const DEFAULT_METRONOME_BPM = 20;
-const PRESET_FIELDS = ['rounds', 'workSec', 'restSec', 'countdownEnabled', 'warningSeconds'];
+const PRESET_FIELDS = ['rounds', 'workSec', 'restSec'];
 const PRESTART_COUNTDOWN_EVENTS = new Set(['prestart-count-3', 'prestart-count-2', 'prestart-count-1']);
 const REST_FINAL_COUNTDOWN_EVENTS = new Set(['rest-final-count-3']);
 
