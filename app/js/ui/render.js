@@ -58,7 +58,9 @@ function remainingTotalSec(state) {
   return totalDurationSec(config);
 }
 
-export function renderTimer(els, state) {
+export function renderTimer(els, state, uiState = {}) {
+  const metronomePanelOpen = Boolean(uiState.metronomePanelOpen);
+
   els.mainTime.textContent = formatTime(state.remainingSec);
   els.phaseLabel.textContent = phaseLabelText(state);
   els.roundLabel.textContent = roundLabelText(state);
@@ -84,6 +86,11 @@ export function renderTimer(els, state) {
     button.classList.toggle('is-active', isActive);
     button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
   });
+
+  els.metronomeCard.classList.toggle('is-collapsed', !metronomePanelOpen);
+  els.metronomeControls.hidden = !metronomePanelOpen;
+  els.metronomeCardToggleBtn.hidden = metronomePanelOpen;
+  els.metronomeCardToggleBtn.setAttribute('aria-expanded', metronomePanelOpen ? 'true' : 'false');
 
   if (state.phase === PHASES.IDLE || state.phase === PHASES.FINISHED) {
     els.startBtn.textContent = 'Старт';

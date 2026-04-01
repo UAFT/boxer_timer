@@ -176,12 +176,10 @@ img {
 }
 
 .round-heading {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
+  margin-left: auto;
   text-transform: none;
   letter-spacing: 0.02em;
-  text-align: center;
+  text-align: right;
   white-space: nowrap;
 }
 
@@ -351,15 +349,24 @@ img {
   place-items: center;
 }
 
+.metro-action-btn {
+  min-height: 42px;
+  border-radius: 12px;
+  background: rgba(31, 42, 95, 0.98);
+  color: var(--text);
+  font-size: 22px;
+  display: grid;
+  place-items: center;
+}
 
 .mode-chip {
-  min-height: 34px;
-  padding: 0 10px;
+  min-height: 42px;
+  padding: 0 8px;
   border-radius: 12px;
   background: rgba(22, 34, 86, 0.86);
   color: rgba(255,255,255,0.82);
   border: 1px solid rgba(255,255,255,0.08);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
 }
 
@@ -370,8 +377,8 @@ img {
 
 .metro-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.95fr) 48px;
-  grid-template-rows: 44px 44px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: repeat(2, 42px);
   gap: 8px;
   align-items: stretch;
 }
@@ -391,24 +398,24 @@ img {
 }
 
 .metro-bpm-value {
-  font-size: 18px;
+  font-size: 17px;
   line-height: 1;
   font-weight: 800;
 }
 
 .metro-bpm-unit {
   margin-top: 2px;
-  font-size: 9px;
+  font-size: 8px;
   color: var(--muted);
   letter-spacing: 0.04em;
 }
 
 .metro-grid-btn {
-  min-height: 44px;
+  min-height: 42px;
 }
 
 .power-btn {
-  min-height: 44px;
+  min-height: 42px;
   color: rgba(255,255,255,0.8);
   font-size: 24px;
   display: grid;
@@ -422,6 +429,28 @@ img {
 
 .metronome-card {
   padding: 10px;
+}
+
+.metronome-card.is-collapsed {
+  display: grid;
+  align-items: stretch;
+}
+
+.metro-collapsed-trigger {
+  min-height: 92px;
+  width: 100%;
+  border-radius: 18px;
+  background: rgba(14, 24, 67, 0.45);
+  color: var(--text);
+  border: 1px solid rgba(255,255,255,0.06);
+  display: grid;
+  place-items: center;
+}
+
+.metro-collapsed-title {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
 }
 
 .metro-grid-box {

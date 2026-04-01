@@ -50,14 +50,19 @@ const ZERO_EVENT_TO_AUDIO = {
 
 let activePresetId = DEFAULT_PRESET_ID;
 let activeSettings = loadSettings(clonePreset(DEFAULT_PRESET_ID));
+let metronomePanelOpen = Boolean(activeSettings.metronomeEnabled);
+
+function renderCurrentState() {
+  renderTimer(els, timer.state, { metronomePanelOpen });
+}
 
 const timer = new TimerEngine({
   onTick: (state) => {
-    renderTimer(els, state);
+    renderTimer(els, state, { metronomePanelOpen });
     metronome.syncPhase(state);
   },
   onStateChange: (state) => {
-    renderTimer(els, state);
+    renderTimer(els, state, { metronomePanelOpen });
     metronome.syncPhase(state);
   },
   onEvent: async (event) => {
@@ -89,6 +94,10 @@ function applySettings(nextSettings) {
   syncMetronome();
   timer.applyConfig(activeSettings);
   setSettingsForm(els, activeSettings);
+  if (!activeSettings.metronomeEnabled) {
+    metronomePanelOpen = false;
+  }
+  renderCurrentState();
 }
 
 async function handleToggleRun() {
@@ -134,9 +143,11 @@ function handleAdjustValue({ target, direction }) {
 
   if (target === 'metronomeBpm' && next === 0) {
     draft.metronomeEnabled = false;
+    metronomePanelOpen = false;
   }
   if (target === 'metronomeBpm' && next > 0 && !draft.metronomeEnabled) {
     draft.metronomeEnabled = true;
+    metronomePanelOpen = true;
   }
 
   applySettings(draft);
@@ -148,12 +159,19 @@ function handleToggleMetronome() {
   if (draft.metronomeEnabled && (!draft.metronomeBpm || draft.metronomeBpm <= 0)) {
     draft.metronomeBpm = DEFAULT_METRONOME_BPM;
   }
+  metronomePanelOpen = draft.metronomeEnabled;
   applySettings(draft);
 }
 
 function handleSelectMetronomeMode(mode) {
   if (!mode) return;
+  metronomePanelOpen = true;
   applySettings({ ...activeSettings, metronomeMode: mode });
+}
+
+function handleOpenMetronomeCard() {
+  metronomePanelOpen = true;
+  renderCurrentState();
 }
 
 function bootstrap() {
@@ -171,8 +189,10 @@ function bootstrap() {
     onSaveSettings: handleSaveSettings,
     onAdjustValue: handleAdjustValue,
     onToggleMetronome: handleToggleMetronome,
-    onSelectMetronomeMode: handleSelectMetronomeMode
+    onSelectMetronomeMode: handleSelectMetronomeMode,
+    onOpenMetronomeCard: handleOpenMetronomeCard
   });
+  renderCurrentState();
 }
 
 bootstrap();

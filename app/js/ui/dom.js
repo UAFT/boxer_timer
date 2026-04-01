@@ -14,6 +14,9 @@ export function getDomRefs() {
     metricMetronome: document.getElementById('metricMetronome'),
     metronomeStatus: document.getElementById('metronomeStatus'),
     metronomeToggleBtn: document.getElementById('metronomeToggleBtn'),
+    metronomeCard: document.getElementById('metronomeCard'),
+    metronomeCardToggleBtn: document.getElementById('metronomeCardToggleBtn'),
+    metronomeControls: document.getElementById('metronomeControls'),
     metronomeModeButtons: [...document.querySelectorAll('.mode-chip')],
 
     startBtn: document.getElementById('startBtn'),
@@ -34,6 +37,6 @@ export function getDomRefs() {
     metronomeModeInput: document.getElementById('metronomeModeInput'),
 
     presetTabs: [...document.querySelectorAll('.preset-tab')],
-    stepperButtons: [...document.querySelectorAll('.stepper-btn')]
+    stepperButtons: [...document.querySelectorAll('.stepper-btn'), ...document.querySelectorAll('.metro-action-btn')]
   };
 }

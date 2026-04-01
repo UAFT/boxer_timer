@@ -38,7 +38,6 @@
         <div class="card-topline">
           <div class="phase-heading" id="phaseLabel">Готов</div>
           <div class="round-heading" id="roundLabel">Раунд 0 из 0</div>
-          <div class="topline-spacer" aria-hidden="true"></div>
         </div>
 
         <div class="main-time" id="mainTime">03:00</div>
@@ -109,22 +108,25 @@
           </div>
         </article>
 
-        <article class="param-card panel metronome-card">
-          <div class="metro-grid" aria-label="Управление метрономом">
-            <button class="mode-chip is-active metro-grid-btn" type="button" data-metronome-mode="direct">Прямой</button>
+        <article class="param-card panel metronome-card is-collapsed" id="metronomeCard">
+          <button class="metro-collapsed-trigger" type="button" id="metronomeCardToggleBtn" aria-expanded="false">
+            <span class="metro-collapsed-title">Метроном</span>
+          </button>
+          <div class="metro-grid" id="metronomeControls" aria-label="Управление метрономом" hidden>
+            <button class="mode-chip is-active metro-grid-btn" type="button" data-metronome-mode="direct">Прям.</button>
             <div class="metro-bpm-box metro-grid-box">
               <div class="metro-bpm-value" id="metricMetronome">20</div>
               <div class="metro-bpm-unit">уд/мин</div>
             </div>
-            <button class="stepper-btn metro-grid-btn" type="button" data-adjust-target="metronomeBpm" data-adjust-direction="up" aria-label="Увеличить удары в минуту">＋</button>
-            <button class="mode-chip metro-grid-btn" type="button" data-metronome-mode="subdivided">Дробный</button>
-            <button class="power-btn metro-grid-btn" type="button" id="metronomeToggleBtn" aria-label="Включить или выключить метроном">
+            <button class="metro-grid-btn metro-action-btn" type="button" data-adjust-target="metronomeBpm" data-adjust-direction="up" aria-label="Увеличить удары в минуту">＋</button>
+            <button class="mode-chip metro-grid-btn" type="button" data-metronome-mode="subdivided">Дроб.</button>
+            <button class="power-btn metro-grid-btn metro-action-btn" type="button" id="metronomeToggleBtn" aria-label="Включить или выключить метроном">
               <svg class="power-icon" viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M12 2v8" />
                 <path d="M6.2 5.8a8 8 0 1 0 11.6 0" />
               </svg>
             </button>
-            <button class="stepper-btn metro-grid-btn" type="button" data-adjust-target="metronomeBpm" data-adjust-direction="down" aria-label="Уменьшить удары в минуту">－</button>
+            <button class="metro-grid-btn metro-action-btn" type="button" data-adjust-target="metronomeBpm" data-adjust-direction="down" aria-label="Уменьшить удары в минуту">－</button>
           </div>
           <div class="visually-hidden" id="metronomeStatus" aria-hidden="true">Выкл · Прямой</div>
         </article>
