@@ -40,10 +40,10 @@ function resolveEventAudioKey(event, settings) {
     return AUDIO_KEYS.WARNING_TICK;
   }
 
-  if (event.type === 'round-start-zero' || event.type === 'rest-end-zero') {
+  if (event.type === 'round-start-zero') {
     return `cue_round_start_${settings.workStartCueVariant || 'v2'}`;
   }
-  if (event.type === 'round-end-zero') {
+  if (event.type === 'round-end-zero' || event.type === 'rest-end-zero') {
     return `cue_rest_start_${settings.restStartCueVariant || 'v2'}`;
   }
   if (event.type === 'workout-end-zero') {
@@ -84,6 +84,7 @@ const timer = new TimerEngine({
     const key = resolveEventAudioKey(event, activeSettings);
     if (!key) return;
     if (TRANSITION_AUDIO_EVENTS.has(event.type)) {
+      metronome.suppressFor(450);
       audio.stopAll();
     }
     await audio.play(key);

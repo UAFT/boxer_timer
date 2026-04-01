@@ -1,6 +1,6 @@
 export const AUDIO_FILE_MAP = {
   cue_countdown_321: './assets/audio/countdown/start_cue_3_2_1.wav',
-  cue_warning_tick: './assets/audio/cues/warning_tick.wav',
+  cue_warning_tick: './assets/audio/cues/warning_tick_runtime.wav',
   cue_round_start_v1: './assets/audio/cues/start_workout_cue.wav',
   cue_round_start_v2: './assets/audio/cues/start_workout_cue_2.wav',
   cue_rest_start_v1: './assets/audio/cues/start_rest_cue.wav',

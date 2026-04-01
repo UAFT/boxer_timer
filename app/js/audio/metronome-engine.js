@@ -1,8 +1,8 @@
 import { PHASES } from '../core/constants.js';
 
 const SAMPLE_MAP = {
-  direct: './assets/audio/metronome/metronome_single.wav',
-  subdivided: './assets/audio/metronome/metronome_split.wav'
+  direct: './assets/audio/metronome/metronome_single_runtime.wav',
+  subdivided: './assets/audio/metronome/metronome_split_runtime.wav'
 };
 
 export class MetronomeEngine {
@@ -15,6 +15,7 @@ export class MetronomeEngine {
     this.subStep = 0;
     this.cache = new Map();
     this.unlocked = false;
+    this.suppressUntilMs = 0;
   }
 
   setConfig({ enabled, bpm, mode }) {
@@ -85,6 +86,11 @@ export class MetronomeEngine {
     }
   }
 
+  suppressFor(ms = 350) {
+    this.suppressUntilMs = Math.max(this.suppressUntilMs, Date.now() + Math.max(0, ms));
+    this.stop();
+  }
+
   async playSample(kind) {
     const base = this.cache.get(kind) || await this.preloadSample(kind);
     if (!base) return;
@@ -115,6 +121,7 @@ export class MetronomeEngine {
 
   async start() {
     if (!this.enabled || this.bpm <= 0 || this.running) return;
+    if (Date.now() < this.suppressUntilMs) return;
     this.running = true;
     this.subStep = 0;
     await this.step();
@@ -144,7 +151,7 @@ export class MetronomeEngine {
       !state.isPaused &&
       (state.phase === PHASES.WORK || state.phase === PHASES.REST);
 
-    if (!shouldRun) {
+    if (!shouldRun || Date.now() < this.suppressUntilMs) {
       this.stop();
       return;
     }
