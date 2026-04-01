@@ -37,6 +37,6 @@ export function getDomRefs() {
     metronomeModeInput: document.getElementById('metronomeModeInput'),
 
     presetTabs: [...document.querySelectorAll('.preset-tab')],
-    stepperButtons: [...document.querySelectorAll('.stepper-btn'), ...document.querySelectorAll('.metro-action-btn')]
+    stepperButtons: [...document.querySelectorAll('[data-adjust-target]')]
   };
 }

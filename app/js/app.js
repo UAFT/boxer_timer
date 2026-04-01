@@ -51,19 +51,30 @@ const ZERO_EVENT_TO_AUDIO = {
 
 let activePresetId = DEFAULT_PRESET_ID;
 let activeSettings = loadSettings(clonePreset(DEFAULT_PRESET_ID));
-let metronomePanelOpen = false;
+const uiState = {
+  metronomePanel: 'collapsed'
+};
+
+function isMetronomePanelOpen() {
+  return uiState.metronomePanel === 'expanded';
+}
+
+function setMetronomePanel(panel, { render = true } = {}) {
+  uiState.metronomePanel = panel === 'expanded' ? 'expanded' : 'collapsed';
+  if (render) renderCurrentState();
+}
 
 function renderCurrentState() {
-  renderTimer(els, timer.state, { metronomePanelOpen });
+  renderTimer(els, timer.state, { metronomePanelOpen: isMetronomePanelOpen() });
 }
 
 const timer = new TimerEngine({
   onTick: (state) => {
-    renderTimer(els, state, { metronomePanelOpen });
+    renderTimer(els, state, { metronomePanelOpen: isMetronomePanelOpen() });
     metronome.syncPhase(state);
   },
   onStateChange: (state) => {
-    renderTimer(els, state, { metronomePanelOpen });
+    renderTimer(els, state, { metronomePanelOpen: isMetronomePanelOpen() });
     metronome.syncPhase(state);
   },
   onEvent: async (event) => {
@@ -121,15 +132,12 @@ function handleReset() {
 }
 
 function handleSelectPreset(presetId) {
-  const preservePanelOpen = metronomePanelOpen;
   activePresetId = presetId || DEFAULT_PRESET_ID;
   setActivePreset(els, activePresetId);
   const preset = clonePreset(activePresetId);
   const merged = { ...activeSettings };
   for (const key of PRESET_FIELDS) merged[key] = preset[key];
   applySettings(merged);
-  metronomePanelOpen = preservePanelOpen;
-  renderCurrentState();
   closeSettings(els);
 }
 
@@ -151,9 +159,10 @@ function handleAdjustValue({ target, direction }, event) {
   if (target === 'metronomeBpm') {
     if (next === 0) {
       draft.metronomeEnabled = false;
-      metronomePanelOpen = false;
+      setMetronomePanel('collapsed', { render: false });
     } else {
-      metronomePanelOpen = true;
+      draft.metronomeEnabled = true;
+      setMetronomePanel('expanded', { render: false });
     }
   }
 
@@ -172,22 +181,32 @@ function handleToggleMetronome(event) {
     draft.metronomeBpm = DEFAULT_METRONOME_BPM;
   }
 
-  metronomePanelOpen = willEnable;
+  setMetronomePanel(willEnable ? 'expanded' : 'collapsed', { render: false });
   applySettings(draft);
 }
 
 function handleSelectMetronomeMode(mode) {
   if (!mode) return;
-  metronomePanelOpen = true;
-  applySettings({ ...activeSettings, metronomeMode: mode });
+  const draft = { ...activeSettings, metronomeMode: mode, metronomeEnabled: true };
+  if (!draft.metronomeBpm || draft.metronomeBpm <= 0) {
+    draft.metronomeBpm = DEFAULT_METRONOME_BPM;
+  }
+  setMetronomePanel('expanded', { render: false });
+  applySettings(draft);
 }
 
 function handleOpenMetronomeCard(event) {
   event?.preventDefault?.();
   event?.stopPropagation?.();
-  if (metronomePanelOpen) return;
-  metronomePanelOpen = true;
-  renderCurrentState();
+  if (isMetronomePanelOpen()) return;
+
+  const draft = { ...activeSettings, metronomeEnabled: true };
+  if (!draft.metronomeBpm || draft.metronomeBpm <= 0) {
+    draft.metronomeBpm = DEFAULT_METRONOME_BPM;
+  }
+
+  setMetronomePanel('expanded', { render: false });
+  applySettings(draft);
 }
 
 function bootstrap() {
