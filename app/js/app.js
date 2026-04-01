@@ -121,12 +121,15 @@ function handleReset() {
 }
 
 function handleSelectPreset(presetId) {
+  const preservePanelOpen = metronomePanelOpen;
   activePresetId = presetId || DEFAULT_PRESET_ID;
   setActivePreset(els, activePresetId);
   const preset = clonePreset(activePresetId);
   const merged = { ...activeSettings };
   for (const key of PRESET_FIELDS) merged[key] = preset[key];
   applySettings(merged);
+  metronomePanelOpen = preservePanelOpen;
+  renderCurrentState();
   closeSettings(els);
 }
 
@@ -135,32 +138,41 @@ function handleSaveSettings() {
   closeSettings(els);
 }
 
-function handleAdjustValue({ target, direction }) {
+function handleAdjustValue({ target, direction }, event) {
+  event?.preventDefault?.();
+  event?.stopPropagation?.();
+
   const rule = STEP_RULES[target];
   if (!rule) return;
   const sign = direction === 'down' ? -1 : 1;
   const next = Math.min(rule.max, Math.max(rule.min, (activeSettings[target] ?? 0) + sign * rule.step));
   const draft = { ...activeSettings, [target]: next };
 
-  if (target === 'metronomeBpm' && next === 0) {
-    draft.metronomeEnabled = false;
-    metronomePanelOpen = false;
-  }
-  if (target === 'metronomeBpm' && next > 0 && !draft.metronomeEnabled) {
-    draft.metronomeEnabled = true;
-    metronomePanelOpen = true;
+  if (target === 'metronomeBpm') {
+    if (next === 0) {
+      draft.metronomeEnabled = false;
+      metronomePanelOpen = false;
+    } else {
+      metronomePanelOpen = true;
+    }
   }
 
   applySettings(draft);
 }
 
-function handleToggleMetronome() {
+function handleToggleMetronome(event) {
+  event?.preventDefault?.();
+  event?.stopPropagation?.();
+
   const draft = { ...activeSettings };
-  draft.metronomeEnabled = !draft.metronomeEnabled;
-  if (draft.metronomeEnabled && (!draft.metronomeBpm || draft.metronomeBpm <= 0)) {
+  const willEnable = !draft.metronomeEnabled;
+
+  draft.metronomeEnabled = willEnable;
+  if (willEnable && (!draft.metronomeBpm || draft.metronomeBpm <= 0)) {
     draft.metronomeBpm = DEFAULT_METRONOME_BPM;
   }
-  metronomePanelOpen = draft.metronomeEnabled;
+
+  metronomePanelOpen = willEnable;
   applySettings(draft);
 }
 
@@ -170,9 +182,17 @@ function handleSelectMetronomeMode(mode) {
   applySettings({ ...activeSettings, metronomeMode: mode });
 }
 
-function handleOpenMetronomeCard() {
+function handleOpenMetronomeCard(event) {
+  event?.preventDefault?.();
+  event?.stopPropagation?.();
+  if (metronomePanelOpen) return;
   metronomePanelOpen = true;
   renderCurrentState();
+}
+function handleMetronomeCardSurfaceClick(event) {
+  if (!metronomePanelOpen) {
+    handleOpenMetronomeCard(event);
+  }
 }
 
 function bootstrap() {
@@ -191,7 +211,8 @@ function bootstrap() {
     onAdjustValue: handleAdjustValue,
     onToggleMetronome: handleToggleMetronome,
     onSelectMetronomeMode: handleSelectMetronomeMode,
-    onOpenMetronomeCard: handleOpenMetronomeCard
+    onOpenMetronomeCard: handleOpenMetronomeCard,
+    onMetronomeCardSurfaceClick: handleMetronomeCardSurfaceClick
   });
   renderCurrentState();
 }
