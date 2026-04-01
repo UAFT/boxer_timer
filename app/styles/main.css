@@ -92,8 +92,8 @@ img {
 }
 
 .brand-logo {
-  width: 80px;
-  height: 80px;
+  width: 96px;
+  height: 96px;
   object-fit: contain;
 }
 
@@ -226,6 +226,15 @@ img {
   border: 1px solid rgba(255,255,255,0.06);
 }
 
+.summary-box {
+  min-height: 82px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
 .summary-label {
   color: var(--muted);
   text-transform: uppercase;
@@ -237,6 +246,8 @@ img {
   margin-top: 4px;
   font-size: clamp(24px, 7vw, 34px);
   font-weight: 800;
+  width: 100%;
+  text-align: center;
 }
 
 .progress-track {
@@ -313,7 +324,9 @@ img {
   min-height: 92px;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
 }
 
 .param-title {
@@ -328,12 +341,20 @@ img {
   color: var(--muted);
 }
 
+.param-title,
+.param-subtitle {
+  width: 100%;
+  text-align: center;
+}
+
 .param-value {
   margin-top: 0;
   font-size: clamp(28px, 8vw, 42px);
   line-height: 0.95;
   font-weight: 800;
   letter-spacing: -0.05em;
+  width: 100%;
+  text-align: center;
 }
 
 .stepper-col {
@@ -375,8 +396,8 @@ img {
 }
 
 .mode-chip.is-active {
-  background: linear-gradient(180deg, #bb824e, #9c6a42);
-  color: #fff8ee;
+  background: linear-gradient(180deg, var(--orange-2) 0%, var(--orange) 100%);
+  color: #f6fff7;
 }
 
 .metro-grid {
@@ -610,8 +631,8 @@ img {
   }
 
   .brand-logo {
-    width: 62px;
-    height: 62px;
+    width: 74px;
+    height: 74px;
   }
 
   .brand-title {
@@ -799,8 +820,8 @@ img {
   }
 
   .brand-logo {
-    width: 54px;
-    height: 54px;
+    width: 66px;
+    height: 66px;
   }
 
   .brand-title {
