@@ -92,6 +92,9 @@ const timer = new TimerEngine({
       metronome.suppressFor(450);
     }
     if (event.type === 'round-start-zero') {
+      metronome.armRoundStartCueSync();
+    }
+    if (event.type === 'round-start-zero') {
       audio.stopTag('warning');
     }
     if (METRONOME_SUPPRESS_EVENTS.has(event.type) || event.type === 'round-start-zero') {

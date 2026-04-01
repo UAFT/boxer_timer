@@ -12,6 +12,7 @@ export class MetronomeEngine {
     this.suppressUntilMs = 0;
     this.runToken = 0;
     this.lastState = null;
+    this.skipStrongOnNextStart = false;
   }
 
   setConfig({ enabled, bpm, mode }) {
@@ -27,6 +28,10 @@ export class MetronomeEngine {
 
   async unlock() {
     return this.audio.unlock();
+  }
+
+  armRoundStartCueSync() {
+    this.skipStrongOnNextStart = true;
   }
 
   suppressFor(ms = 350) {
@@ -119,9 +124,22 @@ export class MetronomeEngine {
     const token = ++this.runToken;
     this.running = true;
     this.subStep = 0;
+    const skipStrong = this.skipStrongOnNextStart;
+    this.skipStrongOnNextStart = false;
 
     if (this.mode === 'subdivided') {
-      await this.runSubdividedStep(token, 0);
+      if (skipStrong) {
+        this.scheduleTimeout(token, this.getSubdivisionMs(), async () => {
+          await this.runSubdividedStep(token, 1);
+        });
+      } else {
+        await this.runSubdividedStep(token, 0);
+      }
+      return;
+    }
+
+    if (skipStrong) {
+      this.scheduleBeatCycle(token);
       return;
     }
 
