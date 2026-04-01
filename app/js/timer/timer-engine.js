@@ -6,7 +6,7 @@ const DEFAULT_CONFIG = {
   workSec: 180,
   restSec: 60,
   countdownEnabled: true,
-  warning10Enabled: true,
+  warningSeconds: 10,
   audioEnabled: true,
   metronomeEnabled: false,
   metronomeBpm: 20
@@ -42,12 +42,17 @@ function nextLabelForPhase(phase, remainingSec, countdownEnabled) {
 
   if (phase === PHASES.REST) {
     if (countdownEnabled && remainingSec > 0 && remainingSec <= 3) {
-      return 'На нуле: двойной сигнал конца отдыха → старт раунда';
+      return 'На нуле: сигнал конца отдыха → старт раунда';
     }
     return 'Идёт отдых';
   }
 
   return '—';
+}
+
+function normalizeWarningSeconds(rawValue) {
+  const value = clampInt(rawValue, 0, 10, DEFAULT_CONFIG.warningSeconds);
+  return [0, 3, 5, 10].includes(value) ? value : DEFAULT_CONFIG.warningSeconds;
 }
 
 export class TimerEngine {
@@ -67,8 +72,8 @@ export class TimerEngine {
       rounds: clampInt(nextConfig?.rounds, 1, 99, DEFAULT_CONFIG.rounds),
       workSec: clampInt(nextConfig?.workSec, 1, 3600, DEFAULT_CONFIG.workSec),
       restSec: clampInt(nextConfig?.restSec, 0, 3600, DEFAULT_CONFIG.restSec),
-      countdownEnabled: Boolean(nextConfig?.countdownEnabled),
-      warning10Enabled: Boolean(nextConfig?.warning10Enabled),
+      countdownEnabled: nextConfig?.countdownEnabled !== false,
+      warningSeconds: normalizeWarningSeconds(nextConfig?.warningSeconds),
       audioEnabled: nextConfig?.audioEnabled !== false,
       metronomeEnabled: Boolean(nextConfig?.metronomeEnabled),
       metronomeBpm: clampInt(nextConfig?.metronomeBpm, 0, 300, DEFAULT_CONFIG.metronomeBpm)
@@ -281,12 +286,12 @@ export class TimerEngine {
 
       if (
         this.state.phase === PHASES.WORK &&
-        this.config.warning10Enabled &&
+        this.config.warningSeconds > 0 &&
         !this.warningTriggered &&
-        nextRemainingSec === 10
+        nextRemainingSec === this.config.warningSeconds
       ) {
         this.warningTriggered = true;
-        this.onEvent({ type: 'warning10', roundIndex: this.state.roundIndex });
+        this.onEvent({ type: `warning-${this.config.warningSeconds}`, roundIndex: this.state.roundIndex });
       }
 
       if (this.config.countdownEnabled && nextRemainingSec >= 1 && nextRemainingSec <= 3) {

@@ -1,15 +1,11 @@
 import { AUDIO_FILE_MAP } from './catalog.js';
-import { AUDIO_KEYS } from '../core/constants.js';
-
-function wait(ms) {
-  return new Promise((resolve) => window.setTimeout(resolve, ms));
-}
 
 export class AudioEngine {
   constructor() {
     this.enabled = true;
     this.cache = new Map();
     this.missing = new Set();
+    this.unlocked = false;
   }
 
   setEnabled(nextValue) {
@@ -61,6 +57,33 @@ export class AudioEngine {
     return audio;
   }
 
+  async unlock() {
+    if (this.unlocked) return true;
+    await this.preloadAll();
+    const firstKey = Object.keys(AUDIO_FILE_MAP).find((key) => this.cache.has(key));
+    if (!firstKey) {
+      this.unlocked = true;
+      return true;
+    }
+
+    const audio = this.cache.get(firstKey);
+    if (!audio) return false;
+
+    try {
+      audio.muted = true;
+      audio.currentTime = 0;
+      await audio.play();
+      audio.pause();
+      audio.currentTime = 0;
+      audio.muted = false;
+      this.unlocked = true;
+      return true;
+    } catch {
+      audio.muted = false;
+      return false;
+    }
+  }
+
   async play(key) {
     if (!this.enabled) return false;
     const src = AUDIO_FILE_MAP[key];
@@ -71,9 +94,7 @@ export class AudioEngine {
       baseAudio = await this.preload(key);
     }
 
-    if (!baseAudio) {
-      return false;
-    }
+    if (!baseAudio) return false;
 
     try {
       const audio = baseAudio.cloneNode(true);
@@ -83,13 +104,5 @@ export class AudioEngine {
     } catch {
       return false;
     }
-  }
-
-  async playCountdown321() {
-    await this.play(AUDIO_KEYS.COUNT_3);
-    await wait(1000);
-    await this.play(AUDIO_KEYS.COUNT_2);
-    await wait(1000);
-    await this.play(AUDIO_KEYS.COUNT_1);
   }
 }

@@ -1,4 +1,4 @@
-export const STORAGE_KEY = 'andar.fight.timer.settings.v3';
+export const STORAGE_KEY = 'andar.fight.timer.settings.v4';
 
 export const PHASES = {
   IDLE: 'idle',
@@ -9,12 +9,8 @@ export const PHASES = {
 };
 
 export const AUDIO_KEYS = {
-  COUNT_3: 'count_3',
-  COUNT_2: 'count_2',
-  COUNT_1: 'count_1',
-  ROUND_START: 'cue_round_start_single',
-  ROUND_END: 'cue_round_end_single',
-  REST_END: 'cue_rest_end_double',
-  WARNING_10: 'cue_warning_10s',
-  WORKOUT_END: 'cue_workout_end_long'
+  COUNTDOWN_321: 'cue_countdown_321',
+  WARNING_3: 'cue_warning_3s',
+  WARNING_5: 'cue_warning_5s',
+  WARNING_10: 'cue_warning_10s'
 };

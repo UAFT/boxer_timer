@@ -26,15 +26,14 @@ export function getDomRefs() {
     saveSettingsBtn: document.getElementById('saveSettingsBtn'),
 
     settingsModal: document.getElementById('settingsModal'),
-    roundsInput: document.getElementById('roundsInput'),
-    workSecInput: document.getElementById('workSecInput'),
-    restSecInput: document.getElementById('restSecInput'),
     countdownEnabledInput: document.getElementById('countdownEnabledInput'),
-    warning10EnabledInput: document.getElementById('warning10EnabledInput'),
     audioEnabledInput: document.getElementById('audioEnabledInput'),
-    metronomeEnabledInput: document.getElementById('metronomeEnabledInput'),
-    metronomeBpmInput: document.getElementById('metronomeBpmInput'),
-    metronomeModeInput: document.getElementById('metronomeModeInput'),
+    warningSecondsInput: document.getElementById('warningSecondsInput'),
+    warningChoiceButtons: [...document.querySelectorAll('[data-warning-seconds]')],
+    workStartCueVariantInput: document.getElementById('workStartCueVariantInput'),
+    restStartCueVariantInput: document.getElementById('restStartCueVariantInput'),
+    workoutEndCueVariantInput: document.getElementById('workoutEndCueVariantInput'),
+    cueVariantButtons: [...document.querySelectorAll('[data-cue-target][data-cue-value]')],
 
     presetTabs: [...document.querySelectorAll('.preset-tab')],
     stepperButtons: [...document.querySelectorAll('[data-adjust-target]')]

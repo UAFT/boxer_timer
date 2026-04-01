@@ -1,13 +1,12 @@
-Положите сюда реальные аудиофайлы.
+Audio assets are local and bundled into the app.
 
-## Countdown
-- countdown/count_3.mp3
-- countdown/count_2.mp3
-- countdown/count_1.mp3
-
-## Cue
-- cues/cue_round_start_single.mp3
-- cues/cue_round_end_single.mp3
-- cues/cue_rest_end_double.mp3
-- cues/cue_warning_10s.mp3
-- cues/cue_workout_end_long.mp3
+Current package includes:
+- countdown/start_cue_3_2_1.wav
+- cues/countdown_3.wav
+- cues/countdown_5.wav
+- cues/countdown_10.wav
+- cues/start_workout_cue(.wav/_2.wav)
+- cues/start_rest_cue(.wav/_2.wav)
+- cues/end_workout_cue(.wav/_2.wav)
+- metronome/metronome_single.wav
+- metronome/metronome_split.wav

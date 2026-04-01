@@ -58,6 +58,15 @@ function remainingTotalSec(state) {
   return totalDurationSec(config);
 }
 
+function applyChoiceButtons(buttons, targetValue, dataKey) {
+  buttons.forEach((button) => {
+    const value = button.dataset[dataKey];
+    const isActive = String(value) === String(targetValue);
+    button.classList.toggle('is-active', isActive);
+    button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+  });
+}
+
 export function renderTimer(els, state, uiState = {}) {
   const metronomePanelOpen = Boolean(uiState.metronomePanelOpen);
 
@@ -101,28 +110,39 @@ export function renderTimer(els, state, uiState = {}) {
 }
 
 export function setSettingsForm(els, settings) {
-  els.roundsInput.value = settings.rounds;
-  els.workSecInput.value = settings.workSec;
-  els.restSecInput.value = settings.restSec;
   els.countdownEnabledInput.checked = settings.countdownEnabled;
-  els.warning10EnabledInput.checked = settings.warning10Enabled;
   els.audioEnabledInput.checked = settings.audioEnabled;
-  els.metronomeEnabledInput.checked = settings.metronomeEnabled;
-  els.metronomeBpmInput.value = settings.metronomeBpm;
-  els.metronomeModeInput.value = settings.metronomeMode || 'direct';
+  els.warningSecondsInput.value = String(settings.warningSeconds ?? 10);
+  els.workStartCueVariantInput.value = settings.workStartCueVariant || 'v1';
+  els.restStartCueVariantInput.value = settings.restStartCueVariant || 'v1';
+  els.workoutEndCueVariantInput.value = settings.workoutEndCueVariant || 'v1';
+
+  applyChoiceButtons(els.warningChoiceButtons, els.warningSecondsInput.value, 'warningSeconds');
+  applyChoiceButtons(
+    els.cueVariantButtons.filter((button) => button.dataset.cueTarget === 'workStartCueVariant'),
+    els.workStartCueVariantInput.value,
+    'cueValue'
+  );
+  applyChoiceButtons(
+    els.cueVariantButtons.filter((button) => button.dataset.cueTarget === 'restStartCueVariant'),
+    els.restStartCueVariantInput.value,
+    'cueValue'
+  );
+  applyChoiceButtons(
+    els.cueVariantButtons.filter((button) => button.dataset.cueTarget === 'workoutEndCueVariant'),
+    els.workoutEndCueVariantInput.value,
+    'cueValue'
+  );
 }
 
 export function readSettingsForm(els) {
   return {
-    rounds: Number(els.roundsInput.value),
-    workSec: Number(els.workSecInput.value),
-    restSec: Number(els.restSecInput.value),
     countdownEnabled: els.countdownEnabledInput.checked,
-    warning10Enabled: els.warning10EnabledInput.checked,
     audioEnabled: els.audioEnabledInput.checked,
-    metronomeEnabled: els.metronomeEnabledInput.checked,
-    metronomeBpm: Number(els.metronomeBpmInput.value),
-    metronomeMode: els.metronomeModeInput.value || 'direct'
+    warningSeconds: Number(els.warningSecondsInput.value || '0'),
+    workStartCueVariant: els.workStartCueVariantInput.value || 'v1',
+    restStartCueVariant: els.restStartCueVariantInput.value || 'v1',
+    workoutEndCueVariant: els.workoutEndCueVariantInput.value || 'v1'
   };
 }
 

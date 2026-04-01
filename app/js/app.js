@@ -23,31 +23,49 @@ const STEP_RULES = {
   metronomeBpm: { step: 1, min: 0, max: 300 }
 };
 const DEFAULT_METRONOME_BPM = 20;
-const PRESET_FIELDS = ['rounds', 'workSec', 'restSec', 'countdownEnabled', 'warning10Enabled'];
+const PRESET_FIELDS = ['rounds', 'workSec', 'restSec', 'countdownEnabled', 'warningSeconds'];
+const COUNTDOWN_START_EVENTS = new Set(['prestart-count-3', 'work-final-count-3', 'rest-final-count-3']);
+const COUNTDOWN_MID_EVENTS = new Set(['prestart-count-2', 'prestart-count-1', 'work-final-count-2', 'work-final-count-1', 'rest-final-count-2', 'rest-final-count-1']);
 
 const els = getDomRefs();
 const audio = new AudioEngine();
 const metronome = new MetronomeEngine();
 
-const COUNTDOWN_EVENT_TO_AUDIO = {
-  'prestart-count-3': AUDIO_KEYS.COUNT_3,
-  'prestart-count-2': AUDIO_KEYS.COUNT_2,
-  'prestart-count-1': AUDIO_KEYS.COUNT_1,
-  'work-final-count-3': AUDIO_KEYS.COUNT_3,
-  'work-final-count-2': AUDIO_KEYS.COUNT_2,
-  'work-final-count-1': AUDIO_KEYS.COUNT_1,
-  'rest-final-count-3': AUDIO_KEYS.COUNT_3,
-  'rest-final-count-2': AUDIO_KEYS.COUNT_2,
-  'rest-final-count-1': AUDIO_KEYS.COUNT_1
-};
+function resolveWarningAudioKey(settings) {
+  switch (Number(settings.warningSeconds || 0)) {
+    case 3:
+      return AUDIO_KEYS.WARNING_3;
+    case 5:
+      return AUDIO_KEYS.WARNING_5;
+    case 10:
+      return AUDIO_KEYS.WARNING_10;
+    default:
+      return null;
+  }
+}
 
-const ZERO_EVENT_TO_AUDIO = {
-  'round-start-zero': AUDIO_KEYS.ROUND_START,
-  'round-end-zero': AUDIO_KEYS.ROUND_END,
-  'rest-end-zero': AUDIO_KEYS.REST_END,
-  'workout-end-zero': AUDIO_KEYS.WORKOUT_END,
-  warning10: AUDIO_KEYS.WARNING_10
-};
+function resolveEventAudioKey(event, settings) {
+  if (COUNTDOWN_START_EVENTS.has(event.type)) {
+    return settings.countdownEnabled ? AUDIO_KEYS.COUNTDOWN_321 : null;
+  }
+  if (COUNTDOWN_MID_EVENTS.has(event.type)) {
+    return null;
+  }
+
+  if (event.type === 'round-start-zero' || event.type === 'rest-end-zero') {
+    return `cue_round_start_${settings.workStartCueVariant || 'v1'}`;
+  }
+  if (event.type === 'round-end-zero') {
+    return `cue_rest_start_${settings.restStartCueVariant || 'v1'}`;
+  }
+  if (event.type === 'workout-end-zero') {
+    return `cue_workout_end_${settings.workoutEndCueVariant || 'v1'}`;
+  }
+  if (event.type.startsWith('warning-')) {
+    return resolveWarningAudioKey(settings);
+  }
+  return null;
+}
 
 let activePresetId = DEFAULT_PRESET_ID;
 let activeSettings = loadSettings(clonePreset(DEFAULT_PRESET_ID));
@@ -78,16 +96,9 @@ const timer = new TimerEngine({
     metronome.syncPhase(state);
   },
   onEvent: async (event) => {
-    const countdownAudioKey = COUNTDOWN_EVENT_TO_AUDIO[event.type];
-    if (countdownAudioKey) {
-      await audio.play(countdownAudioKey);
-      return;
-    }
-
-    const zeroAudioKey = ZERO_EVENT_TO_AUDIO[event.type];
-    if (zeroAudioKey) {
-      await audio.play(zeroAudioKey);
-    }
+    const key = resolveEventAudioKey(event, activeSettings);
+    if (!key) return;
+    await audio.play(key);
   }
 });
 
@@ -110,6 +121,8 @@ function applySettings(nextSettings) {
 }
 
 async function handleToggleRun() {
+  await audio.unlock();
+  await metronome.unlock();
   await audio.preloadAll();
   syncMetronome();
 
@@ -142,7 +155,7 @@ function handleSelectPreset(presetId) {
 }
 
 function handleSaveSettings() {
-  applySettings(readSettingsForm(els));
+  applySettings({ ...activeSettings, ...readSettingsForm(els) });
   closeSettings(els);
 }
 

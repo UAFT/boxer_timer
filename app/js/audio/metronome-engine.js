@@ -1,14 +1,20 @@
 import { PHASES } from '../core/constants.js';
 
+const SAMPLE_MAP = {
+  direct: './assets/audio/metronome/metronome_single.wav',
+  subdivided: './assets/audio/metronome/metronome_split.wav'
+};
+
 export class MetronomeEngine {
   constructor() {
     this.enabled = false;
     this.bpm = 20;
     this.mode = 'direct';
-    this.context = null;
     this.intervalId = null;
     this.running = false;
     this.subStep = 0;
+    this.cache = new Map();
+    this.unlocked = false;
   }
 
   setConfig({ enabled, bpm, mode }) {
@@ -22,40 +28,73 @@ export class MetronomeEngine {
     }
   }
 
-  async ensureContext() {
-    if (!this.context) {
-      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-      if (!AudioContextClass) return null;
-      this.context = new AudioContextClass();
+  async preloadSample(kind) {
+    const src = SAMPLE_MAP[kind];
+    if (!src) return null;
+    if (this.cache.has(kind)) return this.cache.get(kind);
+
+    const audio = new Audio(src);
+    audio.preload = 'auto';
+    this.cache.set(kind, audio);
+
+    try {
+      await new Promise((resolve, reject) => {
+        const onCanPlay = () => {
+          cleanup();
+          resolve(audio);
+        };
+        const onError = () => {
+          cleanup();
+          reject(new Error(`Metronome sample missing: ${kind}`));
+        };
+        const cleanup = () => {
+          audio.removeEventListener('canplaythrough', onCanPlay);
+          audio.removeEventListener('error', onError);
+        };
+        audio.addEventListener('canplaythrough', onCanPlay, { once: true });
+        audio.addEventListener('error', onError, { once: true });
+        audio.load();
+      });
+    } catch {
+      return null;
     }
-    if (this.context.state === 'suspended') {
-      try {
-        await this.context.resume();
-      } catch {
-        return null;
-      }
-    }
-    return this.context;
+
+    return audio;
   }
 
-  async tick({ accented = true } = {}) {
-    const ctx = await this.ensureContext();
-    if (!ctx) return;
-    const now = ctx.currentTime;
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
+  async unlock() {
+    if (this.unlocked) return true;
+    const sample = await this.preloadSample('direct');
+    await this.preloadSample('subdivided');
+    if (!sample) {
+      this.unlocked = true;
+      return true;
+    }
+    try {
+      sample.muted = true;
+      sample.currentTime = 0;
+      await sample.play();
+      sample.pause();
+      sample.currentTime = 0;
+      sample.muted = false;
+      this.unlocked = true;
+      return true;
+    } catch {
+      sample.muted = false;
+      return false;
+    }
+  }
 
-    osc.type = accented ? 'square' : 'sine';
-    osc.frequency.value = accented ? 1260 : 860;
-
-    gain.gain.setValueAtTime(0.0001, now);
-    gain.gain.exponentialRampToValueAtTime(accented ? 0.08 : 0.018, now + 0.003);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + (accented ? 0.05 : 0.035));
-
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start(now);
-    osc.stop(now + (accented ? 0.06 : 0.04));
+  async playSample(kind) {
+    const base = this.cache.get(kind) || await this.preloadSample(kind);
+    if (!base) return;
+    try {
+      const audio = base.cloneNode(true);
+      audio.currentTime = 0;
+      await audio.play();
+    } catch {
+      // no-op
+    }
   }
 
   getStepMs() {
@@ -66,12 +105,12 @@ export class MetronomeEngine {
 
   async step() {
     if (this.mode === 'subdivided') {
-      await this.tick({ accented: this.subStep === 0 });
+      await this.playSample(this.subStep === 0 ? 'direct' : 'subdivided');
       this.subStep = this.subStep === 0 ? 1 : 0;
       return;
     }
 
-    await this.tick({ accented: true });
+    await this.playSample('direct');
   }
 
   async start() {

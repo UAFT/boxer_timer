@@ -1075,3 +1075,110 @@ img {
   }
 }
 
+
+
+.settings-grid-rebuilt {
+  gap: 14px;
+}
+
+.settings-note {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.settings-card {
+  padding: 14px;
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(20, 31, 74, 0.9);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.02);
+}
+
+.settings-card-title {
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.settings-toggle-row {
+  margin-top: 10px;
+  min-height: 54px;
+  padding: 0 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(12, 22, 60, 0.92);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.settings-toggle-row input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--orange);
+}
+
+.settings-field-stack {
+  margin-top: 12px;
+}
+
+.settings-field-label {
+  margin-bottom: 8px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.choice-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.choice-row[aria-label="Старт раунда / конец отдыха"],
+.choice-row[aria-label="Старт отдыха / конец раунда"],
+.choice-row[aria-label="Конец серии"] {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.choice-chip {
+  min-height: 48px;
+  border-radius: 16px;
+  background: rgba(16, 28, 72, 0.9);
+  border: 1px solid rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.86);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.choice-chip.is-active {
+  background: linear-gradient(180deg, var(--orange-2) 0%, var(--orange) 100%);
+  color: #f6fff7;
+}
+
+@media (max-width: 640px) {
+  .settings-card {
+    padding: 12px;
+    border-radius: 18px;
+  }
+
+  .settings-card-title {
+    font-size: 14px;
+  }
+
+  .settings-toggle-row {
+    min-height: 50px;
+    padding: 0 12px;
+  }
+
+  .choice-row {
+    gap: 6px;
+  }
+
+  .choice-chip {
+    min-height: 44px;
+    border-radius: 14px;
+    font-size: 12px;
+  }
+}

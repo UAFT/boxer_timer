@@ -129,58 +129,67 @@
     <div class="modal-backdrop" id="settingsModal" hidden>
       <section class="settings-modal panel">
         <div class="settings-head">
-          <h2>Настройки</h2>
+          <div>
+            <h2>Звук и сигналы</h2>
+            <div class="settings-note">Работа, отдых, раунды и метроном управляются с главной панели.</div>
+          </div>
           <button class="link-btn" type="button" id="closeSettingsBtn">Закрыть</button>
         </div>
 
-        <div class="settings-grid">
-          <label class="field">
-            <span class="field-label">Раундов</span>
-            <input class="field-input" type="number" id="roundsInput" min="1" max="99" step="1" />
-          </label>
+        <div class="settings-grid settings-grid-rebuilt">
+          <section class="settings-card">
+            <div class="settings-card-title">Общее</div>
+            <label class="settings-toggle-row">
+              <input type="checkbox" id="audioEnabledInput" />
+              <span>Включить сигналы таймера</span>
+            </label>
+            <label class="settings-toggle-row">
+              <input type="checkbox" id="countdownEnabledInput" />
+              <span>Финальный отсчёт 3-2-1</span>
+            </label>
+          </section>
 
-          <label class="field">
-            <span class="field-label">Работа (сек)</span>
-            <input class="field-input" type="number" id="workSecInput" min="1" max="3600" step="1" />
-          </label>
+          <section class="settings-card">
+            <div class="settings-card-title">Предупреждение до конца раунда</div>
+            <div class="choice-row" role="group" aria-label="Предупреждение до конца раунда">
+              <button type="button" class="choice-chip" data-warning-seconds="0">Нет</button>
+              <button type="button" class="choice-chip" data-warning-seconds="3">3 сек</button>
+              <button type="button" class="choice-chip" data-warning-seconds="5">5 сек</button>
+              <button type="button" class="choice-chip" data-warning-seconds="10">10 сек</button>
+            </div>
+            <input type="hidden" id="warningSecondsInput" value="10" />
+          </section>
 
-          <label class="field">
-            <span class="field-label">Отдых (сек)</span>
-            <input class="field-input" type="number" id="restSecInput" min="0" max="3600" step="1" />
-          </label>
+          <section class="settings-card">
+            <div class="settings-card-title">Варианты сигналов</div>
 
-          <label class="field">
-            <span class="field-label">Метроном (уд/мин)</span>
-            <input class="field-input" type="number" id="metronomeBpmInput" min="0" max="300" step="1" />
-          </label>
+            <div class="settings-field-stack">
+              <div class="settings-field-label">Старт раунда / конец отдыха</div>
+              <div class="choice-row" role="group" aria-label="Старт раунда / конец отдыха">
+                <button type="button" class="choice-chip" data-cue-target="workStartCueVariant" data-cue-value="v1">Вариант 1</button>
+                <button type="button" class="choice-chip" data-cue-target="workStartCueVariant" data-cue-value="v2">Вариант 2</button>
+              </div>
+              <input type="hidden" id="workStartCueVariantInput" value="v1" />
+            </div>
 
-          <label class="field">
-            <span class="field-label">Режим метронома</span>
-            <select class="field-input" id="metronomeModeInput">
-              <option value="direct">Прямой</option>
-              <option value="subdivided">Дробный</option>
-            </select>
-          </label>
+            <div class="settings-field-stack">
+              <div class="settings-field-label">Старт отдыха / конец раунда</div>
+              <div class="choice-row" role="group" aria-label="Старт отдыха / конец раунда">
+                <button type="button" class="choice-chip" data-cue-target="restStartCueVariant" data-cue-value="v1">Вариант 1</button>
+                <button type="button" class="choice-chip" data-cue-target="restStartCueVariant" data-cue-value="v2">Вариант 2</button>
+              </div>
+              <input type="hidden" id="restStartCueVariantInput" value="v1" />
+            </div>
 
-          <label class="checkbox-field">
-            <input type="checkbox" id="countdownEnabledInput" />
-            <span>Финальный отсчёт 3-2-1</span>
-          </label>
-
-          <label class="checkbox-field">
-            <input type="checkbox" id="warning10EnabledInput" />
-            <span>Warning за 10 секунд</span>
-          </label>
-
-          <label class="checkbox-field">
-            <input type="checkbox" id="audioEnabledInput" />
-            <span>Включить звук cue/countdown</span>
-          </label>
-
-          <label class="checkbox-field">
-            <input type="checkbox" id="metronomeEnabledInput" />
-            <span>Включить метроном</span>
-          </label>
+            <div class="settings-field-stack">
+              <div class="settings-field-label">Конец серии</div>
+              <div class="choice-row" role="group" aria-label="Конец серии">
+                <button type="button" class="choice-chip" data-cue-target="workoutEndCueVariant" data-cue-value="v1">Вариант 1</button>
+                <button type="button" class="choice-chip" data-cue-target="workoutEndCueVariant" data-cue-value="v2">Вариант 2</button>
+              </div>
+              <input type="hidden" id="workoutEndCueVariantInput" value="v1" />
+            </div>
+          </section>
         </div>
 
         <div class="modal-actions">

@@ -1,8 +1,19 @@
 import { STORAGE_KEY } from '../core/constants.js';
 import { clampInt } from '../core/time.js';
 
+const WARNING_VALUES = new Set([0, 3, 5, 10]);
+
 function normalizeMetronomeMode(rawMode, fallbackMode) {
   return rawMode === 'subdivided' ? 'subdivided' : (fallbackMode === 'subdivided' ? 'subdivided' : 'direct');
+}
+
+function normalizeVariant(rawValue, fallbackValue = 'v1') {
+  return rawValue === 'v2' ? 'v2' : (fallbackValue === 'v2' ? 'v2' : 'v1');
+}
+
+function normalizeWarningSeconds(rawValue, fallbackValue = 10) {
+  const value = clampInt(rawValue, 0, 10, fallbackValue);
+  return WARNING_VALUES.has(value) ? value : fallbackValue;
 }
 
 export function normalizeSettings(raw, fallback) {
@@ -10,12 +21,15 @@ export function normalizeSettings(raw, fallback) {
     rounds: clampInt(raw?.rounds, 1, 99, fallback.rounds),
     workSec: clampInt(raw?.workSec, 1, 3600, fallback.workSec),
     restSec: clampInt(raw?.restSec, 0, 3600, fallback.restSec),
-    countdownEnabled: Boolean(raw?.countdownEnabled),
-    warning10Enabled: Boolean(raw?.warning10Enabled),
+    countdownEnabled: raw?.countdownEnabled !== false,
+    warningSeconds: normalizeWarningSeconds(raw?.warningSeconds, fallback.warningSeconds ?? 10),
     audioEnabled: raw?.audioEnabled !== false,
     metronomeEnabled: Boolean(raw?.metronomeEnabled),
     metronomeBpm: clampInt(raw?.metronomeBpm, 0, 300, fallback.metronomeBpm ?? 20),
-    metronomeMode: normalizeMetronomeMode(raw?.metronomeMode, fallback.metronomeMode)
+    metronomeMode: normalizeMetronomeMode(raw?.metronomeMode, fallback.metronomeMode),
+    workStartCueVariant: normalizeVariant(raw?.workStartCueVariant, fallback.workStartCueVariant),
+    restStartCueVariant: normalizeVariant(raw?.restStartCueVariant, fallback.restStartCueVariant),
+    workoutEndCueVariant: normalizeVariant(raw?.workoutEndCueVariant, fallback.workoutEndCueVariant)
   };
 }
 

@@ -6,11 +6,14 @@ export const PRESETS = {
     workSec: 180,
     restSec: 60,
     countdownEnabled: true,
-    warning10Enabled: true,
+    warningSeconds: 10,
     audioEnabled: true,
     metronomeEnabled: false,
     metronomeBpm: 20,
-    metronomeMode: 'direct'
+    metronomeMode: 'direct',
+    workStartCueVariant: 'v1',
+    restStartCueVariant: 'v1',
+    workoutEndCueVariant: 'v1'
   },
   classic2: {
     id: 'classic2',
@@ -19,11 +22,14 @@ export const PRESETS = {
     workSec: 120,
     restSec: 60,
     countdownEnabled: true,
-    warning10Enabled: true,
+    warningSeconds: 10,
     audioEnabled: true,
     metronomeEnabled: false,
     metronomeBpm: 20,
-    metronomeMode: 'direct'
+    metronomeMode: 'direct',
+    workStartCueVariant: 'v1',
+    restStartCueVariant: 'v1',
+    workoutEndCueVariant: 'v1'
   },
   classic1: {
     id: 'classic1',
@@ -32,11 +38,14 @@ export const PRESETS = {
     workSec: 60,
     restSec: 60,
     countdownEnabled: true,
-    warning10Enabled: false,
+    warningSeconds: 5,
     audioEnabled: true,
     metronomeEnabled: false,
     metronomeBpm: 20,
-    metronomeMode: 'direct'
+    metronomeMode: 'direct',
+    workStartCueVariant: 'v1',
+    restStartCueVariant: 'v1',
+    workoutEndCueVariant: 'v1'
   },
   tabata2020x24: {
     id: 'tabata2020x24',
@@ -45,11 +54,14 @@ export const PRESETS = {
     workSec: 20,
     restSec: 20,
     countdownEnabled: true,
-    warning10Enabled: false,
+    warningSeconds: 10,
     audioEnabled: true,
     metronomeEnabled: false,
     metronomeBpm: 20,
-    metronomeMode: 'direct'
+    metronomeMode: 'direct',
+    workStartCueVariant: 'v1',
+    restStartCueVariant: 'v1',
+    workoutEndCueVariant: 'v1'
   }
 };
 
