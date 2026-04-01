@@ -33,7 +33,7 @@ export class MetronomeEngine {
   }
 
   async playStepKey(key) {
-    await this.audio.play(key, { tag: 'metronome' });
+    await this.audio.play(key, { tag: 'metronome', volume: 1.6 });
   }
 
   getStepMs() {
@@ -83,7 +83,7 @@ export class MetronomeEngine {
       this.enabled &&
       this.bpm > 0 &&
       !state.isPaused &&
-      (state.phase === PHASES.WORK || state.phase === PHASES.REST);
+      state.phase === PHASES.WORK;
 
     if (!shouldRun || Date.now() < this.suppressUntilMs) {
       this.stop();

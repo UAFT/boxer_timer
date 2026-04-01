@@ -34,22 +34,25 @@ const metronome = new MetronomeEngine(audio);
 function resolveEventAudioSpec(event, settings) {
   if (PRESTART_COUNTDOWN_EVENTS.has(event.type)) {
     return (settings.countdownEnabled && event.type === 'prestart-count-3')
-      ? { key: AUDIO_KEYS.COUNTDOWN_321, tag: 'countdown' }
+      ? { key: AUDIO_KEYS.COUNTDOWN_321, tag: 'countdown', volume: 1.25 }
       : null;
   }
 
   if (event.type === 'warning-tick') {
-    return { key: AUDIO_KEYS.WARNING_TICK, tag: 'warning' };
+    return { key: AUDIO_KEYS.WARNING_TICK, tag: 'warning', volume: 1.2 };
   }
 
   if (event.type === 'round-start-zero') {
-    return { key: `cue_round_start_${settings.workStartCueVariant || 'v2'}`, tag: 'transition' };
+    return { key: `cue_round_start_${settings.workStartCueVariant || 'v2'}`, tag: 'transition', volume: 1.6 };
   }
-  if (event.type === 'round-end-zero' || event.type === 'rest-end-zero') {
-    return { key: `cue_rest_start_${settings.restStartCueVariant || 'v2'}`, tag: 'transition' };
+  if (event.type === 'round-end-zero') {
+    return { key: `cue_rest_start_${settings.restStartCueVariant || 'v2'}`, tag: 'transition', volume: 1.6 };
+  }
+  if (event.type === 'rest-end-zero') {
+    return { key: `cue_round_start_${settings.workStartCueVariant || 'v2'}`, tag: 'transition', volume: 1.6 };
   }
   if (event.type === 'workout-end-zero') {
-    return { key: `cue_workout_end_${settings.workoutEndCueVariant || 'v2'}`, tag: 'transition' };
+    return { key: `cue_workout_end_${settings.workoutEndCueVariant || 'v2'}`, tag: 'transition', volume: 1.7 };
   }
   return null;
 }
@@ -90,7 +93,7 @@ const timer = new TimerEngine({
       audio.stopTag('warning');
       audio.stopTag('transition');
     }
-    await audio.play(spec.key, { tag: spec.tag });
+    await audio.play(spec.key, { tag: spec.tag, volume: spec.volume });
   }
 });
 
@@ -123,6 +126,7 @@ async function handleToggleRun() {
 
   if (timer.state?.phase && timer.state.phase !== 'idle' && timer.state.phase !== 'finished') {
     audio.stopAll();
+    metronome.stop();
     timer.pause();
     return;
   }
