@@ -25,7 +25,7 @@ const STEP_RULES = {
 const DEFAULT_METRONOME_BPM = 20;
 const PRESET_FIELDS = ['rounds', 'workSec', 'restSec'];
 const PRESTART_COUNTDOWN_EVENTS = new Set(['prestart-count-3', 'prestart-count-2', 'prestart-count-1']);
-const METRONOME_SUPPRESS_EVENTS = new Set(['round-end-zero', 'rest-end-zero', 'workout-end-zero']);
+const TRANSITION_AUDIO_EVENTS = new Set(['round-start-zero', 'round-end-zero', 'rest-end-zero', 'workout-end-zero']);
 
 const els = getDomRefs();
 const audio = new AudioEngine();
@@ -88,13 +88,9 @@ const timer = new TimerEngine({
   onEvent: async (event) => {
     const spec = resolveEventAudioSpec(event, activeSettings);
     if (!spec) return;
-    if (METRONOME_SUPPRESS_EVENTS.has(event.type)) {
+    if (TRANSITION_AUDIO_EVENTS.has(event.type)) {
       metronome.suppressFor(450);
-    }
-    if (event.type === 'round-start-zero') {
       audio.stopTag('warning');
-    }
-    if (METRONOME_SUPPRESS_EVENTS.has(event.type) || event.type === 'round-start-zero') {
       audio.stopTag('transition');
     }
     await audio.play(spec.key, { tag: spec.tag, volume: spec.volume });
