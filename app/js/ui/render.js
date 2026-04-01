@@ -88,9 +88,8 @@ export function renderTimer(els, state, uiState = {}) {
   });
 
   els.metronomeCard.classList.toggle('is-collapsed', !metronomePanelOpen);
-  els.metronomeControls.hidden = !metronomePanelOpen;
-  els.metronomeCardToggleBtn.hidden = metronomePanelOpen;
   els.metronomeCardToggleBtn.setAttribute('aria-expanded', metronomePanelOpen ? 'true' : 'false');
+  els.metronomeCardToggleBtn.setAttribute('aria-hidden', metronomePanelOpen ? 'true' : 'false');
 
   if (state.phase === PHASES.IDLE || state.phase === PHASES.FINISHED) {
     els.startBtn.textContent = 'Старт';
