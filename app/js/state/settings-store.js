@@ -7,8 +7,8 @@ function normalizeMetronomeMode(rawMode, fallbackMode) {
   return rawMode === 'subdivided' ? 'subdivided' : (fallbackMode === 'subdivided' ? 'subdivided' : 'direct');
 }
 
-function normalizeVariant(rawValue, fallbackValue = 'v1') {
-  return rawValue === 'v2' ? 'v2' : (fallbackValue === 'v2' ? 'v2' : 'v1');
+function normalizeVariant(rawValue, fallbackValue = 'v2') {
+  return rawValue === 'v1' ? 'v1' : (rawValue === 'v2' ? 'v2' : (fallbackValue === 'v1' ? 'v1' : 'v2'));
 }
 
 function normalizeWarningSeconds(rawValue, fallbackValue = 10) {

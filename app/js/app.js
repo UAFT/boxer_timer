@@ -24,8 +24,8 @@ const STEP_RULES = {
 };
 const DEFAULT_METRONOME_BPM = 20;
 const PRESET_FIELDS = ['rounds', 'workSec', 'restSec', 'countdownEnabled', 'warningSeconds'];
-const COUNTDOWN_START_EVENTS = new Set(['prestart-count-3', 'work-final-count-3', 'rest-final-count-3']);
-const COUNTDOWN_MID_EVENTS = new Set(['prestart-count-2', 'prestart-count-1', 'work-final-count-2', 'work-final-count-1', 'rest-final-count-2', 'rest-final-count-1']);
+const PRESTART_COUNTDOWN_EVENTS = new Set(['prestart-count-3', 'prestart-count-2', 'prestart-count-1']);
+const REST_FINAL_COUNTDOWN_EVENTS = new Set(['rest-final-count-3']);
 
 const els = getDomRefs();
 const audio = new AudioEngine();
@@ -45,21 +45,22 @@ function resolveWarningAudioKey(settings) {
 }
 
 function resolveEventAudioKey(event, settings) {
-  if (COUNTDOWN_START_EVENTS.has(event.type)) {
-    return settings.countdownEnabled ? AUDIO_KEYS.COUNTDOWN_321 : null;
-  }
-  if (COUNTDOWN_MID_EVENTS.has(event.type)) {
-    return null;
+  if (PRESTART_COUNTDOWN_EVENTS.has(event.type)) {
+    return (settings.countdownEnabled && event.type === 'prestart-count-3') ? AUDIO_KEYS.COUNTDOWN_321 : null;
   }
 
-  if (event.type === 'round-start-zero' || event.type === 'rest-end-zero') {
-    return `cue_round_start_${settings.workStartCueVariant || 'v1'}`;
+  if (REST_FINAL_COUNTDOWN_EVENTS.has(event.type)) {
+    return settings.countdownEnabled ? AUDIO_KEYS.COUNTDOWN_321 : null;
   }
-  if (event.type === 'round-end-zero') {
-    return `cue_rest_start_${settings.restStartCueVariant || 'v1'}`;
+
+  if (event.type === 'round-start-zero') {
+    return `cue_round_start_${settings.workStartCueVariant || 'v2'}`;
+  }
+  if (event.type === 'round-end-zero' || event.type === 'rest-end-zero') {
+    return `cue_rest_start_${settings.restStartCueVariant || 'v2'}`;
   }
   if (event.type === 'workout-end-zero') {
-    return `cue_workout_end_${settings.workoutEndCueVariant || 'v1'}`;
+    return `cue_workout_end_${settings.workoutEndCueVariant || 'v2'}`;
   }
   if (event.type.startsWith('warning-')) {
     return resolveWarningAudioKey(settings);

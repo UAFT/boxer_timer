@@ -11,9 +11,9 @@ export const PRESETS = {
     metronomeEnabled: false,
     metronomeBpm: 20,
     metronomeMode: 'direct',
-    workStartCueVariant: 'v1',
-    restStartCueVariant: 'v1',
-    workoutEndCueVariant: 'v1'
+    workStartCueVariant: 'v2',
+    restStartCueVariant: 'v2',
+    workoutEndCueVariant: 'v2'
   },
   classic2: {
     id: 'classic2',
@@ -27,9 +27,9 @@ export const PRESETS = {
     metronomeEnabled: false,
     metronomeBpm: 20,
     metronomeMode: 'direct',
-    workStartCueVariant: 'v1',
-    restStartCueVariant: 'v1',
-    workoutEndCueVariant: 'v1'
+    workStartCueVariant: 'v2',
+    restStartCueVariant: 'v2',
+    workoutEndCueVariant: 'v2'
   },
   classic1: {
     id: 'classic1',
@@ -43,9 +43,9 @@ export const PRESETS = {
     metronomeEnabled: false,
     metronomeBpm: 20,
     metronomeMode: 'direct',
-    workStartCueVariant: 'v1',
-    restStartCueVariant: 'v1',
-    workoutEndCueVariant: 'v1'
+    workStartCueVariant: 'v2',
+    restStartCueVariant: 'v2',
+    workoutEndCueVariant: 'v2'
   },
   tabata2020x24: {
     id: 'tabata2020x24',
@@ -59,9 +59,9 @@ export const PRESETS = {
     metronomeEnabled: false,
     metronomeBpm: 20,
     metronomeMode: 'direct',
-    workStartCueVariant: 'v1',
-    restStartCueVariant: 'v1',
-    workoutEndCueVariant: 'v1'
+    workStartCueVariant: 'v2',
+    restStartCueVariant: 'v2',
+    workoutEndCueVariant: 'v2'
   }
 };
 

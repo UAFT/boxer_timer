@@ -12,3 +12,10 @@ Changes in this patch:
 Known intentional behavior:
 - Countdown uses the provided combined 3-2-1 WAV clip.
 - The uploaded start_cue_3_2_1.wav is used as one combined countdown asset.
+
+
+PATCH NOTE V19:
+- removed overlapping final-count 3-2-1 audio from work/rest phases
+- prestart 3-2-1 remains only before series start
+- warning countdown 3/5/10 is now the only end-of-phase countdown for both work and rest
+- zero transition cues remain transition-only: rest-start at round end, round-start at rest end, workout-end at series end

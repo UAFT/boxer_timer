@@ -113,9 +113,9 @@ export function setSettingsForm(els, settings) {
   els.countdownEnabledInput.checked = settings.countdownEnabled;
   els.audioEnabledInput.checked = settings.audioEnabled;
   els.warningSecondsInput.value = String(settings.warningSeconds ?? 10);
-  els.workStartCueVariantInput.value = settings.workStartCueVariant || 'v1';
-  els.restStartCueVariantInput.value = settings.restStartCueVariant || 'v1';
-  els.workoutEndCueVariantInput.value = settings.workoutEndCueVariant || 'v1';
+  els.workStartCueVariantInput.value = settings.workStartCueVariant || 'v2';
+  els.restStartCueVariantInput.value = settings.restStartCueVariant || 'v2';
+  els.workoutEndCueVariantInput.value = settings.workoutEndCueVariant || 'v2';
 
   applyChoiceButtons(els.warningChoiceButtons, els.warningSecondsInput.value, 'warningSeconds');
   applyChoiceButtons(
@@ -140,9 +140,9 @@ export function readSettingsForm(els) {
     countdownEnabled: els.countdownEnabledInput.checked,
     audioEnabled: els.audioEnabledInput.checked,
     warningSeconds: Number(els.warningSecondsInput.value || '0'),
-    workStartCueVariant: els.workStartCueVariantInput.value || 'v1',
-    restStartCueVariant: els.restStartCueVariantInput.value || 'v1',
-    workoutEndCueVariant: els.workoutEndCueVariantInput.value || 'v1'
+    workStartCueVariant: els.workStartCueVariantInput.value || 'v2',
+    restStartCueVariant: els.restStartCueVariantInput.value || 'v2',
+    workoutEndCueVariant: els.workoutEndCueVariantInput.value || 'v2'
   };
 }
 
