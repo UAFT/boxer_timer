@@ -72,16 +72,14 @@ export class MetronomeEngine {
     await this.playStepKey('metronome_subdivided', 1.35);
   }
 
-  shouldMuteStrongBeat(state = this.lastState) {
+  shouldMuteForWarning(state = this.lastState) {
     const remainingSec = Number(state?.remainingSec ?? 0);
     const warningSeconds = Number(state?.config?.warningSeconds ?? 0);
-    const alignmentWindowSec = warningSeconds > 0 ? warningSeconds + 1 : 0;
     return Boolean(
-      this.mode === 'subdivided' &&
       state?.phase === PHASES.WORK &&
       warningSeconds > 0 &&
       remainingSec > 0 &&
-      remainingSec <= alignmentWindowSec
+      remainingSec <= warningSeconds
     );
   }
 
@@ -97,7 +95,9 @@ export class MetronomeEngine {
     if (!this.running || token !== this.runToken || !this.canRun()) return;
     const beatMs = this.getBeatMs();
     this.scheduleTimeout(token, beatMs, async () => {
-      await this.playDirectBeat();
+      if (!this.shouldMuteForWarning()) {
+        await this.playDirectBeat();
+      }
       this.scheduleBeatCycle(token);
     });
   }
@@ -107,10 +107,11 @@ export class MetronomeEngine {
     const normalizedStep = ((stepIndex % 4) + 4) % 4;
     const subdivisionMs = this.getSubdivisionMs();
 
-    if (normalizedStep === 0) {
-      if (!this.shouldMuteStrongBeat()) {
-        await this.playDirectBeat();
-      }
+    if (this.shouldMuteForWarning()) {
+      // During audible end-of-round countdown, the metronome must fully drop out
+      // so the 3/5/10 warning owns the space.
+    } else if (normalizedStep === 0) {
+      await this.playDirectBeat();
     } else {
       await this.playSubdivisionBeat();
     }
@@ -144,7 +145,9 @@ export class MetronomeEngine {
       return;
     }
 
-    await this.playDirectBeat();
+    if (!this.shouldMuteForWarning()) {
+      await this.playDirectBeat();
+    }
     if (!this.running || token !== this.runToken || !this.canRun()) return;
     this.scheduleBeatCycle(token);
   }
