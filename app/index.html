@@ -65,66 +65,57 @@
         </div>
       </section>
 
-      <section class="param-grid">
-        <article class="param-card panel">
-          <div class="param-head">
-            <div class="param-copy">
-              <div class="param-title">Длина раунда</div>
-              <div class="param-subtitle">Шаг 5 секунд</div>
-              <div class="param-value" id="metricWork">03:00</div>
-            </div>
-            <div class="stepper-col">
-              <button class="stepper-btn" type="button" data-adjust-target="workSec" data-adjust-direction="up">＋</button>
-              <button class="stepper-btn" type="button" data-adjust-target="workSec" data-adjust-direction="down">－</button>
+      <section class="param-grid compact-controls-grid">
+        <article class="param-card panel compact-param-card">
+          <div class="compact-param-title">Длина раунда</div>
+          <div class="compact-param-row">
+            <div class="param-value compact-param-value" id="metricWork">03:00</div>
+            <div class="stepper-col compact-stepper-col">
+              <button class="stepper-btn" type="button" data-adjust-target="workSec" data-adjust-direction="up" aria-label="Увеличить длину раунда">＋</button>
+              <button class="stepper-btn" type="button" data-adjust-target="workSec" data-adjust-direction="down" aria-label="Уменьшить длину раунда">－</button>
             </div>
           </div>
         </article>
 
-        <article class="param-card panel">
-          <div class="param-head">
-            <div class="param-copy">
-              <div class="param-title">Время отдыха</div>
-              <div class="param-subtitle">Шаг 5 секунд</div>
-              <div class="param-value" id="metricRest">01:00</div>
-            </div>
-            <div class="stepper-col">
-              <button class="stepper-btn" type="button" data-adjust-target="restSec" data-adjust-direction="up">＋</button>
-              <button class="stepper-btn" type="button" data-adjust-target="restSec" data-adjust-direction="down">－</button>
+        <article class="param-card panel compact-param-card">
+          <div class="compact-param-title">Время отдыха</div>
+          <div class="compact-param-row">
+            <div class="param-value compact-param-value" id="metricRest">01:00</div>
+            <div class="stepper-col compact-stepper-col">
+              <button class="stepper-btn" type="button" data-adjust-target="restSec" data-adjust-direction="up" aria-label="Увеличить время отдыха">＋</button>
+              <button class="stepper-btn" type="button" data-adjust-target="restSec" data-adjust-direction="down" aria-label="Уменьшить время отдыха">－</button>
             </div>
           </div>
         </article>
 
-        <article class="param-card panel">
-          <div class="param-head">
-            <div class="param-copy">
-              <div class="param-title">Раунды</div>
-              <div class="param-subtitle">От 1 до 99</div>
-              <div class="param-value" id="metricRounds">5</div>
-            </div>
-            <div class="stepper-col">
-              <button class="stepper-btn" type="button" data-adjust-target="rounds" data-adjust-direction="up">＋</button>
-              <button class="stepper-btn" type="button" data-adjust-target="rounds" data-adjust-direction="down">－</button>
+        <article class="param-card panel compact-param-card">
+          <div class="compact-param-title">Раунды</div>
+          <div class="compact-param-row">
+            <div class="param-value compact-param-value" id="metricRounds">5</div>
+            <div class="stepper-col compact-stepper-col">
+              <button class="stepper-btn" type="button" data-adjust-target="rounds" data-adjust-direction="up" aria-label="Увеличить количество раундов">＋</button>
+              <button class="stepper-btn" type="button" data-adjust-target="rounds" data-adjust-direction="down" aria-label="Уменьшить количество раундов">－</button>
             </div>
           </div>
         </article>
 
-        <article class="param-card panel metronome-card is-collapsed" id="metronomeCard">
-          <div class="metro-stage">
-            <div class="metro-grid" id="metronomeControls" aria-label="Управление метрономом">
+        <article class="param-card panel metronome-card compact-metro-card is-collapsed" id="metronomeCard">
+          <div class="metro-stage compact-metro-stage">
+            <div class="metro-grid compact-metro-grid" id="metronomeControls" aria-label="Управление метрономом">
               <button class="mode-chip metro-grid-btn is-active" type="button" data-metronome-mode="direct">Прям.</button>
-              <div class="metro-bpm-box metro-grid-box">
+              <button class="mode-chip metro-grid-btn" type="button" data-metronome-mode="subdivided">Дробн.</button>
+              <div class="metro-bpm-box metro-grid-box compact-metro-bpm-box">
                 <div class="metro-bpm-value" id="metricMetronome">20</div>
                 <div class="metro-bpm-unit">уд/мин</div>
               </div>
               <button class="metro-grid-btn metro-action-btn" type="button" data-adjust-target="metronomeBpm" data-adjust-direction="up" aria-label="Увеличить удары в минуту">＋</button>
-              <button class="mode-chip metro-grid-btn" type="button" data-metronome-mode="subdivided">Дроб.</button>
+              <button class="metro-grid-btn metro-action-btn" type="button" data-adjust-target="metronomeBpm" data-adjust-direction="down" aria-label="Уменьшить удары в минуту">－</button>
               <button class="power-btn metro-grid-btn metro-action-btn" type="button" id="metronomeToggleBtn" aria-label="Включить или выключить метроном">
                 <svg class="power-icon" viewBox="0 0 24 24" aria-hidden="true">
                   <path d="M12 2v8" />
                   <path d="M6.2 5.8a8 8 0 1 0 11.6 0" />
                 </svg>
               </button>
-              <button class="metro-grid-btn metro-action-btn" type="button" data-adjust-target="metronomeBpm" data-adjust-direction="down" aria-label="Уменьшить удары в минуту">－</button>
             </div>
             <button class="metro-mask" type="button" id="metronomeCardToggleBtn" aria-expanded="false">
               <span class="metro-mask-title">Метроном</span>

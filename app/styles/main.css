@@ -612,6 +612,112 @@ img {
 }
 
 
+.compact-controls-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: stretch;
+}
+
+.compact-param-card {
+  padding: 10px;
+  min-height: 98px;
+}
+
+.compact-param-title {
+  min-height: 30px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  text-align: center;
+  font-size: 14px;
+  line-height: 1.02;
+  font-weight: 800;
+}
+
+.compact-param-row {
+  margin-top: 6px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 42px;
+  gap: 6px;
+  align-items: center;
+}
+
+.compact-param-value {
+  margin-top: 0;
+  min-height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: clamp(22px, 5.8vw, 34px);
+  letter-spacing: -0.05em;
+}
+
+.compact-stepper-col {
+  min-height: 46px;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+
+.compact-stepper-col .stepper-btn {
+  min-height: 36px;
+  border-radius: 12px;
+  font-size: 18px;
+}
+
+.compact-metro-card {
+  grid-column: 1 / -1;
+  padding: 10px;
+}
+
+.compact-metro-stage {
+  min-height: 58px;
+}
+
+.compact-metro-grid {
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1.15fr) minmax(0, 1.15fr) 44px 44px 54px;
+  grid-template-rows: 58px;
+  gap: 8px;
+}
+
+.compact-metro-grid .metro-grid-btn,
+.compact-metro-grid .metro-bpm-box,
+.compact-metro-grid .power-btn {
+  min-height: 58px;
+  height: 58px;
+  border-radius: 16px;
+}
+
+.compact-metro-grid .mode-chip {
+  font-size: 16px;
+  font-weight: 800;
+  padding: 0 8px;
+}
+
+.compact-metro-bpm-box {
+  padding: 4px 6px;
+}
+
+.compact-metro-grid .metro-bpm-value {
+  font-size: 20px;
+}
+
+.compact-metro-grid .metro-bpm-unit {
+  margin-top: 1px;
+  font-size: 10px;
+  letter-spacing: 0.03em;
+}
+
+.compact-metro-grid .metro-action-btn,
+.compact-metro-grid .power-btn {
+  font-size: 24px;
+}
+
+.compact-metro-grid .power-btn {
+  display: grid;
+  place-items: center;
+}
+
+
 @media (max-width: 640px) {
   .app-shell {
     width: min(100%, 400px);
@@ -726,68 +832,67 @@ img {
     gap: 8px;
   }
 
-  .param-card {
-    padding: 10px;
+  .compact-param-card {
+    padding: 9px;
     border-radius: 16px;
+    min-height: 90px;
   }
 
-  .param-title {
-    font-size: 14px;
+  .compact-param-title {
+    min-height: 28px;
+    font-size: 13px;
   }
 
-  .param-subtitle {
-    font-size: 10px;
-  }
-
-  .param-copy,
-  .stepper-col {
-    min-height: 78px;
-  }
-
-  .param-value {
-    margin-top: 0;
-    font-size: clamp(24px, 7vw, 34px);
-  }
-
-  .stepper-col {
-    flex-basis: 42px;
+  .compact-param-row {
+    grid-template-columns: minmax(0, 1fr) 38px;
     gap: 6px;
   }
 
-  .stepper-btn {
-    min-height: 38px;
-    font-size: 20px;
+  .compact-param-value {
+    min-height: 40px;
+    font-size: clamp(20px, 6vw, 28px);
+  }
+
+  .compact-stepper-col .stepper-btn {
+    min-height: 32px;
+    font-size: 17px;
+    border-radius: 12px;
+  }
+
+  .compact-metro-stage {
+    min-height: 52px;
+  }
+
+  .compact-metro-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.08fr) minmax(0, 1.04fr) 40px 40px 48px;
+    grid-template-rows: 52px;
+    gap: 6px;
+  }
+
+  .compact-metro-grid .metro-grid-btn,
+  .compact-metro-grid .metro-bpm-box,
+  .compact-metro-grid .power-btn {
+    min-height: 52px;
+    height: 52px;
     border-radius: 14px;
   }
 
-
-  .metro-pad {
-    grid-template-columns: 54px 40px;
-    grid-template-rows: 40px 40px;
-    gap: 6px;
+  .compact-metro-grid .mode-chip {
+    font-size: 14px;
+    border-radius: 12px;
   }
 
-  .metro-bpm-value {
-    font-size: 17px;
+  .compact-metro-grid .metro-bpm-value {
+    font-size: 18px;
   }
 
-  .metro-bpm-unit {
-    font-size: 8px;
+  .compact-metro-grid .metro-bpm-unit {
+    font-size: 9px;
   }
 
-  .power-btn,
-  .metro-pad-btn {
-    min-height: 40px;
-  }
-
-  .power-btn {
-    font-size: 22px;
-  }
-
-  .mode-chip {
-    min-height: 30px;
-    font-size: 11px;
-    border-radius: 10px;
+  .compact-metro-grid .metro-action-btn,
+  .compact-metro-grid .power-btn {
+    font-size: 21px;
   }
 
   .settings-modal {
@@ -841,33 +946,72 @@ img {
     border-radius: 16px;
   }
 
-  .metro-pad {
-    grid-template-columns: 48px 36px;
-    grid-template-rows: 36px 36px;
+  .compact-controls-grid {
     gap: 6px;
   }
 
-  .metro-bpm-value {
-    font-size: 15px;
+  .compact-param-card {
+    padding: 8px;
+    min-height: 82px;
   }
 
-  .metro-bpm-unit {
-    font-size: 7px;
+  .compact-param-title {
+    min-height: 24px;
+    font-size: 12px;
   }
 
-  .power-btn,
-  .metro-pad-btn {
+  .compact-param-row {
+    margin-top: 4px;
+    grid-template-columns: minmax(0, 1fr) 34px;
+    gap: 5px;
+  }
+
+  .compact-param-value {
     min-height: 36px;
+    font-size: clamp(18px, 5.6vw, 24px);
   }
 
-  .power-btn {
-    font-size: 20px;
-  }
-
-  .mode-chip {
+  .compact-stepper-col .stepper-btn {
     min-height: 28px;
-    font-size: 10px;
-    padding: 0 8px;
+    font-size: 16px;
+    border-radius: 10px;
+  }
+
+  .compact-metro-stage {
+    min-height: 46px;
+  }
+
+  .compact-metro-grid {
+    grid-template-columns: minmax(0, 0.95fr) minmax(0, 1fr) minmax(0, 1fr) 34px 34px 42px;
+    grid-template-rows: 46px;
+    gap: 5px;
+  }
+
+  .compact-metro-grid .metro-grid-btn,
+  .compact-metro-grid .metro-bpm-box,
+  .compact-metro-grid .power-btn {
+    min-height: 46px;
+    height: 46px;
+    border-radius: 12px;
+  }
+
+  .compact-metro-grid .mode-chip {
+    font-size: 12px;
+    border-radius: 10px;
+    padding: 0 5px;
+  }
+
+  .compact-metro-grid .metro-bpm-value {
+    font-size: 16px;
+  }
+
+  .compact-metro-grid .metro-bpm-unit {
+    font-size: 8px;
+  }
+
+  .compact-metro-grid .metro-action-btn,
+  .compact-metro-grid .power-btn {
+    font-size: 18px;
   }
 
   .preset-tab {
