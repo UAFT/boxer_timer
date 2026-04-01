@@ -6,6 +6,7 @@ export class AudioEngine {
     this.cache = new Map();
     this.missing = new Set();
     this.unlocked = false;
+    this.activePlayers = new Set();
   }
 
   setEnabled(nextValue) {
@@ -84,6 +85,16 @@ export class AudioEngine {
     }
   }
 
+  stopAll() {
+    for (const audio of [...this.activePlayers]) {
+      try {
+        audio.pause();
+        audio.currentTime = 0;
+      } catch {}
+      this.activePlayers.delete(audio);
+    }
+  }
+
   async play(key) {
     if (!this.enabled) return false;
     const src = AUDIO_FILE_MAP[key];
@@ -98,7 +109,17 @@ export class AudioEngine {
 
     try {
       const audio = baseAudio.cloneNode(true);
+      const cleanup = () => {
+        this.activePlayers.delete(audio);
+        audio.removeEventListener('ended', cleanup);
+        audio.removeEventListener('pause', cleanup);
+        audio.removeEventListener('error', cleanup);
+      };
+      audio.addEventListener('ended', cleanup);
+      audio.addEventListener('pause', cleanup);
+      audio.addEventListener('error', cleanup);
       audio.currentTime = 0;
+      this.activePlayers.add(audio);
       await audio.play();
       return true;
     } catch {

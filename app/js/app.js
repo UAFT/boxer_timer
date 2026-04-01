@@ -25,45 +25,29 @@ const STEP_RULES = {
 const DEFAULT_METRONOME_BPM = 20;
 const PRESET_FIELDS = ['rounds', 'workSec', 'restSec'];
 const PRESTART_COUNTDOWN_EVENTS = new Set(['prestart-count-3', 'prestart-count-2', 'prestart-count-1']);
-const REST_FINAL_COUNTDOWN_EVENTS = new Set(['rest-final-count-3']);
+const TRANSITION_AUDIO_EVENTS = new Set(['round-start-zero', 'round-end-zero', 'rest-end-zero', 'workout-end-zero']);
 
 const els = getDomRefs();
 const audio = new AudioEngine();
 const metronome = new MetronomeEngine();
-
-function resolveWarningAudioKey(settings) {
-  switch (Number(settings.warningSeconds || 0)) {
-    case 3:
-      return AUDIO_KEYS.WARNING_3;
-    case 5:
-      return AUDIO_KEYS.WARNING_5;
-    case 10:
-      return AUDIO_KEYS.WARNING_10;
-    default:
-      return null;
-  }
-}
 
 function resolveEventAudioKey(event, settings) {
   if (PRESTART_COUNTDOWN_EVENTS.has(event.type)) {
     return (settings.countdownEnabled && event.type === 'prestart-count-3') ? AUDIO_KEYS.COUNTDOWN_321 : null;
   }
 
-  if (REST_FINAL_COUNTDOWN_EVENTS.has(event.type)) {
-    return settings.countdownEnabled ? AUDIO_KEYS.COUNTDOWN_321 : null;
+  if (event.type === 'warning-tick') {
+    return AUDIO_KEYS.WARNING_TICK;
   }
 
-  if (event.type === 'round-start-zero') {
+  if (event.type === 'round-start-zero' || event.type === 'rest-end-zero') {
     return `cue_round_start_${settings.workStartCueVariant || 'v2'}`;
   }
-  if (event.type === 'round-end-zero' || event.type === 'rest-end-zero') {
+  if (event.type === 'round-end-zero') {
     return `cue_rest_start_${settings.restStartCueVariant || 'v2'}`;
   }
   if (event.type === 'workout-end-zero') {
     return `cue_workout_end_${settings.workoutEndCueVariant || 'v2'}`;
-  }
-  if (event.type.startsWith('warning-')) {
-    return resolveWarningAudioKey(settings);
   }
   return null;
 }
@@ -99,6 +83,9 @@ const timer = new TimerEngine({
   onEvent: async (event) => {
     const key = resolveEventAudioKey(event, activeSettings);
     if (!key) return;
+    if (TRANSITION_AUDIO_EVENTS.has(event.type)) {
+      audio.stopAll();
+    }
     await audio.play(key);
   }
 });
@@ -133,6 +120,7 @@ async function handleToggleRun() {
   }
 
   if (timer.state?.phase && timer.state.phase !== 'idle' && timer.state.phase !== 'finished') {
+    audio.stopAll();
     timer.pause();
     return;
   }
@@ -141,6 +129,7 @@ async function handleToggleRun() {
 }
 
 function handleReset() {
+  audio.stopAll();
   timer.reset();
   metronome.stop();
 }

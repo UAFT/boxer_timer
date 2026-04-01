@@ -1,4 +1,4 @@
-export const STORAGE_KEY = 'andar.fight.timer.settings.v5';
+export const STORAGE_KEY = 'andar.fight.timer.settings.v6';
 
 export const PHASES = {
   IDLE: 'idle',
@@ -10,7 +10,5 @@ export const PHASES = {
 
 export const AUDIO_KEYS = {
   COUNTDOWN_321: 'cue_countdown_321',
-  WARNING_3: 'cue_warning_3s',
-  WARNING_5: 'cue_warning_5s',
-  WARNING_10: 'cue_warning_10s'
+  WARNING_TICK: 'cue_warning_tick'
 };

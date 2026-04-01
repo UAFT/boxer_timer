@@ -26,25 +26,17 @@ function createIdleState(config) {
   };
 }
 
-function countdownTextForPhase(phase, remainingSec, warningSeconds, countdownEnabled) {
-  if (phase === PHASES.WORK) {
-    if (warningSeconds > 0 && remainingSec > 0 && remainingSec <= warningSeconds) {
-      return `Предупреждение конца раунда · ${warningSeconds} сек`;
-    }
-    return '';
-  }
-
-  if (phase === PHASES.REST) {
-    if (countdownEnabled && remainingSec > 0 && remainingSec <= 3) {
-      return 'Финальный отсчёт отдыха 3-2-1';
-    }
-    return '';
+function countdownTextForPhase(phase, remainingSec, warningSeconds) {
+  if ((phase === PHASES.WORK || phase === PHASES.REST) && warningSeconds > 0 && remainingSec > 0 && remainingSec <= warningSeconds) {
+    return phase === PHASES.WORK
+      ? `Предупреждение конца раунда · ${warningSeconds} сек`
+      : `Предупреждение конца отдыха · ${warningSeconds} сек`;
   }
 
   return '';
 }
 
-function nextLabelForPhase(phase, remainingSec, warningSeconds, countdownEnabled) {
+function nextLabelForPhase(phase, remainingSec, warningSeconds) {
   if (phase === PHASES.WORK) {
     if (warningSeconds > 0 && remainingSec > 0 && remainingSec <= warningSeconds) {
       return 'На нуле: старт отдыха';
@@ -53,7 +45,7 @@ function nextLabelForPhase(phase, remainingSec, warningSeconds, countdownEnabled
   }
 
   if (phase === PHASES.REST) {
-    if (countdownEnabled && remainingSec > 0 && remainingSec <= 3) {
+    if (warningSeconds > 0 && remainingSec > 0 && remainingSec <= warningSeconds) {
       return 'На нуле: старт следующего раунда';
     }
     return 'Идёт отдых';
@@ -75,7 +67,6 @@ export class TimerEngine {
     this.intervalId = null;
     this.tickEndsAt = 0;
     this.isPaused = false;
-    this.warningTriggered = false;
     this.applyConfig(DEFAULT_CONFIG);
   }
 
@@ -97,7 +88,6 @@ export class TimerEngine {
   reset() {
     this.stopInterval();
     this.isPaused = false;
-    this.warningTriggered = false;
     this.state = createIdleState(this.config);
     this.emitState();
     this.emitTick();
@@ -156,15 +146,14 @@ export class TimerEngine {
   }
 
   beginWorkPhase(roundIndex) {
-    this.warningTriggered = false;
     this.state = {
       phase: PHASES.WORK,
       roundIndex,
       totalRounds: this.config.rounds,
       remainingSec: this.config.workSec,
       phaseDurationSec: Math.max(1, this.config.workSec),
-      nextLabel: nextLabelForPhase(PHASES.WORK, this.config.workSec, this.config.warningSeconds, this.config.countdownEnabled),
-      countdownText: countdownTextForPhase(PHASES.WORK, this.config.workSec, this.config.warningSeconds, this.config.countdownEnabled),
+      nextLabel: nextLabelForPhase(PHASES.WORK, this.config.workSec, this.config.warningSeconds),
+      countdownText: countdownTextForPhase(PHASES.WORK, this.config.workSec, this.config.warningSeconds),
       progress: 0
     };
 
@@ -175,15 +164,14 @@ export class TimerEngine {
   }
 
   beginRestPhase(roundIndex) {
-    this.warningTriggered = false;
     this.state = {
       phase: PHASES.REST,
       roundIndex,
       totalRounds: this.config.rounds,
       remainingSec: this.config.restSec,
       phaseDurationSec: Math.max(1, this.config.restSec),
-      nextLabel: nextLabelForPhase(PHASES.REST, this.config.restSec, this.config.warningSeconds, this.config.countdownEnabled),
-      countdownText: countdownTextForPhase(PHASES.REST, this.config.restSec, this.config.warningSeconds, this.config.countdownEnabled),
+      nextLabel: nextLabelForPhase(PHASES.REST, this.config.restSec, this.config.warningSeconds),
+      countdownText: countdownTextForPhase(PHASES.REST, this.config.restSec, this.config.warningSeconds),
       progress: 0
     };
 
@@ -215,6 +203,7 @@ export class TimerEngine {
         return;
       }
 
+      this.onEvent({ type: 'round-start-zero', roundIndex: roundIndex + 1 });
       this.beginWorkPhase(roundIndex + 1);
       return;
     }
@@ -259,11 +248,6 @@ export class TimerEngine {
 
     if (phase === PHASES.COUNTDOWN) {
       this.onEvent({ type: `prestart-count-${remainingSec}`, roundIndex });
-      return;
-    }
-
-    if (phase === PHASES.REST && this.config.countdownEnabled && remainingSec === 3) {
-      this.onEvent({ type: 'rest-final-count-3', roundIndex });
     }
   }
 
@@ -281,30 +265,32 @@ export class TimerEngine {
         this.state.nextLabel = nextLabelForPhase(
           this.state.phase,
           nextRemainingSec,
-          this.config.warningSeconds,
-          this.config.countdownEnabled
+          this.config.warningSeconds
         );
         this.state.countdownText = countdownTextForPhase(
           this.state.phase,
           nextRemainingSec,
-          this.config.warningSeconds,
-          this.config.countdownEnabled
+          this.config.warningSeconds
         );
       }
 
       this.emitTick();
 
       if (
-        this.state.phase === PHASES.WORK &&
+        (this.state.phase === PHASES.WORK || this.state.phase === PHASES.REST) &&
         this.config.warningSeconds > 0 &&
-        !this.warningTriggered &&
-        nextRemainingSec === this.config.warningSeconds
+        nextRemainingSec >= 1 &&
+        nextRemainingSec <= this.config.warningSeconds
       ) {
-        this.warningTriggered = true;
-        this.onEvent({ type: `warning-${this.config.warningSeconds}`, roundIndex: this.state.roundIndex });
+        this.onEvent({
+          type: 'warning-tick',
+          roundIndex: this.state.roundIndex,
+          phase: this.state.phase,
+          remainingSec: nextRemainingSec
+        });
       }
 
-      if ((this.state.phase === PHASES.COUNTDOWN || this.state.phase === PHASES.REST) && nextRemainingSec >= 1 && nextRemainingSec <= 3) {
+      if (this.state.phase === PHASES.COUNTDOWN && nextRemainingSec >= 1 && nextRemainingSec <= 3) {
         this.emitCountdownEvent(this.state.phase, nextRemainingSec, this.state.roundIndex);
       }
     }
