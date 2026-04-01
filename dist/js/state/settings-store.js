@@ -21,7 +21,7 @@ export function normalizeSettings(raw, fallback) {
     rounds: clampInt(raw?.rounds, 1, 99, fallback.rounds),
     workSec: clampInt(raw?.workSec, 1, 3600, fallback.workSec),
     restSec: clampInt(raw?.restSec, 0, 3600, fallback.restSec),
-    countdownEnabled: raw?.countdownEnabled !== false,
+    countdownEnabled: true,
     warningSeconds: normalizeWarningSeconds(raw?.warningSeconds, fallback.warningSeconds ?? 10),
     audioEnabled: raw?.audioEnabled !== false,
     metronomeEnabled: Boolean(raw?.metronomeEnabled),

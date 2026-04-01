@@ -504,6 +504,38 @@ img {
   pointer-events: none;
 }
 
+.metro-mask-note {
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 1.25;
+  font-weight: 700;
+  color: rgba(255,255,255,0.72);
+  text-align: center;
+  max-width: 220px;
+  pointer-events: none;
+}
+
+.metronome-card.is-locked .metro-mask {
+  border-color: rgba(255,255,255,0.14);
+  background: linear-gradient(180deg, rgba(42, 26, 26, 0.96), rgba(20, 24, 38, 0.98));
+}
+
+.metronome-card.is-locked .metro-mask-title {
+  color: rgba(255,255,255,0.92);
+}
+
+.metronome-card.is-locked .metro-grid-btn,
+.metronome-card.is-locked .power-btn {
+  opacity: 0.45;
+}
+
+.settings-inline-note {
+  margin-top: 10px;
+  font-size: 12px;
+  line-height: 1.35;
+  color: rgba(255,255,255,0.68);
+}
+
 .metro-grid-box {
   min-height: 44px;
 }

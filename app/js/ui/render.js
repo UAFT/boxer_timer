@@ -68,7 +68,8 @@ function applyChoiceButtons(buttons, targetValue, dataKey) {
 }
 
 export function renderTimer(els, state, uiState = {}) {
-  const metronomePanelOpen = Boolean(uiState.metronomePanelOpen);
+  const metronomeLocked = Number(state.config.warningSeconds ?? 0) === 10;
+  const metronomePanelOpen = !metronomeLocked && Boolean(uiState.metronomePanelOpen);
 
   els.mainTime.textContent = formatTime(state.remainingSec);
   els.phaseLabel.textContent = phaseLabelText(state);
@@ -83,22 +84,30 @@ export function renderTimer(els, state, uiState = {}) {
   els.metricMetronome.textContent = String(state.config.metronomeBpm ?? 0);
   els.metricTotal.textContent = formatTime(totalDurationSec(state.config));
   els.metricRemaining.textContent = formatTime(remainingTotalSec(state));
-  els.metronomeStatus.textContent = state.config.metronomeEnabled
-    ? `${metronomeModeLabel(state.config.metronomeMode)} · Вкл`
-    : `${metronomeModeLabel(state.config.metronomeMode)} · Выкл`;
+  els.metronomeStatus.textContent = metronomeLocked
+    ? 'Недоступно · warning 10 сек'
+    : (state.config.metronomeEnabled
+      ? `${metronomeModeLabel(state.config.metronomeMode)} · Вкл`
+      : `${metronomeModeLabel(state.config.metronomeMode)} · Выкл`);
 
-  els.metronomeToggleBtn.classList.toggle('is-on', Boolean(state.config.metronomeEnabled));
-  els.metronomeToggleBtn.setAttribute('aria-pressed', state.config.metronomeEnabled ? 'true' : 'false');
+  els.metronomeMaskNote.textContent = metronomeLocked ? 'Недоступен при warning 10 сек' : '';
+
+  els.metronomeToggleBtn.classList.toggle('is-on', !metronomeLocked && Boolean(state.config.metronomeEnabled));
+  els.metronomeToggleBtn.setAttribute('aria-pressed', !metronomeLocked && state.config.metronomeEnabled ? 'true' : 'false');
+  els.metronomeToggleBtn.disabled = metronomeLocked;
 
   els.metronomeModeButtons.forEach((button) => {
-    const isActive = button.dataset.metronomeMode === state.config.metronomeMode;
+    const isActive = !metronomeLocked && button.dataset.metronomeMode === state.config.metronomeMode;
     button.classList.toggle('is-active', isActive);
     button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+    button.disabled = metronomeLocked;
   });
 
   els.metronomeCard.classList.toggle('is-collapsed', !metronomePanelOpen);
+  els.metronomeCard.classList.toggle('is-locked', metronomeLocked);
   els.metronomeCardToggleBtn.setAttribute('aria-expanded', metronomePanelOpen ? 'true' : 'false');
   els.metronomeCardToggleBtn.setAttribute('aria-hidden', metronomePanelOpen ? 'true' : 'false');
+  els.metronomeCardToggleBtn.setAttribute('aria-disabled', metronomeLocked ? 'true' : 'false');
 
   if (state.phase === PHASES.IDLE || state.phase === PHASES.FINISHED) {
     els.startBtn.textContent = 'Старт';
@@ -110,7 +119,6 @@ export function renderTimer(els, state, uiState = {}) {
 }
 
 export function setSettingsForm(els, settings) {
-  els.countdownEnabledInput.checked = settings.countdownEnabled;
   els.audioEnabledInput.checked = settings.audioEnabled;
   els.warningSecondsInput.value = String(settings.warningSeconds ?? 4);
   els.workStartCueVariantInput.value = settings.workStartCueVariant || 'v2';
@@ -137,7 +145,6 @@ export function setSettingsForm(els, settings) {
 
 export function readSettingsForm(els) {
   return {
-    countdownEnabled: els.countdownEnabledInput.checked,
     audioEnabled: els.audioEnabledInput.checked,
     warningSeconds: Number(els.warningSecondsInput.value || '0'),
     workStartCueVariant: els.workStartCueVariantInput.value || 'v2',

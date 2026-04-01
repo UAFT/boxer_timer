@@ -119,6 +119,7 @@
             </div>
             <button class="metro-mask" type="button" id="metronomeCardToggleBtn" aria-expanded="false">
               <span class="metro-mask-title">Метроном</span>
+              <span class="metro-mask-note" id="metronomeMaskNote"></span>
             </button>
           </div>
           <div class="visually-hidden" id="metronomeStatus" aria-hidden="true">Выкл · Прямой</div>
@@ -141,11 +142,7 @@
             <div class="settings-card-title">Общее</div>
             <label class="settings-toggle-row">
               <input type="checkbox" id="audioEnabledInput" />
-              <span>Включить сигналы таймера</span>
-            </label>
-            <label class="settings-toggle-row">
-              <input type="checkbox" id="countdownEnabledInput" />
-              <span>Предстартовый отсчёт 4-3-2-1</span>
+              <span>Сигналы таймера</span>
             </label>
           </section>
 
@@ -157,6 +154,7 @@
               <button type="button" class="choice-chip" data-warning-seconds="10">10 сек</button>
             </div>
             <input type="hidden" id="warningSecondsInput" value="4" />
+            <div class="settings-inline-note">10 сек — метроном недоступен</div>
           </section>
 
           <section class="settings-card">

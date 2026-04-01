@@ -16,6 +16,7 @@ export function getDomRefs() {
     metronomeToggleBtn: document.getElementById('metronomeToggleBtn'),
     metronomeCard: document.getElementById('metronomeCard'),
     metronomeCardToggleBtn: document.getElementById('metronomeCardToggleBtn'),
+    metronomeMaskNote: document.getElementById('metronomeMaskNote'),
     metronomeControls: document.getElementById('metronomeControls'),
     metronomeModeButtons: [...document.querySelectorAll('.mode-chip')],
 
@@ -26,7 +27,6 @@ export function getDomRefs() {
     saveSettingsBtn: document.getElementById('saveSettingsBtn'),
 
     settingsModal: document.getElementById('settingsModal'),
-    countdownEnabledInput: document.getElementById('countdownEnabledInput'),
     audioEnabledInput: document.getElementById('audioEnabledInput'),
     warningSecondsInput: document.getElementById('warningSecondsInput'),
     warningChoiceButtons: [...document.querySelectorAll('[data-warning-seconds]')],

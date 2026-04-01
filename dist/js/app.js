@@ -33,11 +33,18 @@ const els = getDomRefs();
 const audio = new AudioEngine();
 const metronome = new MetronomeEngine(audio);
 
+function isMetronomeLocked(settings) {
+  return Number(settings?.warningSeconds ?? 0) === 10;
+}
+
+function coerceMetronomeForWarning(settings) {
+  if (!isMetronomeLocked(settings)) return settings;
+  return { ...settings, metronomeEnabled: false };
+}
+
 function resolveEventAudioSpec(event, settings) {
   if (PRESTART_COUNTDOWN_EVENTS.has(event.type)) {
-    return settings.countdownEnabled
-      ? { key: AUDIO_KEYS.WARNING_TICK, tag: 'countdown', volume: 1.25 }
-      : null;
+    return { key: AUDIO_KEYS.WARNING_TICK, tag: 'countdown', volume: 1.25 };
   }
 
   if (event.type === 'warning-tick') {
@@ -106,14 +113,17 @@ const timer = new TimerEngine({
 
 function syncMetronome() {
   metronome.setConfig({
-    enabled: activeSettings.metronomeEnabled,
+    enabled: activeSettings.metronomeEnabled && !isMetronomeLocked(activeSettings),
     bpm: activeSettings.metronomeBpm,
     mode: activeSettings.metronomeMode
   });
 }
 
 function applySettings(nextSettings) {
-  activeSettings = normalizeSettings(nextSettings, clonePreset(activePresetId));
+  activeSettings = coerceMetronomeForWarning(normalizeSettings(nextSettings, clonePreset(activePresetId)));
+  if (isMetronomeLocked(activeSettings)) {
+    setMetronomePanel('collapsed', { render: false });
+  }
   saveSettings(activeSettings);
   audio.setEnabled(activeSettings.audioEnabled);
   syncMetronome();
@@ -188,6 +198,7 @@ function handleAdjustValue({ target, direction }, event) {
 function handleToggleMetronome(event) {
   event?.preventDefault?.();
   event?.stopPropagation?.();
+  if (isMetronomeLocked(activeSettings)) return;
 
   const draft = { ...activeSettings };
   const willEnable = !draft.metronomeEnabled;
@@ -202,7 +213,7 @@ function handleToggleMetronome(event) {
 }
 
 function handleSelectMetronomeMode(mode) {
-  if (!mode) return;
+  if (!mode || isMetronomeLocked(activeSettings)) return;
   const draft = { ...activeSettings, metronomeMode: mode, metronomeEnabled: true };
   if (!draft.metronomeBpm || draft.metronomeBpm <= 0) {
     draft.metronomeBpm = DEFAULT_METRONOME_BPM;
@@ -214,7 +225,7 @@ function handleSelectMetronomeMode(mode) {
 function handleOpenMetronomeCard(event) {
   event?.preventDefault?.();
   event?.stopPropagation?.();
-  if (isMetronomePanelOpen()) return;
+  if (isMetronomePanelOpen() || isMetronomeLocked(activeSettings)) return;
 
   const draft = {
     ...activeSettings,
