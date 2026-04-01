@@ -189,11 +189,6 @@ function handleOpenMetronomeCard(event) {
   metronomePanelOpen = true;
   renderCurrentState();
 }
-function handleMetronomeCardSurfaceClick(event) {
-  if (!metronomePanelOpen) {
-    handleOpenMetronomeCard(event);
-  }
-}
 
 function bootstrap() {
   audio.setEnabled(activeSettings.audioEnabled);
@@ -211,8 +206,7 @@ function bootstrap() {
     onAdjustValue: handleAdjustValue,
     onToggleMetronome: handleToggleMetronome,
     onSelectMetronomeMode: handleSelectMetronomeMode,
-    onOpenMetronomeCard: handleOpenMetronomeCard,
-    onMetronomeCardSurfaceClick: handleMetronomeCardSurfaceClick
+    onOpenMetronomeCard: handleOpenMetronomeCard
   });
   renderCurrentState();
 }
