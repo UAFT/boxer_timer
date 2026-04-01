@@ -75,12 +75,13 @@ export class MetronomeEngine {
   shouldMuteStrongBeat(state = this.lastState) {
     const remainingSec = Number(state?.remainingSec ?? 0);
     const warningSeconds = Number(state?.config?.warningSeconds ?? 0);
+    const alignmentWindowSec = warningSeconds > 0 ? warningSeconds + 1 : 0;
     return Boolean(
       this.mode === 'subdivided' &&
       state?.phase === PHASES.WORK &&
       warningSeconds > 0 &&
       remainingSec > 0 &&
-      remainingSec <= 3
+      remainingSec <= alignmentWindowSec
     );
   }
 
