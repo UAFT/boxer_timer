@@ -200,7 +200,11 @@ function handleOpenMetronomeCard(event) {
   event?.stopPropagation?.();
   if (isMetronomePanelOpen()) return;
 
-  const draft = { ...activeSettings, metronomeEnabled: true };
+  const draft = {
+    ...activeSettings,
+    metronomeEnabled: true,
+    metronomeMode: activeSettings.metronomeMode || 'direct'
+  };
   if (!draft.metronomeBpm || draft.metronomeBpm <= 0) {
     draft.metronomeBpm = DEFAULT_METRONOME_BPM;
   }
