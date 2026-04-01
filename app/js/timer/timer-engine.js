@@ -67,6 +67,7 @@ export class TimerEngine {
     this.intervalId = null;
     this.tickEndsAt = 0;
     this.isPaused = false;
+    this.transitioning = false;
     this.applyConfig(DEFAULT_CONFIG);
   }
 
@@ -95,7 +96,7 @@ export class TimerEngine {
 
   start() {
     if (this.state.phase === PHASES.IDLE) {
-      this.beginPrestart(1);
+      void this.beginPrestart(1);
       return;
     }
 
@@ -121,9 +122,9 @@ export class TimerEngine {
     this.emitState();
   }
 
-  beginPrestart(roundIndex) {
+  async beginPrestart(roundIndex) {
     if (!this.config.countdownEnabled) {
-      this.onEvent({ type: 'round-start-zero', roundIndex });
+      await this.emitEvent({ type: 'round-start-zero', roundIndex });
       this.beginWorkPhase(roundIndex);
       return;
     }
@@ -181,40 +182,40 @@ export class TimerEngine {
     this.startInterval();
   }
 
-  finishCurrentPhase() {
+  async finishCurrentPhase() {
     const { phase, roundIndex, totalRounds } = this.state;
 
     if (phase === PHASES.COUNTDOWN) {
-      this.onEvent({ type: 'round-start-zero', roundIndex });
+      await this.emitEvent({ type: 'round-start-zero', roundIndex });
       this.beginWorkPhase(roundIndex);
       return;
     }
 
     if (phase === PHASES.WORK) {
       if (roundIndex >= totalRounds) {
-        this.finishWorkout(roundIndex);
+        await this.finishWorkout(roundIndex);
         return;
       }
 
-      this.onEvent({ type: 'round-end-zero', roundIndex });
+      await this.emitEvent({ type: 'round-end-zero', roundIndex });
 
       if (this.config.restSec > 0) {
         this.beginRestPhase(roundIndex);
         return;
       }
 
-      this.onEvent({ type: 'round-start-zero', roundIndex: roundIndex + 1 });
+      await this.emitEvent({ type: 'round-start-zero', roundIndex: roundIndex + 1 });
       this.beginWorkPhase(roundIndex + 1);
       return;
     }
 
     if (phase === PHASES.REST) {
-      this.onEvent({ type: 'rest-end-zero', roundIndex });
+      await this.emitEvent({ type: 'rest-end-zero', roundIndex });
       this.beginWorkPhase(roundIndex + 1);
     }
   }
 
-  finishWorkout(roundIndex) {
+  async finishWorkout(roundIndex) {
     this.stopInterval();
     this.state = {
       phase: PHASES.FINISHED,
@@ -228,7 +229,15 @@ export class TimerEngine {
     };
     this.emitState();
     this.emitTick();
-    this.onEvent({ type: 'workout-end-zero', roundIndex });
+    await this.emitEvent({ type: 'workout-end-zero', roundIndex });
+  }
+
+  emitEvent(event) {
+    try {
+      return Promise.resolve(this.onEvent(event));
+    } catch {
+      return Promise.resolve();
+    }
   }
 
   startInterval() {
@@ -299,7 +308,15 @@ export class TimerEngine {
       return;
     }
 
-    this.finishCurrentPhase();
+    if (this.transitioning) {
+      return;
+    }
+
+    this.transitioning = true;
+    this.stopInterval();
+    void this.finishCurrentPhase().finally(() => {
+      this.transitioning = false;
+    });
   }
 
   computeProgress() {
