@@ -24,10 +24,8 @@ const STEP_RULES = {
 };
 const DEFAULT_METRONOME_BPM = 20;
 const PRESET_FIELDS = ['rounds', 'workSec', 'restSec'];
-const PRESTART_COUNTDOWN_EVENTS = new Set(['prestart-count-4', 'prestart-count-3', 'prestart-count-2', 'prestart-count-1']);
-const METRONOME_SUPPRESS_EVENTS = new Set(['round-end-zero', 'workout-end-zero']);
-const ROUND_START_SYNC_EVENTS = new Set(['round-start-zero', 'rest-end-zero']);
-const ZERO_TRANSITION_EVENTS = new Set(['round-start-zero', 'round-end-zero', 'rest-end-zero', 'workout-end-zero']);
+const PRESTART_COUNTDOWN_EVENTS = new Set(['prestart-count-3', 'prestart-count-2', 'prestart-count-1']);
+const TRANSITION_AUDIO_EVENTS = new Set(['round-start-zero', 'round-end-zero', 'rest-end-zero', 'workout-end-zero']);
 
 const els = getDomRefs();
 const audio = new AudioEngine();
@@ -35,8 +33,8 @@ const metronome = new MetronomeEngine(audio);
 
 function resolveEventAudioSpec(event, settings) {
   if (PRESTART_COUNTDOWN_EVENTS.has(event.type)) {
-    return settings.countdownEnabled
-      ? { key: AUDIO_KEYS.WARNING_TICK, tag: 'countdown', volume: 1.25 }
+    return (settings.countdownEnabled && event.type === 'prestart-count-3')
+      ? { key: AUDIO_KEYS.COUNTDOWN_321, tag: 'countdown', volume: 1.25 }
       : null;
   }
 
@@ -90,13 +88,8 @@ const timer = new TimerEngine({
   onEvent: async (event) => {
     const spec = resolveEventAudioSpec(event, activeSettings);
     if (!spec) return;
-    if (METRONOME_SUPPRESS_EVENTS.has(event.type)) {
+    if (TRANSITION_AUDIO_EVENTS.has(event.type)) {
       metronome.suppressFor(450);
-    }
-    if (ROUND_START_SYNC_EVENTS.has(event.type)) {
-      metronome.armRoundStartCueSync();
-    }
-    if (ZERO_TRANSITION_EVENTS.has(event.type)) {
       audio.stopTag('warning');
       audio.stopTag('transition');
     }

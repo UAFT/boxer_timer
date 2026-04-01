@@ -1,0 +1,41 @@
+export function getDomRefs() {
+  return {
+    mainTime: document.getElementById('mainTime'),
+    phaseLabel: document.getElementById('phaseLabel'),
+    roundLabel: document.getElementById('roundLabel'),
+    phaseCaption: document.getElementById('phaseCaption'),
+    countdownCaption: document.getElementById('countdownCaption'),
+    progressFill: document.getElementById('progressFill'),
+    metricWork: document.getElementById('metricWork'),
+    metricRest: document.getElementById('metricRest'),
+    metricRounds: document.getElementById('metricRounds'),
+    metricTotal: document.getElementById('metricTotal'),
+    metricRemaining: document.getElementById('metricRemaining'),
+    metricMetronome: document.getElementById('metricMetronome'),
+    metronomeStatus: document.getElementById('metronomeStatus'),
+    metronomeToggleBtn: document.getElementById('metronomeToggleBtn'),
+    metronomeCard: document.getElementById('metronomeCard'),
+    metronomeCardToggleBtn: document.getElementById('metronomeCardToggleBtn'),
+    metronomeControls: document.getElementById('metronomeControls'),
+    metronomeModeButtons: [...document.querySelectorAll('.mode-chip')],
+
+    startBtn: document.getElementById('startBtn'),
+    resetBtn: document.getElementById('resetBtn'),
+    settingsBtn: document.getElementById('settingsBtn'),
+    closeSettingsBtn: document.getElementById('closeSettingsBtn'),
+    saveSettingsBtn: document.getElementById('saveSettingsBtn'),
+
+    settingsModal: document.getElementById('settingsModal'),
+    countdownEnabledInput: document.getElementById('countdownEnabledInput'),
+    audioEnabledInput: document.getElementById('audioEnabledInput'),
+    warningSecondsInput: document.getElementById('warningSecondsInput'),
+    warningChoiceButtons: [...document.querySelectorAll('[data-warning-seconds]')],
+    workStartCueVariantInput: document.getElementById('workStartCueVariantInput'),
+    restStartCueVariantInput: document.getElementById('restStartCueVariantInput'),
+    workoutEndCueVariantInput: document.getElementById('workoutEndCueVariantInput'),
+    cueVariantButtons: [...document.querySelectorAll('[data-cue-target][data-cue-value]')],
+
+    presetTabs: [...document.querySelectorAll('.preset-tab')],
+    stepperButtons: [...document.querySelectorAll('[data-adjust-target]')]
+  };
+}

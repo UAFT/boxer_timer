@@ -1,0 +1,1 @@
+V36: unified audible 4-3-2-1 countdown for prestart, round end, and rest end; warning choice simplified to No/4 sec.\n
