@@ -23,6 +23,7 @@ const STEP_RULES = {
   metronomeBpm: { step: 1, min: 0, max: 300 }
 };
 const DEFAULT_METRONOME_BPM = 20;
+const PRESET_FIELDS = ['rounds', 'workSec', 'restSec', 'countdownEnabled', 'warning10Enabled'];
 
 const els = getDomRefs();
 const audio = new AudioEngine();
@@ -50,7 +51,7 @@ const ZERO_EVENT_TO_AUDIO = {
 
 let activePresetId = DEFAULT_PRESET_ID;
 let activeSettings = loadSettings(clonePreset(DEFAULT_PRESET_ID));
-let metronomePanelOpen = Boolean(activeSettings.metronomeEnabled);
+let metronomePanelOpen = false;
 
 function renderCurrentState() {
   renderTimer(els, timer.state, { metronomePanelOpen });
@@ -94,9 +95,6 @@ function applySettings(nextSettings) {
   syncMetronome();
   timer.applyConfig(activeSettings);
   setSettingsForm(els, activeSettings);
-  if (!activeSettings.metronomeEnabled) {
-    metronomePanelOpen = false;
-  }
   renderCurrentState();
 }
 
@@ -125,7 +123,10 @@ function handleReset() {
 function handleSelectPreset(presetId) {
   activePresetId = presetId || DEFAULT_PRESET_ID;
   setActivePreset(els, activePresetId);
-  applySettings(clonePreset(activePresetId));
+  const preset = clonePreset(activePresetId);
+  const merged = { ...activeSettings };
+  for (const key of PRESET_FIELDS) merged[key] = preset[key];
+  applySettings(merged);
   closeSettings(els);
 }
 
