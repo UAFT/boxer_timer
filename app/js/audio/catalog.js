@@ -6,7 +6,9 @@ export const AUDIO_FILE_MAP = {
   cue_rest_start_v1: './assets/audio/cues/start_rest_cue.wav',
   cue_rest_start_v2: './assets/audio/cues/start_rest_cue_2.wav',
   cue_workout_end_v1: './assets/audio/cues/end_workout_cue.wav',
-  cue_workout_end_v2: './assets/audio/cues/end_workout_cue_2.wav'
+  cue_workout_end_v2: './assets/audio/cues/end_workout_cue_2.wav',
+  metronome_direct: './assets/audio/metronome/metronome_single_runtime.wav',
+  metronome_subdivided: './assets/audio/metronome/metronome_split_runtime.wav'
 };
 
 export const CUE_VARIANT_OPTIONS = {

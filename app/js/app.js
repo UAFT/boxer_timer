@@ -29,25 +29,27 @@ const TRANSITION_AUDIO_EVENTS = new Set(['round-start-zero', 'round-end-zero', '
 
 const els = getDomRefs();
 const audio = new AudioEngine();
-const metronome = new MetronomeEngine();
+const metronome = new MetronomeEngine(audio);
 
-function resolveEventAudioKey(event, settings) {
+function resolveEventAudioSpec(event, settings) {
   if (PRESTART_COUNTDOWN_EVENTS.has(event.type)) {
-    return (settings.countdownEnabled && event.type === 'prestart-count-3') ? AUDIO_KEYS.COUNTDOWN_321 : null;
+    return (settings.countdownEnabled && event.type === 'prestart-count-3')
+      ? { key: AUDIO_KEYS.COUNTDOWN_321, tag: 'countdown' }
+      : null;
   }
 
   if (event.type === 'warning-tick') {
-    return AUDIO_KEYS.WARNING_TICK;
+    return { key: AUDIO_KEYS.WARNING_TICK, tag: 'warning' };
   }
 
   if (event.type === 'round-start-zero') {
-    return `cue_round_start_${settings.workStartCueVariant || 'v2'}`;
+    return { key: `cue_round_start_${settings.workStartCueVariant || 'v2'}`, tag: 'transition' };
   }
   if (event.type === 'round-end-zero' || event.type === 'rest-end-zero') {
-    return `cue_rest_start_${settings.restStartCueVariant || 'v2'}`;
+    return { key: `cue_rest_start_${settings.restStartCueVariant || 'v2'}`, tag: 'transition' };
   }
   if (event.type === 'workout-end-zero') {
-    return `cue_workout_end_${settings.workoutEndCueVariant || 'v2'}`;
+    return { key: `cue_workout_end_${settings.workoutEndCueVariant || 'v2'}`, tag: 'transition' };
   }
   return null;
 }
@@ -81,13 +83,14 @@ const timer = new TimerEngine({
     metronome.syncPhase(state);
   },
   onEvent: async (event) => {
-    const key = resolveEventAudioKey(event, activeSettings);
-    if (!key) return;
+    const spec = resolveEventAudioSpec(event, activeSettings);
+    if (!spec) return;
     if (TRANSITION_AUDIO_EVENTS.has(event.type)) {
       metronome.suppressFor(450);
-      audio.stopAll();
+      audio.stopTag('warning');
+      audio.stopTag('transition');
     }
-    await audio.play(key);
+    await audio.play(spec.key, { tag: spec.tag });
   }
 });
 
@@ -111,8 +114,6 @@ function applySettings(nextSettings) {
 
 async function handleToggleRun() {
   await audio.unlock();
-  await metronome.unlock();
-  await audio.preloadAll();
   syncMetronome();
 
   if (timer.isPaused) {

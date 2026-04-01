@@ -1,20 +1,14 @@
 import { PHASES } from '../core/constants.js';
 
-const SAMPLE_MAP = {
-  direct: './assets/audio/metronome/metronome_single_runtime.wav',
-  subdivided: './assets/audio/metronome/metronome_split_runtime.wav'
-};
-
 export class MetronomeEngine {
-  constructor() {
+  constructor(audioEngine) {
+    this.audio = audioEngine;
     this.enabled = false;
     this.bpm = 20;
     this.mode = 'direct';
     this.intervalId = null;
     this.running = false;
     this.subStep = 0;
-    this.cache = new Map();
-    this.unlocked = false;
     this.suppressUntilMs = 0;
   }
 
@@ -29,61 +23,8 @@ export class MetronomeEngine {
     }
   }
 
-  async preloadSample(kind) {
-    const src = SAMPLE_MAP[kind];
-    if (!src) return null;
-    if (this.cache.has(kind)) return this.cache.get(kind);
-
-    const audio = new Audio(src);
-    audio.preload = 'auto';
-    this.cache.set(kind, audio);
-
-    try {
-      await new Promise((resolve, reject) => {
-        const onCanPlay = () => {
-          cleanup();
-          resolve(audio);
-        };
-        const onError = () => {
-          cleanup();
-          reject(new Error(`Metronome sample missing: ${kind}`));
-        };
-        const cleanup = () => {
-          audio.removeEventListener('canplaythrough', onCanPlay);
-          audio.removeEventListener('error', onError);
-        };
-        audio.addEventListener('canplaythrough', onCanPlay, { once: true });
-        audio.addEventListener('error', onError, { once: true });
-        audio.load();
-      });
-    } catch {
-      return null;
-    }
-
-    return audio;
-  }
-
   async unlock() {
-    if (this.unlocked) return true;
-    const sample = await this.preloadSample('direct');
-    await this.preloadSample('subdivided');
-    if (!sample) {
-      this.unlocked = true;
-      return true;
-    }
-    try {
-      sample.muted = true;
-      sample.currentTime = 0;
-      await sample.play();
-      sample.pause();
-      sample.currentTime = 0;
-      sample.muted = false;
-      this.unlocked = true;
-      return true;
-    } catch {
-      sample.muted = false;
-      return false;
-    }
+    return this.audio.unlock();
   }
 
   suppressFor(ms = 350) {
@@ -91,16 +32,8 @@ export class MetronomeEngine {
     this.stop();
   }
 
-  async playSample(kind) {
-    const base = this.cache.get(kind) || await this.preloadSample(kind);
-    if (!base) return;
-    try {
-      const audio = base.cloneNode(true);
-      audio.currentTime = 0;
-      await audio.play();
-    } catch {
-      // no-op
-    }
+  async playStepKey(key) {
+    await this.audio.play(key, { tag: 'metronome' });
   }
 
   getStepMs() {
@@ -111,12 +44,12 @@ export class MetronomeEngine {
 
   async step() {
     if (this.mode === 'subdivided') {
-      await this.playSample(this.subStep === 0 ? 'direct' : 'subdivided');
+      await this.playStepKey(this.subStep === 0 ? 'metronome_direct' : 'metronome_subdivided');
       this.subStep = this.subStep === 0 ? 1 : 0;
       return;
     }
 
-    await this.playSample('direct');
+    await this.playStepKey('metronome_direct');
   }
 
   async start() {
@@ -126,7 +59,7 @@ export class MetronomeEngine {
     this.subStep = 0;
     await this.step();
     this.intervalId = window.setInterval(() => {
-      this.step();
+      void this.step();
     }, this.getStepMs());
   }
 
@@ -135,13 +68,14 @@ export class MetronomeEngine {
       window.clearInterval(this.intervalId);
       this.intervalId = null;
     }
+    this.audio.stopTag('metronome');
     this.running = false;
     this.subStep = 0;
   }
 
   restart() {
     this.stop();
-    this.start();
+    void this.start();
   }
 
   syncPhase(state) {
@@ -157,7 +91,7 @@ export class MetronomeEngine {
     }
 
     if (!this.running) {
-      this.start();
+      void this.start();
     }
   }
 }

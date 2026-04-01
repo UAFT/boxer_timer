@@ -1,12 +1,23 @@
 import { AUDIO_FILE_MAP } from './catalog.js';
 
+function createSilentBuffer(context) {
+  const buffer = context.createBuffer(1, 1, context.sampleRate);
+  const source = context.createBufferSource();
+  source.buffer = buffer;
+  source.connect(context.destination);
+  return source;
+}
+
 export class AudioEngine {
   constructor() {
     this.enabled = true;
-    this.cache = new Map();
+    this.context = null;
+    this.masterGain = null;
+    this.bufferCache = new Map();
+    this.pendingLoads = new Map();
     this.missing = new Set();
     this.unlocked = false;
-    this.activePlayers = new Set();
+    this.activeNodes = new Set();
   }
 
   setEnabled(nextValue) {
@@ -17,6 +28,30 @@ export class AudioEngine {
     return [...this.missing.values()];
   }
 
+  ensureContext() {
+    if (this.context) return this.context;
+    const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextCtor) return null;
+    this.context = new AudioContextCtor();
+    this.masterGain = this.context.createGain();
+    this.masterGain.gain.value = 1;
+    this.masterGain.connect(this.context.destination);
+    return this.context;
+  }
+
+  async resumeContext() {
+    const context = this.ensureContext();
+    if (!context) return null;
+    if (context.state === 'suspended') {
+      try {
+        await context.resume();
+      } catch {
+        return null;
+      }
+    }
+    return context;
+  }
+
   async preloadAll() {
     const keys = Object.keys(AUDIO_FILE_MAP);
     await Promise.allSettled(keys.map((key) => this.preload(key)));
@@ -25,102 +60,107 @@ export class AudioEngine {
   async preload(key) {
     const src = AUDIO_FILE_MAP[key];
     if (!src) return null;
-    if (this.cache.has(key)) return this.cache.get(key);
+    if (this.bufferCache.has(key)) return this.bufferCache.get(key);
+    if (this.pendingLoads.has(key)) return this.pendingLoads.get(key);
 
-    const audio = new Audio(src);
-    audio.preload = 'auto';
-    this.cache.set(key, audio);
-
-    try {
-      await new Promise((resolve, reject) => {
-        const onCanPlay = () => {
-          cleanup();
-          resolve(audio);
-        };
-        const onError = () => {
-          cleanup();
+    const loader = (async () => {
+      const context = this.ensureContext();
+      if (!context) return null;
+      try {
+        const response = await fetch(src);
+        if (!response.ok) {
           this.missing.add(key);
-          reject(new Error(`Audio missing: ${key}`));
-        };
-        const cleanup = () => {
-          audio.removeEventListener('canplaythrough', onCanPlay);
-          audio.removeEventListener('error', onError);
-        };
+          return null;
+        }
+        const arrayBuffer = await response.arrayBuffer();
+        const decoded = await context.decodeAudioData(arrayBuffer.slice(0));
+        this.bufferCache.set(key, decoded);
+        return decoded;
+      } catch {
+        this.missing.add(key);
+        return null;
+      } finally {
+        this.pendingLoads.delete(key);
+      }
+    })();
 
-        audio.addEventListener('canplaythrough', onCanPlay, { once: true });
-        audio.addEventListener('error', onError, { once: true });
-        audio.load();
-      });
-    } catch {
-      return null;
-    }
-
-    return audio;
+    this.pendingLoads.set(key, loader);
+    return loader;
   }
 
   async unlock() {
-    if (this.unlocked) return true;
-    await this.preloadAll();
-    const firstKey = Object.keys(AUDIO_FILE_MAP).find((key) => this.cache.has(key));
-    if (!firstKey) {
-      this.unlocked = true;
-      return true;
-    }
-
-    const audio = this.cache.get(firstKey);
-    if (!audio) return false;
+    const context = await this.resumeContext();
+    if (!context) return false;
 
     try {
-      audio.muted = true;
-      audio.currentTime = 0;
-      await audio.play();
-      audio.pause();
-      audio.currentTime = 0;
-      audio.muted = false;
-      this.unlocked = true;
-      return true;
+      const silent = createSilentBuffer(context);
+      silent.start(0);
     } catch {
-      audio.muted = false;
-      return false;
+      // no-op
     }
+
+    this.unlocked = true;
+    await this.preloadAll();
+    return true;
   }
 
   stopAll() {
-    for (const audio of [...this.activePlayers]) {
-      try {
-        audio.pause();
-        audio.currentTime = 0;
-      } catch {}
-      this.activePlayers.delete(audio);
+    for (const meta of [...this.activeNodes]) {
+      this.stopMeta(meta);
     }
   }
 
-  async play(key) {
-    if (!this.enabled) return false;
-    const src = AUDIO_FILE_MAP[key];
-    if (!src) return false;
-
-    let baseAudio = this.cache.get(key);
-    if (!baseAudio) {
-      baseAudio = await this.preload(key);
+  stopTag(tag) {
+    if (!tag) return;
+    for (const meta of [...this.activeNodes]) {
+      if (meta.tag === tag) this.stopMeta(meta);
     }
+  }
 
-    if (!baseAudio) return false;
+  stopMeta(meta) {
+    if (!meta) return;
+    try {
+      meta.source.onended = null;
+      meta.source.stop(0);
+    } catch {
+      // no-op
+    }
+    try {
+      meta.source.disconnect();
+    } catch {
+      // no-op
+    }
+    try {
+      meta.gain.disconnect();
+    } catch {
+      // no-op
+    }
+    this.activeNodes.delete(meta);
+  }
+
+  async play(key, { tag = 'cue', volume = 1 } = {}) {
+    if (!this.enabled) return false;
+    const context = await this.resumeContext();
+    if (!context) return false;
+
+    const buffer = await this.preload(key);
+    if (!buffer || !this.masterGain) return false;
 
     try {
-      const audio = baseAudio.cloneNode(true);
-      const cleanup = () => {
-        this.activePlayers.delete(audio);
-        audio.removeEventListener('ended', cleanup);
-        audio.removeEventListener('pause', cleanup);
-        audio.removeEventListener('error', cleanup);
+      const source = context.createBufferSource();
+      const gain = context.createGain();
+      gain.gain.value = Number.isFinite(volume) ? volume : 1;
+      source.buffer = buffer;
+      source.connect(gain);
+      gain.connect(this.masterGain);
+      const meta = { source, gain, tag };
+      source.onended = () => {
+        this.activeNodes.delete(meta);
+        try { source.disconnect(); } catch {}
+        try { gain.disconnect(); } catch {}
       };
-      audio.addEventListener('ended', cleanup);
-      audio.addEventListener('pause', cleanup);
-      audio.addEventListener('error', cleanup);
-      audio.currentTime = 0;
-      this.activePlayers.add(audio);
-      await audio.play();
+      this.activeNodes.add(meta);
+      source.start(0);
       return true;
     } catch {
       return false;
