@@ -159,30 +159,24 @@
 
             <div class="settings-field-stack">
               <div class="settings-field-label">Шаг работы по раундам</div>
-              <div class="choice-row" role="group" aria-label="Шаг работы по раундам">
-                <button type="button" class="choice-chip" data-work-step-sec="-60">−60 сек</button>
-                <button type="button" class="choice-chip" data-work-step-sec="-30">−30 сек</button>
-                <button type="button" class="choice-chip" data-work-step-sec="-15">−15 сек</button>
-                <button type="button" class="choice-chip" data-work-step-sec="0">0</button>
-                <button type="button" class="choice-chip" data-work-step-sec="15">+15 сек</button>
-                <button type="button" class="choice-chip" data-work-step-sec="30">+30 сек</button>
-                <button type="button" class="choice-chip" data-work-step-sec="60">+60 сек</button>
+              <div class="settings-stepper" role="group" aria-label="Шаг работы по раундам">
+                <button type="button" class="settings-stepper-btn" data-ladder-target="workStepSec" data-ladder-direction="down">−5</button>
+                <div class="settings-stepper-value" id="workStepSecDisplay">без шага</div>
+                <button type="button" class="settings-stepper-btn" data-ladder-target="workStepSec" data-ladder-direction="up">+5</button>
               </div>
               <input type="hidden" id="workStepSecInput" value="0" />
+              <div class="settings-inline-note">Шаг меняется по 5 секунд: 5, 10, 15, 20, 25, 30… Можно и уменьшать, и увеличивать.</div>
             </div>
 
             <div class="settings-field-stack">
               <div class="settings-field-label">Шаг отдыха по раундам</div>
-              <div class="choice-row" role="group" aria-label="Шаг отдыха по раундам">
-                <button type="button" class="choice-chip" data-rest-step-sec="-60">−60 сек</button>
-                <button type="button" class="choice-chip" data-rest-step-sec="-30">−30 сек</button>
-                <button type="button" class="choice-chip" data-rest-step-sec="-15">−15 сек</button>
-                <button type="button" class="choice-chip" data-rest-step-sec="0">0</button>
-                <button type="button" class="choice-chip" data-rest-step-sec="15">+15 сек</button>
-                <button type="button" class="choice-chip" data-rest-step-sec="30">+30 сек</button>
-                <button type="button" class="choice-chip" data-rest-step-sec="60">+60 сек</button>
+              <div class="settings-stepper" role="group" aria-label="Шаг отдыха по раундам">
+                <button type="button" class="settings-stepper-btn" data-ladder-target="restStepSec" data-ladder-direction="down">−5</button>
+                <div class="settings-stepper-value" id="restStepSecDisplay">без шага</div>
+                <button type="button" class="settings-stepper-btn" data-ladder-target="restStepSec" data-ladder-direction="up">+5</button>
               </div>
               <input type="hidden" id="restStepSecInput" value="0" />
+              <div class="settings-inline-note">Шаг отдыха тоже наборный: можно уменьшать или увеличивать по 5 секунд.</div>
             </div>
 
             <div class="settings-inline-note">Лестница меняет длительность каждого следующего раунда и отдыха на выбранный шаг.</div>

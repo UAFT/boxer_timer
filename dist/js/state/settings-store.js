@@ -16,7 +16,8 @@ function normalizeIntervalMode(rawMode, fallbackMode = 'standard') {
 }
 
 function normalizeStepSeconds(rawValue, fallbackValue = 0) {
-  return clampInt(rawValue, -600, 600, fallbackValue);
+  const value = clampInt(rawValue, -600, 600, fallbackValue);
+  return Math.round(value / 5) * 5;
 }
 
 function normalizeWarningSeconds(rawValue, fallbackValue = 4) {

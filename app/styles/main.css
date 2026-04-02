@@ -1220,3 +1220,52 @@ img {
     font-size: 12px;
   }
 }
+
+
+.settings-stepper {
+  display: grid;
+  grid-template-columns: 68px minmax(0, 1fr) 68px;
+  gap: 8px;
+}
+
+.settings-stepper-btn {
+  min-height: 48px;
+  border-radius: 16px;
+  background: rgba(16, 28, 72, 0.9);
+  border: 1px solid rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.92);
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.settings-stepper-value {
+  min-height: 48px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(12, 22, 60, 0.92);
+  color: rgba(255,255,255,0.92);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 0 10px;
+}
+
+@media (max-width: 640px) {
+  .settings-stepper {
+    grid-template-columns: 60px minmax(0, 1fr) 60px;
+    gap: 6px;
+  }
+
+  .settings-stepper-btn,
+  .settings-stepper-value {
+    min-height: 44px;
+    border-radius: 14px;
+  }
+
+  .settings-stepper-value {
+    font-size: 12px;
+  }
+}

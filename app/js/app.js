@@ -20,7 +20,9 @@ const STEP_RULES = {
   workSec: { step: 5, min: 5, max: 3600 },
   restSec: { step: 5, min: 0, max: 3600 },
   rounds: { step: 1, min: 1, max: 99 },
-  metronomeBpm: { step: 1, min: 0, max: 300 }
+  metronomeBpm: { step: 1, min: 0, max: 300 },
+  workStepSec: { step: 5, min: -600, max: 600 },
+  restStepSec: { step: 5, min: -600, max: 600 }
 };
 const DEFAULT_METRONOME_BPM = 20;
 const PRESET_FIELDS = ['rounds', 'workSec', 'restSec'];
@@ -195,6 +197,17 @@ function handleAdjustValue({ target, direction }, event) {
   applySettings(draft);
 }
 
+
+function handleAdjustLadderStep({ target, direction }, event) {
+  event?.preventDefault?.();
+  event?.stopPropagation?.();
+  const rule = STEP_RULES[target];
+  if (!rule || (target !== 'workStepSec' && target !== 'restStepSec')) return;
+  const sign = direction === 'down' ? -1 : 1;
+  const next = Math.min(rule.max, Math.max(rule.min, (activeSettings[target] ?? 0) + sign * rule.step));
+  applySettings({ ...activeSettings, [target]: next, intervalMode: 'ladder' });
+}
+
 function handleToggleMetronome(event) {
   event?.preventDefault?.();
   event?.stopPropagation?.();
@@ -254,6 +267,7 @@ function bootstrap() {
     onCloseSettings: () => closeSettings(els),
     onSaveSettings: handleSaveSettings,
     onAdjustValue: handleAdjustValue,
+    onAdjustLadderStep: handleAdjustLadderStep,
     onToggleMetronome: handleToggleMetronome,
     onSelectMetronomeMode: handleSelectMetronomeMode,
     onOpenMetronomeCard: handleOpenMetronomeCard

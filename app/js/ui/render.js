@@ -2,19 +2,24 @@ import { PHASES } from '../core/constants.js';
 import { formatTime } from '../core/time.js';
 import { displayDurationsForState, remainingTotalSecForState, totalDurationSecForConfig } from '../core/schedule.js';
 
+function intervalModeTitle(config) {
+  return config?.intervalMode === 'ladder' ? 'Лестница' : 'Обычный';
+}
+
 function phaseLabelText(state) {
-  if (state.isPaused) return 'Пауза';
+  const modeTitle = intervalModeTitle(state?.config);
+  if (state.isPaused) return `Пауза · ${modeTitle}`;
   switch (state.phase) {
     case PHASES.COUNTDOWN:
-      return 'Отсчёт';
+      return `Отсчёт · ${modeTitle}`;
     case PHASES.WORK:
-      return 'Работа';
+      return `Работа · ${modeTitle}`;
     case PHASES.REST:
-      return 'Отдых';
+      return `Отдых · ${modeTitle}`;
     case PHASES.FINISHED:
       return 'Готово';
     default:
-      return 'Готов';
+      return `Готов · ${modeTitle}`;
   }
 }
 
@@ -112,14 +117,14 @@ export function setSettingsForm(els, settings) {
   els.intervalModeInput.value = settings.intervalMode || 'standard';
   els.workStepSecInput.value = String(settings.workStepSec ?? 0);
   els.restStepSecInput.value = String(settings.restStepSec ?? 0);
+  if (els.workStepSecDisplay) els.workStepSecDisplay.textContent = stepLabel(settings.workStepSec ?? 0);
+  if (els.restStepSecDisplay) els.restStepSecDisplay.textContent = stepLabel(settings.restStepSec ?? 0);
   els.workStartCueVariantInput.value = settings.workStartCueVariant || 'v2';
   els.restStartCueVariantInput.value = settings.restStartCueVariant || 'v2';
   els.workoutEndCueVariantInput.value = settings.workoutEndCueVariant || 'v2';
 
   applyChoiceButtons(els.warningChoiceButtons, els.warningSecondsInput.value, 'warningSeconds');
   applyChoiceButtons(els.intervalModeButtons, els.intervalModeInput.value, 'intervalMode');
-  applyChoiceButtons(els.workStepChoiceButtons, els.workStepSecInput.value, 'workStepSec');
-  applyChoiceButtons(els.restStepChoiceButtons, els.restStepSecInput.value, 'restStepSec');
   applyChoiceButtons(
     els.cueVariantButtons.filter((button) => button.dataset.cueTarget === 'workStartCueVariant'),
     els.workStartCueVariantInput.value,

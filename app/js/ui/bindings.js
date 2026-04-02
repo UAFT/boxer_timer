@@ -56,19 +56,13 @@ export function bindControls(els, handlers) {
     });
   });
 
-  els.workStepChoiceButtons.forEach((button) => {
-    button.addEventListener('click', () => {
-      const value = button.dataset.workStepSec ?? '0';
-      els.workStepSecInput.value = value;
-      activateChoice(els.workStepChoiceButtons, (candidate) => candidate.dataset.workStepSec === value);
-    });
-  });
-
-  els.restStepChoiceButtons.forEach((button) => {
-    button.addEventListener('click', () => {
-      const value = button.dataset.restStepSec ?? '0';
-      els.restStepSecInput.value = value;
-      activateChoice(els.restStepChoiceButtons, (candidate) => candidate.dataset.restStepSec === value);
+  els.ladderStepButtons.forEach((button) => {
+    button.addEventListener('click', (event) => {
+      event.stopPropagation();
+      handlers.onAdjustLadderStep({
+        target: button.dataset.ladderTarget,
+        direction: button.dataset.ladderDirection
+      }, event);
     });
   });
 
