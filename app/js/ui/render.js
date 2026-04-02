@@ -90,7 +90,7 @@ export function renderTimer(els, state, uiState = {}) {
       ? `${metronomeModeLabel(state.config.metronomeMode)} · Вкл`
       : `${metronomeModeLabel(state.config.metronomeMode)} · Выкл`);
 
-  els.metronomeMaskNote.textContent = metronomeLocked ? 'Недоступен при warning 10 сек' : '';
+  els.metronomeMaskNote.textContent = '';
 
   els.metronomeToggleBtn.classList.toggle('is-on', !metronomeLocked && Boolean(state.config.metronomeEnabled));
   els.metronomeToggleBtn.setAttribute('aria-pressed', !metronomeLocked && state.config.metronomeEnabled ? 'true' : 'false');
