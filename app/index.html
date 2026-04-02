@@ -147,6 +147,48 @@
           </section>
 
           <section class="settings-card">
+            <div class="settings-card-title">Режим интервалов</div>
+            <div class="settings-field-stack">
+              <div class="settings-field-label">Схема</div>
+              <div class="choice-row" role="group" aria-label="Режим интервалов">
+                <button type="button" class="choice-chip" data-interval-mode="standard">Обычный</button>
+                <button type="button" class="choice-chip" data-interval-mode="ladder">Лестница</button>
+              </div>
+              <input type="hidden" id="intervalModeInput" value="standard" />
+            </div>
+
+            <div class="settings-field-stack">
+              <div class="settings-field-label">Шаг работы по раундам</div>
+              <div class="choice-row" role="group" aria-label="Шаг работы по раундам">
+                <button type="button" class="choice-chip" data-work-step-sec="-60">−60 сек</button>
+                <button type="button" class="choice-chip" data-work-step-sec="-30">−30 сек</button>
+                <button type="button" class="choice-chip" data-work-step-sec="-15">−15 сек</button>
+                <button type="button" class="choice-chip" data-work-step-sec="0">0</button>
+                <button type="button" class="choice-chip" data-work-step-sec="15">+15 сек</button>
+                <button type="button" class="choice-chip" data-work-step-sec="30">+30 сек</button>
+                <button type="button" class="choice-chip" data-work-step-sec="60">+60 сек</button>
+              </div>
+              <input type="hidden" id="workStepSecInput" value="0" />
+            </div>
+
+            <div class="settings-field-stack">
+              <div class="settings-field-label">Шаг отдыха по раундам</div>
+              <div class="choice-row" role="group" aria-label="Шаг отдыха по раундам">
+                <button type="button" class="choice-chip" data-rest-step-sec="-60">−60 сек</button>
+                <button type="button" class="choice-chip" data-rest-step-sec="-30">−30 сек</button>
+                <button type="button" class="choice-chip" data-rest-step-sec="-15">−15 сек</button>
+                <button type="button" class="choice-chip" data-rest-step-sec="0">0</button>
+                <button type="button" class="choice-chip" data-rest-step-sec="15">+15 сек</button>
+                <button type="button" class="choice-chip" data-rest-step-sec="30">+30 сек</button>
+                <button type="button" class="choice-chip" data-rest-step-sec="60">+60 сек</button>
+              </div>
+              <input type="hidden" id="restStepSecInput" value="0" />
+            </div>
+
+            <div class="settings-inline-note">Лестница меняет длительность каждого следующего раунда и отдыха на выбранный шаг.</div>
+          </section>
+
+          <section class="settings-card">
             <div class="settings-card-title">Предупреждение до конца этапа</div>
             <div class="choice-row" role="group" aria-label="Предупреждение до конца этапа">
               <button type="button" class="choice-chip" data-warning-seconds="0">Нет</button>

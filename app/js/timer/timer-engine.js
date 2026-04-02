@@ -1,10 +1,14 @@
 import { PHASES } from '../core/constants.js';
 import { clampInt } from '../core/time.js';
+import { restSecAfterRound, workSecForRound } from '../core/schedule.js';
 
 const DEFAULT_CONFIG = {
   rounds: 12,
   workSec: 180,
   restSec: 60,
+  intervalMode: 'standard',
+  workStepSec: 0,
+  restStepSec: 0,
   countdownEnabled: true,
   warningSeconds: 10,
   audioEnabled: true,
@@ -18,8 +22,8 @@ function createIdleState(config) {
     phase: PHASES.IDLE,
     roundIndex: 0,
     totalRounds: config.rounds,
-    remainingSec: config.workSec,
-    phaseDurationSec: config.workSec,
+    remainingSec: workSecForRound(config, 1),
+    phaseDurationSec: workSecForRound(config, 1),
     nextLabel: 'Следующий этап не запущен',
     countdownText: '',
     progress: 0
@@ -81,6 +85,9 @@ export class TimerEngine {
       rounds: clampInt(nextConfig?.rounds, 1, 99, DEFAULT_CONFIG.rounds),
       workSec: clampInt(nextConfig?.workSec, 1, 3600, DEFAULT_CONFIG.workSec),
       restSec: clampInt(nextConfig?.restSec, 0, 3600, DEFAULT_CONFIG.restSec),
+      intervalMode: nextConfig?.intervalMode === 'ladder' ? 'ladder' : 'standard',
+      workStepSec: clampInt(nextConfig?.workStepSec, -600, 600, DEFAULT_CONFIG.workStepSec),
+      restStepSec: clampInt(nextConfig?.restStepSec, -600, 600, DEFAULT_CONFIG.restStepSec),
       countdownEnabled: nextConfig?.countdownEnabled !== false,
       warningSeconds: normalizeWarningSeconds(nextConfig?.warningSeconds),
       audioEnabled: nextConfig?.audioEnabled !== false,
@@ -156,14 +163,14 @@ export class TimerEngine {
       phase: PHASES.WORK,
       roundIndex,
       totalRounds: this.config.rounds,
-      remainingSec: this.config.workSec,
-      phaseDurationSec: Math.max(1, this.config.workSec),
-      nextLabel: nextLabelForPhase(PHASES.WORK, this.config.workSec, effectiveWarningSecondsForPhase(this.config, PHASES.WORK)),
-      countdownText: countdownTextForPhase(PHASES.WORK, this.config.workSec, effectiveWarningSecondsForPhase(this.config, PHASES.WORK)),
+      remainingSec: workSecForRound(this.config, roundIndex),
+      phaseDurationSec: Math.max(1, workSecForRound(this.config, roundIndex)),
+      nextLabel: nextLabelForPhase(PHASES.WORK, workSecForRound(this.config, roundIndex), effectiveWarningSecondsForPhase(this.config, PHASES.WORK)),
+      countdownText: countdownTextForPhase(PHASES.WORK, workSecForRound(this.config, roundIndex), effectiveWarningSecondsForPhase(this.config, PHASES.WORK)),
       progress: 0
     };
 
-    this.tickEndsAt = Date.now() + this.config.workSec * 1000;
+    this.tickEndsAt = Date.now() + workSecForRound(this.config, roundIndex) * 1000;
     this.emitState();
     this.emitTick();
     this.startInterval();
@@ -174,14 +181,14 @@ export class TimerEngine {
       phase: PHASES.REST,
       roundIndex,
       totalRounds: this.config.rounds,
-      remainingSec: this.config.restSec,
-      phaseDurationSec: Math.max(1, this.config.restSec),
-      nextLabel: nextLabelForPhase(PHASES.REST, this.config.restSec, effectiveWarningSecondsForPhase(this.config, PHASES.REST)),
-      countdownText: countdownTextForPhase(PHASES.REST, this.config.restSec, effectiveWarningSecondsForPhase(this.config, PHASES.REST)),
+      remainingSec: restSecAfterRound(this.config, roundIndex),
+      phaseDurationSec: Math.max(1, restSecAfterRound(this.config, roundIndex)),
+      nextLabel: nextLabelForPhase(PHASES.REST, restSecAfterRound(this.config, roundIndex), effectiveWarningSecondsForPhase(this.config, PHASES.REST)),
+      countdownText: countdownTextForPhase(PHASES.REST, restSecAfterRound(this.config, roundIndex), effectiveWarningSecondsForPhase(this.config, PHASES.REST)),
       progress: 0
     };
 
-    this.tickEndsAt = Date.now() + this.config.restSec * 1000;
+    this.tickEndsAt = Date.now() + restSecAfterRound(this.config, roundIndex) * 1000;
     this.emitState();
     this.emitTick();
     this.startInterval();
@@ -204,7 +211,7 @@ export class TimerEngine {
 
       await this.emitEvent({ type: 'round-end-zero', roundIndex });
 
-      if (this.config.restSec > 0) {
+      if (restSecAfterRound(this.config, roundIndex) > 0) {
         this.beginRestPhase(roundIndex);
         return;
       }

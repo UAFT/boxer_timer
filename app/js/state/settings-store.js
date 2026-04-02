@@ -11,6 +11,14 @@ function normalizeVariant(rawValue, fallbackValue = 'v2') {
   return rawValue === 'v1' ? 'v1' : (rawValue === 'v2' ? 'v2' : (fallbackValue === 'v1' ? 'v1' : 'v2'));
 }
 
+function normalizeIntervalMode(rawMode, fallbackMode = 'standard') {
+  return rawMode === 'ladder' ? 'ladder' : (fallbackMode === 'ladder' ? 'ladder' : 'standard');
+}
+
+function normalizeStepSeconds(rawValue, fallbackValue = 0) {
+  return clampInt(rawValue, -600, 600, fallbackValue);
+}
+
 function normalizeWarningSeconds(rawValue, fallbackValue = 4) {
   const value = clampInt(rawValue, 0, 10, fallbackValue);
   return WARNING_VALUES.has(value) ? value : fallbackValue;
@@ -27,6 +35,9 @@ export function normalizeSettings(raw, fallback) {
     metronomeEnabled: Boolean(raw?.metronomeEnabled),
     metronomeBpm: clampInt(raw?.metronomeBpm, 0, 300, fallback.metronomeBpm ?? 20),
     metronomeMode: normalizeMetronomeMode(raw?.metronomeMode, fallback.metronomeMode),
+    intervalMode: normalizeIntervalMode(raw?.intervalMode, fallback.intervalMode),
+    workStepSec: normalizeStepSeconds(raw?.workStepSec, fallback.workStepSec ?? 0),
+    restStepSec: normalizeStepSeconds(raw?.restStepSec, fallback.restStepSec ?? 0),
     workStartCueVariant: normalizeVariant(raw?.workStartCueVariant, fallback.workStartCueVariant),
     restStartCueVariant: normalizeVariant(raw?.restStartCueVariant, fallback.restStartCueVariant),
     workoutEndCueVariant: normalizeVariant(raw?.workoutEndCueVariant, fallback.workoutEndCueVariant)

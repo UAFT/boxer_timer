@@ -11,6 +11,9 @@ export const PRESETS = {
     metronomeEnabled: false,
     metronomeBpm: 20,
     metronomeMode: 'direct',
+    intervalMode: 'standard',
+    workStepSec: 0,
+    restStepSec: 0,
     workStartCueVariant: 'v2',
     restStartCueVariant: 'v2',
     workoutEndCueVariant: 'v2'
@@ -27,6 +30,9 @@ export const PRESETS = {
     metronomeEnabled: false,
     metronomeBpm: 20,
     metronomeMode: 'direct',
+    intervalMode: 'standard',
+    workStepSec: 0,
+    restStepSec: 0,
     workStartCueVariant: 'v2',
     restStartCueVariant: 'v2',
     workoutEndCueVariant: 'v2'
@@ -43,6 +49,9 @@ export const PRESETS = {
     metronomeEnabled: false,
     metronomeBpm: 20,
     metronomeMode: 'direct',
+    intervalMode: 'standard',
+    workStepSec: 0,
+    restStepSec: 0,
     workStartCueVariant: 'v2',
     restStartCueVariant: 'v2',
     workoutEndCueVariant: 'v2'
@@ -59,6 +68,9 @@ export const PRESETS = {
     metronomeEnabled: false,
     metronomeBpm: 20,
     metronomeMode: 'direct',
+    intervalMode: 'standard',
+    workStepSec: 0,
+    restStepSec: 0,
     workStartCueVariant: 'v2',
     restStartCueVariant: 'v2',
     workoutEndCueVariant: 'v2'

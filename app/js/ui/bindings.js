@@ -48,6 +48,30 @@ export function bindControls(els, handlers) {
     });
   });
 
+  els.intervalModeButtons.forEach((button) => {
+    button.addEventListener('click', () => {
+      const value = button.dataset.intervalMode ?? 'standard';
+      els.intervalModeInput.value = value;
+      activateChoice(els.intervalModeButtons, (candidate) => candidate.dataset.intervalMode === value);
+    });
+  });
+
+  els.workStepChoiceButtons.forEach((button) => {
+    button.addEventListener('click', () => {
+      const value = button.dataset.workStepSec ?? '0';
+      els.workStepSecInput.value = value;
+      activateChoice(els.workStepChoiceButtons, (candidate) => candidate.dataset.workStepSec === value);
+    });
+  });
+
+  els.restStepChoiceButtons.forEach((button) => {
+    button.addEventListener('click', () => {
+      const value = button.dataset.restStepSec ?? '0';
+      els.restStepSecInput.value = value;
+      activateChoice(els.restStepChoiceButtons, (candidate) => candidate.dataset.restStepSec === value);
+    });
+  });
+
   els.cueVariantButtons.forEach((button) => {
     button.addEventListener('click', () => {
       const target = button.dataset.cueTarget;
