@@ -75,7 +75,7 @@ export function renderTimer(els, state, uiState = {}) {
   els.phaseLabel.textContent = phaseLabelText(state);
   els.roundLabel.textContent = roundLabelText(state);
   els.phaseCaption.textContent = '';
-  els.countdownCaption.textContent = state.countdownText || '';
+  els.countdownCaption.textContent = '';
   els.progressFill.style.width = `${state.progress || 0}%`;
 
   els.metricWork.textContent = formatTime(state.config.workSec);

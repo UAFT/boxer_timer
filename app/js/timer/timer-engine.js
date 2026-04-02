@@ -35,12 +35,9 @@ function effectiveWarningSecondsForPhase(config, phase) {
 }
 
 function countdownTextForPhase(phase, remainingSec, warningSeconds) {
-  if ((phase === PHASES.WORK || phase === PHASES.REST) && warningSeconds > 0 && remainingSec > 0 && remainingSec <= warningSeconds) {
-    return phase === PHASES.WORK
-      ? `Предупреждение конца раунда · ${warningSeconds} сек`
-      : `Предупреждение конца отдыха · ${warningSeconds} сек`;
-  }
-
+  void phase;
+  void remainingSec;
+  void warningSeconds;
   return '';
 }
 
@@ -144,7 +141,7 @@ export class TimerEngine {
       remainingSec: 4,
       phaseDurationSec: 4,
       nextLabel: 'На нуле: старт первого раунда',
-      countdownText: 'Предстартовый отсчёт 4-3-2-1',
+      countdownText: '',
       progress: 0
     };
     this.tickEndsAt = Date.now() + 4000;
