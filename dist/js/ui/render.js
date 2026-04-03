@@ -119,27 +119,8 @@ export function setSettingsForm(els, settings) {
   els.restStepSecInput.value = String(settings.restStepSec ?? 0);
   if (els.workStepSecDisplay) els.workStepSecDisplay.textContent = stepLabel(settings.workStepSec ?? 0);
   if (els.restStepSecDisplay) els.restStepSecDisplay.textContent = stepLabel(settings.restStepSec ?? 0);
-  els.workStartCueVariantInput.value = settings.workStartCueVariant || 'v2';
-  els.restStartCueVariantInput.value = settings.restStartCueVariant || 'v2';
-  els.workoutEndCueVariantInput.value = settings.workoutEndCueVariant || 'v2';
-
   applyChoiceButtons(els.warningChoiceButtons, els.warningSecondsInput.value, 'warningSeconds');
   applyChoiceButtons(els.intervalModeButtons, els.intervalModeInput.value, 'intervalMode');
-  applyChoiceButtons(
-    els.cueVariantButtons.filter((button) => button.dataset.cueTarget === 'workStartCueVariant'),
-    els.workStartCueVariantInput.value,
-    'cueValue'
-  );
-  applyChoiceButtons(
-    els.cueVariantButtons.filter((button) => button.dataset.cueTarget === 'restStartCueVariant'),
-    els.restStartCueVariantInput.value,
-    'cueValue'
-  );
-  applyChoiceButtons(
-    els.cueVariantButtons.filter((button) => button.dataset.cueTarget === 'workoutEndCueVariant'),
-    els.workoutEndCueVariantInput.value,
-    'cueValue'
-  );
 }
 
 export function readSettingsForm(els) {
@@ -148,10 +129,7 @@ export function readSettingsForm(els) {
     warningSeconds: Number(els.warningSecondsInput.value || '0'),
     intervalMode: els.intervalModeInput.value || 'standard',
     workStepSec: Number(els.workStepSecInput.value || '0'),
-    restStepSec: Number(els.restStepSecInput.value || '0'),
-    workStartCueVariant: els.workStartCueVariantInput.value || 'v2',
-    restStartCueVariant: els.restStartCueVariantInput.value || 'v2',
-    workoutEndCueVariant: els.workoutEndCueVariantInput.value || 'v2'
+    restStepSec: Number(els.restStepSecInput.value || '0')
   };
 }
 

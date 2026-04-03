@@ -54,16 +54,16 @@ function resolveEventAudioSpec(event, settings) {
   }
 
   if (event.type === 'round-start-zero') {
-    return { key: `cue_round_start_${settings.workStartCueVariant || 'v2'}`, tag: 'transition', volume: 1.6 };
+    return { key: 'cue_round_start_v2', tag: 'transition', volume: 1.6 };
   }
   if (event.type === 'round-end-zero') {
-    return { key: `cue_rest_start_${settings.restStartCueVariant || 'v2'}`, tag: 'transition', volume: 1.6 };
+    return { key: 'cue_rest_start_v2', tag: 'transition', volume: 1.6 };
   }
   if (event.type === 'rest-end-zero') {
-    return { key: `cue_round_start_${settings.workStartCueVariant || 'v2'}`, tag: 'transition', volume: 1.6 };
+    return { key: 'cue_round_start_v2', tag: 'transition', volume: 1.6 };
   }
   if (event.type === 'workout-end-zero') {
-    return { key: `cue_workout_end_${settings.workoutEndCueVariant || 'v2'}`, tag: 'transition', volume: 1.7 };
+    return { key: 'cue_workout_end_v2', tag: 'transition', volume: 1.7 };
   }
   return null;
 }

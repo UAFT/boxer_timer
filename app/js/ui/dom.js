@@ -37,10 +37,6 @@ export function getDomRefs() {
     restStepSecInput: document.getElementById('restStepSecInput'),
     restStepSecDisplay: document.getElementById('restStepSecDisplay'),
     ladderStepButtons: [...document.querySelectorAll('[data-ladder-target][data-ladder-direction]')],
-    workStartCueVariantInput: document.getElementById('workStartCueVariantInput'),
-    restStartCueVariantInput: document.getElementById('restStartCueVariantInput'),
-    workoutEndCueVariantInput: document.getElementById('workoutEndCueVariantInput'),
-    cueVariantButtons: [...document.querySelectorAll('[data-cue-target][data-cue-value]')],
 
     presetTabs: [...document.querySelectorAll('.preset-tab')],
     stepperButtons: [...document.querySelectorAll('[data-adjust-target]')]
