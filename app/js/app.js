@@ -115,7 +115,7 @@ const timer = new TimerEngine({
 
 function syncMetronome() {
   metronome.setConfig({
-    enabled: activeSettings.metronomeEnabled && !isMetronomeLocked(activeSettings),
+    enabled: activeSettings.metronomeEnabled && isMetronomePanelOpen() && !isMetronomeLocked(activeSettings),
     bpm: activeSettings.metronomeBpm,
     mode: activeSettings.metronomeMode
   });
@@ -240,11 +240,7 @@ function handleOpenMetronomeCard(event) {
   event?.stopPropagation?.();
   if (isMetronomePanelOpen() || isMetronomeLocked(activeSettings)) return;
 
-  const draft = {
-    ...activeSettings,
-    metronomeEnabled: true,
-    metronomeMode: activeSettings.metronomeMode || 'direct'
-  };
+  const draft = { ...activeSettings };
   if (!draft.metronomeBpm || draft.metronomeBpm <= 0) {
     draft.metronomeBpm = DEFAULT_METRONOME_BPM;
   }
