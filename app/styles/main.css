@@ -1330,3 +1330,5 @@ img {
 .program-actions button:first-child {background:#39c67d;color:#072919;font-weight:700;flex:1}
 .program-hint {font-size:11px;color:#9aaad0}
 @media(prefers-reduced-motion:reduce){.program-stage.is-current{animation:none}}
+
+.language-select-row{display:flex;align-items:center;justify-content:space-between;gap:1rem;color:#d9e3f7;font-size:1rem;flex-wrap:wrap}.language-select-row select{background:#111c44;color:#fff;border:1px solid #354778;border-radius:12px;padding:12px;min-width:145px;font:inherit}

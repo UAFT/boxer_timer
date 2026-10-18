@@ -6,12 +6,12 @@
       name="viewport"
       content="width=device-width, initial-scale=1, viewport-fit=cover"
     />
-    <title>Fight Tech Timer</title>
+    <title>FightTech Interval Timer</title>
     <meta
       name="description"
       content="Offline sports timer. Local logic. Local audio. No API."
     />
-    <link rel="icon" href="./favicon.ico" />
+    <link rel="icon" href="./assets/icons/icon-192.png" />
     <link rel="stylesheet" href="./styles/main.css" />
   </head>
   <body>
@@ -31,7 +31,7 @@
         <button class="preset-tab is-active" type="button" data-preset="classic3">3′</button>
         <button class="preset-tab" type="button" data-preset="classic2">2′</button>
         <button class="preset-tab" type="button" data-preset="classic1">1′</button>
-        <button class="preset-tab" type="button" data-preset="tabata2020x24">⚡</button>
+        <button class="preset-tab" type="button" data-preset="tabata2020x24" aria-label="Скоростной" title="Скоростной · 20/20 · 24 раунда">⚡</button>
       </section>
 
       <section class="timer-card panel">
@@ -149,6 +149,7 @@
         </div>
 
         <div class="settings-grid settings-grid-rebuilt">
+          <section class="settings-card"><div class="settings-card-title">Язык / Language</div><label class="language-select-row" for="languageSelect">Язык интерфейса <select id="languageSelect"><option value="auto">Авто / Auto</option><option value="ru">Русский</option><option value="en">English</option></select></label></section>
           <section class="settings-card">
             <div class="settings-card-title">Общее</div>
             <label class="settings-toggle-row">
