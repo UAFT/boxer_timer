@@ -6,6 +6,10 @@ function intervalModeTitle(config) {
   return config?.programRounds?.length ? 'Программа' : (config?.presetId === 'tabata2020x24' ? 'Скоростной' : (config?.intervalMode === 'ladder' ? 'Лестница' : 'Обычный'));
 }
 
+function programStageMode(round) {
+  return round.presetId === 'tabata2020x24' ? 'Скоростной' : (round.intervalMode === 'ladder' ? 'Лестница' : 'Обычный');
+}
+
 function phaseLabelText(state) {
   const modeTitle = intervalModeTitle(state?.config);
   if (state.isPaused) return `Пауза · ${modeTitle}`;
@@ -149,7 +153,7 @@ export function renderLiveLadder(els, state, ui = {}) {
     const rows = [];
     for (let i = 1; i <= totalRoundsForConfig(config); i += 1) {
       const pr=config.programRounds?.[i-1];
-      if (pr && pr.stageRound===1) rows.push('<div class="ladder-block-label" data-stage="'+pr.stageIndex+'">Этап '+(pr.stageIndex+1)+'</div>');
+      if (pr && pr.stageRound===1) rows.push('<div class="ladder-block-label" data-stage="'+pr.stageIndex+'">Этап '+(pr.stageIndex+1)+' · '+programStageMode(pr)+'</div>');
       if (pr && pr.blockCount>1 && pr.localRound===1) rows.push('<div class="ladder-block-label" data-block="'+pr.block+'" data-stage="'+pr.stageIndex+'">Блок '+pr.block+' из '+pr.blockCount+'</div>');
       if (!pr && blockCount(config) > 1 && localRoundFor(config,i) === 1) rows.push(`<div class="ladder-block-label" data-block="${blockForRound(config,i)}">Блок ${blockForRound(config,i)} из ${blockCount(config)}</div>`);
       const rest = i < totalRoundsForConfig(config) ? formatTime(restSecAfterRound(config, i)) : '—';
