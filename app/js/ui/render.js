@@ -130,6 +130,8 @@ export function renderLiveLadder(els, state, ui = {}) {
   if (!panel) return;
   const config = state.config;
   panel.hidden = config.intervalMode !== 'ladder' && !config.programRounds?.length;
+  const ladderTitle = panel.querySelector('.ladder-live-head strong');
+  if (ladderTitle) ladderTitle.textContent = config.programRounds?.length ? 'ПРОГРАММА' : 'ЛЕСТНИЦА';
   if (panel.hidden) return;
   const expanded = Boolean(ui.ladderExpanded);
   panel.classList.toggle('is-expanded', expanded);
