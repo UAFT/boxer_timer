@@ -1,5 +1,6 @@
 import { AUDIO_KEYS } from './core/constants.js';
 import { clonePreset } from './state/presets.js';
+import { compileProgram, normalizeProgram, PRESET_NAMES, PROGRAM_KEY } from './core/program.js';
 import { loadProfileState, saveProfileState, normalizeSettings } from './state/settings-store.js';
 import { AudioEngine } from './audio/audio-engine.js';
 import { MetronomeEngine } from './audio/metronome-engine.js';
@@ -72,6 +73,10 @@ const profileState = loadProfileState();
 const profiles = { ...profileState.profiles };
 let activePresetId = profileState.activeId;
 let activeSettings = normalizeSettings(profiles[activePresetId], clonePreset(activePresetId));
+let programEntries = [];
+try { programEntries = normalizeProgram(JSON.parse(localStorage.getItem(PROGRAM_KEY) || '[]')); } catch {}
+let programRunning = false;
+let programSnapshot = null;
 const uiState = {
   metronomePanel: 'collapsed',
   ladderExpanded: false
@@ -88,15 +93,18 @@ function setMetronomePanel(panel, { render = true } = {}) {
 
 function renderCurrentState() {
   renderTimer(els, { ...timer.state, config: timer.config, isPaused: timer.isPaused }, { metronomePanelOpen: isMetronomePanelOpen(), ladderExpanded: uiState.ladderExpanded });
+  renderProgram();
 }
 
 const timer = new TimerEngine({
   onTick: (state) => {
     renderTimer(els, state, { metronomePanelOpen: isMetronomePanelOpen(), ladderExpanded: uiState.ladderExpanded });
+    renderProgram();
     metronome.syncPhase(state);
   },
   onStateChange: (state) => {
     renderTimer(els, state, { metronomePanelOpen: isMetronomePanelOpen(), ladderExpanded: uiState.ladderExpanded });
+    renderProgram();
     metronome.syncPhase(state);
   },
   onEvent: async (event) => {
@@ -133,6 +141,7 @@ function applySettings(nextSettings) {
   saveProfileState(activePresetId, profiles);
   audio.setEnabled(activeSettings.audioEnabled);
   syncMetronome();
+  if (programRunning) exitProgram();
   timer.applyConfig(activeSettings);
   setSettingsForm(els, activeSettings);
   renderCurrentState();
@@ -154,16 +163,19 @@ async function handleToggleRun() {
     return;
   }
 
+  if (programEntries.length && !programRunning) { startProgram(); return; }
   timer.start();
 }
 
 function handleReset() {
+  if (programRunning) { exitProgram(); }
   audio.stopAll();
   timer.reset();
   metronome.stop();
 }
 
 function handleSelectPreset(presetId) {
+  if (programRunning) exitProgram();
   if (!presetId || !['classic3', 'classic2', 'classic1', 'tabata2020x24'].includes(presetId)) return;
   activePresetId = presetId;
   setActivePreset(els, activePresetId);
@@ -251,6 +263,114 @@ function handleOpenMetronomeCard(event) {
   applySettings(draft);
 }
 
+
+function persistProgram() {
+  localStorage.setItem(PROGRAM_KEY, JSON.stringify(programEntries));
+  renderProgram();
+}
+function addProgramStage(presetId) {
+  if (!PRESET_NAMES[presetId] || programRunning || programEntries.length >= 24) return;
+  programEntries.push({ presetId, restAfterSec: 60 });
+  persistProgram();
+}
+function removeProgramStage(index) {
+  if (programRunning) return;
+  programEntries.splice(index,1);
+  persistProgram();
+}
+function moveProgramStage(index, delta) {
+  if (programRunning || index+delta<0 || index+delta>=programEntries.length) return;
+  [programEntries[index],programEntries[index+delta]]=[programEntries[index+delta],programEntries[index]];
+  persistProgram();
+}
+function setProgramRest(index,delta) {
+  if (programRunning || !programEntries[index]) return;
+  programEntries[index].restAfterSec = Math.max(0,Math.min(3600,programEntries[index].restAfterSec+delta));
+  persistProgram();
+}
+function startProgram() {
+  if (!programEntries.length) return;
+  audio.stopAll();
+  metronome.stop();
+  programSnapshot = compileProgram(programEntries,profiles);
+  if (!programSnapshot.length) return;
+  programRunning = true;
+  timer.applyConfig({ ...activeSettings, programRounds: programSnapshot, intervalMode:'standard' });
+  syncMetronome();
+  renderCurrentState();
+  timer.start();
+}
+function exitProgram() {
+  programRunning=false;
+  programSnapshot=null;
+  timer.applyConfig(activeSettings);
+  renderCurrentState();
+}
+function renderProgram() {
+  const panel=document.getElementById('programPanel');
+  if (!panel) return;
+  panel.hidden=!programEntries.length;
+  document.getElementById('programStart').hidden=programRunning;
+  document.getElementById('programExit').hidden=!programRunning;
+  for (const tab of els.presetTabs) {
+    const positions=programEntries.flatMap((entry,i)=>entry.presetId===tab.dataset.preset?[i+1]:[]);
+    tab.classList.toggle('has-program',positions.length>0);
+    let badge=tab.querySelector('.preset-order');
+    if (!badge) {badge=document.createElement('span');badge.className='preset-order';tab.append(badge);}
+    badge.replaceChildren(...positions.map(i=>{const b=document.createElement('b');b.textContent=String(i);return b;}));
+  }
+  const list=document.getElementById('programList');
+  const activeIndex=programRunning && timer.state.roundIndex>0 ? programSnapshot?.[timer.state.roundIndex-1]?.stageIndex : -1;
+  const signature=JSON.stringify([programEntries,programRunning]);
+  if (list.dataset.signature!==signature) {
+    list.replaceChildren();
+    programEntries.forEach((entry,i)=>{
+      const stage=document.createElement('div');stage.className='program-stage';stage.dataset.stage=String(i);
+      const main=document.createElement('div');main.className='program-stage-main';
+      const name=document.createElement('strong');name.textContent=`Этап  · `;
+      const detail=document.createElement('small');const cfg=profiles[entry.presetId];
+      detail.textContent=cfg.intervalMode==='ladder' ? `Лестница ·  раундов${cfg.blockEnabled?' · блоков '+cfg.blockCount:''}` : ` раундов · :`;
+      main.append(name,detail);stage.append(main);
+      if (!programRunning) {
+        for (const [label,fn] of [['↑',()=>moveProgramStage(i,-1)],['↓',()=>moveProgramStage(i,1)],['×',()=>removeProgramStage(i)]]) {
+          const b=document.createElement('button');b.type='button';b.textContent=label;b.setAttribute('aria-label',label==='×'?'Удалить этап':label==='↑'?'Поднять этап':'Опустить этап');b.addEventListener('click',fn);stage.append(b);
+        }
+      }
+      list.append(stage);
+      if (i<programEntries.length-1) {
+        const rest=document.createElement('div');rest.className='program-rest';
+        const label=document.createElement('span');label.textContent='Отдых между этапами';
+        const minus=document.createElement('button');minus.textContent='−';minus.disabled=programRunning;minus.addEventListener('click',()=>setProgramRest(i,-5));
+        const time=document.createElement('strong');time.textContent=`:`;
+        const plus=document.createElement('button');plus.textContent='+';plus.disabled=programRunning;plus.addEventListener('click',()=>setProgramRest(i,5));
+        rest.append(label,minus,time,plus);list.append(rest);
+      }
+    });
+    list.dataset.signature=signature;
+  }
+  for (const stage of list.querySelectorAll('.program-stage')) stage.classList.toggle('is-current',Number(stage.dataset.stage)===activeIndex);
+}
+function bindProgram() {
+  let hold=null;
+  for (const tab of els.presetTabs) {
+    let consumed=false;
+    const cancel=()=>{if(hold!==null){clearTimeout(hold);hold=null;}};
+    tab.addEventListener('pointerdown',e=>{
+      if(e.button!==0) return;
+      consumed=false;cancel();
+      hold=setTimeout(()=>{hold=null;consumed=true;addProgramStage(tab.dataset.preset);},550);
+    });
+    tab.addEventListener('pointerup',cancel);
+    tab.addEventListener('pointercancel',cancel);
+    tab.addEventListener('pointerleave',cancel);
+    tab.addEventListener('contextmenu',e=>e.preventDefault());
+    tab.addEventListener('click',e=>{if(consumed){e.stopImmediatePropagation();e.preventDefault();consumed=false;}},true);
+  }
+  document.getElementById('programClear').addEventListener('click',()=>{if(!programRunning){programEntries=[];persistProgram();}});
+  document.getElementById('programStart').addEventListener('click',async()=>{await audio.unlock();startProgram();});
+  document.getElementById('programExit').addEventListener('click',exitProgram);
+}
+
 function bootstrap() {
   audio.setEnabled(activeSettings.audioEnabled);
   syncMetronome();
@@ -258,6 +378,7 @@ function bootstrap() {
   setSettingsForm(els, activeSettings);
   timer.applyConfig(activeSettings);
   bindPresetTabs(els, handleSelectPreset);
+  bindProgram();
   bindControls(els, {
     onToggleRun: handleToggleRun,
     onReset: handleReset,
