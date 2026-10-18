@@ -31,9 +31,22 @@ jobs:
         run: |
           rm -rf android
           rm -f capacitor.config.ts
-          echo '{"appId":"com.andarfighttech.boxertimer","appName":"Andar Fight Timer","webDir":"dist"}' > capacitor.config.json
+          echo '{"appId":"com.andarfighttech.boxertimer","appName":"FightTech Interval Timer","webDir":"dist"}' > capacitor.config.json
           npx cap add android
           npx cap sync android
+      - name: Apply Fight Tech launcher icon
+        run: |
+          python3 - <<'PYICON'
+          from pathlib import Path
+          import shutil
+          for density,size in {'mdpi':48,'hdpi':72,'xhdpi':96,'xxhdpi':144,'xxxhdpi':192}.items():
+              folder=Path('android/app/src/main/res/mipmap-'+density)
+              folder.mkdir(parents=True,exist_ok=True)
+              for name in ('ic_launcher.png','ic_launcher_round.png','ic_launcher_foreground.png'):
+                  shutil.copyfile('app/assets/android-icon/icon-'+str(size)+'.png',folder/name)
+          for file in Path('android/app/src/main/res').glob('mipmap-anydpi-v26/ic_launcher*.xml'):
+              file.unlink()
+          PYICON
       - name: Set stable package ID and increasing versionCode
         env:
           BUILD_NUMBER: ${{ github.run_number }}
