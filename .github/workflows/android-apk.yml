@@ -32,7 +32,9 @@ jobs:
           cat > capacitor.config.json <<'EOF'
           {"appId":"com.andarfighttech.boxertimer","appName":"Andar Fight Timer","webDir":"dist"}
           EOF
-      - run: npx cap add android
+      - name: Ensure Android platform exists
+        run: |
+          if [ ! -d android ]; then npx cap add android; fi
       - run: npx cap sync android
       - run: cd android && chmod +x gradlew && ./gradlew --no-daemon assembleDebug
       - uses: actions/upload-artifact@v4
