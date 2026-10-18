@@ -12,7 +12,7 @@ export function totalRoundsForConfig(config) {
 }
 export function localRoundFor(config, roundIndex) {
   const rounds = Math.max(1, Number(config?.rounds) || 1);
-  return ((Math.max(1, roundIndex) - 1) % rounds) + 1;
+  return config?.rounds == null ? Math.max(1, roundIndex) : ((Math.max(1, roundIndex) - 1) % rounds) + 1;
 }
 export function blockForRound(config, roundIndex) {
   return Math.floor((Math.max(1, roundIndex) - 1) / Math.max(1, config.rounds)) + 1;
