@@ -19,7 +19,11 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
-      - uses: android-actions/setup-android@v3
+      - name: Verify Android SDK on runner
+        run: |
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          test -d "$ANDROID_HOME"
+          ls "$ANDROID_HOME/platforms" | tail -5
       - run: npm install --no-audit --no-fund
       - run: npm run build
       - run: npx cap add android
