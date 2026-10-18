@@ -1,6 +1,11 @@
 name: Android debug APK
 on:
   workflow_dispatch:
+  pull_request:
+    paths:
+      - 'app/**'
+      - 'tests/**'
+      - '.github/workflows/android-apk.yml'
   push:
     paths:
       - .github/workflows/android-apk.yml
@@ -25,6 +30,7 @@ jobs:
           test -d "$ANDROID_HOME"
           ls "$ANDROID_HOME/platforms" | tail -5
       - run: npm install --no-audit --no-fund
+      - run: node --experimental-default-type=module --test tests/*.test.mjs || test ! -d tests
       - run: npm run build
       - name: Write JSON Capacitor config for CI
         run: |
