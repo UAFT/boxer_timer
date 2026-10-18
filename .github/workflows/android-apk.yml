@@ -1,6 +1,11 @@
 name: Android debug APK
 on:
   workflow_dispatch:
+  pull_request:
+    paths:
+      - 'app/**'
+      - 'tests/**'
+      - '.github/workflows/android-apk.yml'
   push:
     branches: [feat/preset-memory-ladder-preview-20261019]
     paths:
