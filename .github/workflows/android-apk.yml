@@ -2,6 +2,7 @@ name: Android debug APK
 on:
   workflow_dispatch:
   push:
+    branches: [feat/preset-memory-ladder-preview-20261019]
     paths:
       - .github/workflows/android-apk.yml
 permissions:
@@ -25,6 +26,7 @@ jobs:
           test -d "$ANDROID_HOME"
           ls "$ANDROID_HOME/platforms" | tail -5
       - run: npm install --no-audit --no-fund
+      - run: node --experimental-default-type=module --test tests/profile-ladder.test.mjs
       - run: npm run build
       - name: Write JSON Capacitor config for CI
         run: |
