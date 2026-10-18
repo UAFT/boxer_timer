@@ -147,7 +147,7 @@
           </section>
 
           <section class="settings-card">
-            <div class="settings-card-title">Режим интервалов</div>
+            <div class="settings-card-title">Режим интервалов</div>\n            <p class="ladder-explainer">Лестница: каждый следующий раунд и отдых могут становиться длиннее или короче на выбранный шаг. Количество раундов, длительность первого раунда и исходное время отдыха задаются на главном экране выбранного профиля.</p>
             <div class="settings-field-stack">
               <div class="settings-field-label">Схема</div>
               <div class="choice-row" role="group" aria-label="Режим интервалов">
@@ -165,7 +165,7 @@
                 <button type="button" class="settings-stepper-btn" data-ladder-target="workStepSec" data-ladder-direction="up">+5</button>
               </div>
               <input type="hidden" id="workStepSecInput" value="0" />
-              <div class="settings-inline-note">Шаг меняется по 5 секунд: 5, 10, 15, 20, 25, 30… Можно и уменьшать, и увеличивать.</div>
+              <div class="settings-inline-note">Отрицательный шаг сокращает каждый следующий раунд, положительный — удлиняет. Изменение по 5 секунд.</div>
             </div>
 
             <div class="settings-field-stack">
@@ -176,10 +176,10 @@
                 <button type="button" class="settings-stepper-btn" data-ladder-target="restStepSec" data-ladder-direction="up">+5</button>
               </div>
               <input type="hidden" id="restStepSecInput" value="0" />
-              <div class="settings-inline-note">Шаг отдыха тоже наборный: можно уменьшать или увеличивать по 5 секунд.</div>
+              <div class="settings-inline-note">Отрицательный шаг сокращает отдых, положительный — удлиняет. Нулевой шаг сохраняет одинаковый отдых.</div>
             </div>
 
-            <div class="settings-inline-note">Лестница меняет длительность каждого следующего раунда и отдыха на выбранный шаг.</div>
+            <div class="ladder-preview" id="ladderPreview" aria-live="polite"></div>
           </section>
 
           <section class="settings-card">

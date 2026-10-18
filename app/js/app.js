@@ -1,6 +1,6 @@
 import { AUDIO_KEYS } from './core/constants.js';
 import { clonePreset } from './state/presets.js';
-import { loadSettings, normalizeSettings, saveSettings } from './state/settings-store.js';
+import { loadProfileState, saveProfileState, normalizeSettings } from './state/settings-store.js';
 import { AudioEngine } from './audio/audio-engine.js';
 import { MetronomeEngine } from './audio/metronome-engine.js';
 import { TimerEngine } from './timer/timer-engine.js';
@@ -10,6 +10,7 @@ import {
   openSettings,
   readSettingsForm,
   renderTimer,
+  renderLadderPreview,
   setActivePreset,
   setSettingsForm
 } from './ui/render.js';
@@ -25,7 +26,6 @@ const STEP_RULES = {
   restStepSec: { step: 5, min: -600, max: 600 }
 };
 const DEFAULT_METRONOME_BPM = 20;
-const PRESET_FIELDS = ['rounds', 'workSec', 'restSec'];
 const PRESTART_COUNTDOWN_EVENTS = new Set(['prestart-count-4', 'prestart-count-3', 'prestart-count-2', 'prestart-count-1']);
 const METRONOME_SUPPRESS_EVENTS = new Set(['round-end-zero', 'workout-end-zero']);
 const ROUND_START_SYNC_EVENTS = new Set(['round-start-zero', 'rest-end-zero']);
@@ -68,8 +68,10 @@ function resolveEventAudioSpec(event, settings) {
   return null;
 }
 
-let activePresetId = DEFAULT_PRESET_ID;
-let activeSettings = loadSettings(clonePreset(DEFAULT_PRESET_ID));
+const profileState = loadProfileState();
+const profiles = { ...profileState.profiles };
+let activePresetId = profileState.activeId;
+let activeSettings = normalizeSettings(profiles[activePresetId], clonePreset(activePresetId));
 const uiState = {
   metronomePanel: 'collapsed'
 };
@@ -126,7 +128,8 @@ function applySettings(nextSettings) {
   if (isMetronomeLocked(activeSettings)) {
     setMetronomePanel('collapsed', { render: false });
   }
-  saveSettings(activeSettings);
+  profiles[activePresetId] = { ...activeSettings };
+  saveProfileState(activePresetId, profiles);
   audio.setEnabled(activeSettings.audioEnabled);
   syncMetronome();
   timer.applyConfig(activeSettings);
@@ -160,12 +163,10 @@ function handleReset() {
 }
 
 function handleSelectPreset(presetId) {
-  activePresetId = presetId || DEFAULT_PRESET_ID;
+  if (!presetId || !['classic3', 'classic2', 'classic1', 'tabata2020x24'].includes(presetId)) return;
+  activePresetId = presetId;
   setActivePreset(els, activePresetId);
-  const preset = clonePreset(activePresetId);
-  const merged = { ...activeSettings };
-  for (const key of PRESET_FIELDS) merged[key] = preset[key];
-  applySettings(merged);
+  applySettings(normalizeSettings(profiles[activePresetId], clonePreset(activePresetId)));
   closeSettings(els);
 }
 
@@ -262,6 +263,7 @@ function bootstrap() {
     onOpenSettings: () => openSettings(els),
     onCloseSettings: () => closeSettings(els),
     onSaveSettings: handleSaveSettings,
+    onPreviewChange: () => renderLadderPreview(els, activeSettings),
     onAdjustValue: handleAdjustValue,
     onAdjustLadderStep: handleAdjustLadderStep,
     onToggleMetronome: handleToggleMetronome,
