@@ -125,6 +125,11 @@
           <div class="visually-hidden" id="metronomeStatus" aria-hidden="true">Выкл · Прямой</div>
         </article>
       </section>
+      <section id="ladderLive" class="ladder-live panel" hidden aria-label="Лестница раундов">
+        <div class="ladder-live-head"><strong>ЛЕСТНИЦА</strong><button id="ladderExpand" type="button" aria-label="Развернуть лестницу" aria-expanded="false">⛶</button></div>
+        <div id="ladderFullControls" class="ladder-full-controls" hidden><strong id="ladderFullTime">00:00</strong><button id="ladderFullPause" type="button">Старт</button></div>
+        <div id="ladderLiveList" class="ladder-live-list"></div>
+      </section>
     </main>
 
     <div class="modal-backdrop" id="settingsModal" hidden>
@@ -147,7 +152,8 @@
           </section>
 
           <section class="settings-card">
-            <div class="settings-card-title">Режим интервалов</div>\n            <p class="ladder-explainer">Лестница: каждый следующий раунд и отдых могут становиться длиннее или короче на выбранный шаг. Количество раундов, длительность первого раунда и исходное время отдыха задаются на главном экране выбранного профиля.</p>
+            <div class="settings-card-title">Режим интервалов</div>
+            <p class="ladder-explainer">Лестница: каждый следующий раунд и отдых могут становиться длиннее или короче на выбранный шаг. Количество раундов, длительность первого раунда и исходное время отдыха задаются на главном экране выбранного профиля.</p>
             <div class="settings-field-stack">
               <div class="settings-field-label">Схема</div>
               <div class="choice-row" role="group" aria-label="Режим интервалов">
