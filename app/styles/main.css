@@ -1269,3 +1269,10 @@ img {
     font-size: 12px;
   }
 }
+
+.ladder-explainer { color: var(--muted); font-size: 13px; line-height: 1.55; margin: 10px 0 14px; }
+.ladder-preview { margin-top: 16px; padding: 12px; border-radius: 16px; border: 1px solid rgba(255,255,255,.12); background: rgba(10,21,54,.8); }
+.ladder-preview-title { font-weight: 800; margin-bottom: 10px; }
+.ladder-preview-row { display: grid; grid-template-columns: minmax(0,1fr) 58px 48px 58px; align-items: center; gap: 6px; padding: 5px 0; font-size: 12px; }
+.ladder-preview-row strong { text-align: center; border-radius: 8px; padding: 8px 3px; background: #28c976; color: #07172c; font-variant-numeric: tabular-nums; }
+.ladder-preview-row strong:last-child { background: #263e79; color: #dbe9ff; }
