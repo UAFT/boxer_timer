@@ -151,14 +151,21 @@ export function renderLiveLadder(els, state, ui = {}) {
   const key = config.programRounds?.length ? JSON.stringify(config.programRounds) : [config.rounds, config.workSec, config.restSec, config.workStepSec, config.restStepSec, config.blockEnabled, config.blockCount, config.blockRestSec].join(':');
   if (list.dataset.scheduleKey !== key) {
     const rows = [];
+    let openStage = false;
     for (let i = 1; i <= totalRoundsForConfig(config); i += 1) {
       const pr=config.programRounds?.[i-1];
-      if (pr && pr.stageRound===1) rows.push('<div class="ladder-block-label" data-stage="'+pr.stageIndex+'">Этап '+(pr.stageIndex+1)+' · '+programStageMode(pr)+'</div>');
+      if (pr && pr.stageRound===1) {
+        if (openStage) rows.push('</section>');
+        rows.push('<section class="ladder-stage-group" data-stage-group="'+pr.stageIndex+'">');
+        openStage = true;
+        rows.push('<div class="ladder-block-label" data-stage="'+pr.stageIndex+'">Этап '+(pr.stageIndex+1)+' · '+programStageMode(pr)+'</div>');
+      }
       if (pr && pr.blockCount>1 && pr.localRound===1) rows.push('<div class="ladder-block-label" data-block="'+pr.block+'" data-stage="'+pr.stageIndex+'">Блок '+pr.block+' из '+pr.blockCount+'</div>');
       if (!pr && blockCount(config) > 1 && localRoundFor(config,i) === 1) rows.push(`<div class="ladder-block-label" data-block="${blockForRound(config,i)}">Блок ${blockForRound(config,i)} из ${blockCount(config)}</div>`);
       const rest = i < totalRoundsForConfig(config) ? formatTime(restSecAfterRound(config, i)) : '—';
       rows.push(`<div class="ladder-live-row" data-round="${i}"><span class="ladder-plan">Раунд ${pr ? pr.localRound : localRoundFor(config, i)} · ${formatTime(workSecForRound(config, i))} · отдых ${rest}</span><strong class="ladder-count"></strong></div>`);
     }
+    if (openStage) rows.push('</section>');
     list.innerHTML = rows.join('');
     list.dataset.scheduleKey = key;
     list.dataset.activeRound = '';
@@ -167,6 +174,9 @@ export function renderLiveLadder(els, state, ui = {}) {
   const active = [PHASES.WORK, PHASES.REST, PHASES.COUNTDOWN].includes(state.phase) ? state.roundIndex : 0;
   const currentProgramRound = config.programRounds?.[active-1];
   const currentBlock = active > 0 ? (currentProgramRound?.block ?? blockForRound(config, active)) : 0;
+  for (const group of list.querySelectorAll('.ladder-stage-group')) {
+    group.classList.toggle('is-active', active > 0 && Number(group.dataset.stageGroup) === currentProgramRound?.stageIndex);
+  }
   for (const heading of list.querySelectorAll('.ladder-block-label')) {
     heading.classList.toggle('is-active', currentProgramRound ? Number(heading.dataset.stage)===currentProgramRound.stageIndex && (!heading.dataset.block || Number(heading.dataset.block)===currentBlock) : Number(heading.dataset.block)===currentBlock);
   }
