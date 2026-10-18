@@ -8,6 +8,7 @@ export function blockCount(config) {
   return config?.intervalMode === 'ladder' && config?.blockEnabled ? Math.max(1, Math.min(99, Number(config.blockCount) || 1)) : 1;
 }
 export function totalRoundsForConfig(config) {
+  if (config?.programRounds?.length) return config.programRounds.length;
   return Math.max(1, Number(config?.rounds) || 1) * blockCount(config);
 }
 export function localRoundFor(config, roundIndex) {
@@ -18,6 +19,7 @@ export function blockForRound(config, roundIndex) {
   return Math.floor((Math.max(1, roundIndex) - 1) / Math.max(1, config.rounds)) + 1;
 }
 export function workSecForRound(config, roundIndex) {
+  if (config?.programRounds?.length) return config.programRounds[Math.max(0,Math.min(config.programRounds.length-1,roundIndex-1))].workSec;
   const base = clampInt(config?.workSec, 1, 3600, 180);
   if (normalizeMode(config?.intervalMode) !== "ladder") return base;
   const step = clampInt(config?.workStepSec, -3600, 3600, 0);
@@ -26,6 +28,7 @@ export function workSecForRound(config, roundIndex) {
 }
 
 export function restSecAfterRound(config, roundIndex) {
+  if (config?.programRounds?.length) return config.programRounds[Math.max(0,Math.min(config.programRounds.length-1,roundIndex-1))].restSec;
   const local = localRoundFor(config, roundIndex);
   if (local === Math.max(1, Number(config.rounds) || 1) && Number(roundIndex) < totalRoundsForConfig(config)) {
     return clampInt(config?.blockRestSec, 0, 3600, 90);
@@ -49,7 +52,7 @@ export function totalDurationSecForConfig(config) {
 
 export function remainingTotalSecForState(state) {
   const config = state?.config || {};
-  const rounds = clampInt(config?.rounds, 1, 99, 1);
+  const rounds = totalRoundsForConfig(config);
   const roundIndex = Math.max(1, Number(state?.roundIndex || 1));
 
   if (state?.phase === 'idle' || state?.phase === 'countdown') return totalDurationSecForConfig(config);

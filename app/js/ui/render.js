@@ -3,7 +3,7 @@ import { formatTime } from '../core/time.js';
 import { displayDurationsForState, remainingTotalSecForState, totalDurationSecForConfig, workSecForRound, restSecAfterRound, totalRoundsForConfig, blockCount, localRoundFor, blockForRound } from '../core/schedule.js';
 
 function intervalModeTitle(config) {
-  return config?.intervalMode === 'ladder' ? 'Лестница' : 'Обычный';
+  return config?.programRounds?.length ? 'Программа' : (config?.intervalMode === 'ladder' ? 'Лестница' : 'Обычный');
 }
 
 function phaseLabelText(state) {
@@ -68,7 +68,11 @@ export function renderTimer(els, state, uiState = {}) {
   els.roundLabel.textContent = roundLabelText(state);
   const roundActive = [PHASES.WORK, PHASES.REST, PHASES.COUNTDOWN].includes(state.phase);
   els.roundLabel.classList.toggle('round-active', roundActive);
-  if (roundActive) {
+  if (roundActive && state.config.programRounds?.length) {
+    const r=state.config.programRounds[Math.max(0,state.roundIndex-1)];
+    const stages=new Set(state.config.programRounds.map(x=>x.stageIndex)).size;
+    els.roundLabel.innerHTML=`Этап <span class="block-number"></span>/ · Раунд <span class="round-number"></span>/`;
+  } else if (roundActive) {
     const blocks = blockCount(state.config);
     els.roundLabel.innerHTML = blocks > 1
       ? `Блок <span class="block-number">${blockForRound(state.config, state.roundIndex)}</span>/${blocks} · Раунд <span class="round-number">${localRoundFor(state.config, state.roundIndex)}</span>/${state.config.rounds}`
@@ -125,7 +129,7 @@ export function renderLiveLadder(els, state, ui = {}) {
   const panel = els.ladderLive;
   if (!panel) return;
   const config = state.config;
-  panel.hidden = config.intervalMode !== 'ladder';
+  panel.hidden = config.intervalMode !== 'ladder' && !config.programRounds?.length;
   if (panel.hidden) return;
   const expanded = Boolean(ui.ladderExpanded);
   panel.classList.toggle('is-expanded', expanded);
@@ -138,11 +142,14 @@ export function renderLiveLadder(els, state, ui = {}) {
     ? 'Старт' : state.isPaused ? 'Продолжить' : 'Пауза';
 
   const list = els.ladderLiveList;
-  const key = [config.rounds, config.workSec, config.restSec, config.workStepSec, config.restStepSec, config.blockEnabled, config.blockCount, config.blockRestSec].join(':');
+  const key = config.programRounds?.length ? JSON.stringify(config.programRounds) : [config.rounds, config.workSec, config.restSec, config.workStepSec, config.restStepSec, config.blockEnabled, config.blockCount, config.blockRestSec].join(':');
   if (list.dataset.scheduleKey !== key) {
     const rows = [];
     for (let i = 1; i <= totalRoundsForConfig(config); i += 1) {
-      if (blockCount(config) > 1 && localRoundFor(config,i) === 1) rows.push(`<div class="ladder-block-label" data-block="${blockForRound(config,i)}">Блок ${blockForRound(config,i)} из ${blockCount(config)}</div>`);
+      const pr=config.programRounds?.[i-1];
+      if (pr && pr.stageRound===1) rows.push(`<div class="ladder-block-label" data-stage="">Этап </div>`);
+      if (pr && pr.blockCount>1 && pr.localRound===1) rows.push(`<div class="ladder-block-label" data-block="" data-stage="">Блок  из </div>`);
+      if (!pr && blockCount(config) > 1 && localRoundFor(config,i) === 1) rows.push(`<div class="ladder-block-label" data-block="${blockForRound(config,i)}">Блок ${blockForRound(config,i)} из ${blockCount(config)}</div>`);
       const rest = i < totalRoundsForConfig(config) ? formatTime(restSecAfterRound(config, i)) : '—';
       rows.push(`<div class="ladder-live-row" data-round="${i}"><span class="ladder-plan">Раунд ${localRoundFor(config, i)} · ${formatTime(workSecForRound(config, i))} · отдых ${rest}</span><strong class="ladder-count"></strong></div>`);
     }
@@ -152,9 +159,10 @@ export function renderLiveLadder(els, state, ui = {}) {
   }
 
   const active = [PHASES.WORK, PHASES.REST, PHASES.COUNTDOWN].includes(state.phase) ? state.roundIndex : 0;
-  const currentBlock = active > 0 ? blockForRound(config, active) : 0;
+  const currentProgramRound = config.programRounds?.[active-1];
+  const currentBlock = active > 0 ? (currentProgramRound?.block ?? blockForRound(config, active)) : 0;
   for (const heading of list.querySelectorAll('.ladder-block-label')) {
-    heading.classList.toggle('is-active', Number(heading.dataset.block) === currentBlock);
+    heading.classList.toggle('is-active', currentProgramRound ? Number(heading.dataset.stage)===currentProgramRound.stageIndex && (!heading.dataset.block || Number(heading.dataset.block)===currentBlock) : Number(heading.dataset.block)===currentBlock);
   }
   for (const row of list.querySelectorAll('.ladder-live-row')) {
     const current = Number(row.dataset.round) === active;

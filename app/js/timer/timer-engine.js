@@ -83,6 +83,7 @@ export class TimerEngine {
   applyConfig(nextConfig) {
     this.config = {
       rounds: clampInt(nextConfig?.rounds, 1, 99, DEFAULT_CONFIG.rounds),
+      programRounds: Array.isArray(nextConfig?.programRounds) ? structuredClone(nextConfig.programRounds) : null,
       workSec: clampInt(nextConfig?.workSec, 1, 3600, DEFAULT_CONFIG.workSec),
       restSec: clampInt(nextConfig?.restSec, 0, 3600, DEFAULT_CONFIG.restSec),
       blockEnabled: Boolean(nextConfig?.blockEnabled),
