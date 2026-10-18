@@ -1,6 +1,6 @@
 import { PHASES } from '../core/constants.js';
 import { clampInt } from '../core/time.js';
-import { restSecAfterRound, workSecForRound } from '../core/schedule.js';
+import { restSecAfterRound, workSecForRound, totalRoundsForConfig } from '../core/schedule.js';
 
 const DEFAULT_CONFIG = {
   rounds: 12,
@@ -21,7 +21,7 @@ function createIdleState(config) {
   return {
     phase: PHASES.IDLE,
     roundIndex: 0,
-    totalRounds: config.rounds,
+    totalRounds: totalRoundsForConfig(config),
     remainingSec: workSecForRound(config, 1),
     phaseDurationSec: workSecForRound(config, 1),
     nextLabel: 'Следующий этап не запущен',
@@ -85,6 +85,9 @@ export class TimerEngine {
       rounds: clampInt(nextConfig?.rounds, 1, 99, DEFAULT_CONFIG.rounds),
       workSec: clampInt(nextConfig?.workSec, 1, 3600, DEFAULT_CONFIG.workSec),
       restSec: clampInt(nextConfig?.restSec, 0, 3600, DEFAULT_CONFIG.restSec),
+      blockEnabled: Boolean(nextConfig?.blockEnabled),
+      blockCount: clampInt(nextConfig?.blockCount, 1, 99, 1),
+      blockRestSec: Math.round(clampInt(nextConfig?.blockRestSec, 0, 3600, 90) / 5) * 5,
       intervalMode: nextConfig?.intervalMode === 'ladder' ? 'ladder' : 'standard',
       workStepSec: Math.round(clampInt(nextConfig?.workStepSec, -600, 600, DEFAULT_CONFIG.workStepSec) / 5) * 5,
       restStepSec: Math.round(clampInt(nextConfig?.restStepSec, -600, 600, DEFAULT_CONFIG.restStepSec) / 5) * 5,
@@ -144,7 +147,7 @@ export class TimerEngine {
     this.state = {
       phase: PHASES.COUNTDOWN,
       roundIndex,
-      totalRounds: this.config.rounds,
+      totalRounds: totalRoundsForConfig(this.config),
       remainingSec: 4,
       phaseDurationSec: 4,
       nextLabel: 'На нуле: старт первого раунда',
@@ -162,7 +165,7 @@ export class TimerEngine {
     this.state = {
       phase: PHASES.WORK,
       roundIndex,
-      totalRounds: this.config.rounds,
+      totalRounds: totalRoundsForConfig(this.config),
       remainingSec: workSecForRound(this.config, roundIndex),
       phaseDurationSec: Math.max(1, workSecForRound(this.config, roundIndex)),
       nextLabel: nextLabelForPhase(PHASES.WORK, workSecForRound(this.config, roundIndex), effectiveWarningSecondsForPhase(this.config, PHASES.WORK)),
@@ -180,7 +183,7 @@ export class TimerEngine {
     this.state = {
       phase: PHASES.REST,
       roundIndex,
-      totalRounds: this.config.rounds,
+      totalRounds: totalRoundsForConfig(this.config),
       remainingSec: restSecAfterRound(this.config, roundIndex),
       phaseDurationSec: Math.max(1, restSecAfterRound(this.config, roundIndex)),
       nextLabel: nextLabelForPhase(PHASES.REST, restSecAfterRound(this.config, roundIndex), effectiveWarningSecondsForPhase(this.config, PHASES.REST)),
@@ -232,7 +235,7 @@ export class TimerEngine {
     this.state = {
       phase: PHASES.FINISHED,
       roundIndex,
-      totalRounds: this.config.rounds,
+      totalRounds: totalRoundsForConfig(this.config),
       remainingSec: 0,
       phaseDurationSec: 1,
       nextLabel: 'Серия завершена',

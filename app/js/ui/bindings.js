@@ -53,6 +53,22 @@ export function bindControls(els, handlers) {
       const value = button.dataset.intervalMode ?? 'standard';
       els.intervalModeInput.value = value;
       activateChoice(els.intervalModeButtons, (candidate) => candidate.dataset.intervalMode === value);
+      els.blockSettings.hidden = value !== 'ladder';
+      handlers.onPreviewChange?.();
+    });
+  });
+
+  els.blockEnabledInput.addEventListener('change', () => handlers.onPreviewChange?.());
+  els.blockStepButtons.forEach((button) => {
+    button.addEventListener('click', () => {
+      const target = button.dataset.blockTarget;
+      const input = target === 'blockCount' ? els.blockCountInput : els.blockRestSecInput;
+      const step = target === 'blockCount' ? 1 : 5;
+      const max = target === 'blockCount' ? 99 : 3600;
+      const delta = button.dataset.blockDirection === 'down' ? -step : step;
+      input.value = String(Math.max(target === 'blockCount' ? 1 : 0, Math.min(max, Number(input.value) + delta)));
+      els.blockCountDisplay.textContent = els.blockCountInput.value;
+      els.blockRestSecDisplay.textContent = String(Math.floor(Number(els.blockRestSecInput.value) / 60)).padStart(2,'0') + ':' + String(Number(els.blockRestSecInput.value) % 60).padStart(2,'0');
       handlers.onPreviewChange?.();
     });
   });

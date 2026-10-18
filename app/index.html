@@ -126,7 +126,7 @@
         </article>
       </section>
       <section id="ladderLive" class="ladder-live panel" hidden aria-label="Лестница раундов">
-        <div class="ladder-live-head"><strong>ЛЕСТНИЦА</strong><button id="ladderExpand" type="button" aria-label="Развернуть лестницу" aria-expanded="false">⛶</button></div>
+        <div class="ladder-live-head"><strong>ЛЕСТНИЦА</strong><button id="ladderExpand" type="button" aria-label="Развернуть лестницу" aria-expanded="false">⤢</button></div>
         <div id="ladderFullControls" class="ladder-full-controls" hidden><strong id="ladderFullTime">00:00</strong><button id="ladderFullPause" type="button">Старт</button></div>
         <div id="ladderLiveList" class="ladder-live-list"></div>
       </section>
@@ -185,6 +185,17 @@
               <div class="settings-inline-note">Отрицательный шаг сокращает отдых, положительный — удлиняет. Нулевой шаг сохраняет одинаковый отдых.</div>
             </div>
 
+            <section class="block-settings" id="blockSettings">
+              <label class="settings-toggle-row"><input type="checkbox" id="blockEnabledInput" /><span>Лестница + Блок</span></label>
+              <div class="settings-field-stack"><div class="settings-field-label">Количество блоков</div>
+                <div class="settings-stepper"><button type="button" class="settings-stepper-btn" data-block-target="blockCount" data-block-direction="down">−</button><div id="blockCountDisplay" class="settings-stepper-value">1</div><button type="button" class="settings-stepper-btn" data-block-target="blockCount" data-block-direction="up">+</button></div>
+                <input type="hidden" id="blockCountInput" value="1" />
+              </div>
+              <div class="settings-field-stack"><div class="settings-field-label">Отдых между блоками</div>
+                <div class="settings-stepper"><button type="button" class="settings-stepper-btn" data-block-target="blockRestSec" data-block-direction="down">−5</button><div id="blockRestSecDisplay" class="settings-stepper-value">01:30</div><button type="button" class="settings-stepper-btn" data-block-target="blockRestSec" data-block-direction="up">+5</button></div>
+                <input type="hidden" id="blockRestSecInput" value="90" />
+              </div>
+            </section>
             <div class="ladder-preview" id="ladderPreview" aria-live="polite"></div>
           </section>
 
