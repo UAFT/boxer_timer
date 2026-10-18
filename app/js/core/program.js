@@ -19,6 +19,7 @@ export function compileProgram(entries, profiles) {
         workSec: workSecForRound(config,i),
         restSec: i<total ? restSecAfterRound(config,i) : (stageIndex<stages.length-1 ? stage.restAfterSec : 0),
         stageIndex, stageRound: i, stageRounds: total, presetId: stage.presetId,
+        intervalMode: config.intervalMode,
         block: config.intervalMode==='ladder' && config.blockEnabled ? Math.floor((i-1)/config.rounds)+1 : 1,
         blockCount: config.intervalMode==='ladder' && config.blockEnabled ? config.blockCount : 1,
         localRound: (i-1)%config.rounds+1,
