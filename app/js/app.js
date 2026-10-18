@@ -9,7 +9,7 @@ import {
   closeSettings,
   openSettings,
   readSettingsForm,
-  renderTimer,
+  renderTimer,\n  renderLadderPreview,
   setActivePreset,
   setSettingsForm
 } from './ui/render.js';
@@ -260,7 +260,7 @@ function bootstrap() {
     onReset: handleReset,
     onOpenSettings: () => openSettings(els),
     onCloseSettings: () => closeSettings(els),
-    onSaveSettings: handleSaveSettings,
+    onSaveSettings: handleSaveSettings,\n    onPreviewChange: () => renderLadderPreview(els, activeSettings),
     onAdjustValue: handleAdjustValue,
     onAdjustLadderStep: handleAdjustLadderStep,
     onToggleMetronome: handleToggleMetronome,
