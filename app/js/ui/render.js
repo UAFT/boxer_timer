@@ -71,7 +71,7 @@ export function renderTimer(els, state, uiState = {}) {
   if (roundActive) {
     const blocks = blockCount(state.config);
     els.roundLabel.innerHTML = blocks > 1
-      ? `Блок <span class="block-number"></span>/ · Раунд <span class="round-number"></span>/`
+      ? `Блок <span class="block-number">${blockForRound(state.config, state.roundIndex)}</span>/${blocks} · Раунд <span class="round-number">${localRoundFor(state.config, state.roundIndex)}</span>/${state.config.rounds}`
       : `Раунд <span class="round-number">${state.roundIndex}</span> из ${state.totalRounds}`;
   }
   renderLiveLadder(els, state, uiState);
@@ -142,7 +142,7 @@ export function renderLiveLadder(els, state, ui = {}) {
   if (list.dataset.scheduleKey !== key) {
     const rows = [];
     for (let i = 1; i <= totalRoundsForConfig(config); i += 1) {
-      if (blockCount(config) > 1 && localRoundFor(config,i) === 1) rows.push(`<div class="ladder-block-label" data-block="">Блок  из </div>`);
+      if (blockCount(config) > 1 && localRoundFor(config,i) === 1) rows.push(`<div class="ladder-block-label" data-block="${blockForRound(config,i)}">Блок ${blockForRound(config,i)} из ${blockCount(config)}</div>`);
       const rest = i < totalRoundsForConfig(config) ? formatTime(restSecAfterRound(config, i)) : '—';
       rows.push(`<div class="ladder-live-row" data-round="${i}"><span class="ladder-plan">Раунд ${localRoundFor(config, i)} · ${formatTime(workSecForRound(config, i))} · отдых ${rest}</span><strong class="ladder-count"></strong></div>`);
     }
