@@ -111,7 +111,20 @@ export function renderTimer(els, state, uiState = {}) {
   }
 }
 
-export function renderLadderPreview(els, settings) {\n  const panel = document.getElementById('ladderPreview');\n  if (!panel) return;\n  const config = { ...settings, ...readSettingsForm(els) };\n  const rounds = Math.max(1, Number(config.rounds || 1));\n  const count = Math.min(rounds, 8);\n  const rows = [];\n  for (let i = 1; i <= count; i += 1) {\n    rows.push(`<div class="ladder-preview-row"><span>Раунд ${i}</span><strong>${formatTime(workSecForRound(config, i))}</strong><span>Отдых</span><strong>${i < rounds ? formatTime(restSecAfterRound(config, i)) : '—'}</strong></div>`);\n  }\n  panel.innerHTML = `<div class="ladder-preview-title">Предварительный просмотр</div>${rows.join('')}${rounds > count ? `<div class="settings-inline-note">Показаны первые ${count} из ${rounds} раундов</div>` : ''}${config.intervalMode === 'ladder' && !config.workStepSec && !config.restStepSec ? '<div class="settings-inline-note">Оба шага равны нулю: все раунды будут одинаковыми.</div>' : ''}`;\n}\n\nexport function setSettingsForm(els, settings) {
+export function renderLadderPreview(els, settings) {
+  const panel = document.getElementById('ladderPreview');
+  if (!panel) return;
+  const config = { ...settings, ...readSettingsForm(els) };
+  const rounds = Math.max(1, Number(config.rounds || 1));
+  const count = Math.min(rounds, 8);
+  const rows = [];
+  for (let i = 1; i <= count; i += 1) {
+    rows.push(`<div class="ladder-preview-row"><span>Раунд ${i}</span><strong>${formatTime(workSecForRound(config, i))}</strong><span>Отдых</span><strong>${i < rounds ? formatTime(restSecAfterRound(config, i)) : '—'}</strong></div>`);
+  }
+  panel.innerHTML = `<div class="ladder-preview-title">Предварительный просмотр</div>${rows.join('')}${rounds > count ? `<div class="settings-inline-note">Показаны первые ${count} из ${rounds} раундов</div>` : ''}${config.intervalMode === 'ladder' && !config.workStepSec && !config.restStepSec ? '<div class="settings-inline-note">Оба шага равны нулю: все раунды будут одинаковыми.</div>' : ''}`;
+}
+
+export function setSettingsForm(els, settings) {
   els.audioEnabledInput.checked = settings.audioEnabled;
   els.warningSecondsInput.value = String(settings.warningSeconds ?? 4);
   els.intervalModeInput.value = settings.intervalMode || 'standard';
@@ -120,7 +133,8 @@ export function renderLadderPreview(els, settings) {\n  const panel = document.g
   if (els.workStepSecDisplay) els.workStepSecDisplay.textContent = stepLabel(settings.workStepSec ?? 0);
   if (els.restStepSecDisplay) els.restStepSecDisplay.textContent = stepLabel(settings.restStepSec ?? 0);
   applyChoiceButtons(els.warningChoiceButtons, els.warningSecondsInput.value, 'warningSeconds');
-  applyChoiceButtons(els.intervalModeButtons, els.intervalModeInput.value, 'intervalMode');\n  renderLadderPreview(els, settings);
+  applyChoiceButtons(els.intervalModeButtons, els.intervalModeInput.value, 'intervalMode');
+  renderLadderPreview(els, settings);
 }
 
 export function readSettingsForm(els) {
