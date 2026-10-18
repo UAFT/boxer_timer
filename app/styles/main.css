@@ -1299,3 +1299,9 @@ img {
 .ladder-full-controls button {background:#24bd77;border:0;border-radius:12px;padding:12px 22px;color:#07172c;font-weight:900}
 @media(max-width:370px) {.ladder-live-row {font-size:11px;gap:3px;padding:7px 4px}}
 @media(prefers-reduced-motion:reduce) {.round-heading.round-active .round-number,.ladder-live-row.is-active {animation:none}.ladder-live-list {scroll-behavior:auto}}
+
+/* Block markers and unobtrusive ladder expand/collapse glyph. */
+.ladder-live-head button { width:28px;height:28px;font-size:22px;border:0;background:transparent;color:#b9d5e9;padding:0; }
+.ladder-block-label {font-size:12px;font-weight:800;color:#bed1ef;padding:11px 8px 5px;letter-spacing:.04em}
+.block-settings {margin:12px 0;padding:12px;border:1px solid rgba(255,255,255,.1);border-radius:14px}
+.block-settings[hidden] {display:none}
