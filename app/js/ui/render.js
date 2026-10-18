@@ -3,7 +3,7 @@ import { formatTime } from '../core/time.js';
 import { displayDurationsForState, remainingTotalSecForState, totalDurationSecForConfig, workSecForRound, restSecAfterRound, totalRoundsForConfig, blockCount, localRoundFor, blockForRound } from '../core/schedule.js';
 
 function intervalModeTitle(config) {
-  return config?.programRounds?.length ? 'Программа' : (config?.intervalMode === 'ladder' ? 'Лестница' : 'Обычный');
+  return config?.programRounds?.length ? 'Программа' : (config?.presetId === 'tabata2020x24' ? 'Скоростной' : (config?.intervalMode === 'ladder' ? 'Лестница' : 'Обычный'));
 }
 
 function phaseLabelText(state) {
