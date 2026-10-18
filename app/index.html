@@ -34,12 +34,6 @@
         <button class="preset-tab" type="button" data-preset="tabata2020x24">⚡</button>
       </section>
 
-      <section id="programPanel" class="program-panel panel" hidden>
-        <div class="program-top"><strong>ПРОГРАММА</strong><button type="button" id="programClear">Очистить</button></div>
-        <div id="programList" class="program-list"></div>
-        <div class="program-actions"><button type="button" id="programStart">Запустить программу</button><button type="button" id="programExit" hidden>Выйти из программы</button></div>
-        <div class="program-hint">Удерживай пресет, чтобы добавить этап. Повторное удержание добавит его ещё раз.</div>
-      </section>
       <section class="timer-card panel">
         <div class="card-topline">
           <div class="phase-heading" id="phaseLabel">Готов</div>
@@ -135,6 +129,12 @@
         <div class="ladder-live-head"><strong>ЛЕСТНИЦА</strong><button id="ladderExpand" type="button" aria-label="Развернуть лестницу" aria-expanded="false">⤢</button></div>
         <div id="ladderFullControls" class="ladder-full-controls" hidden><strong id="ladderFullTime">00:00</strong><button id="ladderFullPause" type="button">Старт</button></div>
         <div id="ladderLiveList" class="ladder-live-list"></div>
+      </section>
+      <section id="programPanel" class="program-panel panel" hidden>
+        <div class="program-top"><strong>ПРОГРАММА</strong><button type="button" id="programClear">Очистить</button></div>
+        <div id="programList" class="program-list"></div>
+        <div class="program-actions"><button type="button" id="programStart">Запустить программу</button><button type="button" id="programExit" hidden>Выйти из программы</button></div>
+        <div class="program-hint">Удерживай пресет, чтобы добавить этап. Повторное удержание добавит его ещё раз.</div>
       </section>
     </main>
 
