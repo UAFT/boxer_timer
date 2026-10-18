@@ -87,7 +87,7 @@ function setMetronomePanel(panel, { render = true } = {}) {
 }
 
 function renderCurrentState() {
-  renderTimer(els, timer.state, { metronomePanelOpen: isMetronomePanelOpen(), ladderExpanded: uiState.ladderExpanded });
+  renderTimer(els, { ...timer.state, config: timer.config, isPaused: timer.isPaused }, { metronomePanelOpen: isMetronomePanelOpen(), ladderExpanded: uiState.ladderExpanded });
 }
 
 const timer = new TimerEngine({
