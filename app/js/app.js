@@ -1,3 +1,4 @@
+import { installLocalization } from './i18n/locale.js';
 import { AUDIO_KEYS } from './core/constants.js';
 import { clonePreset } from './state/presets.js';
 import { compileProgram, normalizeProgram, PRESET_NAMES, PROGRAM_KEY } from './core/program.js';
@@ -398,6 +399,7 @@ function bootstrap() {
   });
   els.ladderFullPause.addEventListener('click', handleToggleRun);
   renderCurrentState();
+  installLocalization(document.getElementById('languageSelect'));
 }
 
 bootstrap();
