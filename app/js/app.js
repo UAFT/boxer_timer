@@ -73,7 +73,8 @@ const profiles = { ...profileState.profiles };
 let activePresetId = profileState.activeId;
 let activeSettings = normalizeSettings(profiles[activePresetId], clonePreset(activePresetId));
 const uiState = {
-  metronomePanel: 'collapsed'
+  metronomePanel: 'collapsed',
+  ladderExpanded: false
 };
 
 function isMetronomePanelOpen() {
@@ -86,16 +87,16 @@ function setMetronomePanel(panel, { render = true } = {}) {
 }
 
 function renderCurrentState() {
-  renderTimer(els, timer.state, { metronomePanelOpen: isMetronomePanelOpen() });
+  renderTimer(els, timer.state, { metronomePanelOpen: isMetronomePanelOpen(), ladderExpanded: uiState.ladderExpanded });
 }
 
 const timer = new TimerEngine({
   onTick: (state) => {
-    renderTimer(els, state, { metronomePanelOpen: isMetronomePanelOpen() });
+    renderTimer(els, state, { metronomePanelOpen: isMetronomePanelOpen(), ladderExpanded: uiState.ladderExpanded });
     metronome.syncPhase(state);
   },
   onStateChange: (state) => {
-    renderTimer(els, state, { metronomePanelOpen: isMetronomePanelOpen() });
+    renderTimer(els, state, { metronomePanelOpen: isMetronomePanelOpen(), ladderExpanded: uiState.ladderExpanded });
     metronome.syncPhase(state);
   },
   onEvent: async (event) => {
@@ -270,6 +271,11 @@ function bootstrap() {
     onSelectMetronomeMode: handleSelectMetronomeMode,
     onOpenMetronomeCard: handleOpenMetronomeCard
   });
+  els.ladderExpand.addEventListener('click', () => {
+    uiState.ladderExpanded = !uiState.ladderExpanded;
+    renderCurrentState();
+  });
+  els.ladderFullPause.addEventListener('click', handleToggleRun);
   renderCurrentState();
 }
 

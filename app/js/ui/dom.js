@@ -1,6 +1,12 @@
 export function getDomRefs() {
   return {
     mainTime: document.getElementById('mainTime'),
+    ladderLive: document.getElementById('ladderLive'),
+    ladderLiveList: document.getElementById('ladderLiveList'),
+    ladderExpand: document.getElementById('ladderExpand'),
+    ladderFullControls: document.getElementById('ladderFullControls'),
+    ladderFullTime: document.getElementById('ladderFullTime'),
+    ladderFullPause: document.getElementById('ladderFullPause'),
     phaseLabel: document.getElementById('phaseLabel'),
     roundLabel: document.getElementById('roundLabel'),
     phaseCaption: document.getElementById('phaseCaption'),

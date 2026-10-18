@@ -66,6 +66,10 @@ export function renderTimer(els, state, uiState = {}) {
   els.mainTime.textContent = formatTime(state.remainingSec);
   els.phaseLabel.textContent = phaseLabelText(state);
   els.roundLabel.textContent = roundLabelText(state);
+  const roundActive = [PHASES.WORK, PHASES.REST, PHASES.COUNTDOWN].includes(state.phase);
+  els.roundLabel.classList.toggle('round-active', roundActive);
+  if (roundActive) els.roundLabel.innerHTML = `Раунд <span class="round-number">${state.roundIndex}</span> из ${state.totalRounds}`;
+  renderLiveLadder(els, state, uiState);
   els.phaseCaption.textContent = intervalCaption(state.config);
   els.countdownCaption.textContent = '';
   els.progressFill.style.width = `${state.progress || 0}%`;
@@ -108,6 +112,56 @@ export function renderTimer(els, state, uiState = {}) {
     els.startBtn.textContent = 'Продолжить';
   } else {
     els.startBtn.textContent = 'Пауза';
+  }
+}
+
+
+export function renderLiveLadder(els, state, ui = {}) {
+  const panel = els.ladderLive;
+  if (!panel) return;
+  const config = state.config;
+  panel.hidden = config.intervalMode !== 'ladder';
+  if (panel.hidden) return;
+  const expanded = Boolean(ui.ladderExpanded);
+  panel.classList.toggle('is-expanded', expanded);
+  els.ladderExpand.textContent = expanded ? '⊟' : '⛶';
+  els.ladderExpand.setAttribute('aria-expanded', String(expanded));
+  els.ladderExpand.setAttribute('aria-label', expanded ? 'Свернуть лестницу' : 'Развернуть лестницу');
+  els.ladderFullControls.hidden = !expanded;
+  els.ladderFullTime.textContent = formatTime(state.remainingSec);
+  els.ladderFullPause.textContent = state.phase === PHASES.IDLE || state.phase === PHASES.FINISHED
+    ? 'Старт' : state.isPaused ? 'Продолжить' : 'Пауза';
+
+  const list = els.ladderLiveList;
+  const key = [config.rounds, config.workSec, config.restSec, config.workStepSec, config.restStepSec].join(':');
+  if (list.dataset.scheduleKey !== key) {
+    const rows = [];
+    for (let i = 1; i <= config.rounds; i += 1) {
+      const rest = i < config.rounds ? formatTime(restSecAfterRound(config, i)) : '—';
+      rows.push(`<div class="ladder-live-row" data-round="${i}"><span class="ladder-plan">Раунд ${i} · ${formatTime(workSecForRound(config, i))} · отдых ${rest}</span><strong class="ladder-count"></strong></div>`);
+    }
+    list.innerHTML = rows.join('');
+    list.dataset.scheduleKey = key;
+    list.dataset.activeRound = '';
+  }
+
+  const active = [PHASES.WORK, PHASES.REST, PHASES.COUNTDOWN].includes(state.phase) ? state.roundIndex : 0;
+  for (const row of list.children) {
+    const current = Number(row.dataset.round) === active;
+    row.classList.toggle('is-active', current);
+    const countdown = row.querySelector('.ladder-count');
+    countdown.textContent = current ? (state.phase === PHASES.REST ? 'отд. ' : state.phase === PHASES.COUNTDOWN ? 'старт ' : '→ ') + formatTime(state.remainingSec) : '';
+  }
+
+  if (list.dataset.activeRound !== String(active)) {
+    list.dataset.activeRound = String(active);
+    if (!active) list.scrollTop = 0;
+    else {
+      const row = list.querySelector(`[data-round="${active}"]`);
+      if (row && row.offsetTop + row.offsetHeight > list.scrollTop + list.clientHeight) {
+        list.scrollTo({ top: row.offsetTop + row.offsetHeight - list.clientHeight, behavior: 'smooth' });
+      }
+    }
   }
 }
 
