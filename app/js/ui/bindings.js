@@ -53,6 +53,7 @@ export function bindControls(els, handlers) {
       const value = button.dataset.intervalMode ?? 'standard';
       els.intervalModeInput.value = value;
       activateChoice(els.intervalModeButtons, (candidate) => candidate.dataset.intervalMode === value);
+      handlers.onPreviewChange?.();
     });
   });
 
@@ -66,7 +67,7 @@ export function bindControls(els, handlers) {
     });
   });
 
-  els.cueVariantButtons.forEach((button) => {
+  (els.cueVariantButtons || []).forEach((button) => {
     button.addEventListener('click', () => {
       const target = button.dataset.cueTarget;
       const value = button.dataset.cueValue;

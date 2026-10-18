@@ -58,3 +58,21 @@ export function loadSettings(fallback) {
 export function saveSettings(settings) {
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
 }
+
+const PROFILE_KEY = 'andar.fight.timer.profiles.v1';
+const PROFILE_IDS = ['classic3', 'classic2', 'classic1', 'tabata2020x24'];
+
+export function loadProfileState() {
+  let saved = null;
+  try { saved = JSON.parse(window.localStorage.getItem(PROFILE_KEY) || 'null'); } catch {}
+  if (saved?.profiles && typeof saved.profiles === 'object') {
+    return { activeId: PROFILE_IDS.includes(saved.activeId) ? saved.activeId : 'classic3', profiles: saved.profiles };
+  }
+  let legacy = null;
+  try { legacy = JSON.parse(window.localStorage.getItem(STORAGE_KEY) || 'null'); } catch {}
+  return { activeId: 'classic3', profiles: legacy ? { classic3: legacy } : {} };
+}
+
+export function saveProfileState(activeId, profiles) {
+  try { window.localStorage.setItem(PROFILE_KEY, JSON.stringify({ activeId, profiles })); } catch {}
+}
