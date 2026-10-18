@@ -32,6 +32,7 @@ jobs:
           ls "$ANDROID_HOME/platforms" | tail -5
       - run: npm install --no-audit --no-fund
       - run: node --experimental-default-type=module --test tests/profile-ladder.test.mjs
+      - run: node --check app/js/app.js && node --check app/js/ui/render.js && node --check app/js/ui/bindings.js
       - run: npm run build
       - name: Write JSON Capacitor config for CI
         run: |
