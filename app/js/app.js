@@ -327,9 +327,9 @@ function renderProgram() {
     programEntries.forEach((entry,i)=>{
       const stage=document.createElement('div');stage.className='program-stage';stage.dataset.stage=String(i);
       const main=document.createElement('div');main.className='program-stage-main';
-      const name=document.createElement('strong');name.textContent=`Этап  · `;
+      const name=document.createElement('strong');name.textContent='Этап '+(i+1)+' · '+PRESET_NAMES[entry.presetId];
       const detail=document.createElement('small');const cfg=profiles[entry.presetId];
-      detail.textContent=cfg.intervalMode==='ladder' ? `Лестница ·  раундов${cfg.blockEnabled?' · блоков '+cfg.blockCount:''}` : ` раундов · :`;
+      detail.textContent=cfg.intervalMode==='ladder' ? 'Лестница · '+cfg.rounds+' раундов'+(cfg.blockEnabled?' · блоков '+cfg.blockCount:'') : 'Стандарт · '+cfg.rounds+' раундов · '+String(Math.floor(cfg.workSec/60)).padStart(2,'0')+':'+String(cfg.workSec%60).padStart(2,'0');
       main.append(name,detail);stage.append(main);
       if (!programRunning) {
         for (const [label,fn] of [['↑',()=>moveProgramStage(i,-1)],['↓',()=>moveProgramStage(i,1)],['×',()=>removeProgramStage(i)]]) {
@@ -341,7 +341,7 @@ function renderProgram() {
         const rest=document.createElement('div');rest.className='program-rest';
         const label=document.createElement('span');label.textContent='Отдых между этапами';
         const minus=document.createElement('button');minus.textContent='−';minus.disabled=programRunning;minus.addEventListener('click',()=>setProgramRest(i,-5));
-        const time=document.createElement('strong');time.textContent=`:`;
+        const time=document.createElement('strong');time.textContent=String(Math.floor(entry.restAfterSec/60)).padStart(2,'0')+':'+String(entry.restAfterSec%60).padStart(2,'0');
         const plus=document.createElement('button');plus.textContent='+';plus.disabled=programRunning;plus.addEventListener('click',()=>setProgramRest(i,5));
         rest.append(label,minus,time,plus);list.append(rest);
       }
