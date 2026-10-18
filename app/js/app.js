@@ -326,7 +326,8 @@ function renderProgram() {
   if (list.dataset.signature!==signature) {
     list.replaceChildren();
     programEntries.forEach((entry,i)=>{
-      const stage=document.createElement('div');stage.className='program-stage';stage.dataset.stage=String(i);
+      const card=document.createElement('div');card.className='program-stage-card';card.dataset.stage=String(i);
+      const stage=document.createElement('div');stage.className='program-stage';
       const main=document.createElement('div');main.className='program-stage-main';
       const name=document.createElement('strong');name.textContent='Этап '+(i+1)+' · '+PRESET_NAMES[entry.presetId];
       const detail=document.createElement('small');const cfg=profiles[entry.presetId];
@@ -337,19 +338,20 @@ function renderProgram() {
           const b=document.createElement('button');b.type='button';b.textContent=label;b.setAttribute('aria-label',label==='×'?'Удалить этап':label==='↑'?'Поднять этап':'Опустить этап');b.addEventListener('click',fn);stage.append(b);
         }
       }
-      list.append(stage);
+      card.append(stage);
       if (i<programEntries.length-1) {
         const rest=document.createElement('div');rest.className='program-rest';
         const label=document.createElement('span');label.textContent='Отдых между этапами';
         const minus=document.createElement('button');minus.textContent='−';minus.disabled=programRunning;minus.addEventListener('click',()=>setProgramRest(i,-5));
         const time=document.createElement('strong');time.textContent=String(Math.floor(entry.restAfterSec/60)).padStart(2,'0')+':'+String(entry.restAfterSec%60).padStart(2,'0');
         const plus=document.createElement('button');plus.textContent='+';plus.disabled=programRunning;plus.addEventListener('click',()=>setProgramRest(i,5));
-        rest.append(label,minus,time,plus);list.append(rest);
+        rest.append(label,minus,time,plus);card.append(rest);
       }
+      list.append(card);
     });
     list.dataset.signature=signature;
   }
-  for (const stage of list.querySelectorAll('.program-stage')) stage.classList.toggle('is-current',Number(stage.dataset.stage)===activeIndex);
+  for (const card of list.querySelectorAll('.program-stage-card')) card.classList.toggle('is-current',Number(card.dataset.stage)===activeIndex);
 }
 function bindProgram() {
   let hold=null;

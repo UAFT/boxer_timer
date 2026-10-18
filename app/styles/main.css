@@ -1337,3 +1337,13 @@ img {
 .language-choices button{flex:1 1 90px;min-height:46px;border:1px solid #354778;border-radius:12px;background:#111c44;color:#d9e3f7;font:inherit;font-weight:650;padding:9px 10px;cursor:pointer}
 .language-choices button.is-active{background:linear-gradient(180deg,#d49a59,#9d6b40);color:#fff;border-color:#dda66d;box-shadow:0 0 0 1px #e8ae6a44}
 .language-choices button:focus-visible{outline:2px solid #60dfab;outline-offset:2px}
+
+/* Each program stage and its inter-stage rest form one visual unit. */
+.program-list {gap:10px}
+.program-stage-card {display:grid;gap:8px;padding:8px;border:2px solid #e7ba52;border-radius:16px;background:rgba(12,24,57,.22);transition:border-color .2s,box-shadow .2s}
+.program-stage-card.is-current {border-color:#42d68b;animation:programStageGlow 2s ease-in-out infinite}
+.program-stage {border:0;background:#17234c}
+.program-stage.is-current {border:0;color:inherit}
+.program-stage-card .program-rest {padding:5px 4px 3px}
+@keyframes programStageGlow {0%,100%{box-shadow:0 0 0 1px rgba(66,214,139,.15)}50%{box-shadow:0 0 12px 2px rgba(66,214,139,.48)}}
+@media(prefers-reduced-motion:reduce){.program-stage-card.is-current{animation:none}}
