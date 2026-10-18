@@ -144,7 +144,7 @@ export function renderLiveLadder(els, state, ui = {}) {
     for (let i = 1; i <= totalRoundsForConfig(config); i += 1) {
       if (blockCount(config) > 1 && localRoundFor(config,i) === 1) rows.push(`<div class="ladder-block-label">Блок ${blockForRound(config,i)} из ${blockCount(config)}</div>`);
       const rest = i < totalRoundsForConfig(config) ? formatTime(restSecAfterRound(config, i)) : '—';
-      rows.push(`<div class="ladder-live-row" data-round="${i}"><span class="ladder-plan">Раунд ${i} · ${formatTime(workSecForRound(config, i))} · отдых ${rest}</span><strong class="ladder-count"></strong></div>`);
+      rows.push(`<div class="ladder-live-row" data-round="${i}"><span class="ladder-plan">Раунд ${localRoundFor(config, i)} · ${formatTime(workSecForRound(config, i))} · отдых ${rest}</span><strong class="ladder-count"></strong></div>`);
     }
     list.innerHTML = rows.join('');
     list.dataset.scheduleKey = key;
