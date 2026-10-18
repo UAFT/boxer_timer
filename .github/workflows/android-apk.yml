@@ -34,7 +34,10 @@ jobs:
           EOF
       - name: Ensure Android platform exists
         run: |
-          if [ ! -d android ]; then npx cap add android; fi
+          if [ ! -f android/gradlew ]; then
+            rm -rf android
+            npx cap add android
+          fi
       - run: npx cap sync android
       - run: cd android && chmod +x gradlew && ./gradlew --no-daemon assembleDebug
       - uses: actions/upload-artifact@v4
