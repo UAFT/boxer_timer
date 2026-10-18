@@ -1,6 +1,6 @@
 import { PHASES } from '../core/constants.js';
 import { formatTime } from '../core/time.js';
-import { displayDurationsForState, remainingTotalSecForState, totalDurationSecForConfig, workSecForRound, restSecAfterRound } from '../core/schedule.js';
+import { displayDurationsForState, remainingTotalSecForState, totalDurationSecForConfig, workSecForRound, restSecAfterRound, totalRoundsForConfig, blockCount, localRoundFor, blockForRound } from '../core/schedule.js';
 
 function intervalModeTitle(config) {
   return config?.intervalMode === 'ladder' ? 'Лестница' : 'Обычный';
@@ -68,7 +68,12 @@ export function renderTimer(els, state, uiState = {}) {
   els.roundLabel.textContent = roundLabelText(state);
   const roundActive = [PHASES.WORK, PHASES.REST, PHASES.COUNTDOWN].includes(state.phase);
   els.roundLabel.classList.toggle('round-active', roundActive);
-  if (roundActive) els.roundLabel.innerHTML = `Раунд <span class="round-number">${state.roundIndex}</span> из ${state.totalRounds}`;
+  if (roundActive) {
+    const blocks = blockCount(state.config);
+    els.roundLabel.innerHTML = blocks > 1
+      ? `Блок ${blockForRound(state.config, state.roundIndex)}/${blocks} · Раунд <span class="round-number">${localRoundFor(state.config, state.roundIndex)}</span>/${state.config.rounds}`
+      : `Раунд <span class="round-number">${state.roundIndex}</span> из ${state.totalRounds}`;
+  }
   renderLiveLadder(els, state, uiState);
   els.phaseCaption.textContent = intervalCaption(state.config);
   els.countdownCaption.textContent = '';
@@ -124,7 +129,7 @@ export function renderLiveLadder(els, state, ui = {}) {
   if (panel.hidden) return;
   const expanded = Boolean(ui.ladderExpanded);
   panel.classList.toggle('is-expanded', expanded);
-  els.ladderExpand.textContent = expanded ? '⊟' : '⛶';
+  els.ladderExpand.textContent = expanded ? '⤡' : '⤢';
   els.ladderExpand.setAttribute('aria-expanded', String(expanded));
   els.ladderExpand.setAttribute('aria-label', expanded ? 'Свернуть лестницу' : 'Развернуть лестницу');
   els.ladderFullControls.hidden = !expanded;
@@ -133,11 +138,12 @@ export function renderLiveLadder(els, state, ui = {}) {
     ? 'Старт' : state.isPaused ? 'Продолжить' : 'Пауза';
 
   const list = els.ladderLiveList;
-  const key = [config.rounds, config.workSec, config.restSec, config.workStepSec, config.restStepSec].join(':');
+  const key = [config.rounds, config.workSec, config.restSec, config.workStepSec, config.restStepSec, config.blockEnabled, config.blockCount, config.blockRestSec].join(':');
   if (list.dataset.scheduleKey !== key) {
     const rows = [];
-    for (let i = 1; i <= config.rounds; i += 1) {
-      const rest = i < config.rounds ? formatTime(restSecAfterRound(config, i)) : '—';
+    for (let i = 1; i <= totalRoundsForConfig(config); i += 1) {
+      if (blockCount(config) > 1 && localRoundFor(config,i) === 1) rows.push(`<div class="ladder-block-label">Блок ${blockForRound(config,i)} из ${blockCount(config)}</div>`);
+      const rest = i < totalRoundsForConfig(config) ? formatTime(restSecAfterRound(config, i)) : '—';
       rows.push(`<div class="ladder-live-row" data-round="${i}"><span class="ladder-plan">Раунд ${i} · ${formatTime(workSecForRound(config, i))} · отдых ${rest}</span><strong class="ladder-count"></strong></div>`);
     }
     list.innerHTML = rows.join('');
@@ -146,11 +152,11 @@ export function renderLiveLadder(els, state, ui = {}) {
   }
 
   const active = [PHASES.WORK, PHASES.REST, PHASES.COUNTDOWN].includes(state.phase) ? state.roundIndex : 0;
-  for (const row of list.children) {
+  for (const row of list.querySelectorAll('.ladder-live-row')) {
     const current = Number(row.dataset.round) === active;
     row.classList.toggle('is-active', current);
     const countdown = row.querySelector('.ladder-count');
-    countdown.textContent = current ? (state.phase === PHASES.REST ? 'отд. ' : state.phase === PHASES.COUNTDOWN ? 'старт ' : '→ ') + formatTime(state.remainingSec) : '';
+    countdown.textContent = current ? (state.phase === PHASES.REST ? 'Отдых ' : state.phase === PHASES.COUNTDOWN ? 'старт ' : '→ ') + formatTime(state.remainingSec) : '';
   }
 
   if (list.dataset.activeRound !== String(active)) {
@@ -182,6 +188,12 @@ export function setSettingsForm(els, settings) {
   els.audioEnabledInput.checked = settings.audioEnabled;
   els.warningSecondsInput.value = String(settings.warningSeconds ?? 4);
   els.intervalModeInput.value = settings.intervalMode || 'standard';
+  els.blockSettings.hidden = settings.intervalMode !== 'ladder';
+  els.blockEnabledInput.checked = Boolean(settings.blockEnabled);
+  els.blockCountInput.value = String(settings.blockCount ?? 1);
+  els.blockRestSecInput.value = String(settings.blockRestSec ?? 90);
+  els.blockCountDisplay.textContent = els.blockCountInput.value;
+  els.blockRestSecDisplay.textContent = formatTime(Number(els.blockRestSecInput.value));
   els.workStepSecInput.value = String(settings.workStepSec ?? 0);
   els.restStepSecInput.value = String(settings.restStepSec ?? 0);
   if (els.workStepSecDisplay) els.workStepSecDisplay.textContent = stepLabel(settings.workStepSec ?? 0);
@@ -196,6 +208,9 @@ export function readSettingsForm(els) {
     audioEnabled: els.audioEnabledInput.checked,
     warningSeconds: Number(els.warningSecondsInput.value || '0'),
     intervalMode: els.intervalModeInput.value || 'standard',
+    blockEnabled: els.intervalModeInput.value === 'ladder' && els.blockEnabledInput.checked,
+    blockCount: Number(els.blockCountInput.value),
+    blockRestSec: Number(els.blockRestSecInput.value),
     workStepSec: Number(els.workStepSecInput.value || '0'),
     restStepSec: Number(els.restStepSecInput.value || '0')
   };
