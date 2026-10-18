@@ -24,8 +24,8 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
-      - run: npm ci --no-audit --no-fund
-      - run: node --experimental-default-type=module --test tests/*.test.mjs
+      - run: npm install --no-audit --no-fund
+      - run: node --experimental-default-type=module --test tests/*.test.mjs || test ! -d tests
       - run: npm run build
       - name: Create Capacitor Android project
         run: |
