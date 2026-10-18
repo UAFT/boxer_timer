@@ -71,7 +71,7 @@ export function renderTimer(els, state, uiState = {}) {
   if (roundActive) {
     const blocks = blockCount(state.config);
     els.roundLabel.innerHTML = blocks > 1
-      ? `Блок ${blockForRound(state.config, state.roundIndex)}/${blocks} · Раунд <span class="round-number">${localRoundFor(state.config, state.roundIndex)}</span>/${state.config.rounds}`
+      ? `Блок <span class="block-number">${blockForRound(state.config, state.roundIndex)}</span>/${blocks} · Раунд <span class="round-number">${localRoundFor(state.config, state.roundIndex)}</span>/${state.config.rounds}`
       : `Раунд <span class="round-number">${state.roundIndex}</span> из ${state.totalRounds}`;
   }
   renderLiveLadder(els, state, uiState);
@@ -142,7 +142,7 @@ export function renderLiveLadder(els, state, ui = {}) {
   if (list.dataset.scheduleKey !== key) {
     const rows = [];
     for (let i = 1; i <= totalRoundsForConfig(config); i += 1) {
-      if (blockCount(config) > 1 && localRoundFor(config,i) === 1) rows.push(`<div class="ladder-block-label">Блок ${blockForRound(config,i)} из ${blockCount(config)}</div>`);
+      if (blockCount(config) > 1 && localRoundFor(config,i) === 1) rows.push(`<div class="ladder-block-label" data-block="${blockForRound(config,i)}">Блок ${blockForRound(config,i)} из ${blockCount(config)}</div>`);
       const rest = i < totalRoundsForConfig(config) ? formatTime(restSecAfterRound(config, i)) : '—';
       rows.push(`<div class="ladder-live-row" data-round="${i}"><span class="ladder-plan">Раунд ${localRoundFor(config, i)} · ${formatTime(workSecForRound(config, i))} · отдых ${rest}</span><strong class="ladder-count"></strong></div>`);
     }
@@ -152,6 +152,10 @@ export function renderLiveLadder(els, state, ui = {}) {
   }
 
   const active = [PHASES.WORK, PHASES.REST, PHASES.COUNTDOWN].includes(state.phase) ? state.roundIndex : 0;
+  const currentBlock = active > 0 ? blockForRound(config, active) : 0;
+  for (const heading of list.querySelectorAll('.ladder-block-label')) {
+    heading.classList.toggle('is-active', Number(heading.dataset.block) === currentBlock);
+  }
   for (const row of list.querySelectorAll('.ladder-live-row')) {
     const current = Number(row.dataset.round) === active;
     row.classList.toggle('is-active', current);

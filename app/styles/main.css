@@ -1305,3 +1305,8 @@ img {
 .ladder-block-label {font-size:12px;font-weight:800;color:#bed1ef;padding:11px 8px 5px;letter-spacing:.04em}
 .block-settings {margin:12px 0;padding:12px;border:1px solid rgba(255,255,255,.1);border-radius:14px}
 .block-settings[hidden] {display:none}
+
+.round-heading.round-active .block-number {color:#ffce56;display:inline-block;animation:blockGlow 1.7s ease-in-out infinite}
+.ladder-block-label.is-active {color:#ffce56;animation:blockGlow 1.7s ease-in-out infinite}
+@keyframes blockGlow {0%,100% {opacity:1;text-shadow:0 0 3px #d99c28} 50% {opacity:.62;text-shadow:0 0 12px #e9b23e}}
+@media(prefers-reduced-motion:reduce) {.round-heading.round-active .block-number,.ladder-block-label.is-active {animation:none}}
