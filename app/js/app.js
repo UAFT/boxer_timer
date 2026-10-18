@@ -9,7 +9,8 @@ import {
   closeSettings,
   openSettings,
   readSettingsForm,
-  renderTimer,\n  renderLadderPreview,
+  renderTimer,
+  renderLadderPreview,
   setActivePreset,
   setSettingsForm
 } from './ui/render.js';
@@ -127,7 +128,8 @@ function applySettings(nextSettings) {
   if (isMetronomeLocked(activeSettings)) {
     setMetronomePanel('collapsed', { render: false });
   }
-  profiles[activePresetId] = { ...activeSettings };\n  saveProfileState(activePresetId, profiles);
+  profiles[activePresetId] = { ...activeSettings };
+  saveProfileState(activePresetId, profiles);
   audio.setEnabled(activeSettings.audioEnabled);
   syncMetronome();
   timer.applyConfig(activeSettings);
@@ -260,7 +262,8 @@ function bootstrap() {
     onReset: handleReset,
     onOpenSettings: () => openSettings(els),
     onCloseSettings: () => closeSettings(els),
-    onSaveSettings: handleSaveSettings,\n    onPreviewChange: () => renderLadderPreview(els, activeSettings),
+    onSaveSettings: handleSaveSettings,
+    onPreviewChange: () => renderLadderPreview(els, activeSettings),
     onAdjustValue: handleAdjustValue,
     onAdjustLadderStep: handleAdjustLadderStep,
     onToggleMetronome: handleToggleMetronome,
