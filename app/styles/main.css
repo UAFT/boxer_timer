@@ -1332,3 +1332,8 @@ img {
 @media(prefers-reduced-motion:reduce){.program-stage.is-current{animation:none}}
 
 .language-select-row{display:flex;align-items:center;justify-content:space-between;gap:1rem;color:#d9e3f7;font-size:1rem;flex-wrap:wrap}.language-select-row select{background:#111c44;color:#fff;border:1px solid #354778;border-radius:12px;padding:12px;min-width:145px;font:inherit}
+
+.language-choices{display:flex;gap:7px;flex-wrap:wrap;width:100%}
+.language-choices button{flex:1 1 90px;min-height:46px;border:1px solid #354778;border-radius:12px;background:#111c44;color:#d9e3f7;font:inherit;font-weight:650;padding:9px 10px;cursor:pointer}
+.language-choices button.is-active{background:linear-gradient(180deg,#d49a59,#9d6b40);color:#fff;border-color:#dda66d;box-shadow:0 0 0 1px #e8ae6a44}
+.language-choices button:focus-visible{outline:2px solid #60dfab;outline-offset:2px}

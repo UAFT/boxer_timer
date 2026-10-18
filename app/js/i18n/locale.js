@@ -28,7 +28,7 @@ const pairs = [
 ['Сохранить','Save'],['Предварительный просмотр','Preview'],
 ['Оба шага равны нулю: все раунды будут одинаковыми.','Both steps are zero: all rounds will be equal.'],
 ['без шага','no step'],['мин','min'],['сек','sec'],['из','of'],['блоков','blocks'],['раундов','rounds'],
-['Скоростной','Speed'],['Развернуть лестницу','Expand ladder'],['Свернуть лестницу','Collapse ladder'],
+['Скоростной','Speed'],['Язык интерфейса','Interface language'],['Развернуть лестницу','Expand ladder'],['Свернуть лестницу','Collapse ladder'],
 ['Увеличить длину раунда','Increase round duration'],['Уменьшить длину раунда','Decrease round duration'],
 ['Увеличить время отдыха','Increase rest duration'],['Уменьшить время отдыха','Decrease rest duration'],
 ['Увеличить количество раундов','Increase rounds'],['Уменьшить количество раундов','Decrease rounds'],
@@ -45,7 +45,7 @@ export function translateText(text, lang) {
   }
   return result;
 }
-export function installLocalization(select) {
+export function installLocalization(buttons) {
   const originals = new WeakMap();
   let preference = ['ru','en','auto'].includes(localStorage.getItem(LANGUAGE_KEY)) ? localStorage.getItem(LANGUAGE_KEY) : 'auto';
   let lang = resolveLanguage(preference,navigator.language);
@@ -73,13 +73,21 @@ export function installLocalization(select) {
     }
   }
   function refresh() { document.documentElement.lang = lang; visit(document.body); document.title = 'FightTech Interval Timer'; }
-  select.value = preference;
-  select.addEventListener('change', () => {
-    preference = select.value;
+  function syncButtons() {
+    for (const button of buttons) {
+      const active = button.dataset.language === preference;
+      button.classList.toggle('is-active',active);
+      button.setAttribute('aria-pressed',String(active));
+    }
+  }
+  for (const button of buttons) button.addEventListener('click', () => {
+    preference = button.dataset.language;
     localStorage.setItem(LANGUAGE_KEY,preference);
     lang = resolveLanguage(preference,navigator.language);
+    syncButtons();
     refresh();
   });
+  syncButtons();
   window.addEventListener('languagechange',()=>{if(preference==='auto'){lang=resolveLanguage(preference,navigator.language);refresh();}});
   let pending = false;
   const observer = new MutationObserver(() => {

@@ -143,7 +143,7 @@ function applySettings(nextSettings) {
   audio.setEnabled(activeSettings.audioEnabled);
   syncMetronome();
   if (programRunning) exitProgram();
-  timer.applyConfig(activeSettings);
+  timer.applyConfig({ ...activeSettings, presetId: activePresetId });
   setSettingsForm(els, activeSettings);
   renderCurrentState();
 }
@@ -296,7 +296,7 @@ function startProgram() {
   programSnapshot = compileProgram(programEntries,profiles);
   if (!programSnapshot.length) return;
   programRunning = true;
-  timer.applyConfig({ ...activeSettings, programRounds: programSnapshot, intervalMode:'standard' });
+  timer.applyConfig({ ...activeSettings, presetId: activePresetId, programRounds: programSnapshot, intervalMode:'standard' });
   syncMetronome();
   renderCurrentState();
   timer.start();
@@ -304,7 +304,7 @@ function startProgram() {
 function exitProgram() {
   programRunning=false;
   programSnapshot=null;
-  timer.applyConfig(activeSettings);
+  timer.applyConfig({ ...activeSettings, presetId: activePresetId });
   renderCurrentState();
 }
 function renderProgram() {
@@ -377,7 +377,7 @@ function bootstrap() {
   syncMetronome();
   setActivePreset(els, activePresetId);
   setSettingsForm(els, activeSettings);
-  timer.applyConfig(activeSettings);
+  timer.applyConfig({ ...activeSettings, presetId: activePresetId });
   bindPresetTabs(els, handleSelectPreset);
   bindProgram();
   bindControls(els, {
@@ -399,7 +399,7 @@ function bootstrap() {
   });
   els.ladderFullPause.addEventListener('click', handleToggleRun);
   renderCurrentState();
-  installLocalization(document.getElementById('languageSelect'));
+  installLocalization(document.querySelectorAll('[data-language]'));
 }
 
 bootstrap();
