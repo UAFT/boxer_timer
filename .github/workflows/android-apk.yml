@@ -26,6 +26,8 @@ jobs:
           ls "$ANDROID_HOME/platforms" | tail -5
       - run: npm install --no-audit --no-fund
       - run: npm run build
+      - name: Install TypeScript for Capacitor config
+        run: npm install --no-save --no-audit --no-fund typescript
       - run: npx cap add android
       - run: npx cap sync android
       - run: cd android && chmod +x gradlew && ./gradlew --no-daemon assembleDebug
