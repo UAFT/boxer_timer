@@ -4,15 +4,32 @@ function normalizeMode(mode) {
   return mode === "ladder" ? "ladder" : "standard";
 }
 
+export function blockCount(config) {
+  return config?.intervalMode === 'ladder' && config?.blockEnabled ? Math.max(1, Math.min(99, Number(config.blockCount) || 1)) : 1;
+}
+export function totalRoundsForConfig(config) {
+  return Math.max(1, Number(config?.rounds) || 1) * blockCount(config);
+}
+export function localRoundFor(config, roundIndex) {
+  const rounds = Math.max(1, Number(config?.rounds) || 1);
+  return ((Math.max(1, roundIndex) - 1) % rounds) + 1;
+}
+export function blockForRound(config, roundIndex) {
+  return Math.floor((Math.max(1, roundIndex) - 1) / Math.max(1, config.rounds)) + 1;
+}
 export function workSecForRound(config, roundIndex) {
   const base = clampInt(config?.workSec, 1, 3600, 180);
   if (normalizeMode(config?.intervalMode) !== "ladder") return base;
   const step = clampInt(config?.workStepSec, -3600, 3600, 0);
-  const value = base + Math.max(0, Number(roundIndex || 1) - 1) * step;
+  const value = base + Math.max(0, localRoundFor(config, Number(roundIndex || 1)) - 1) * step;
   return Math.min(3600, Math.max(1, value));
 }
 
 export function restSecAfterRound(config, roundIndex) {
+  const local = localRoundFor(config, roundIndex);
+  if (local === Math.max(1, Number(config.rounds) || 1) && Number(roundIndex) < totalRoundsForConfig(config)) {
+    return clampInt(config?.blockRestSec, 0, 3600, 90);
+  }
   const base = clampInt(config?.restSec, 0, 3600, 60);
   if (normalizeMode(config?.intervalMode) !== "ladder") return base;
   const step = clampInt(config?.restStepSec, -3600, 3600, 0);
@@ -21,7 +38,7 @@ export function restSecAfterRound(config, roundIndex) {
 }
 
 export function totalDurationSecForConfig(config) {
-  const rounds = clampInt(config?.rounds, 1, 99, 1);
+  const rounds = totalRoundsForConfig(config);
   let total = 0;
   for (let round = 1; round <= rounds; round += 1) {
     total += workSecForRound(config, round);
@@ -62,7 +79,7 @@ export function remainingTotalSecForState(state) {
 
 export function displayDurationsForState(state) {
   const config = state?.config || {};
-  const rounds = clampInt(config?.rounds, 1, 99, 1);
+  const rounds = totalRoundsForConfig(config);
   const currentRound = Math.max(1, Math.min(rounds, Number(state?.roundIndex || 1)));
 
   if (state?.phase === 'rest') {
