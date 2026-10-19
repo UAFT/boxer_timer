@@ -125,6 +125,14 @@
           <div class="visually-hidden" id="metronomeStatus" aria-hidden="true">Выкл · Прямой</div>
         </article>
       </section>
+      <section id="programPanel" class="program-panel panel" hidden>
+        <div class="program-top"><strong>ПРОГРАММА</strong><button type="button" id="programClear">Очистить</button></div>
+        <div class="program-library-actions"><button id="programLibraryOpen" type="button">Мои программы</button><button id="programSaveOpen" type="button">Сохранить</button></div>
+        <div id="programList" class="program-list"></div>
+        <div class="program-cycle-panel"><div class="program-cycle-row"><strong>Циклы программы</strong><div class="program-cycle-controls"><button type="button" id="programCycleMinus">−</button><strong id="programCycleCount">1</strong><button type="button" id="programCyclePlus">+</button></div></div><div class="program-cycle-row" id="programCycleRestRow" hidden><span>Отдых между циклами</span><div class="program-cycle-controls"><button type="button" id="programCycleRestMinus">−</button><strong id="programCycleRestValue">01:00</strong><button type="button" id="programCycleRestPlus">+</button></div></div></div>
+        <div class="program-actions"><button type="button" id="programStart">Запустить программу</button><button type="button" id="programExit" hidden>Выйти из программы</button></div>
+        <div class="program-hint">Удерживай пресет, чтобы добавить этап. Повторное удержание добавит его ещё раз.</div>
+      </section>
       <section id="ladderLive" class="ladder-live panel" hidden aria-label="Лестница раундов">
         <div class="ladder-live-head"><strong>ЛЕСТНИЦА</strong><button id="ladderExpand" type="button" aria-label="Развернуть лестницу" aria-expanded="false">⤢</button></div>
         <div id="ladderFullControls" class="ladder-full-controls" hidden>
@@ -137,14 +145,22 @@
         </div>
         <div id="ladderLiveList" class="ladder-live-list"></div>
       </section>
-      <section id="programPanel" class="program-panel panel" hidden>
-        <div class="program-top"><strong>ПРОГРАММА</strong><button type="button" id="programClear">Очистить</button></div>
-        <div id="programList" class="program-list"></div>
-        <div class="program-actions"><button type="button" id="programStart">Запустить программу</button><button type="button" id="programExit" hidden>Выйти из программы</button></div>
-        <div class="program-hint">Удерживай пресет, чтобы добавить этап. Повторное удержание добавит его ещё раз.</div>
-      </section>
     </main>
 
+    <div class="modal-backdrop" id="programLibraryModal" hidden>
+      <section class="settings-modal panel program-library-modal" role="dialog" aria-modal="true" aria-labelledby="programLibraryTitle">
+        <div class="settings-head"><h2 id="programLibraryTitle">Мои программы</h2><button type="button" id="programLibraryClose">Закрыть</button></div>
+        <div class="program-library-tabs"><button type="button" id="programLibraryMine">Мои</button><button type="button" id="programLibraryTemplates">Готовые</button></div>
+        <div id="programLibraryList" class="program-library-list"></div>
+      </section>
+    </div>
+    <div class="modal-backdrop" id="programSaveModal" hidden>
+      <section class="settings-modal panel program-library-modal" role="dialog" aria-modal="true" aria-labelledby="programSaveTitle">
+        <div class="settings-head"><h2 id="programSaveTitle">Сохранить программу</h2><button type="button" id="programSaveClose">Закрыть</button></div>
+        <label for="programNameInput">Название программы</label><input id="programNameInput" type="text" maxlength="80" autocomplete="off" />
+        <div class="program-library-actions"><button type="button" id="programSaveOverwrite">Сохранить изменения</button><button type="button" id="programSaveCopy">Сохранить как новую</button></div>
+      </section>
+    </div>
     <div class="modal-backdrop" id="settingsModal" hidden>
       <section class="settings-modal panel">
         <div class="settings-head">

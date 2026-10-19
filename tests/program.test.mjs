@@ -36,3 +36,19 @@ test('engine automatically transitions from one preset to another',async()=>{
  assert.equal(t.state.remainingSec,60);
  t.reset();
 });
+test('program cycles preserve names, independent settings, stage rests and cycle rests',()=>{
+ const stages=[
+  {presetId:'classic3',title:'Разминка',restAfterSec:60,settings:{rounds:1,workSec:180,restSec:60,intervalMode:'standard'}},
+  {presetId:'classic2',title:'Скорость',restAfterSec:0,settings:{rounds:2,workSec:20,restSec:20,intervalMode:'standard'}}
+ ];
+ const rows=compileProgram(stages,profiles,{cycles:2,cycleRestSec:120});
+ assert.equal(rows.length,6);
+ assert.deepEqual(rows.map(x=>x.workSec),[180,20,20,180,20,20]);
+ assert.deepEqual(rows.map(x=>x.restSec),[60,20,120,60,20,0]);
+ assert.deepEqual(rows.map(x=>x.cycleIndex),[0,0,0,1,1,1]);
+ assert.equal(rows[0].stageTitle,'Разминка');
+ assert.equal(rows[3].stageTitle,'Разминка');
+ assert.equal(totalDurationSecForConfig({programRounds:rows}),180*2+20*4+60*2+20*2+120);
+ profiles.classic3.workSec=600;
+ assert.equal(compileProgram(stages,profiles,{cycles:1})[0].workSec,180);
+});
