@@ -380,12 +380,17 @@ function renderProgram() {
       const card=document.createElement('div');card.className='program-stage-card';card.dataset.stage=String(i);
       const stage=document.createElement('div');stage.className='program-stage';
       const main=document.createElement('div');main.className='program-stage-main';
-      const name=document.createElement('strong');name.textContent='Этап '+(i+1)+(entry.title?' · '+entry.title:'')+' · '+PRESET_NAMES[entry.presetId];
+      const heading=document.createElement('strong');heading.className='program-stage-heading';
+      heading.textContent='Этап '+(i+1)+(entry.title?' · '+entry.title:'');
       const detail=document.createElement('small');const cfg=entry.settings || profiles[entry.presetId];
-      detail.textContent=cfg.intervalMode==='ladder' ? 'Лестница · '+russianRoundCount(cfg.rounds)+(cfg.blockEnabled?' · '+russianBlockCount(cfg.blockCount):'') : (entry.presetId==='tabata2020x24' ? 'Скоростной' : 'Обычный')+' · '+russianRoundCount(cfg.rounds)+' · '+String(Math.floor(cfg.workSec/60)).padStart(2,'0')+':'+String(cfg.workSec%60).padStart(2,'0');
-      main.append(name,detail);stage.append(main);
+      const kind=document.createElement('small');kind.className='program-stage-kind';
+      kind.textContent=cfg.intervalMode==='ladder' ? 'Лестница' : (entry.presetId==='tabata2020x24' ? 'Скоростной' : 'Обычный');
+      detail.textContent=cfg.intervalMode==='ladder'
+        ? russianRoundCount(cfg.rounds)+(cfg.blockEnabled?' · '+russianBlockCount(cfg.blockCount):'')
+        : russianRoundCount(cfg.rounds)+' по '+String(Math.floor(cfg.workSec/60)).padStart(2,'0')+':'+String(cfg.workSec%60).padStart(2,'0');
+      main.append(heading,kind,detail);stage.append(main);
       if (!programRunning) {
-        const edit=document.createElement('button');edit.type='button';edit.textContent='✎';edit.setAttribute('aria-label','Название этапа');edit.addEventListener('click',()=>renameProgramStage(i));main.append(edit);
+        const edit=document.createElement('button');edit.type='button';edit.textContent='✎';edit.className='program-stage-edit';edit.setAttribute('aria-label','Название этапа');edit.addEventListener('click',()=>renameProgramStage(i));stage.append(edit);
         for (const [label,fn] of [['↑',()=>moveProgramStage(i,-1)],['↓',()=>moveProgramStage(i,1)],['×',()=>removeProgramStage(i)]]) {
           const b=document.createElement('button');b.type='button';b.textContent=label;b.setAttribute('aria-label',label==='×'?'Удалить этап':label==='↑'?'Поднять этап':'Опустить этап');b.addEventListener('click',fn);stage.append(b);
         }

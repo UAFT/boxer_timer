@@ -37,6 +37,9 @@ export function normalizeSettings(raw, fallback) {
     metronomeBpm: clampInt(raw?.metronomeBpm, 0, 300, fallback.metronomeBpm ?? 20),
     metronomeMode: normalizeMetronomeMode(raw?.metronomeMode, fallback.metronomeMode),
     intervalMode: normalizeIntervalMode(raw?.intervalMode, fallback.intervalMode),
+    blockEnabled: Boolean(raw?.blockEnabled),
+    blockCount: clampInt(raw?.blockCount, 1, 99, fallback.blockCount ?? 1),
+    blockRestSec: Math.round(clampInt(raw?.blockRestSec, 0, 3600, fallback.blockRestSec ?? 90) / 5) * 5,
     workStepSec: normalizeStepSeconds(raw?.workStepSec, fallback.workStepSec ?? 0),
     restStepSec: normalizeStepSeconds(raw?.restStepSec, fallback.restStepSec ?? 0),
     workStartCueVariant: normalizeVariant(raw?.workStartCueVariant, fallback.workStartCueVariant),
@@ -57,4 +60,22 @@ export function loadSettings(fallback) {
 
 export function saveSettings(settings) {
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+}
+
+const PROFILE_KEY = 'andar.fight.timer.profiles.v1';
+const PROFILE_IDS = ['classic3', 'classic2', 'classic1', 'tabata2020x24'];
+
+export function loadProfileState() {
+  let saved = null;
+  try { saved = JSON.parse(window.localStorage.getItem(PROFILE_KEY) || 'null'); } catch {}
+  if (saved?.profiles && typeof saved.profiles === 'object') {
+    return { activeId: PROFILE_IDS.includes(saved.activeId) ? saved.activeId : 'classic3', profiles: saved.profiles };
+  }
+  let legacy = null;
+  try { legacy = JSON.parse(window.localStorage.getItem(STORAGE_KEY) || 'null'); } catch {}
+  return { activeId: 'classic3', profiles: legacy ? { classic3: legacy } : {} };
+}
+
+export function saveProfileState(activeId, profiles) {
+  try { window.localStorage.setItem(PROFILE_KEY, JSON.stringify({ activeId, profiles })); } catch {}
 }

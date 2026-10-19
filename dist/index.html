@@ -6,12 +6,12 @@
       name="viewport"
       content="width=device-width, initial-scale=1, viewport-fit=cover"
     />
-    <title>Fight Tech Timer</title>
+    <title>FightTech Interval Timer</title>
     <meta
       name="description"
       content="Offline sports timer. Local logic. Local audio. No API."
     />
-    <link rel="icon" href="./favicon.ico" />
+    <link rel="icon" href="./assets/icons/icon-192.png" />
     <link rel="stylesheet" href="./styles/main.css" />
   </head>
   <body>
@@ -31,7 +31,7 @@
         <button class="preset-tab is-active" type="button" data-preset="classic3">3′</button>
         <button class="preset-tab" type="button" data-preset="classic2">2′</button>
         <button class="preset-tab" type="button" data-preset="classic1">1′</button>
-        <button class="preset-tab" type="button" data-preset="tabata2020x24">⚡</button>
+        <button class="preset-tab" type="button" data-preset="tabata2020x24" aria-label="Скоростной" title="Скоростной · 20/20 · 24 раунда">⚡</button>
       </section>
 
       <section class="timer-card panel">
@@ -125,8 +125,42 @@
           <div class="visually-hidden" id="metronomeStatus" aria-hidden="true">Выкл · Прямой</div>
         </article>
       </section>
+      <section id="programPanel" class="program-panel panel" hidden>
+        <div class="program-top"><strong>ПРОГРАММА</strong><button type="button" id="programClear">Очистить</button></div>
+        <div class="program-library-actions"><button id="programLibraryOpen" type="button">Мои программы</button><button id="programSaveOpen" type="button">Сохранить</button></div>
+        <div id="programList" class="program-list"></div>
+        <div class="program-cycle-panel"><div class="program-cycle-row"><strong>Циклы программы</strong><div class="program-cycle-controls"><button type="button" id="programCycleMinus">−</button><strong id="programCycleCount">1</strong><button type="button" id="programCyclePlus">+</button></div></div><div class="program-cycle-row" id="programCycleRestRow" hidden><span>Отдых между циклами</span><div class="program-cycle-controls"><button type="button" id="programCycleRestMinus">−</button><strong id="programCycleRestValue">01:00</strong><button type="button" id="programCycleRestPlus">+</button></div></div></div>
+        <div class="program-actions"><button type="button" id="programStart">Запустить программу</button><button type="button" id="programExit" hidden>Выйти из программы</button></div>
+        <div class="program-hint">Удерживай пресет, чтобы добавить этап. Повторное удержание добавит его ещё раз.</div>
+      </section>
+      <section id="ladderLive" class="ladder-live panel" hidden aria-label="Лестница раундов">
+        <div class="ladder-live-head"><strong>ЛЕСТНИЦА</strong><button id="ladderExpand" type="button" aria-label="Развернуть лестницу" aria-expanded="false">⤢</button></div>
+        <div id="ladderFullControls" class="ladder-full-controls" hidden>
+          <div class="ladder-current"><span id="ladderCurrentLabel">Текущий раунд</span><strong id="ladderFullTime">00:00</strong></div>
+          <div class="ladder-summary-row">
+            <div class="ladder-summary-box"><span>Вся программа</span><strong id="ladderProgramTotal">00:00</strong></div>
+            <button id="ladderFullPause" type="button" aria-label="Пауза" disabled><span aria-hidden="true">Ⅱ</span></button>
+            <div class="ladder-summary-box"><span>Осталось</span><strong id="ladderProgramRemaining">00:00</strong></div>
+          </div>
+        </div>
+        <div id="ladderLiveList" class="ladder-live-list"></div>
+      </section>
     </main>
 
+    <div class="modal-backdrop" id="programLibraryModal" hidden>
+      <section class="settings-modal panel program-library-modal" role="dialog" aria-modal="true" aria-labelledby="programLibraryTitle">
+        <div class="settings-head"><h2 id="programLibraryTitle">Мои программы</h2><button type="button" id="programLibraryClose">Закрыть</button></div>
+        <div class="program-library-tabs"><button type="button" id="programLibraryMine">Мои</button><button type="button" id="programLibraryTemplates">Готовые</button></div>
+        <div id="programLibraryList" class="program-library-list"></div>
+      </section>
+    </div>
+    <div class="modal-backdrop" id="programSaveModal" hidden>
+      <section class="settings-modal panel program-library-modal" role="dialog" aria-modal="true" aria-labelledby="programSaveTitle">
+        <div class="settings-head"><h2 id="programSaveTitle">Сохранить программу</h2><button type="button" id="programSaveClose">Закрыть</button></div>
+        <label for="programNameInput">Название программы</label><input id="programNameInput" type="text" maxlength="80" autocomplete="off" />
+        <div class="program-library-actions"><button type="button" id="programSaveOverwrite">Сохранить изменения</button><button type="button" id="programSaveCopy">Сохранить как новую</button></div>
+      </section>
+    </div>
     <div class="modal-backdrop" id="settingsModal" hidden>
       <section class="settings-modal panel">
         <div class="settings-head">
@@ -138,6 +172,7 @@
         </div>
 
         <div class="settings-grid settings-grid-rebuilt">
+          <section class="settings-card"><div class="settings-card-title">Язык / Language</div><div class="language-select-row"><span>Язык интерфейса</span><div class="language-choices" role="group" aria-label="Язык интерфейса"><button type="button" data-language="auto">Авто / Auto</button><button type="button" data-language="ru">Русский</button><button type="button" data-language="en">English</button></div></div></section>
           <section class="settings-card">
             <div class="settings-card-title">Общее</div>
             <label class="settings-toggle-row">
@@ -148,6 +183,7 @@
 
           <section class="settings-card">
             <div class="settings-card-title">Режим интервалов</div>
+            <p class="ladder-explainer">Лестница: каждый следующий раунд и отдых могут становиться длиннее или короче на выбранный шаг. Количество раундов, длительность первого раунда и исходное время отдыха задаются на главном экране выбранного профиля.</p>
             <div class="settings-field-stack">
               <div class="settings-field-label">Схема</div>
               <div class="choice-row" role="group" aria-label="Режим интервалов">
@@ -165,7 +201,7 @@
                 <button type="button" class="settings-stepper-btn" data-ladder-target="workStepSec" data-ladder-direction="up">+5</button>
               </div>
               <input type="hidden" id="workStepSecInput" value="0" />
-              <div class="settings-inline-note">Шаг меняется по 5 секунд: 5, 10, 15, 20, 25, 30… Можно и уменьшать, и увеличивать.</div>
+              <div class="settings-inline-note">Отрицательный шаг сокращает каждый следующий раунд, положительный — удлиняет. Изменение по 5 секунд.</div>
             </div>
 
             <div class="settings-field-stack">
@@ -176,10 +212,21 @@
                 <button type="button" class="settings-stepper-btn" data-ladder-target="restStepSec" data-ladder-direction="up">+5</button>
               </div>
               <input type="hidden" id="restStepSecInput" value="0" />
-              <div class="settings-inline-note">Шаг отдыха тоже наборный: можно уменьшать или увеличивать по 5 секунд.</div>
+              <div class="settings-inline-note">Отрицательный шаг сокращает отдых, положительный — удлиняет. Нулевой шаг сохраняет одинаковый отдых.</div>
             </div>
 
-            <div class="settings-inline-note">Лестница меняет длительность каждого следующего раунда и отдыха на выбранный шаг.</div>
+            <section class="block-settings" id="blockSettings">
+              <label class="settings-toggle-row"><input type="checkbox" id="blockEnabledInput" /><span>Лестница + Блок</span></label>
+              <div class="settings-field-stack"><div class="settings-field-label">Количество блоков</div>
+                <div class="settings-stepper"><button type="button" class="settings-stepper-btn" data-block-target="blockCount" data-block-direction="down">−</button><div id="blockCountDisplay" class="settings-stepper-value">1</div><button type="button" class="settings-stepper-btn" data-block-target="blockCount" data-block-direction="up">+</button></div>
+                <input type="hidden" id="blockCountInput" value="1" />
+              </div>
+              <div class="settings-field-stack"><div class="settings-field-label">Отдых между блоками</div>
+                <div class="settings-stepper"><button type="button" class="settings-stepper-btn" data-block-target="blockRestSec" data-block-direction="down">−5</button><div id="blockRestSecDisplay" class="settings-stepper-value">01:30</div><button type="button" class="settings-stepper-btn" data-block-target="blockRestSec" data-block-direction="up">+5</button></div>
+                <input type="hidden" id="blockRestSecInput" value="90" />
+              </div>
+            </section>
+            <div class="ladder-preview" id="ladderPreview" aria-live="polite"></div>
           </section>
 
           <section class="settings-card">

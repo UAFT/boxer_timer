@@ -1,9 +1,13 @@
 import { PHASES } from '../core/constants.js';
 import { formatTime } from '../core/time.js';
-import { displayDurationsForState, remainingTotalSecForState, totalDurationSecForConfig } from '../core/schedule.js';
+import { displayDurationsForState, remainingTotalSecForState, totalDurationSecForConfig, workSecForRound, restSecAfterRound, totalRoundsForConfig, blockCount, localRoundFor, blockForRound } from '../core/schedule.js';
 
 function intervalModeTitle(config) {
-  return config?.intervalMode === 'ladder' ? 'Лестница' : 'Обычный';
+  return config?.programRounds?.length ? 'Программа' : (config?.presetId === 'tabata2020x24' ? 'Скоростной' : (config?.intervalMode === 'ladder' ? 'Лестница' : 'Обычный'));
+}
+
+function programStageMode(round) {
+  return round.presetId === 'tabata2020x24' ? 'Скоростной' : (round.intervalMode === 'ladder' ? 'Лестница' : 'Обычный');
 }
 
 function phaseLabelText(state) {
@@ -66,6 +70,19 @@ export function renderTimer(els, state, uiState = {}) {
   els.mainTime.textContent = formatTime(state.remainingSec);
   els.phaseLabel.textContent = phaseLabelText(state);
   els.roundLabel.textContent = roundLabelText(state);
+  const roundActive = [PHASES.WORK, PHASES.REST, PHASES.COUNTDOWN].includes(state.phase);
+  els.roundLabel.classList.toggle('round-active', roundActive);
+  if (roundActive && state.config.programRounds?.length) {
+    const r=state.config.programRounds[Math.max(0,state.roundIndex-1)];
+    const stages=new Set(state.config.programRounds.map(x=>x.stageIndex)).size;
+    els.roundLabel.innerHTML='Этап <span class="block-number">'+(r.stageIndex+1)+'</span>/'+stages+' · Раунд <span class="round-number">'+r.stageRound+'</span>/'+r.stageRounds;
+  } else if (roundActive) {
+    const blocks = blockCount(state.config);
+    els.roundLabel.innerHTML = blocks > 1
+      ? `Блок <span class="block-number">${blockForRound(state.config, state.roundIndex)}</span>/${blocks} · Раунд <span class="round-number">${localRoundFor(state.config, state.roundIndex)}</span>/${state.config.rounds}`
+      : `Раунд <span class="round-number">${state.roundIndex}</span> из ${state.totalRounds}`;
+  }
+  renderLiveLadder(els, state, uiState);
   els.phaseCaption.textContent = intervalCaption(state.config);
   els.countdownCaption.textContent = '';
   els.progressFill.style.width = `${state.progress || 0}%`;
@@ -111,16 +128,113 @@ export function renderTimer(els, state, uiState = {}) {
   }
 }
 
+
+function escapeStageTitle(value) {return String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+export function renderLiveLadder(els, state, ui = {}) {
+  const panel = els.ladderLive;
+  if (!panel) return;
+  const preview = Boolean(ui.previewRounds?.length && !state.config.programRounds?.length);
+  const config = preview ? { ...state.config, programRounds: ui.previewRounds } : state.config;
+  panel.hidden = config.intervalMode !== 'ladder' && !config.programRounds?.length;
+  const ladderTitle = panel.querySelector('.ladder-live-head strong');
+  if (ladderTitle) ladderTitle.textContent = config.programRounds?.length ? 'ПЛАН ТРЕНИРОВКИ' : 'ЛЕСТНИЦА';
+  if (panel.hidden) return;
+  const expanded = Boolean(ui.ladderExpanded);
+  panel.classList.toggle('is-expanded', expanded);
+  els.ladderExpand.textContent = expanded ? '⤡' : '⤢';
+  els.ladderExpand.setAttribute('aria-expanded', String(expanded));
+  els.ladderExpand.setAttribute('aria-label', expanded ? 'Свернуть лестницу' : 'Развернуть лестницу');
+  els.ladderFullControls.hidden = !expanded;
+  const total = totalDurationSecForConfig(config);
+  const remaining = preview ? total : remainingTotalSecForState(state);
+  document.getElementById('ladderProgramTotal').textContent = formatTime(total);
+  document.getElementById('ladderProgramRemaining').textContent = formatTime(remaining);
+  document.getElementById('ladderCurrentLabel').textContent = preview ? 'Программа готова' : 'Текущий раунд';
+  els.ladderFullTime.textContent = preview ? formatTime(total) : formatTime(state.remainingSec);
+  const canPause = !preview && state.phase !== PHASES.IDLE && state.phase !== PHASES.FINISHED;
+  els.ladderFullPause.disabled = !canPause;
+  els.ladderFullPause.innerHTML = state.isPaused && canPause ? '<span aria-hidden="true">▶</span>' : '<span aria-hidden="true">Ⅱ</span>';
+  els.ladderFullPause.setAttribute('aria-label', state.isPaused && canPause ? 'Продолжить' : 'Пауза');
+
+  const list = els.ladderLiveList;
+  const key = config.programRounds?.length ? JSON.stringify(config.programRounds) : [config.rounds, config.workSec, config.restSec, config.workStepSec, config.restStepSec, config.blockEnabled, config.blockCount, config.blockRestSec].join(':');
+  if (list.dataset.scheduleKey !== key) {
+    const rows = [];
+    let stageOpen = false;
+    let blockOpen = false;
+    const closeBlock = () => { if (blockOpen) { rows.push('</div>'); blockOpen = false; } };
+    const closeStage = () => { closeBlock(); if (stageOpen) { rows.push('</div>'); stageOpen = false; } };
+    for (let i = 1; i <= totalRoundsForConfig(config); i += 1) {
+      const pr=config.programRounds?.[i-1];
+      if (pr && pr.stageRound===1) { closeStage(); if (pr.stageIndex===0 && pr.cycles>1) rows.push('<div class="ladder-cycle-label">Цикл '+(pr.cycleIndex+1)+' из '+pr.cycles+'</div>'); rows.push('<div class="ladder-stage-outline">'); stageOpen=true; }
+      if (pr && pr.blockCount>1 && pr.localRound===1) { closeBlock(); rows.push('<div class="ladder-block-outline">'); blockOpen=true; }
+      if (pr && pr.stageRound===1) rows.push('<div class="ladder-block-label" data-stage="'+pr.stageIndex+'">Этап '+(pr.stageIndex+1)+(pr.stageTitle?' · '+escapeStageTitle(pr.stageTitle):'')+' · '+programStageMode(pr)+'</div>');
+      if (pr && pr.blockCount>1 && pr.localRound===1) rows.push('<div class="ladder-block-label" data-block="'+pr.block+'" data-stage="'+pr.stageIndex+'">Блок '+pr.block+' из '+pr.blockCount+'</div>');
+      if (!pr && blockCount(config) > 1 && localRoundFor(config,i) === 1) rows.push(`<div class="ladder-block-label" data-block="${blockForRound(config,i)}">Блок ${blockForRound(config,i)} из ${blockCount(config)}</div>`);
+      const rest = i < totalRoundsForConfig(config) ? formatTime(restSecAfterRound(config, i)) : '—';
+      rows.push(`<div class="ladder-live-row" data-round="${i}"><span class="ladder-plan">Раунд ${pr ? pr.localRound : localRoundFor(config, i)} · ${formatTime(workSecForRound(config, i))} · отдых ${rest}</span><strong class="ladder-count"></strong></div>`);
+    }
+    closeStage();
+    list.innerHTML = rows.join('');
+    list.dataset.scheduleKey = key;
+    list.dataset.activeRound = '';
+  }
+
+  const active = !preview && [PHASES.WORK, PHASES.REST, PHASES.COUNTDOWN].includes(state.phase) ? state.roundIndex : 0;
+  const currentProgramRound = config.programRounds?.[active-1];
+  const currentBlock = active > 0 ? (currentProgramRound?.block ?? blockForRound(config, active)) : 0;
+  for (const heading of list.querySelectorAll('.ladder-block-label')) {
+    heading.classList.toggle('is-active', currentProgramRound ? Number(heading.dataset.stage)===currentProgramRound.stageIndex && (!heading.dataset.block || Number(heading.dataset.block)===currentBlock) : Number(heading.dataset.block)===currentBlock);
+  }
+  for (const row of list.querySelectorAll('.ladder-live-row')) {
+    const current = Number(row.dataset.round) === active;
+    row.classList.toggle('is-active', current);
+    const countdown = row.querySelector('.ladder-count');
+    countdown.textContent = current ? (state.phase === PHASES.REST ? 'Отдых ' : state.phase === PHASES.COUNTDOWN ? 'старт ' : '→ ') + formatTime(state.remainingSec) : '';
+  }
+
+  if (list.dataset.activeRound !== String(active)) {
+    list.dataset.activeRound = String(active);
+    if (!active) list.scrollTop = 0;
+    else {
+      const row = list.querySelector(`[data-round="${active}"]`);
+      if (row && row.offsetTop + row.offsetHeight > list.scrollTop + list.clientHeight) {
+        list.scrollTo({ top: row.offsetTop + row.offsetHeight - list.clientHeight, behavior: 'smooth' });
+      }
+    }
+  }
+}
+
+export function renderLadderPreview(els, settings) {
+  const panel = document.getElementById('ladderPreview');
+  if (!panel) return;
+  const config = { ...settings, ...readSettingsForm(els) };
+  const rounds = Math.max(1, Number(config.rounds || 1));
+  const count = Math.min(rounds, 8);
+  const rows = [];
+  for (let i = 1; i <= count; i += 1) {
+    rows.push(`<div class="ladder-preview-row"><span>Раунд ${i}</span><strong>${formatTime(workSecForRound(config, i))}</strong><span>Отдых</span><strong>${i < rounds ? formatTime(restSecAfterRound(config, i)) : '—'}</strong></div>`);
+  }
+  panel.innerHTML = `<div class="ladder-preview-title">Предварительный просмотр</div>${rows.join('')}${rounds > count ? `<div class="settings-inline-note">Показаны первые ${count} из ${rounds} раундов</div>` : ''}${config.intervalMode === 'ladder' && !config.workStepSec && !config.restStepSec ? '<div class="settings-inline-note">Оба шага равны нулю: все раунды будут одинаковыми.</div>' : ''}`;
+}
+
 export function setSettingsForm(els, settings) {
   els.audioEnabledInput.checked = settings.audioEnabled;
   els.warningSecondsInput.value = String(settings.warningSeconds ?? 4);
   els.intervalModeInput.value = settings.intervalMode || 'standard';
+  els.blockSettings.hidden = settings.intervalMode !== 'ladder';
+  els.blockEnabledInput.checked = Boolean(settings.blockEnabled);
+  els.blockCountInput.value = String(settings.blockCount ?? 1);
+  els.blockRestSecInput.value = String(settings.blockRestSec ?? 90);
+  els.blockCountDisplay.textContent = els.blockCountInput.value;
+  els.blockRestSecDisplay.textContent = formatTime(Number(els.blockRestSecInput.value));
   els.workStepSecInput.value = String(settings.workStepSec ?? 0);
   els.restStepSecInput.value = String(settings.restStepSec ?? 0);
   if (els.workStepSecDisplay) els.workStepSecDisplay.textContent = stepLabel(settings.workStepSec ?? 0);
   if (els.restStepSecDisplay) els.restStepSecDisplay.textContent = stepLabel(settings.restStepSec ?? 0);
   applyChoiceButtons(els.warningChoiceButtons, els.warningSecondsInput.value, 'warningSeconds');
   applyChoiceButtons(els.intervalModeButtons, els.intervalModeInput.value, 'intervalMode');
+  renderLadderPreview(els, settings);
 }
 
 export function readSettingsForm(els) {
@@ -128,6 +242,9 @@ export function readSettingsForm(els) {
     audioEnabled: els.audioEnabledInput.checked,
     warningSeconds: Number(els.warningSecondsInput.value || '0'),
     intervalMode: els.intervalModeInput.value || 'standard',
+    blockEnabled: els.intervalModeInput.value === 'ladder' && els.blockEnabledInput.checked,
+    blockCount: Number(els.blockCountInput.value),
+    blockRestSec: Number(els.blockRestSecInput.value),
     workStepSec: Number(els.workStepSecInput.value || '0'),
     restStepSec: Number(els.restStepSecInput.value || '0')
   };
