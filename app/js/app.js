@@ -1,7 +1,7 @@
 import { installLocalization } from './i18n/locale.js';
 import { AUDIO_KEYS } from './core/constants.js';
 import { clonePreset } from './state/presets.js';
-import { compileProgram, normalizeProgram, PRESET_NAMES, PROGRAM_KEY } from './core/program.js';
+import { compileProgram, normalizeProgram, normalizeOptions, normalizeLibrary, LIBRARY_KEY, PROGRAM_OPTIONS_KEY, PRESET_NAMES, PROGRAM_KEY } from './core/program.js';
 import { loadProfileState, saveProfileState, normalizeSettings } from './state/settings-store.js';
 import { AudioEngine } from './audio/audio-engine.js';
 import { MetronomeEngine } from './audio/metronome-engine.js';
@@ -76,6 +76,18 @@ let activePresetId = profileState.activeId;
 let activeSettings = normalizeSettings(profiles[activePresetId], clonePreset(activePresetId));
 let programEntries = [];
 try { programEntries = normalizeProgram(JSON.parse(localStorage.getItem(PROGRAM_KEY) || '[]')); } catch {}
+let programOptions = normalizeOptions({});
+let savedPrograms = [];
+try { programOptions=normalizeOptions(JSON.parse(localStorage.getItem(PROGRAM_OPTIONS_KEY) || '{}')); } catch {}
+try { savedPrograms=normalizeLibrary(JSON.parse(localStorage.getItem(LIBRARY_KEY) || '[]')); } catch {}
+let openedProgramId = null;
+let openedProgramName = '';
+let libraryTab = 'mine';
+const builtInPrograms = [
+  {id:'built-box',name:'Классический бокс',entries:[{presetId:'classic3',title:'Раунды',restAfterSec:0,settings:{...clonePreset('classic3'),rounds:12,workSec:180,restSec:60}}],options:{cycles:1,cycleRestSec:60}},
+  {id:'built-tech',name:'Разминка и техника',entries:[{presetId:'classic3',title:'Разминка',restAfterSec:60,settings:{...clonePreset('classic3'),rounds:1,workSec:180}},{presetId:'classic2',title:'Техника',restAfterSec:0,settings:{...clonePreset('classic2'),rounds:6,workSec:60,restSec:30}}],options:{cycles:1,cycleRestSec:60}},
+  {id:'built-speed',name:'Скоростная работа',entries:[{presetId:'tabata2020x24',title:'Скорость',restAfterSec:0,settings:{...clonePreset('tabata2020x24'),rounds:4,workSec:20,restSec:20,intervalMode:'ladder',blockEnabled:true,blockCount:2,blockRestSec:20,workStepSec:0,restStepSec:0}}],options:{cycles:1,cycleRestSec:60}}
+];
 let programRunning = false;
 let programSnapshot = null;
 const uiState = {
@@ -92,19 +104,20 @@ function setMetronomePanel(panel, { render = true } = {}) {
   if (render) renderCurrentState();
 }
 
+function previewProgram() { return programEntries.length ? compileProgram(programEntries, profiles, programOptions) : null; }
 function renderCurrentState() {
-  renderTimer(els, { ...timer.state, config: timer.config, isPaused: timer.isPaused }, { metronomePanelOpen: isMetronomePanelOpen(), ladderExpanded: uiState.ladderExpanded, previewRounds: !programRunning && programEntries.length ? compileProgram(programEntries,profiles) : null });
+  renderTimer(els, { ...timer.state, config: timer.config, isPaused: timer.isPaused }, { metronomePanelOpen: isMetronomePanelOpen(), ladderExpanded: uiState.ladderExpanded, previewRounds: !programRunning && programEntries.length ? previewProgram() : null });
   renderProgram();
 }
 
 const timer = new TimerEngine({
   onTick: (state) => {
-    renderTimer(els, state, { metronomePanelOpen: isMetronomePanelOpen(), ladderExpanded: uiState.ladderExpanded, previewRounds: !programRunning && programEntries.length ? compileProgram(programEntries,profiles) : null });
+    renderTimer(els, state, { metronomePanelOpen: isMetronomePanelOpen(), ladderExpanded: uiState.ladderExpanded, previewRounds: !programRunning && programEntries.length ? previewProgram() : null });
     renderProgram();
     metronome.syncPhase(state);
   },
   onStateChange: (state) => {
-    renderTimer(els, state, { metronomePanelOpen: isMetronomePanelOpen(), ladderExpanded: uiState.ladderExpanded, previewRounds: !programRunning && programEntries.length ? compileProgram(programEntries,profiles) : null });
+    renderTimer(els, state, { metronomePanelOpen: isMetronomePanelOpen(), ladderExpanded: uiState.ladderExpanded, previewRounds: !programRunning && programEntries.length ? previewProgram() : null });
     renderProgram();
     metronome.syncPhase(state);
   },
@@ -265,13 +278,17 @@ function handleOpenMetronomeCard(event) {
 }
 
 
+function persistOptions() {
+  localStorage.setItem(PROGRAM_OPTIONS_KEY, JSON.stringify(programOptions));
+  renderCurrentState();
+}
 function persistProgram() {
   localStorage.setItem(PROGRAM_KEY, JSON.stringify(programEntries));
   renderCurrentState();
 }
 function addProgramStage(presetId) {
   if (!PRESET_NAMES[presetId] || programRunning || programEntries.length >= 24) return;
-  programEntries.push({ presetId, restAfterSec: 60 });
+  programEntries.push({ presetId, title:'', restAfterSec: 60 });
   persistProgram();
 }
 function removeProgramStage(index) {
@@ -289,11 +306,18 @@ function setProgramRest(index,delta) {
   programEntries[index].restAfterSec = Math.max(0,Math.min(3600,programEntries[index].restAfterSec+delta));
   persistProgram();
 }
+function renameProgramStage(index) {
+  if (programRunning || !programEntries[index]) return;
+  const name = window.prompt('Название этапа', programEntries[index].title || '');
+  if (name === null) return;
+  programEntries[index].title = name.trim().slice(0,80);
+  persistProgram();
+}
 function startProgram() {
   if (!programEntries.length) return;
   audio.stopAll();
   metronome.stop();
-  programSnapshot = compileProgram(programEntries,profiles);
+  programSnapshot = compileProgram(programEntries,profiles,programOptions);
   if (!programSnapshot.length) return;
   programRunning = true;
   timer.applyConfig({ ...activeSettings, presetId: activePresetId, programRounds: programSnapshot, intervalMode:'standard' });
@@ -325,11 +349,18 @@ function russianBlockCount(count) {
   return String(count) + ' ' + suffix;
 }
 
+function formatProgramTime(sec) {return String(Math.floor(sec/60)).padStart(2,'0')+':'+String(sec%60).padStart(2,'0');}
 function renderProgram() {
   const panel=document.getElementById('programPanel');
   if (!panel) return;
-  panel.hidden=!programEntries.length;
-  document.getElementById('programStart').hidden=programRunning;
+  panel.hidden=false;
+  document.getElementById('programStart').hidden=programRunning || !programEntries.length;
+  document.getElementById('programCycleCount').textContent=String(programOptions.cycles);
+  document.getElementById('programCycleRestRow').hidden=programOptions.cycles===1;
+  document.getElementById('programCycleRestValue').textContent=formatProgramTime(programOptions.cycleRestSec);
+  document.querySelector('.program-cycle-panel').querySelectorAll('button').forEach(b=>b.disabled=programRunning);
+  document.getElementById('programSaveOpen').disabled=programRunning || !programEntries.length;
+  document.getElementById('programLibraryOpen').disabled=programRunning;
   document.getElementById('programExit').hidden=!programRunning;
   for (const tab of els.presetTabs) {
     const positions=programEntries.flatMap((entry,i)=>entry.presetId===tab.dataset.preset?[i+1]:[]);
@@ -349,11 +380,17 @@ function renderProgram() {
       const card=document.createElement('div');card.className='program-stage-card';card.dataset.stage=String(i);
       const stage=document.createElement('div');stage.className='program-stage';
       const main=document.createElement('div');main.className='program-stage-main';
-      const name=document.createElement('strong');name.textContent='Этап '+(i+1)+' · '+PRESET_NAMES[entry.presetId];
-      const detail=document.createElement('small');const cfg=profiles[entry.presetId];
-      detail.textContent=cfg.intervalMode==='ladder' ? 'Лестница · '+russianRoundCount(cfg.rounds)+(cfg.blockEnabled?' · '+russianBlockCount(cfg.blockCount):'') : (entry.presetId==='tabata2020x24' ? 'Скоростной' : 'Обычный')+' · '+russianRoundCount(cfg.rounds)+' · '+String(Math.floor(cfg.workSec/60)).padStart(2,'0')+':'+String(cfg.workSec%60).padStart(2,'0');
-      main.append(name,detail);stage.append(main);
+      const heading=document.createElement('strong');heading.className='program-stage-heading';
+      heading.textContent='Этап '+(i+1)+(entry.title?' · '+entry.title:'');
+      const detail=document.createElement('small');const cfg=entry.settings || profiles[entry.presetId];
+      const kind=document.createElement('small');kind.className='program-stage-kind';
+      kind.textContent=cfg.intervalMode==='ladder' ? 'Лестница' : (entry.presetId==='tabata2020x24' ? 'Скоростной' : 'Обычный');
+      detail.textContent=cfg.intervalMode==='ladder'
+        ? russianRoundCount(cfg.rounds)+(cfg.blockEnabled?' · '+russianBlockCount(cfg.blockCount):'')
+        : russianRoundCount(cfg.rounds)+' по '+String(Math.floor(cfg.workSec/60)).padStart(2,'0')+':'+String(cfg.workSec%60).padStart(2,'0');
+      main.append(heading,kind,detail);stage.append(main);
       if (!programRunning) {
+        const edit=document.createElement('button');edit.type='button';edit.textContent='✎';edit.className='program-stage-edit';edit.setAttribute('aria-label','Название этапа');edit.addEventListener('click',()=>renameProgramStage(i));stage.append(edit);
         for (const [label,fn] of [['↑',()=>moveProgramStage(i,-1)],['↓',()=>moveProgramStage(i,1)],['×',()=>removeProgramStage(i)]]) {
           const b=document.createElement('button');b.type='button';b.textContent=label;b.setAttribute('aria-label',label==='×'?'Удалить этап':label==='↑'?'Поднять этап':'Опустить этап');b.addEventListener('click',fn);stage.append(b);
         }
@@ -373,6 +410,64 @@ function renderProgram() {
   }
   for (const card of list.querySelectorAll('.program-stage-card')) card.classList.toggle('is-current',Number(card.dataset.stage)===activeIndex);
 }
+function bindProgramLibrary() {
+  const byId=id=>document.getElementById(id);
+  const library=byId('programLibraryModal');
+  const save=byId('programSaveModal');
+  const close=()=>{library.hidden=true;save.hidden=true;};
+  function persistLibrary() {localStorage.setItem(LIBRARY_KEY,JSON.stringify(savedPrograms));}
+  function snapshot(name,id) {
+    return {id,name,entries:normalizeProgram(programEntries.map(x=>({...x,settings:x.settings || structuredClone(profiles[x.presetId])}))),options:normalizeOptions(programOptions)};
+  }
+  function openEntry(entry, builtIn=false) {
+    if (programRunning) return;
+    programEntries=normalizeProgram(entry.entries);
+    programOptions=normalizeOptions(entry.options);
+    openedProgramId=builtIn?null:entry.id;
+    openedProgramName=entry.name;
+    localStorage.setItem(PROGRAM_KEY,JSON.stringify(programEntries));
+    localStorage.setItem(PROGRAM_OPTIONS_KEY,JSON.stringify(programOptions));
+    timer.applyConfig({...activeSettings,presetId:activePresetId});
+    close();renderCurrentState();
+  }
+  function renderLibrary() {
+    const list=byId('programLibraryList');list.replaceChildren();
+    byId('programLibraryMine').classList.toggle('is-active',libraryTab==='mine');
+    byId('programLibraryTemplates').classList.toggle('is-active',libraryTab==='templates');
+    for(const entry of libraryTab==='mine'?savedPrograms:builtInPrograms) {
+      const row=document.createElement('div');row.className='program-library-entry';
+      const text=document.createElement('span');text.textContent=entry.name+' · '+entry.entries.length+' этапов';
+      const open=document.createElement('button');open.textContent='Открыть';open.addEventListener('click',()=>openEntry(entry,libraryTab!=='mine'));
+      row.append(text,open);
+      if(libraryTab==='mine') {
+        const del=document.createElement('button');del.textContent='×';del.setAttribute('aria-label','Удалить программу');
+        del.addEventListener('click',()=>{if(!window.confirm('Удалить программу «'+entry.name+'»?'))return;savedPrograms=savedPrograms.filter(x=>x.id!==entry.id);if(openedProgramId===entry.id)openedProgramId=null;persistLibrary();renderLibrary();});
+        row.append(del);
+      }
+      list.append(row);
+    }
+  }
+  byId('programLibraryOpen').addEventListener('click',()=>{libraryTab='mine';renderLibrary();library.hidden=false;});
+  byId('programLibraryClose').addEventListener('click',close);
+  byId('programLibraryMine').addEventListener('click',()=>{libraryTab='mine';renderLibrary();});
+  byId('programLibraryTemplates').addEventListener('click',()=>{libraryTab='templates';renderLibrary();});
+  byId('programSaveOpen').addEventListener('click',()=>{byId('programNameInput').value=openedProgramName||'';byId('programSaveOverwrite').hidden=!openedProgramId;save.hidden=false;byId('programNameInput').focus();});
+  byId('programSaveClose').addEventListener('click',close);
+  byId('programSaveOverwrite').addEventListener('click',()=>{
+    const name=byId('programNameInput').value.trim();if(!name||!openedProgramId)return;
+    savedPrograms=savedPrograms.map(x=>x.id===openedProgramId?snapshot(name,x.id):x);
+    openedProgramName=name;persistLibrary();close();renderCurrentState();
+  });
+  byId('programSaveCopy').addEventListener('click',()=>{
+    const name=byId('programNameInput').value.trim();if(!name||savedPrograms.length>=100)return;
+    const id='p'+Date.now()+'-'+Math.random().toString(36).slice(2,8);
+    savedPrograms.push(snapshot(name,id));openedProgramId=id;openedProgramName=name;persistLibrary();close();renderCurrentState();
+  });
+  for (const [id,key,delta] of [['programCycleMinus','cycles',-1],['programCyclePlus','cycles',1],['programCycleRestMinus','cycleRestSec',-5],['programCycleRestPlus','cycleRestSec',5]]) {
+    byId(id).addEventListener('click',()=>{if(programRunning)return;const limit=key==='cycles'?20:3600;const min=key==='cycles'?1:0;programOptions=normalizeOptions({...programOptions,[key]:Math.max(min,Math.min(limit,programOptions[key]+delta))});persistOptions();});
+  }
+}
+
 function bindProgram() {
   let hold=null;
   for (const tab of els.presetTabs) {
@@ -392,6 +487,7 @@ function bindProgram() {
   document.getElementById('programClear').addEventListener('click',()=>{if(!programRunning){programEntries=[];persistProgram();}});
   document.getElementById('programStart').addEventListener('click',async()=>{await audio.unlock();startProgram();});
   document.getElementById('programExit').addEventListener('click',exitProgram);
+  bindProgramLibrary();
 }
 
 function bootstrap() {

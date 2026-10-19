@@ -36,7 +36,7 @@ jobs:
         run: |
           rm capacitor.config.ts
           cat > capacitor.config.json <<'EOF'
-          {"appId":"com.andarfighttech.boxertimer","appName":"Andar Fight Timer","webDir":"dist"}
+          {"appId":"com.andarfighttech.boxertimer","appName":"Fight Tech Interval Timer","webDir":"dist"}
           EOF
       - name: Ensure Android platform exists
         run: |

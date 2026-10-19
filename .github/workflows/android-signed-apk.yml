@@ -31,7 +31,7 @@ jobs:
         run: |
           rm -rf android
           rm -f capacitor.config.ts
-          echo '{"appId":"com.andarfighttech.boxertimer","appName":"FightTech Interval Timer","webDir":"dist"}' > capacitor.config.json
+          echo '{"appId":"com.andarfighttech.boxertimer","appName":"Fight Tech Interval Timer","webDir":"dist"}' > capacitor.config.json
           npx cap add android
           npx cap sync android
       - name: Apply Fight Tech launcher icon
