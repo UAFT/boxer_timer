@@ -14,6 +14,51 @@ export function bindPresetTabs(els, onSelectPreset) {
   });
 }
 
+// One tap = one step; holding repeats after a short delay. Pointer cancellation,
+// release and blur always stop repetition. The subsequent click is suppressed
+// only if the hold actually repeated, preventing an extra increment.
+function bindRepeatButton(button, action) {
+  let delay = null;
+  let interval = null;
+  let repeated = false;
+  let pointerActive = false;
+  let touchActive = false;
+  const stop = () => {
+    clearTimeout(delay);
+    clearInterval(interval);
+    delay = null;
+    interval = null;
+    pointerActive = false;
+  };
+  button.addEventListener('pointerdown', (event) => {
+    if (event.button !== 0 || button.disabled) return;
+    if (event.pointerType === 'touch') event.preventDefault();
+    stop();
+    pointerActive = true;
+    touchActive = event.pointerType === 'touch';
+    repeated = false;
+    delay = setTimeout(() => {
+      if (!pointerActive) return;
+      repeated = true;
+      action();
+      interval = setInterval(action, 75);
+    }, 420);
+  });
+  button.addEventListener('pointerup', () => {
+    if (pointerActive && touchActive && !repeated) action();
+    stop();
+  });
+  button.addEventListener('pointercancel', () => { stop(); repeated = true; });
+  button.addEventListener('pointerleave', stop);
+  button.addEventListener('blur', stop);
+  button.addEventListener('click', (event) => {
+    event.stopPropagation();
+    if (repeated || touchActive) { event.preventDefault(); repeated = false; touchActive = false; return; }
+    action();
+  });
+  button.addEventListener('contextmenu', (event) => event.preventDefault());
+}
+
 export function bindControls(els, handlers) {
   els.startBtn.addEventListener('click', handlers.onToggleRun);
   els.resetBtn.addEventListener('click', handlers.onReset);
@@ -31,13 +76,10 @@ export function bindControls(els, handlers) {
   });
 
   els.stepperButtons.forEach((button) => {
-    button.addEventListener('click', (event) => {
-      event.stopPropagation();
-      handlers.onAdjustValue({
-        target: button.dataset.adjustTarget,
-        direction: button.dataset.adjustDirection
-      }, event);
-    });
+    bindRepeatButton(button, () => handlers.onAdjustValue({
+      target: button.dataset.adjustTarget,
+      direction: button.dataset.adjustDirection
+    }));
   });
 
   els.warningChoiceButtons.forEach((button) => {
@@ -60,7 +102,7 @@ export function bindControls(els, handlers) {
 
   els.blockEnabledInput.addEventListener('change', () => handlers.onPreviewChange?.());
   els.blockStepButtons.forEach((button) => {
-    button.addEventListener('click', () => {
+    bindRepeatButton(button, () => {
       const target = button.dataset.blockTarget;
       const input = target === 'blockCount' ? els.blockCountInput : els.blockRestSecInput;
       const step = target === 'blockCount' ? 1 : 5;
@@ -74,13 +116,10 @@ export function bindControls(els, handlers) {
   });
 
   els.ladderStepButtons.forEach((button) => {
-    button.addEventListener('click', (event) => {
-      event.stopPropagation();
-      handlers.onAdjustLadderStep({
-        target: button.dataset.ladderTarget,
-        direction: button.dataset.ladderDirection
-      }, event);
-    });
+    bindRepeatButton(button, () => handlers.onAdjustLadderStep({
+      target: button.dataset.ladderTarget,
+      direction: button.dataset.ladderDirection
+    }));
   });
 
   (els.cueVariantButtons || []).forEach((button) => {

@@ -151,14 +151,21 @@ export function renderLiveLadder(els, state, ui = {}) {
   const key = config.programRounds?.length ? JSON.stringify(config.programRounds) : [config.rounds, config.workSec, config.restSec, config.workStepSec, config.restStepSec, config.blockEnabled, config.blockCount, config.blockRestSec].join(':');
   if (list.dataset.scheduleKey !== key) {
     const rows = [];
+    let stageOpen = false;
+    let blockOpen = false;
+    const closeBlock = () => { if (blockOpen) { rows.push('</div>'); blockOpen = false; } };
+    const closeStage = () => { closeBlock(); if (stageOpen) { rows.push('</div>'); stageOpen = false; } };
     for (let i = 1; i <= totalRoundsForConfig(config); i += 1) {
       const pr=config.programRounds?.[i-1];
+      if (pr && pr.stageRound===1) { closeStage(); rows.push('<div class="ladder-stage-outline">'); stageOpen=true; }
+      if (pr && pr.blockCount>1 && pr.localRound===1) { closeBlock(); rows.push('<div class="ladder-block-outline">'); blockOpen=true; }
       if (pr && pr.stageRound===1) rows.push('<div class="ladder-block-label" data-stage="'+pr.stageIndex+'">Этап '+(pr.stageIndex+1)+' · '+programStageMode(pr)+'</div>');
       if (pr && pr.blockCount>1 && pr.localRound===1) rows.push('<div class="ladder-block-label" data-block="'+pr.block+'" data-stage="'+pr.stageIndex+'">Блок '+pr.block+' из '+pr.blockCount+'</div>');
       if (!pr && blockCount(config) > 1 && localRoundFor(config,i) === 1) rows.push(`<div class="ladder-block-label" data-block="${blockForRound(config,i)}">Блок ${blockForRound(config,i)} из ${blockCount(config)}</div>`);
       const rest = i < totalRoundsForConfig(config) ? formatTime(restSecAfterRound(config, i)) : '—';
       rows.push(`<div class="ladder-live-row" data-round="${i}"><span class="ladder-plan">Раунд ${pr ? pr.localRound : localRoundFor(config, i)} · ${formatTime(workSecForRound(config, i))} · отдых ${rest}</span><strong class="ladder-count"></strong></div>`);
     }
+    closeStage();
     list.innerHTML = rows.join('');
     list.dataset.scheduleKey = key;
     list.dataset.activeRound = '';

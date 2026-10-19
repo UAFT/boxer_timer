@@ -1347,3 +1347,18 @@ img {
 .program-stage-card .program-rest {padding:5px 4px 3px}
 @keyframes programStageGlow {0%,100%{box-shadow:0 0 0 1px rgba(66,214,139,.15)}50%{box-shadow:0 0 12px 2px rgba(66,214,139,.48)}}
 @media(prefers-reduced-motion:reduce){.program-stage-card.is-current{animation:none}}
+
+/* Android WebView: prevent long-press text selection/copy menu on repeat steppers. */
+button[data-adjust-target],
+button[data-ladder-target],
+button[data-block-target] {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: manipulation;
+}
+
+/* Fullscreen program schedule: stage and ladder-block contours. */
+.ladder-live-list .ladder-stage-outline {border:2px solid #e7ba52;border-radius:16px;padding:8px 6px;margin:10px 0 14px;background:rgba(12,24,57,.26)}
+.ladder-live-list .ladder-block-outline {border:1px solid rgba(231,186,82,.62);border-radius:12px;padding:5px 4px;margin:8px 0}
+.ladder-live-list .ladder-stage-outline:has(.ladder-live-row.is-active),.ladder-live-list .ladder-block-outline:has(.ladder-live-row.is-active) {border-color:#42d68b}

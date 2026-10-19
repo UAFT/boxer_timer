@@ -307,6 +307,24 @@ function exitProgram() {
   timer.applyConfig({ ...activeSettings, presetId: activePresetId });
   renderCurrentState();
 }
+function russianRoundCount(count) {
+  const n = Math.abs(Number(count));
+  const lastTwo = n % 100;
+  const suffix = lastTwo >= 11 && lastTwo <= 14 ? 'раундов'
+    : n % 10 === 1 ? 'раунд'
+    : n % 10 >= 2 && n % 10 <= 4 ? 'раунда' : 'раундов';
+  return String(count) + ' ' + suffix;
+}
+
+function russianBlockCount(count) {
+  const n = Math.abs(Number(count));
+  const lastTwo = n % 100;
+  const suffix = lastTwo >= 11 && lastTwo <= 14 ? 'блоков'
+    : n % 10 === 1 ? 'блок'
+    : n % 10 >= 2 && n % 10 <= 4 ? 'блока' : 'блоков';
+  return String(count) + ' ' + suffix;
+}
+
 function renderProgram() {
   const panel=document.getElementById('programPanel');
   if (!panel) return;
@@ -322,7 +340,9 @@ function renderProgram() {
   }
   const list=document.getElementById('programList');
   const activeIndex=programRunning && timer.state.roundIndex>0 ? programSnapshot?.[timer.state.roundIndex-1]?.stageIndex : -1;
-  const signature=JSON.stringify([programEntries,programRunning]);
+  // Stage entries reference live preset profiles; refresh details when a preset changes.
+  // During playback, keep the compiled program snapshot stable.
+  const signature=JSON.stringify([programEntries,programRunning,programRunning ? null : programEntries.map(entry=>profiles[entry.presetId])]);
   if (list.dataset.signature!==signature) {
     list.replaceChildren();
     programEntries.forEach((entry,i)=>{
@@ -331,7 +351,7 @@ function renderProgram() {
       const main=document.createElement('div');main.className='program-stage-main';
       const name=document.createElement('strong');name.textContent='Этап '+(i+1)+' · '+PRESET_NAMES[entry.presetId];
       const detail=document.createElement('small');const cfg=profiles[entry.presetId];
-      detail.textContent=cfg.intervalMode==='ladder' ? 'Лестница · '+cfg.rounds+' раундов'+(cfg.blockEnabled?' · блоков '+cfg.blockCount:'') : (entry.presetId==='tabata2020x24' ? 'Скоростной' : 'Обычный')+' · '+cfg.rounds+' раундов · '+String(Math.floor(cfg.workSec/60)).padStart(2,'0')+':'+String(cfg.workSec%60).padStart(2,'0');
+      detail.textContent=cfg.intervalMode==='ladder' ? 'Лестница · '+russianRoundCount(cfg.rounds)+(cfg.blockEnabled?' · '+russianBlockCount(cfg.blockCount):'') : (entry.presetId==='tabata2020x24' ? 'Скоростной' : 'Обычный')+' · '+russianRoundCount(cfg.rounds)+' · '+String(Math.floor(cfg.workSec/60)).padStart(2,'0')+':'+String(cfg.workSec%60).padStart(2,'0');
       main.append(name,detail);stage.append(main);
       if (!programRunning) {
         for (const [label,fn] of [['↑',()=>moveProgramStage(i,-1)],['↓',()=>moveProgramStage(i,1)],['×',()=>removeProgramStage(i)]]) {
