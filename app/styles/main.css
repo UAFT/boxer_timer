@@ -1423,3 +1423,79 @@ button[data-block-target] {
 .program-library-entry span {flex:1;min-width:0;overflow-wrap:anywhere}
 .ladder-cycle-label {font-size:17px;font-weight:700;color:#e9bd60;margin:12px 3px}
 @media(max-width:420px){.program-stage,.program-rest{grid-template-columns:minmax(0,1fr) 26px repeat(3,36px);gap:4px}.program-stage button,.program-rest-controls button{width:36px;min-height:38px}.program-stage .program-stage-edit{width:26px!important;min-width:26px!important;min-height:38px!important}}
+
+.program-round-editor{padding:4px 10px 10px;display:grid;gap:5px}.program-round-edit-row{display:flex;align-items:center;gap:8px;font-size:12px}.program-round-edit-row span{flex:1;min-width:0;overflow-wrap:anywhere}.program-round-edit-row button{min-width:32px;min-height:32px;border:1px solid #777;border-radius:7px;background:transparent;color:inherit}
+
+/* Round editing: viewport-safe cards and a localized, in-app editor. */
+.program-panel,.program-list,.program-stage-card,.program-round-editor,.program-round-edit-row{min-width:0;max-width:100%;box-sizing:border-box}
+.program-stage-card{overflow:hidden}
+.program-round-editor{width:100%;padding:4px 6px 10px}
+.program-round-edit-row{display:grid;grid-template-columns:minmax(0,1fr) 34px 34px;gap:6px;align-items:center;width:100%}
+.program-round-edit-row span{display:block;min-width:0;max-width:100%;white-space:normal;overflow-wrap:anywhere;word-break:break-word;line-height:1.4}
+.program-round-edit-row button{width:34px;min-width:34px;min-height:36px;flex-shrink:0}
+.program-stage-user-title,.program-stage-heading{overflow-wrap:anywhere;word-break:break-word}
+.round-edit-modal{width:min(94vw,420px);max-width:calc(100vw - 20px);box-sizing:border-box;display:grid;gap:12px;padding:20px}
+.round-edit-modal h2{font-size:19px;margin:0;color:#f5d076}
+.round-edit-modal label{font-size:13px;color:#c2d0e8}
+.round-edit-modal textarea{width:100%;min-width:0;box-sizing:border-box;resize:vertical;border:1px solid #657399;border-radius:10px;background:#101d40;color:white;font:inherit;font-size:16px;line-height:1.4;padding:12px;max-height:35vh}
+.round-edit-modal textarea:focus{outline:2px solid #e7ba52;outline-offset:1px}
+.round-edit-actions{display:flex;justify-content:flex-end;gap:9px}
+.round-edit-actions button{min-height:42px;border-radius:10px;padding:8px 15px;color:white;background:#303e62}
+#roundEditSave{background:#d7ac48;color:#132044;font-weight:700}
+
+/* Mobile viewport containment: prevent grid min-content from widening the app. */
+html,body{width:100%;max-width:100%;overflow-x:clip}
+.app-shell{width:100%;max-width:420px;min-width:0;grid-template-columns:minmax(0,1fr)}
+.app-shell>*,.app-shell .panel,.program-panel,.program-list,.program-stage-card,.program-stage,.program-stage-main,.program-rest,.program-round-editor,.program-round-edit-row{min-width:0;max-width:100%}
+.program-list,.program-stage-card{grid-template-columns:minmax(0,1fr)}
+.program-stage-card{width:100%;overflow:hidden}
+.program-round-edit-row{grid-template-columns:minmax(0,1fr) 34px 34px}
+.program-round-edit-row span{min-width:0;overflow-wrap:anywhere;word-break:break-word;white-space:normal}
+/* The program header and controls must not impose intrinsic width. */
+.program-top,.program-actions,.program-library-actions,.program-cycle-panel{min-width:0;max-width:100%}
+.round-edit-modal textarea{resize:none}
+
+/* Inter-stage rest: time, minus and plus aligned with round edit columns. */
+.program-stage-card .program-rest{display:grid;grid-template-columns:minmax(0,1fr) 58px 34px 34px;gap:6px;align-items:center;width:100%;padding:5px 6px 8px!important}
+.program-stage-card .program-rest-label{grid-column:1;min-width:0;overflow-wrap:anywhere}
+.program-stage-card .program-rest-controls{display:contents}
+.program-stage-card .program-rest-controls strong{grid-column:2;text-align:center;min-width:0;font-size:14px;font-variant-numeric:tabular-nums}
+.program-stage-card .program-rest-controls button{width:34px;min-width:34px!important;max-width:34px;height:36px;min-height:36px!important;padding:0;font-size:19px;border-radius:9px}
+.program-stage-card .program-rest-controls button:first-of-type{grid-column:3}
+.program-stage-card .program-rest-controls button:last-of-type{grid-column:4}
+
+/* Opened saved/template program name below the section heading. */
+.program-heading{display:flex;flex-direction:column;align-items:flex-start;gap:5px;min-width:0;flex:1}
+.program-current-name{display:block;max-width:100%;min-width:0;font-size:17px;line-height:1.3;font-weight:700;color:#e8bc60;overflow-wrap:anywhere;word-break:break-word}
+.program-current-name[hidden]{display:none}
+.program-top>button{flex-shrink:0;align-self:flex-start}
+/* Single-tap program list and explicit update/copy save actions. */
+.program-library-entry{display:grid;grid-template-columns:minmax(0,1fr) 42px;gap:8px;align-items:center;min-width:0}
+.program-library-entry-open{min-width:0;text-align:left;white-space:normal;overflow-wrap:anywhere;word-break:break-word;width:100%;height:100%}
+.program-library-entry:has(.program-library-entry-open:only-child){grid-template-columns:minmax(0,1fr)}
+.program-library-entry-delete{width:42px;min-width:42px;font-size:24px}
+#programSaveCurrent{font-weight:700;color:#e8bc60;overflow-wrap:anywhere;padding:10px;background:#19274d;border-radius:10px}
+#programSaveCurrent[hidden],#programSaveNewFields[hidden],#programSaveOverwrite[hidden]{display:none!important}
+#programSaveNewFields{display:grid;gap:10px;margin-top:12px}
+#programSaveNewFields input{min-width:0;width:100%;box-sizing:border-box}
+#programSaveCreate{background:#d7ac48;color:#122040;border:0;border-radius:10px;min-height:44px;font-weight:700}
+
+/* Long round names: swipe each plan row horizontally to reveal duration/rest. */
+.ladder-live-row{min-width:0;max-width:100%;overflow:hidden}
+.ladder-live-row .ladder-plan{display:block;flex:1 1 auto;min-width:0;overflow-x:auto;overflow-y:hidden;white-space:nowrap;text-overflow:clip;touch-action:pan-x;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;scrollbar-width:thin}
+.ladder-live-row .ladder-count{flex:0 0 auto}
+
+/* Gentle auto-pan for clipped plan text, reversible and motion-safe. */
+.ladder-live-row .ladder-plan.is-marquee{scrollbar-width:none}
+.ladder-live-row .ladder-plan.is-marquee .plan-moving-text{display:inline-block;animation:planAutoPan 9s ease-in-out 1.5s infinite alternate}
+@keyframes planAutoPan{0%,15%{transform:translateX(0)}85%,100%{transform:translateX(calc(-1 * var(--plan-travel)))}}
+.ladder-live-row .ladder-plan.is-marquee:active .plan-moving-text{animation-play-state:paused}
+@media(prefers-reduced-motion:reduce){.ladder-live-row .ladder-plan.is-marquee .plan-moving-text{animation:none}}
+/* Make program library/save entry points visually distinct from neutral controls. */
+#programLibraryOpen,#programSaveOpen{border:2px solid #d9ad4c;background:#253761;color:#fff;font-weight:700;box-shadow:inset 0 0 0 1px rgba(217,173,76,.12)}
+#programLibraryOpen:active,#programSaveOpen:active{background:#40517b}
+/* Faster bidirectional scrolling; only long round labels animate. */
+.ladder-live-row .ladder-plan.is-marquee .plan-moving-text{animation-duration:5.5s}
+
+/* Measure intrinsic label width even when the text is clipped by the row. */
+.ladder-live-row .ladder-plan.is-marquee .plan-moving-text{animation-duration:4s}

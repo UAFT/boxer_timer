@@ -1,3 +1,5 @@
+import { starterPrograms } from './core/starter-programs.js';
+import { announceRound, stopVoice } from './audio/voice-coach.js';
 import { installLocalization } from './i18n/locale.js';
 import { AUDIO_KEYS } from './core/constants.js';
 import { clonePreset } from './state/presets.js';
@@ -84,6 +86,7 @@ let openedProgramId = null;
 let openedProgramName = '';
 let libraryTab = 'mine';
 const builtInPrograms = [
+  ...starterPrograms,
   {id:'built-box',name:'Классический бокс',entries:[{presetId:'classic3',title:'Раунды',restAfterSec:0,settings:{...clonePreset('classic3'),rounds:12,workSec:180,restSec:60}}],options:{cycles:1,cycleRestSec:60}},
   {id:'built-tech',name:'Разминка и техника',entries:[{presetId:'classic3',title:'Разминка',restAfterSec:60,settings:{...clonePreset('classic3'),rounds:1,workSec:180}},{presetId:'classic2',title:'Техника',restAfterSec:0,settings:{...clonePreset('classic2'),rounds:6,workSec:60,restSec:30}}],options:{cycles:1,cycleRestSec:60}},
   {id:'built-speed',name:'Скоростная работа',entries:[{presetId:'tabata2020x24',title:'Скорость',restAfterSec:0,settings:{...clonePreset('tabata2020x24'),rounds:4,workSec:20,restSec:20,intervalMode:'ladder',blockEnabled:true,blockCount:2,blockRestSec:20,workStepSec:0,restStepSec:0}}],options:{cycles:1,cycleRestSec:60}}
@@ -135,6 +138,10 @@ const timer = new TimerEngine({
       audio.stopTag('transition');
     }
     await audio.play(spec.key, { tag: spec.tag, volume: spec.volume });
+    if (programRunning && activeSettings.audioEnabled && ['round-start-zero','rest-end-zero','round-end-zero'].includes(event.type)) {
+      const round=programSnapshot?.[Math.max(0,(event.roundIndex || timer.state.roundIndex)-1)];
+      announceRound(event.type,round,document.documentElement.lang?.startsWith('en')?'en':'ru');
+    }
   }
 });
 
@@ -182,6 +189,7 @@ async function handleToggleRun() {
 }
 
 function handleReset() {
+  stopVoice();
   if (programRunning) { exitProgram(); }
   audio.stopAll();
   timer.reset();
@@ -199,6 +207,18 @@ function handleSelectPreset(presetId) {
 
 function handleSaveSettings() {
   applySettings({ ...activeSettings, ...readSettingsForm(els) });
+  // A program stage may carry a saved preset snapshot. Keep its ladder/block
+  // controls in sync with the preset the user just edited in Settings.
+  if (programEntries.length && !programRunning) {
+    const fields=['intervalMode','blockEnabled','blockCount','blockRestSec','workStepSec','restStepSec'];
+    let changed=false;
+    for (const entry of programEntries) {
+      if (!entry.settings || entry.presetId!==activePresetId) continue;
+      for (const field of fields) entry.settings[field]=activeSettings[field];
+      changed=true;
+    }
+    if (changed) persistProgram();
+  }
   closeSettings(els);
 }
 
@@ -306,6 +326,56 @@ function setProgramRest(index,delta) {
   programEntries[index].restAfterSec = Math.max(0,Math.min(3600,programEntries[index].restAfterSec+delta));
   persistProgram();
 }
+let roundEditorContext=null;
+function closeRoundEditor() {
+  document.getElementById('roundEditModal').hidden=true;
+  const trigger=roundEditorContext?.trigger;
+  roundEditorContext=null;
+  trigger?.focus();
+}
+function renameProgramRound(stageIndex, roundIndex, description=false, trigger=null) {
+  if (programRunning || !programEntries[stageIndex]) return;
+  const stage=programEntries[stageIndex];
+  const field=description?'roundDescriptions':'roundNames';
+  const input=document.getElementById('roundEditInput');
+  const en=document.documentElement.lang==='en';
+  const label=description?(en?'Exercise description':'Описание упражнения'):(en?'Exercise name':'Название упражнения');
+  roundEditorContext={stageIndex,roundIndex,field,description,trigger};
+  document.getElementById('roundEditTitle').textContent=label;
+  document.getElementById('roundEditLabel').textContent=label;
+  document.getElementById('roundEditCancel').textContent=en?'Cancel':'Отмена';
+  document.getElementById('roundEditSave').textContent=en?'Save':'Сохранить';
+  input.maxLength=description?600:100;
+  input.rows=description?5:2;
+  input.value=stage[field]?.[roundIndex]||'';
+  document.getElementById('roundEditModal').hidden=false;
+  input.focus();
+  input.setSelectionRange(input.value.length,input.value.length);
+}
+function bindRoundEditor() {
+  const modal=document.getElementById('roundEditModal');
+  const input=document.getElementById('roundEditInput');
+  document.getElementById('roundEditCancel').addEventListener('click',closeRoundEditor);
+  document.getElementById('roundEditSave').addEventListener('click',()=>{
+    const ctx=roundEditorContext;
+    if (!ctx || programRunning || !programEntries[ctx.stageIndex]) return closeRoundEditor();
+    const stage=programEntries[ctx.stageIndex];
+    const values=Array.isArray(stage[ctx.field])?[...stage[ctx.field]]:[];
+    values[ctx.roundIndex]=input.value.trim().slice(0,ctx.description?600:100);
+    stage[ctx.field]=values;
+    closeRoundEditor();
+    persistProgram();
+  });
+  modal.addEventListener('click',event=>{if(event.target===modal)closeRoundEditor();});
+  modal.addEventListener('keydown',event=>{
+    if(event.key==='Escape'){event.preventDefault();closeRoundEditor();}
+    if(event.key==='Tab'){
+      const controls=[input,document.getElementById('roundEditCancel'),document.getElementById('roundEditSave')];
+      const index=controls.indexOf(document.activeElement);
+      if(index>=0){event.preventDefault();controls[(index+(event.shiftKey?2:1))%3].focus();}
+    }
+  });
+}
 function renameProgramStage(index) {
   if (programRunning || !programEntries[index]) return;
   const name = window.prompt('Название этапа', programEntries[index].title || '');
@@ -326,6 +396,7 @@ function startProgram() {
   timer.start();
 }
 function exitProgram() {
+  stopVoice();
   programRunning=false;
   programSnapshot=null;
   timer.applyConfig({ ...activeSettings, presetId: activePresetId });
@@ -354,6 +425,9 @@ function renderProgram() {
   const panel=document.getElementById('programPanel');
   if (!panel) return;
   panel.hidden=false;
+  const nameEl=document.getElementById('programCurrentName');
+  nameEl.textContent=openedProgramName || '';
+  nameEl.hidden=!openedProgramName;
   document.getElementById('programStart').hidden=programRunning || !programEntries.length;
   document.getElementById('programCycleCount').textContent=String(programOptions.cycles);
   document.getElementById('programCycleRestRow').hidden=programOptions.cycles===1;
@@ -397,13 +471,25 @@ function renderProgram() {
         }
       }
       card.append(stage);
+      if (!programRunning) {
+        const rounds=compileProgram([entry],profiles,{cycles:1}).length;
+        const editor=document.createElement('div');editor.className='program-round-editor';
+        for(let j=0;j<rounds;j++) {
+          const line=document.createElement('div');line.className='program-round-edit-row';
+          const label=document.createElement('span');label.textContent='Раунд '+(j+1)+' · '+(entry.roundNames?.[j]||'Без названия');
+          const edit=document.createElement('button');edit.type='button';edit.textContent='✎';edit.setAttribute('aria-label','Название раунда '+(j+1));edit.addEventListener('click',()=>renameProgramRound(i,j,false,edit));
+          const desc=document.createElement('button');desc.type='button';desc.textContent='≡';desc.setAttribute('aria-label','Описание раунда '+(j+1));desc.addEventListener('click',()=>renameProgramRound(i,j,true,desc));
+          line.append(label,edit,desc);editor.append(line);
+        }
+        card.append(editor);
+      }
       if (i<programEntries.length-1) {
         const rest=document.createElement('div');rest.className='program-rest';
         const label=document.createElement('span');label.className='program-rest-label';label.textContent='Отдых между этапами';
         const minus=document.createElement('button');minus.textContent='−';minus.disabled=programRunning;minus.addEventListener('click',()=>setProgramRest(i,-5));
         const time=document.createElement('strong');time.textContent=String(Math.floor(entry.restAfterSec/60)).padStart(2,'0')+':'+String(entry.restAfterSec%60).padStart(2,'0');
         const plus=document.createElement('button');plus.textContent='+';plus.disabled=programRunning;plus.addEventListener('click',()=>setProgramRest(i,5));
-        const controls=document.createElement('div');controls.className='program-rest-controls';controls.append(minus,time,plus);rest.append(label,controls);card.append(rest);
+        const controls=document.createElement('div');controls.className='program-rest-controls';controls.append(time,minus,plus);rest.append(label,controls);card.append(rest);
       }
       list.append(card);
     });
@@ -437,12 +523,17 @@ function bindProgramLibrary() {
     byId('programLibraryTemplates').classList.toggle('is-active',libraryTab==='templates');
     for(const entry of libraryTab==='mine'?savedPrograms:builtInPrograms) {
       const row=document.createElement('div');row.className='program-library-entry';
-      const text=document.createElement('span');text.textContent=entry.name+' · '+entry.entries.length+' этапов';
-      const open=document.createElement('button');open.textContent='Открыть';open.addEventListener('click',()=>openEntry(entry,libraryTab!=='mine'));
-      row.append(text,open);
+      const open=document.createElement('button');open.className='program-library-entry-open';open.textContent=entry.name;
+      open.addEventListener('click',()=>openEntry(entry,libraryTab!=='mine'));
+      row.append(open);
       if(libraryTab==='mine') {
-        const del=document.createElement('button');del.textContent='×';del.setAttribute('aria-label','Удалить программу');
-        del.addEventListener('click',()=>{if(!window.confirm('Удалить программу «'+entry.name+'»?'))return;savedPrograms=savedPrograms.filter(x=>x.id!==entry.id);if(openedProgramId===entry.id)openedProgramId=null;persistLibrary();renderLibrary();});
+        const del=document.createElement('button');del.className='program-library-entry-delete';del.textContent='×';del.setAttribute('aria-label','Удалить программу «'+entry.name+'»');
+        del.addEventListener('click',()=>{
+          if(!window.confirm('Удалить программу «'+entry.name+'»?'))return;
+          savedPrograms=savedPrograms.filter(x=>x.id!==entry.id);
+          if(openedProgramId===entry.id)openedProgramId=null;
+          persistLibrary();renderLibrary();renderCurrentState();
+        });
         row.append(del);
       }
       list.append(row);
@@ -452,17 +543,29 @@ function bindProgramLibrary() {
   byId('programLibraryClose').addEventListener('click',close);
   byId('programLibraryMine').addEventListener('click',()=>{libraryTab='mine';renderLibrary();});
   byId('programLibraryTemplates').addEventListener('click',()=>{libraryTab='templates';renderLibrary();});
-  byId('programSaveOpen').addEventListener('click',()=>{byId('programNameInput').value=openedProgramName||'';byId('programSaveOverwrite').hidden=!openedProgramId;save.hidden=false;byId('programNameInput').focus();});
+  const current=byId('programSaveCurrent'),fields=byId('programSaveNewFields');
+  const overwrite=byId('programSaveOverwrite');
+  byId('programSaveOpen').addEventListener('click',()=>{
+    const existing=savedPrograms.find(x=>x.id===openedProgramId);
+    current.hidden=!existing;current.textContent=existing?.name||'';
+    overwrite.hidden=!existing;fields.hidden=true;
+    byId('programNameInput').value='';save.hidden=false;
+  });
   byId('programSaveClose').addEventListener('click',close);
-  byId('programSaveOverwrite').addEventListener('click',()=>{
-    const name=byId('programNameInput').value.trim();if(!name||!openedProgramId)return;
-    savedPrograms=savedPrograms.map(x=>x.id===openedProgramId?snapshot(name,x.id):x);
-    openedProgramName=name;persistLibrary();close();renderCurrentState();
+  overwrite.addEventListener('click',()=>{
+    const existing=savedPrograms.find(x=>x.id===openedProgramId);
+    if(!existing)return;
+    savedPrograms=savedPrograms.map(x=>x.id===existing.id?snapshot(existing.name,existing.id):x);
+    openedProgramName=existing.name;persistLibrary();close();renderCurrentState();
   });
   byId('programSaveCopy').addEventListener('click',()=>{
+    fields.hidden=false;byId('programNameInput').focus();
+  });
+  byId('programSaveCreate').addEventListener('click',()=>{
     const name=byId('programNameInput').value.trim();if(!name||savedPrograms.length>=100)return;
     const id='p'+Date.now()+'-'+Math.random().toString(36).slice(2,8);
-    savedPrograms.push(snapshot(name,id));openedProgramId=id;openedProgramName=name;persistLibrary();close();renderCurrentState();
+    savedPrograms.push(snapshot(name,id));openedProgramId=id;openedProgramName=name;
+    persistLibrary();close();renderCurrentState();
   });
   for (const [id,key,delta] of [['programCycleMinus','cycles',-1],['programCyclePlus','cycles',1],['programCycleRestMinus','cycleRestSec',-5],['programCycleRestPlus','cycleRestSec',5]]) {
     byId(id).addEventListener('click',()=>{if(programRunning)return;const limit=key==='cycles'?20:3600;const min=key==='cycles'?1:0;programOptions=normalizeOptions({...programOptions,[key]:Math.max(min,Math.min(limit,programOptions[key]+delta))});persistOptions();});
@@ -485,7 +588,7 @@ function bindProgram() {
     tab.addEventListener('contextmenu',e=>e.preventDefault());
     tab.addEventListener('click',e=>{if(consumed){e.stopImmediatePropagation();e.preventDefault();consumed=false;}},true);
   }
-  document.getElementById('programClear').addEventListener('click',()=>{if(!programRunning){programEntries=[];persistProgram();}});
+  document.getElementById('programClear').addEventListener('click',()=>{if(!programRunning){programEntries=[];openedProgramName='';openedProgramId=null;persistProgram();}});
   document.getElementById('programStart').addEventListener('click',async()=>{await audio.unlock();startProgram();});
   document.getElementById('programExit').addEventListener('click',exitProgram);
   bindProgramLibrary();
@@ -499,6 +602,7 @@ function bootstrap() {
   timer.applyConfig({ ...activeSettings, presetId: activePresetId });
   bindPresetTabs(els, handleSelectPreset);
   bindProgram();
+  bindRoundEditor();
   bindControls(els, {
     onToggleRun: handleToggleRun,
     onReset: handleReset,

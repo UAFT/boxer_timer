@@ -75,7 +75,7 @@ export function renderTimer(els, state, uiState = {}) {
   if (roundActive && state.config.programRounds?.length) {
     const r=state.config.programRounds[Math.max(0,state.roundIndex-1)];
     const stages=new Set(state.config.programRounds.map(x=>x.stageIndex)).size;
-    els.roundLabel.innerHTML='Этап <span class="block-number">'+(r.stageIndex+1)+'</span>/'+stages+' · Раунд <span class="round-number">'+r.stageRound+'</span>/'+r.stageRounds;
+    els.roundLabel.textContent='Этап '+(r.stageIndex+1)+'/'+stages+' · Раунд '+r.stageRound+'/'+r.stageRounds+(r.roundName?' · '+r.roundName:'');
   } else if (roundActive) {
     const blocks = blockCount(state.config);
     els.roundLabel.innerHTML = blocks > 1
@@ -174,10 +174,22 @@ export function renderLiveLadder(els, state, ui = {}) {
       if (pr && pr.blockCount>1 && pr.localRound===1) rows.push('<div class="ladder-block-label" data-block="'+pr.block+'" data-stage="'+pr.stageIndex+'">Блок '+pr.block+' из '+pr.blockCount+'</div>');
       if (!pr && blockCount(config) > 1 && localRoundFor(config,i) === 1) rows.push(`<div class="ladder-block-label" data-block="${blockForRound(config,i)}">Блок ${blockForRound(config,i)} из ${blockCount(config)}</div>`);
       const rest = i < totalRoundsForConfig(config) ? formatTime(restSecAfterRound(config, i)) : '—';
-      rows.push(`<div class="ladder-live-row" data-round="${i}"><span class="ladder-plan">Раунд ${pr ? pr.localRound : localRoundFor(config, i)} · ${formatTime(workSecForRound(config, i))} · отдых ${rest}</span><strong class="ladder-count"></strong></div>`);
+      rows.push(`<div class="ladder-live-row" data-round="${i}"><span class="ladder-plan">Раунд ${pr ? pr.localRound : localRoundFor(config, i)}${pr?.roundName ? ' · '+escapeStageTitle(pr.roundName) : ''} · ${formatTime(workSecForRound(config, i))} · отдых ${rest}</span><strong class="ladder-count"></strong></div>`);
     }
     closeStage();
     list.innerHTML = rows.join('');
+    // Only overflowing labels move. Rest duration stays reachable without touch.
+    requestAnimationFrame(() => {
+      for (const label of list.querySelectorAll('.ladder-plan')) {
+        const overflow=label.scrollWidth-label.clientWidth;
+        label.style.setProperty('--plan-travel',Math.max(0,overflow)+'px');
+        label.classList.toggle('is-marquee',overflow>2);
+        if (overflow>2 && !label.querySelector('.plan-moving-text')) {
+          const moving=document.createElement('span');moving.className='plan-moving-text';
+          moving.textContent=label.textContent;label.replaceChildren(moving);
+        }
+      }
+    });
     list.dataset.scheduleKey = key;
     list.dataset.activeRound = '';
   }
@@ -211,8 +223,8 @@ export function renderLadderPreview(els, settings) {
   const panel = document.getElementById('ladderPreview');
   if (!panel) return;
   const config = { ...settings, ...readSettingsForm(els) };
-  const rounds = Math.max(1, Number(config.rounds || 1));
-  const count = Math.min(rounds, 8);
+  const rounds = totalRoundsForConfig(config);
+  const count = Math.min(rounds, 12);
   const rows = [];
   for (let i = 1; i <= count; i += 1) {
     rows.push(`<div class="ladder-preview-row"><span>Раунд ${i}</span><strong>${formatTime(workSecForRound(config, i))}</strong><span>Отдых</span><strong>${i < rounds ? formatTime(restSecAfterRound(config, i)) : '—'}</strong></div>`);

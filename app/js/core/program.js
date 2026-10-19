@@ -12,6 +12,8 @@ export function normalizeProgram(raw) {
   return entries.slice(0, 24).filter(x => PRESET_NAMES[x?.presetId]).map(x => ({
     presetId: x.presetId,
     title: typeof x.title==='string' ? x.title.slice(0,80) : '',
+    roundNames: Array.isArray(x.roundNames) ? x.roundNames.slice(0,200).map(n=>String(n||'').slice(0,100)) : [],
+    roundDescriptions: Array.isArray(x.roundDescriptions) ? x.roundDescriptions.slice(0,200).map(n=>String(n||'').slice(0,600)) : [],
     settings: x.settings && typeof x.settings==='object' && !Array.isArray(x.settings) ? structuredClone(x.settings) : null,
     restAfterSec: Math.max(0, Math.min(3600, Math.round((Number(x.restAfterSec) || 0) / 5) * 5))
   }));
@@ -28,7 +30,7 @@ export function compileProgram(entries, profiles, options = {}) {
         workSec: workSecForRound(config,i),
         restSec: i<total ? restSecAfterRound(config,i) : (stageIndex<stages.length-1 ? stage.restAfterSec : cycleIndex<cycles-1 ? cycleRestSec : 0),
         stageIndex, stageRound: i, stageRounds: total, presetId: stage.presetId,
-        stageTitle: stage.title, cycleIndex, cycles, cycleRestSec,
+        stageTitle: stage.title, roundName: stage.roundNames[i-1] || '', roundDescription: stage.roundDescriptions[i-1] || '', cycleIndex, cycles, cycleRestSec,
         intervalMode: config.intervalMode,
         block: config.intervalMode==='ladder' && config.blockEnabled ? Math.floor((i-1)/config.rounds)+1 : 1,
         blockCount: config.intervalMode==='ladder' && config.blockEnabled ? config.blockCount : 1,
