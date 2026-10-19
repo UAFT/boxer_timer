@@ -22,6 +22,7 @@ function bindRepeatButton(button, action) {
   let interval = null;
   let repeated = false;
   let pointerActive = false;
+  let touchActive = false;
   const stop = () => {
     clearTimeout(delay);
     clearInterval(interval);
@@ -31,8 +32,10 @@ function bindRepeatButton(button, action) {
   };
   button.addEventListener('pointerdown', (event) => {
     if (event.button !== 0 || button.disabled) return;
+    if (event.pointerType === 'touch') event.preventDefault();
     stop();
     pointerActive = true;
+    touchActive = event.pointerType === 'touch';
     repeated = false;
     delay = setTimeout(() => {
       if (!pointerActive) return;
@@ -41,13 +44,16 @@ function bindRepeatButton(button, action) {
       interval = setInterval(action, 75);
     }, 420);
   });
-  button.addEventListener('pointerup', stop);
+  button.addEventListener('pointerup', () => {
+    if (pointerActive && touchActive && !repeated) action();
+    stop();
+  });
   button.addEventListener('pointercancel', () => { stop(); repeated = true; });
   button.addEventListener('pointerleave', stop);
   button.addEventListener('blur', stop);
   button.addEventListener('click', (event) => {
     event.stopPropagation();
-    if (repeated) { event.preventDefault(); repeated = false; return; }
+    if (repeated || touchActive) { event.preventDefault(); repeated = false; touchActive = false; return; }
     action();
   });
   button.addEventListener('contextmenu', (event) => event.preventDefault());
