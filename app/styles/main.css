@@ -1479,3 +1479,8 @@ html,body{width:100%;max-width:100%;overflow-x:clip}
 #programSaveNewFields{display:grid;gap:10px;margin-top:12px}
 #programSaveNewFields input{min-width:0;width:100%;box-sizing:border-box}
 #programSaveCreate{background:#d7ac48;color:#122040;border:0;border-radius:10px;min-height:44px;font-weight:700}
+
+/* Long round names: swipe each plan row horizontally to reveal duration/rest. */
+.ladder-live-row{min-width:0;max-width:100%;overflow:hidden}
+.ladder-live-row .ladder-plan{display:block;flex:1 1 auto;min-width:0;overflow-x:auto;overflow-y:hidden;white-space:nowrap;text-overflow:clip;touch-action:pan-x;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;scrollbar-width:thin}
+.ladder-live-row .ladder-count{flex:0 0 auto}
