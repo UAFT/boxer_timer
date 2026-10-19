@@ -314,16 +314,55 @@ function setProgramRest(index,delta) {
   programEntries[index].restAfterSec = Math.max(0,Math.min(3600,programEntries[index].restAfterSec+delta));
   persistProgram();
 }
-function renameProgramRound(stageIndex, roundIndex, description=false) {
+let roundEditorContext=null;
+function closeRoundEditor() {
+  document.getElementById('roundEditModal').hidden=true;
+  const trigger=roundEditorContext?.trigger;
+  roundEditorContext=null;
+  trigger?.focus();
+}
+function renameProgramRound(stageIndex, roundIndex, description=false, trigger=null) {
   if (programRunning || !programEntries[stageIndex]) return;
   const stage=programEntries[stageIndex];
   const field=description?'roundDescriptions':'roundNames';
-  const values=Array.isArray(stage[field])?[...stage[field]]:[];
-  const value=window.prompt(description?'Описание упражнения':'Название упражнения',values[roundIndex]||'');
-  if (value===null) return;
-  values[roundIndex]=value.trim().slice(0,description?600:100);
-  stage[field]=values;
-  persistProgram();
+  const input=document.getElementById('roundEditInput');
+  const en=document.documentElement.lang==='en';
+  const label=description?(en?'Exercise description':'Описание упражнения'):(en?'Exercise name':'Название упражнения');
+  roundEditorContext={stageIndex,roundIndex,field,description,trigger};
+  document.getElementById('roundEditTitle').textContent=label;
+  document.getElementById('roundEditLabel').textContent=label;
+  document.getElementById('roundEditCancel').textContent=en?'Cancel':'Отмена';
+  document.getElementById('roundEditSave').textContent=en?'Save':'Сохранить';
+  input.maxLength=description?600:100;
+  input.rows=description?5:2;
+  input.value=stage[field]?.[roundIndex]||'';
+  document.getElementById('roundEditModal').hidden=false;
+  input.focus();
+  input.setSelectionRange(input.value.length,input.value.length);
+}
+function bindRoundEditor() {
+  const modal=document.getElementById('roundEditModal');
+  const input=document.getElementById('roundEditInput');
+  document.getElementById('roundEditCancel').addEventListener('click',closeRoundEditor);
+  document.getElementById('roundEditSave').addEventListener('click',()=>{
+    const ctx=roundEditorContext;
+    if (!ctx || programRunning || !programEntries[ctx.stageIndex]) return closeRoundEditor();
+    const stage=programEntries[ctx.stageIndex];
+    const values=Array.isArray(stage[ctx.field])?[...stage[ctx.field]]:[];
+    values[ctx.roundIndex]=input.value.trim().slice(0,ctx.description?600:100);
+    stage[ctx.field]=values;
+    closeRoundEditor();
+    persistProgram();
+  });
+  modal.addEventListener('click',event=>{if(event.target===modal)closeRoundEditor();});
+  modal.addEventListener('keydown',event=>{
+    if(event.key==='Escape'){event.preventDefault();closeRoundEditor();}
+    if(event.key==='Tab'){
+      const controls=[input,document.getElementById('roundEditCancel'),document.getElementById('roundEditSave')];
+      const index=controls.indexOf(document.activeElement);
+      if(index>=0){event.preventDefault();controls[(index+(event.shiftKey?2:1))%3].focus();}
+    }
+  });
 }
 function renameProgramStage(index) {
   if (programRunning || !programEntries[index]) return;
@@ -423,8 +462,8 @@ function renderProgram() {
         for(let j=0;j<rounds;j++) {
           const line=document.createElement('div');line.className='program-round-edit-row';
           const label=document.createElement('span');label.textContent='Раунд '+(j+1)+' · '+(entry.roundNames?.[j]||'Без названия');
-          const edit=document.createElement('button');edit.type='button';edit.textContent='✎';edit.setAttribute('aria-label','Название раунда '+(j+1));edit.addEventListener('click',()=>renameProgramRound(i,j));
-          const desc=document.createElement('button');desc.type='button';desc.textContent='≡';desc.setAttribute('aria-label','Описание раунда '+(j+1));desc.addEventListener('click',()=>renameProgramRound(i,j,true));
+          const edit=document.createElement('button');edit.type='button';edit.textContent='✎';edit.setAttribute('aria-label','Название раунда '+(j+1));edit.addEventListener('click',()=>renameProgramRound(i,j,false,edit));
+          const desc=document.createElement('button');desc.type='button';desc.textContent='≡';desc.setAttribute('aria-label','Описание раунда '+(j+1));desc.addEventListener('click',()=>renameProgramRound(i,j,true,desc));
           line.append(label,edit,desc);editor.append(line);
         }
         card.append(editor);
@@ -531,6 +570,7 @@ function bootstrap() {
   timer.applyConfig({ ...activeSettings, presetId: activePresetId });
   bindPresetTabs(els, handleSelectPreset);
   bindProgram();
+  bindRoundEditor();
   bindControls(els, {
     onToggleRun: handleToggleRun,
     onReset: handleReset,

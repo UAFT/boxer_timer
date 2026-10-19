@@ -1425,3 +1425,20 @@ button[data-block-target] {
 @media(max-width:420px){.program-stage,.program-rest{grid-template-columns:minmax(0,1fr) 26px repeat(3,36px);gap:4px}.program-stage button,.program-rest-controls button{width:36px;min-height:38px}.program-stage .program-stage-edit{width:26px!important;min-width:26px!important;min-height:38px!important}}
 
 .program-round-editor{padding:4px 10px 10px;display:grid;gap:5px}.program-round-edit-row{display:flex;align-items:center;gap:8px;font-size:12px}.program-round-edit-row span{flex:1;min-width:0;overflow-wrap:anywhere}.program-round-edit-row button{min-width:32px;min-height:32px;border:1px solid #777;border-radius:7px;background:transparent;color:inherit}
+
+/* Round editing: viewport-safe cards and a localized, in-app editor. */
+.program-panel,.program-list,.program-stage-card,.program-round-editor,.program-round-edit-row{min-width:0;max-width:100%;box-sizing:border-box}
+.program-stage-card{overflow:hidden}
+.program-round-editor{width:100%;padding:4px 6px 10px}
+.program-round-edit-row{display:grid;grid-template-columns:minmax(0,1fr) 34px 34px;gap:6px;align-items:center;width:100%}
+.program-round-edit-row span{display:block;min-width:0;max-width:100%;white-space:normal;overflow-wrap:anywhere;word-break:break-word;line-height:1.4}
+.program-round-edit-row button{width:34px;min-width:34px;min-height:36px;flex-shrink:0}
+.program-stage-user-title,.program-stage-heading{overflow-wrap:anywhere;word-break:break-word}
+.round-edit-modal{width:min(94vw,420px);max-width:calc(100vw - 20px);box-sizing:border-box;display:grid;gap:12px;padding:20px}
+.round-edit-modal h2{font-size:19px;margin:0;color:#f5d076}
+.round-edit-modal label{font-size:13px;color:#c2d0e8}
+.round-edit-modal textarea{width:100%;min-width:0;box-sizing:border-box;resize:vertical;border:1px solid #657399;border-radius:10px;background:#101d40;color:white;font:inherit;font-size:16px;line-height:1.4;padding:12px;max-height:35vh}
+.round-edit-modal textarea:focus{outline:2px solid #e7ba52;outline-offset:1px}
+.round-edit-actions{display:flex;justify-content:flex-end;gap:9px}
+.round-edit-actions button{min-height:42px;border-radius:10px;padding:8px 15px;color:white;background:#303e62}
+#roundEditSave{background:#d7ac48;color:#132044;font-weight:700}

@@ -147,6 +147,17 @@
       </section>
     </main>
 
+    <div class="modal-backdrop" id="roundEditModal" hidden>
+      <section class="settings-modal panel round-edit-modal" role="dialog" aria-modal="true" aria-labelledby="roundEditTitle">
+        <h2 id="roundEditTitle">Название упражнения</h2>
+        <label id="roundEditLabel" for="roundEditInput">Название упражнения</label>
+        <textarea id="roundEditInput" rows="2" maxlength="100"></textarea>
+        <div class="round-edit-actions">
+          <button type="button" id="roundEditCancel">Отмена</button>
+          <button type="button" id="roundEditSave">Сохранить</button>
+        </div>
+      </section>
+    </div>
     <div class="modal-backdrop" id="programLibraryModal" hidden>
       <section class="settings-modal panel program-library-modal" role="dialog" aria-modal="true" aria-labelledby="programLibraryTitle">
         <div class="settings-head"><h2 id="programLibraryTitle">Мои программы</h2><button type="button" id="programLibraryClose">Закрыть</button></div>
