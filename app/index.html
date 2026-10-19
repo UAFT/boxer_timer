@@ -127,7 +127,14 @@
       </section>
       <section id="ladderLive" class="ladder-live panel" hidden aria-label="Лестница раундов">
         <div class="ladder-live-head"><strong>ЛЕСТНИЦА</strong><button id="ladderExpand" type="button" aria-label="Развернуть лестницу" aria-expanded="false">⤢</button></div>
-        <div id="ladderFullControls" class="ladder-full-controls" hidden><strong id="ladderFullTime">00:00</strong><button id="ladderFullPause" type="button">Старт</button></div>
+        <div id="ladderFullControls" class="ladder-full-controls" hidden>
+          <div class="ladder-current"><span id="ladderCurrentLabel">Текущий раунд</span><strong id="ladderFullTime">00:00</strong></div>
+          <div class="ladder-summary-row">
+            <div class="ladder-summary-box"><span>Вся программа</span><strong id="ladderProgramTotal">00:00</strong></div>
+            <button id="ladderFullPause" type="button" aria-label="Пауза" disabled><span aria-hidden="true">Ⅱ</span></button>
+            <div class="ladder-summary-box"><span>Осталось</span><strong id="ladderProgramRemaining">00:00</strong></div>
+          </div>
+        </div>
         <div id="ladderLiveList" class="ladder-live-list"></div>
       </section>
       <section id="programPanel" class="program-panel panel" hidden>

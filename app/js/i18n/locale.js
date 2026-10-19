@@ -5,7 +5,7 @@ export function resolveLanguage(preference, device) {
 const pairs = [
 ['Таймер спортсмена','Training Timer'],['Настройки','Settings'],['Пресеты таймера','Timer presets'],
 ['Готово','Finished'],['Готов','Ready'],['Работа','Work'],['Отдых','Rest'],['Отсчёт','Countdown'],['Пауза','Pause'],
-['Всего','Total'],['Осталось','Remaining'],['Старт','Start'],['Продолжить','Resume'],['Сброс','Reset'],
+['Вся программа','Full program'],['Текущий раунд','Current round'],['Программа готова','Program ready'],['Всего','Total'],['Осталось','Remaining'],['Старт','Start'],['Продолжить','Resume'],['Сброс','Reset'],
 ['Длина раунда','Round duration'],['Время отдыха','Rest duration'],['Раунды','Rounds'],
 ['Метроном','Metronome'],['Прямой','Straight'],['Дробный','Subdivision'],['уд/мин','BPM'],
 ['Вкл','On'],['Выкл','Off'],['Недоступно','Unavailable'],
@@ -27,7 +27,7 @@ const pairs = [
 ['Нет','None'],['4 сек','4 sec'],['10 сек','10 sec'],['10 сек — метроном недоступен','10 sec — metronome unavailable'],
 ['Сохранить','Save'],['Предварительный просмотр','Preview'],
 ['Оба шага равны нулю: все раунды будут одинаковыми.','Both steps are zero: all rounds will be equal.'],
-['без шага','no step'],['мин','min'],['сек','sec'],['из','of'],['блоков','blocks'],['раундов','rounds'],
+['без шага','no step'],['мин','min'],['сек','sec'],['из','of'],['блоков','blocks'],['блока','blocks'],['блок','block'],['раундов','rounds'],['раунда','rounds'],['раунд','round'],
 ['Скоростной','Speed'],['Язык интерфейса','Interface language'],['Развернуть лестницу','Expand ladder'],['Свернуть лестницу','Collapse ladder'],
 ['Увеличить длину раунда','Increase round duration'],['Уменьшить длину раунда','Decrease round duration'],
 ['Увеличить время отдыха','Increase rest duration'],['Уменьшить время отдыха','Decrease rest duration'],
