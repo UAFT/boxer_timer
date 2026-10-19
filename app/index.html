@@ -168,8 +168,9 @@
     <div class="modal-backdrop" id="programSaveModal" hidden>
       <section class="settings-modal panel program-library-modal" role="dialog" aria-modal="true" aria-labelledby="programSaveTitle">
         <div class="settings-head"><h2 id="programSaveTitle">Сохранить программу</h2><button type="button" id="programSaveClose">Закрыть</button></div>
-        <label for="programNameInput">Название программы</label><input id="programNameInput" type="text" maxlength="80" autocomplete="off" />
-        <div class="program-library-actions"><button type="button" id="programSaveOverwrite">Сохранить изменения</button><button type="button" id="programSaveCopy">Сохранить как новую</button></div>
+        <div id="programSaveCurrent" hidden></div>
+        <div class="program-library-actions"><button type="button" id="programSaveOverwrite">Обновить программу</button><button type="button" id="programSaveCopy">Сохранить как новую</button></div>
+        <div id="programSaveNewFields" hidden><label for="programNameInput">Название новой программы</label><input id="programNameInput" type="text" maxlength="80" /><button type="button" id="programSaveCreate">Сохранить новую программу</button></div>
       </section>
     </div>
     <div class="modal-backdrop" id="settingsModal" hidden>

@@ -511,12 +511,17 @@ function bindProgramLibrary() {
     byId('programLibraryTemplates').classList.toggle('is-active',libraryTab==='templates');
     for(const entry of libraryTab==='mine'?savedPrograms:builtInPrograms) {
       const row=document.createElement('div');row.className='program-library-entry';
-      const text=document.createElement('span');text.textContent=entry.name+' · '+entry.entries.length+' этапов';
-      const open=document.createElement('button');open.textContent='Открыть';open.addEventListener('click',()=>openEntry(entry,libraryTab!=='mine'));
-      row.append(text,open);
+      const open=document.createElement('button');open.className='program-library-entry-open';open.textContent=entry.name;
+      open.addEventListener('click',()=>openEntry(entry,libraryTab!=='mine'));
+      row.append(open);
       if(libraryTab==='mine') {
-        const del=document.createElement('button');del.textContent='×';del.setAttribute('aria-label','Удалить программу');
-        del.addEventListener('click',()=>{if(!window.confirm('Удалить программу «'+entry.name+'»?'))return;savedPrograms=savedPrograms.filter(x=>x.id!==entry.id);if(openedProgramId===entry.id)openedProgramId=null;persistLibrary();renderLibrary();});
+        const del=document.createElement('button');del.className='program-library-entry-delete';del.textContent='×';del.setAttribute('aria-label','Удалить программу «'+entry.name+'»');
+        del.addEventListener('click',()=>{
+          if(!window.confirm('Удалить программу «'+entry.name+'»?'))return;
+          savedPrograms=savedPrograms.filter(x=>x.id!==entry.id);
+          if(openedProgramId===entry.id)openedProgramId=null;
+          persistLibrary();renderLibrary();renderCurrentState();
+        });
         row.append(del);
       }
       list.append(row);
@@ -526,17 +531,29 @@ function bindProgramLibrary() {
   byId('programLibraryClose').addEventListener('click',close);
   byId('programLibraryMine').addEventListener('click',()=>{libraryTab='mine';renderLibrary();});
   byId('programLibraryTemplates').addEventListener('click',()=>{libraryTab='templates';renderLibrary();});
-  byId('programSaveOpen').addEventListener('click',()=>{byId('programNameInput').value=openedProgramName||'';byId('programSaveOverwrite').hidden=!openedProgramId;save.hidden=false;byId('programNameInput').focus();});
+  const current=byId('programSaveCurrent'),fields=byId('programSaveNewFields');
+  const overwrite=byId('programSaveOverwrite');
+  byId('programSaveOpen').addEventListener('click',()=>{
+    const existing=savedPrograms.find(x=>x.id===openedProgramId);
+    current.hidden=!existing;current.textContent=existing?.name||'';
+    overwrite.hidden=!existing;fields.hidden=true;
+    byId('programNameInput').value='';save.hidden=false;
+  });
   byId('programSaveClose').addEventListener('click',close);
-  byId('programSaveOverwrite').addEventListener('click',()=>{
-    const name=byId('programNameInput').value.trim();if(!name||!openedProgramId)return;
-    savedPrograms=savedPrograms.map(x=>x.id===openedProgramId?snapshot(name,x.id):x);
-    openedProgramName=name;persistLibrary();close();renderCurrentState();
+  overwrite.addEventListener('click',()=>{
+    const existing=savedPrograms.find(x=>x.id===openedProgramId);
+    if(!existing)return;
+    savedPrograms=savedPrograms.map(x=>x.id===existing.id?snapshot(existing.name,existing.id):x);
+    openedProgramName=existing.name;persistLibrary();close();renderCurrentState();
   });
   byId('programSaveCopy').addEventListener('click',()=>{
+    fields.hidden=false;byId('programNameInput').focus();
+  });
+  byId('programSaveCreate').addEventListener('click',()=>{
     const name=byId('programNameInput').value.trim();if(!name||savedPrograms.length>=100)return;
     const id='p'+Date.now()+'-'+Math.random().toString(36).slice(2,8);
-    savedPrograms.push(snapshot(name,id));openedProgramId=id;openedProgramName=name;persistLibrary();close();renderCurrentState();
+    savedPrograms.push(snapshot(name,id));openedProgramId=id;openedProgramName=name;
+    persistLibrary();close();renderCurrentState();
   });
   for (const [id,key,delta] of [['programCycleMinus','cycles',-1],['programCyclePlus','cycles',1],['programCycleRestMinus','cycleRestSec',-5],['programCycleRestPlus','cycleRestSec',5]]) {
     byId(id).addEventListener('click',()=>{if(programRunning)return;const limit=key==='cycles'?20:3600;const min=key==='cycles'?1:0;programOptions=normalizeOptions({...programOptions,[key]:Math.max(min,Math.min(limit,programOptions[key]+delta))});persistOptions();});

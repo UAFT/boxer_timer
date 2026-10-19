@@ -1469,3 +1469,13 @@ html,body{width:100%;max-width:100%;overflow-x:clip}
 .program-current-name{display:block;max-width:100%;min-width:0;font-size:17px;line-height:1.3;font-weight:700;color:#e8bc60;overflow-wrap:anywhere;word-break:break-word}
 .program-current-name[hidden]{display:none}
 .program-top>button{flex-shrink:0;align-self:flex-start}
+/* Single-tap program list and explicit update/copy save actions. */
+.program-library-entry{display:grid;grid-template-columns:minmax(0,1fr) 42px;gap:8px;align-items:center;min-width:0}
+.program-library-entry-open{min-width:0;text-align:left;white-space:normal;overflow-wrap:anywhere;word-break:break-word;width:100%;height:100%}
+.program-library-entry:has(.program-library-entry-open:only-child){grid-template-columns:minmax(0,1fr)}
+.program-library-entry-delete{width:42px;min-width:42px;font-size:24px}
+#programSaveCurrent{font-weight:700;color:#e8bc60;overflow-wrap:anywhere;padding:10px;background:#19274d;border-radius:10px}
+#programSaveCurrent[hidden],#programSaveNewFields[hidden],#programSaveOverwrite[hidden]{display:none!important}
+#programSaveNewFields{display:grid;gap:10px;margin-top:12px}
+#programSaveNewFields input{min-width:0;width:100%;box-sizing:border-box}
+#programSaveCreate{background:#d7ac48;color:#122040;border:0;border-radius:10px;min-height:44px;font-weight:700}
