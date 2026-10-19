@@ -1269,3 +1269,156 @@ img {
     font-size: 12px;
   }
 }
+
+.ladder-explainer { color: var(--muted); font-size: 13px; line-height: 1.55; margin: 10px 0 14px; }
+.ladder-preview { margin-top: 16px; padding: 12px; border-radius: 16px; border: 1px solid rgba(255,255,255,.12); background: rgba(10,21,54,.8); }
+.ladder-preview-title { font-weight: 800; margin-bottom: 10px; }
+.ladder-preview-row { display: grid; grid-template-columns: minmax(0,1fr) 58px 48px 58px; align-items: center; gap: 6px; padding: 5px 0; font-size: 12px; }
+.ladder-preview-row strong { text-align: center; border-radius: 8px; padding: 8px 3px; background: #28c976; color: #07172c; font-variant-numeric: tabular-nums; }
+.ladder-preview-row strong:last-child { background: #263e79; color: #dbe9ff; }
+
+
+/* Compact and expanded live ladder, driven by the main timer. */
+.round-heading.round-active .round-number { color:#58efa2; display:inline-block; animation:ladderGlow 1.7s ease-in-out infinite; }
+@keyframes ladderGlow { 0%,100% {opacity:1;text-shadow:0 0 3px #26bd73} 50% {opacity:.62;text-shadow:0 0 12px #26bd73} }
+.ladder-live { margin-top:12px; padding:12px; color:#e8f0ff; }
+.ladder-live[hidden], .ladder-full-controls[hidden] {display:none!important}
+.ladder-live-head {display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;font-size:13px;letter-spacing:.05em}
+.ladder-live-head button {border:1px solid #4d6384;background:#15294c;color:#dcefff;border-radius:9px;font-size:24px;width:38px;height:36px}
+.ladder-live-list {position:relative;overflow-y:auto;overscroll-behavior:contain;max-height:176px;scroll-behavior:smooth}
+.ladder-live-row {display:flex;align-items:center;justify-content:space-between;gap:5px;min-height:43px;padding:7px 9px;border-radius:9px;font-size:12px;color:#9cabc3;white-space:nowrap;font-variant-numeric:tabular-nums}
+.ladder-live-row:nth-child(even) {background:rgba(255,255,255,.035)}
+.ladder-live-row.is-active {color:#65efa5;background:rgba(29,127,80,.24);animation:ladderGlow 1.7s ease-in-out infinite}
+.ladder-plan {min-width:0;overflow:hidden;text-overflow:ellipsis}
+.ladder-count {flex-shrink:0;color:#65efa5;font-size:12px}
+.ladder-live.is-expanded {position:fixed;inset:0;z-index:80;margin:0;border-radius:0;padding:calc(env(safe-area-inset-top,0px) + 18px) 16px calc(env(safe-area-inset-bottom,0px) + 16px);display:flex;flex-direction:column;background:#0b1533}
+.ladder-live.is-expanded .ladder-live-list {flex:1;max-height:none}
+.ladder-live.is-expanded .ladder-live-row {min-height:48px;font-size:clamp(12px,3.5vw,17px)}
+.ladder-full-controls {display:flex;align-items:center;justify-content:space-between;padding:12px 2px}
+.ladder-full-controls strong {font-size:clamp(30px,9vw,55px);font-variant-numeric:tabular-nums}
+.ladder-full-controls button {background:#24bd77;border:0;border-radius:12px;padding:12px 22px;color:#07172c;font-weight:900}
+@media(max-width:370px) {.ladder-live-row {font-size:11px;gap:3px;padding:7px 4px}}
+@media(prefers-reduced-motion:reduce) {.round-heading.round-active .round-number,.ladder-live-row.is-active {animation:none}.ladder-live-list {scroll-behavior:auto}}
+
+/* Block markers and unobtrusive ladder expand/collapse glyph. */
+.ladder-live-head button { width:28px;height:28px;font-size:22px;border:0;background:transparent;color:#b9d5e9;padding:0; }
+.ladder-block-label {font-size:12px;font-weight:800;color:#bed1ef;padding:11px 8px 5px;letter-spacing:.04em}
+.block-settings {margin:12px 0;padding:12px;border:1px solid rgba(255,255,255,.1);border-radius:14px}
+.block-settings[hidden] {display:none}
+
+.round-heading.round-active .block-number {color:#ffce56;display:inline-block;animation:blockGlow 1.7s ease-in-out infinite}
+.ladder-block-label.is-active {color:#ffce56;animation:blockGlow 1.7s ease-in-out infinite}
+@keyframes blockGlow {0%,100% {opacity:1;text-shadow:0 0 3px #d99c28} 50% {opacity:.62;text-shadow:0 0 12px #e9b23e}}
+@media(prefers-reduced-motion:reduce) {.round-heading.round-active .block-number,.ladder-block-label.is-active {animation:none}}
+
+/* Program composer */
+.preset-tab {position:relative;touch-action:manipulation;user-select:none}
+.preset-tab.has-program {outline:2px solid #41d58b;outline-offset:-3px}
+.preset-order {position:absolute;bottom:3px;left:3px;right:3px;display:flex;justify-content:center;gap:3px;flex-wrap:wrap;pointer-events:none}
+.preset-order b {font-size:10px;min-width:15px;height:15px;border-radius:12px;background:#42d68b;color:#092819;display:grid;place-items:center}
+.program-panel {padding:14px;display:grid;gap:10px}
+.program-panel[hidden] {display:none}
+.program-top,.program-actions,.program-stage,.program-rest {display:flex;align-items:center;justify-content:space-between;gap:8px}
+.program-top button,.program-stage button,.program-rest button,.program-actions button {background:#243463;color:white;border-radius:10px;padding:8px 11px}
+.program-list {display:grid;gap:7px}
+.program-stage {background:#17234c;border-radius:13px;padding:8px}
+.program-stage.is-current {border:1px solid #ffcf5a;color:#ffcf5a}
+.program-stage-main {flex:1;min-width:0}
+.program-stage-main small {display:block;color:#aab8d5}
+.program-rest {padding:4px 8px;color:#bdc8e1;font-size:13px}
+.program-rest strong {min-width:48px;text-align:center}
+.program-actions button:first-child {background:#39c67d;color:#072919;font-weight:700;flex:1}
+.program-hint {font-size:11px;color:#9aaad0}
+@media(prefers-reduced-motion:reduce){.program-stage.is-current{animation:none}}
+
+.language-select-row{display:flex;align-items:center;justify-content:space-between;gap:1rem;color:#d9e3f7;font-size:1rem;flex-wrap:wrap}.language-select-row select{background:#111c44;color:#fff;border:1px solid #354778;border-radius:12px;padding:12px;min-width:145px;font:inherit}
+
+.language-choices{display:flex;gap:7px;flex-wrap:wrap;width:100%}
+.language-choices button{flex:1 1 90px;min-height:46px;border:1px solid #354778;border-radius:12px;background:#111c44;color:#d9e3f7;font:inherit;font-weight:650;padding:9px 10px;cursor:pointer}
+.language-choices button.is-active{background:linear-gradient(180deg,#d49a59,#9d6b40);color:#fff;border-color:#dda66d;box-shadow:0 0 0 1px #e8ae6a44}
+.language-choices button:focus-visible{outline:2px solid #60dfab;outline-offset:2px}
+
+/* Each program stage and its inter-stage rest form one visual unit. */
+.program-list {gap:10px}
+.program-stage-card {display:grid;gap:8px;padding:8px;border:2px solid #e7ba52;border-radius:16px;background:rgba(12,24,57,.22);transition:border-color .2s,box-shadow .2s}
+.program-stage-card.is-current {border-color:#42d68b;animation:programStageGlow 2s ease-in-out infinite}
+.program-stage {border:0;background:#17234c}
+.program-stage.is-current {border:0;color:inherit}
+.program-stage-card .program-rest {padding:5px 4px 3px}
+@keyframes programStageGlow {0%,100%{box-shadow:0 0 0 1px rgba(66,214,139,.15)}50%{box-shadow:0 0 12px 2px rgba(66,214,139,.48)}}
+@media(prefers-reduced-motion:reduce){.program-stage-card.is-current{animation:none}}
+
+/* Android WebView: prevent long-press text selection/copy menu on repeat steppers. */
+button[data-adjust-target],
+button[data-ladder-target],
+button[data-block-target] {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: manipulation;
+}
+
+/* Fullscreen program schedule: stage and ladder-block contours. */
+.ladder-live-list .ladder-stage-outline {border:2px solid #e7ba52;border-radius:16px;padding:8px 6px;margin:10px 0 14px;background:rgba(12,24,57,.26)}
+.ladder-live-list .ladder-block-outline {border:1px solid rgba(231,186,82,.62);border-radius:12px;padding:5px 4px;margin:8px 0}
+.ladder-live-list .ladder-stage-outline:has(.ladder-live-row.is-active),.ladder-live-list .ladder-block-outline:has(.ladder-live-row.is-active) {border-color:#42d68b}
+
+/* Compact UI layout only; schedule/timer arithmetic is unchanged. */
+.main-time {font-size:clamp(76px,19vw,124px);line-height:1.05}
+.summary-grid {gap:8px}
+.summary-box {padding:8px 6px;min-height:unset}
+.summary-label {white-space:nowrap;overflow-wrap:normal;word-break:normal;font-size:clamp(10px,2.6vw,13px)}
+.summary-value {font-size:clamp(19px,5vw,28px)}
+.compact-param-card {padding:10px 6px}
+.compact-param-title {min-height:32px;display:flex;align-items:center;justify-content:center;text-align:center}
+.compact-param-row {display:flex;flex-direction:column;align-items:stretch;gap:5px;margin-top:2px}
+.compact-param-value {min-height:38px;font-size:clamp(25px,6vw,36px)}
+.compact-stepper-col {display:grid;grid-template-columns:1fr 1fr;min-height:0;gap:5px;width:100%}
+.compact-stepper-col .stepper-btn {min-height:44px;font-size:23px}
+.program-stage-card {gap:3px}
+.program-stage {padding:6px}
+.program-stage button {min-width:39px;min-height:42px;padding:5px}
+.program-rest {display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;padding:3px 5px!important}
+.program-rest-label {min-width:0;font-size:clamp(11px,2.8vw,14px)}
+.program-rest-controls {display:grid;grid-template-columns:40px 51px 40px;gap:5px;align-items:center}
+.program-rest-controls button {min-width:40px;min-height:42px;padding:4px}
+.program-rest-controls strong {min-width:0;text-align:center;font-variant-numeric:tabular-nums}
+.ladder-full-controls {display:flex;flex-direction:column;align-items:stretch;gap:12px;padding:10px 0}
+.ladder-current {display:flex;flex-direction:column;align-items:center;gap:3px}
+.ladder-current>span {font-size:13px;color:#b9c8e3}
+.ladder-current>strong {font-size:clamp(44px,12vw,76px);font-variant-numeric:tabular-nums}
+.ladder-summary-row {display:grid;grid-template-columns:minmax(0,1fr) minmax(54px,.8fr) minmax(0,1fr);gap:7px;align-items:stretch}
+.ladder-summary-box {background:#19274d;border-radius:12px;padding:9px 3px;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px}
+.ladder-summary-box>span {font-size:clamp(9px,2.3vw,12px);white-space:nowrap;letter-spacing:0;color:#b4c3dd}
+.ladder-summary-box>strong {font-size:clamp(19px,5vw,27px);font-variant-numeric:tabular-nums}
+.ladder-full-controls #ladderFullPause {padding:0;min-width:0;min-height:65px;font-size:35px;display:grid;place-items:center;background:#25c37d;color:#092b20}
+.ladder-full-controls #ladderFullPause:disabled {opacity:.42;background:#4b6077;color:#dce6f2}
+
+/* Program library and cycle controls */
+.program-library-actions {display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.program-library-actions button,.program-library-tabs button,.program-library-entry button,.program-cycle-controls button {background:#263965;color:#fff;border:0;border-radius:10px;padding:10px 8px;min-height:42px}
+.program-cycle-panel {border:1px solid #44577c;border-radius:14px;background:#19264b;padding:12px;display:grid;gap:10px}
+.program-cycle-row {display:flex;align-items:center;justify-content:space-between;gap:8px}
+.program-cycle-row>span,.program-cycle-row>strong {font-size:clamp(12px,3vw,15px)}
+.program-cycle-controls {display:grid;grid-template-columns:42px 55px 42px;align-items:center;text-align:center;gap:5px;flex-shrink:0}
+.program-cycle-controls strong {font-variant-numeric:tabular-nums}
+.program-stage {display:grid;grid-template-columns:minmax(0,1fr) 32px repeat(3,44px);gap:6px;align-items:start}
+.program-stage-main {min-width:0;padding-right:0;display:flex;flex-direction:column;gap:3px;overflow-wrap:anywhere}
+.program-stage-heading {display:block;line-height:1.3}
+.program-stage-main small {display:block;line-height:1.3}
+.program-stage button {min-width:0!important;width:44px;min-height:44px;padding:5px}
+.program-stage .program-stage-edit {width:32px!important;min-width:32px!important;min-height:44px!important;padding:0!important;font-size:20px}
+.program-rest {display:grid;grid-template-columns:minmax(0,1fr) 32px repeat(3,44px);gap:6px;align-items:center}
+.program-rest-label {grid-column:1/3}
+.program-rest-controls {display:contents}
+.program-rest-controls button {width:44px;min-width:0}
+.program-rest-controls strong {text-align:center}
+.program-library-modal {width:min(94vw,560px);max-height:85vh;overflow:auto;display:grid;gap:12px}
+.program-library-modal input {width:100%;padding:12px;background:#182750;color:#fff;border:1px solid #657399;border-radius:9px}
+.program-library-tabs {display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.program-library-tabs button.is-active {background:#2e9c70}
+.program-library-list {display:grid;gap:8px}
+.program-library-entry {display:flex;align-items:center;gap:8px;background:#18264a;padding:10px;border-radius:10px}
+.program-library-entry span {flex:1;min-width:0;overflow-wrap:anywhere}
+.ladder-cycle-label {font-size:17px;font-weight:700;color:#e9bd60;margin:12px 3px}
+@media(max-width:420px){.program-stage,.program-rest{grid-template-columns:minmax(0,1fr) 26px repeat(3,36px);gap:4px}.program-stage button,.program-rest-controls button{width:36px;min-height:38px}.program-stage .program-stage-edit{width:26px!important;min-width:26px!important;min-height:38px!important}}
