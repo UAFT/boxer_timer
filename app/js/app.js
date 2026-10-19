@@ -207,6 +207,18 @@ function handleSelectPreset(presetId) {
 
 function handleSaveSettings() {
   applySettings({ ...activeSettings, ...readSettingsForm(els) });
+  // A program stage may carry a saved preset snapshot. Keep its ladder/block
+  // controls in sync with the preset the user just edited in Settings.
+  if (programEntries.length && !programRunning) {
+    const fields=['intervalMode','blockEnabled','blockCount','blockRestSec','workStepSec','restStepSec'];
+    let changed=false;
+    for (const entry of programEntries) {
+      if (entry.presetId!==activePresetId || !entry.settings) continue;
+      for (const field of fields) entry.settings[field]=activeSettings[field];
+      changed=true;
+    }
+    if (changed) persistProgram();
+  }
   closeSettings(els);
 }
 

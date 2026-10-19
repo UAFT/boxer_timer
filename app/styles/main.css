@@ -1484,3 +1484,9 @@ html,body{width:100%;max-width:100%;overflow-x:clip}
 .ladder-live-row{min-width:0;max-width:100%;overflow:hidden}
 .ladder-live-row .ladder-plan{display:block;flex:1 1 auto;min-width:0;overflow-x:auto;overflow-y:hidden;white-space:nowrap;text-overflow:clip;touch-action:pan-x;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;scrollbar-width:thin}
 .ladder-live-row .ladder-count{flex:0 0 auto}
+
+/* Gentle auto-pan for clipped plan text, reversible and motion-safe. */
+.ladder-live-row .ladder-plan.is-marquee{scrollbar-width:none;animation:planAutoPan 9s ease-in-out 1.5s infinite alternate}
+@keyframes planAutoPan{0%,15%{text-indent:0}85%,100%{text-indent:calc(-1 * var(--plan-travel))}}
+.ladder-live-row .ladder-plan.is-marquee:active{animation-play-state:paused}
+@media(prefers-reduced-motion:reduce){.ladder-live-row .ladder-plan.is-marquee{animation:none}}

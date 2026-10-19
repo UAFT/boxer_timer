@@ -178,6 +178,14 @@ export function renderLiveLadder(els, state, ui = {}) {
     }
     closeStage();
     list.innerHTML = rows.join('');
+    // Only overflowing labels move. Rest duration stays reachable without touch.
+    requestAnimationFrame(() => {
+      for (const label of list.querySelectorAll('.ladder-plan')) {
+        const overflow=label.scrollWidth-label.clientWidth;
+        label.style.setProperty('--plan-travel',Math.max(0,overflow)+'px');
+        label.classList.toggle('is-marquee',overflow>8);
+      }
+    });
     list.dataset.scheduleKey = key;
     list.dataset.activeRound = '';
   }
