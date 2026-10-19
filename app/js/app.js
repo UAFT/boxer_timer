@@ -322,7 +322,9 @@ function renderProgram() {
   }
   const list=document.getElementById('programList');
   const activeIndex=programRunning && timer.state.roundIndex>0 ? programSnapshot?.[timer.state.roundIndex-1]?.stageIndex : -1;
-  const signature=JSON.stringify([programEntries,programRunning]);
+  // Stage entries reference live preset profiles; refresh details when a preset changes.
+  // During playback, keep the compiled program snapshot stable.
+  const signature=JSON.stringify([programEntries,programRunning,programRunning ? null : programEntries.map(entry=>profiles[entry.presetId])]);
   if (list.dataset.signature!==signature) {
     list.replaceChildren();
     programEntries.forEach((entry,i)=>{
