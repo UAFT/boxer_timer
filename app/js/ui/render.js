@@ -184,6 +184,10 @@ export function renderLiveLadder(els, state, ui = {}) {
         const overflow=label.scrollWidth-label.clientWidth;
         label.style.setProperty('--plan-travel',Math.max(0,overflow)+'px');
         label.classList.toggle('is-marquee',overflow>8);
+        if (overflow>8 && !label.querySelector('.plan-moving-text')) {
+          const moving=document.createElement('span');moving.className='plan-moving-text';
+          moving.textContent=label.textContent;label.replaceChildren(moving);
+        }
       }
     });
     list.dataset.scheduleKey = key;
