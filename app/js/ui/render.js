@@ -152,9 +152,11 @@ export function renderLiveLadder(els, state, ui = {}) {
   document.getElementById('ladderCurrentLabel').textContent = preview ? 'Программа готова' : 'Текущий раунд';
   els.ladderFullTime.textContent = preview ? formatTime(total) : formatTime(state.remainingSec);
   const canPause = !preview && state.phase !== PHASES.IDLE && state.phase !== PHASES.FINISHED;
-  els.ladderFullPause.disabled = !canPause;
-  els.ladderFullPause.innerHTML = state.isPaused && canPause ? '<span aria-hidden="true">▶</span>' : '<span aria-hidden="true">Ⅱ</span>';
-  els.ladderFullPause.setAttribute('aria-label', state.isPaused && canPause ? 'Продолжить' : 'Пауза');
+  const canStartProgram = preview && Boolean(ui.previewRounds?.length);
+  els.ladderFullPause.disabled = !canPause && !canStartProgram;
+  const showPlay = canStartProgram || (state.isPaused && canPause);
+  els.ladderFullPause.innerHTML = showPlay ? '<span aria-hidden="true">▶</span>' : '<span aria-hidden="true">Ⅱ</span>';
+  els.ladderFullPause.setAttribute('aria-label', canStartProgram ? 'Запустить программу' : (state.isPaused && canPause ? 'Продолжить' : 'Пауза'));
 
   const list = els.ladderLiveList;
   const key = config.programRounds?.length ? JSON.stringify(config.programRounds) : [config.rounds, config.workSec, config.restSec, config.workStepSec, config.restStepSec, config.blockEnabled, config.blockCount, config.blockRestSec].join(':');
