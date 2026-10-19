@@ -27,7 +27,7 @@ const pairs = [
 ['Нет','None'],['4 сек','4 sec'],['10 сек','10 sec'],['10 сек — метроном недоступен','10 sec — metronome unavailable'],
 ['Сохранить','Save'],['Предварительный просмотр','Preview'],
 ['Оба шага равны нулю: все раунды будут одинаковыми.','Both steps are zero: all rounds will be equal.'],
-['без шага','no step'],['мин','min'],['сек','sec'],['из','of'],['блоков','blocks'],['раундов','rounds'],['раунда','rounds'],['раунд','round'],
+['без шага','no step'],['мин','min'],['сек','sec'],['из','of'],['блоков','blocks'],['блока','blocks'],['блок','block'],['раундов','rounds'],['раунда','rounds'],['раунд','round'],
 ['Скоростной','Speed'],['Язык интерфейса','Interface language'],['Развернуть лестницу','Expand ladder'],['Свернуть лестницу','Collapse ladder'],
 ['Увеличить длину раунда','Increase round duration'],['Уменьшить длину раунда','Decrease round duration'],
 ['Увеличить время отдыха','Increase rest duration'],['Уменьшить время отдыха','Decrease rest duration'],
