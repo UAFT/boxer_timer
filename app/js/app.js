@@ -381,7 +381,8 @@ function renderProgram() {
       const stage=document.createElement('div');stage.className='program-stage';
       const main=document.createElement('div');main.className='program-stage-main';
       const heading=document.createElement('strong');heading.className='program-stage-heading';
-      heading.textContent='Этап '+(i+1)+(entry.title?' · '+entry.title:'');
+      heading.textContent='Этап '+(i+1);
+      if (entry.title) {const title=document.createElement('span');title.className='program-stage-user-title';title.textContent=entry.title;heading.append(title);}
       const detail=document.createElement('small');const cfg=entry.settings || profiles[entry.presetId];
       const kind=document.createElement('small');kind.className='program-stage-kind';
       kind.textContent=cfg.intervalMode==='ladder' ? 'Лестница' : (entry.presetId==='tabata2020x24' ? 'Скоростной' : 'Обычный');

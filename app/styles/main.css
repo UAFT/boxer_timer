@@ -1314,7 +1314,7 @@ img {
 /* Program composer */
 .preset-tab {position:relative;touch-action:manipulation;user-select:none}
 .preset-tab.has-program {outline:2px solid #41d58b;outline-offset:-3px}
-.preset-order {position:absolute;bottom:3px;left:3px;right:3px;display:flex;justify-content:center;gap:3px;flex-wrap:wrap;pointer-events:none}
+.preset-order {position:absolute;top:3px;right:3px;display:flex;justify-content:flex-end;gap:3px;flex-wrap:wrap;max-width:62%;pointer-events:none;z-index:2}
 .preset-order b {font-size:10px;min-width:15px;height:15px;border-radius:12px;background:#42d68b;color:#092819;display:grid;place-items:center}
 .program-panel {padding:14px;display:grid;gap:10px}
 .program-panel[hidden] {display:none}
@@ -1405,6 +1405,7 @@ button[data-block-target] {
 .program-stage {display:grid;grid-template-columns:minmax(0,1fr) 32px repeat(3,44px);gap:6px;align-items:start}
 .program-stage-main {min-width:0;padding-right:0;display:flex;flex-direction:column;gap:3px;overflow-wrap:anywhere}
 .program-stage-heading {display:block;line-height:1.3}
+.program-stage-user-title {display:block;overflow-wrap:normal;word-break:normal;hyphens:none}
 .program-stage-main small {display:block;line-height:1.3}
 .program-stage button {min-width:0!important;width:44px;min-height:44px;padding:5px}
 .program-stage .program-stage-edit {width:32px!important;min-width:32px!important;min-height:44px!important;padding:0!important;font-size:20px}
