@@ -342,7 +342,7 @@ function renderProgram() {
       const main=document.createElement('div');main.className='program-stage-main';
       const name=document.createElement('strong');name.textContent='Этап '+(i+1)+' · '+PRESET_NAMES[entry.presetId];
       const detail=document.createElement('small');const cfg=profiles[entry.presetId];
-      detail.textContent=cfg.intervalMode==='ladder' ? 'Лестница · '+russianRoundCount(cfg.rounds)+(cfg.blockEnabled?' · блоков '+cfg.blockCount:'') : (entry.presetId==='tabata2020x24' ? 'Скоростной' : 'Обычный')+' · '+cfg.rounds+' раундов · '+String(Math.floor(cfg.workSec/60)).padStart(2,'0')+':'+String(cfg.workSec%60).padStart(2,'0');
+      detail.textContent=cfg.intervalMode==='ladder' ? 'Лестница · '+russianRoundCount(cfg.rounds)+(cfg.blockEnabled?' · блоков '+cfg.blockCount:'') : (entry.presetId==='tabata2020x24' ? 'Скоростной' : 'Обычный')+' · '+russianRoundCount(cfg.rounds)+' · '+String(Math.floor(cfg.workSec/60)).padStart(2,'0')+':'+String(cfg.workSec%60).padStart(2,'0');
       main.append(name,detail);stage.append(main);
       if (!programRunning) {
         for (const [label,fn] of [['↑',()=>moveProgramStage(i,-1)],['↓',()=>moveProgramStage(i,1)],['×',()=>removeProgramStage(i)]]) {
