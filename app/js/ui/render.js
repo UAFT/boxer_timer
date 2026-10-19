@@ -132,7 +132,8 @@ export function renderTimer(els, state, uiState = {}) {
 export function renderLiveLadder(els, state, ui = {}) {
   const panel = els.ladderLive;
   if (!panel) return;
-  const config = state.config;
+  const preview = Boolean(ui.previewRounds?.length && !state.config.programRounds?.length);
+  const config = preview ? { ...state.config, programRounds: ui.previewRounds } : state.config;
   panel.hidden = config.intervalMode !== 'ladder' && !config.programRounds?.length;
   const ladderTitle = panel.querySelector('.ladder-live-head strong');
   if (ladderTitle) ladderTitle.textContent = config.programRounds?.length ? 'ПРОГРАММА' : 'ЛЕСТНИЦА';
@@ -143,9 +144,16 @@ export function renderLiveLadder(els, state, ui = {}) {
   els.ladderExpand.setAttribute('aria-expanded', String(expanded));
   els.ladderExpand.setAttribute('aria-label', expanded ? 'Свернуть лестницу' : 'Развернуть лестницу');
   els.ladderFullControls.hidden = !expanded;
-  els.ladderFullTime.textContent = formatTime(state.remainingSec);
-  els.ladderFullPause.textContent = state.phase === PHASES.IDLE || state.phase === PHASES.FINISHED
-    ? 'Старт' : state.isPaused ? 'Продолжить' : 'Пауза';
+  const total = totalDurationSecForConfig(config);
+  const remaining = preview ? total : remainingTotalSecForState(state);
+  document.getElementById('ladderProgramTotal').textContent = formatTime(total);
+  document.getElementById('ladderProgramRemaining').textContent = formatTime(remaining);
+  document.getElementById('ladderCurrentLabel').textContent = preview ? 'Программа готова' : 'Текущий раунд';
+  els.ladderFullTime.textContent = preview ? formatTime(total) : formatTime(state.remainingSec);
+  const canPause = !preview && state.phase !== PHASES.IDLE && state.phase !== PHASES.FINISHED;
+  els.ladderFullPause.disabled = !canPause;
+  els.ladderFullPause.innerHTML = state.isPaused && canPause ? '<span aria-hidden="true">▶</span>' : '<span aria-hidden="true">Ⅱ</span>';
+  els.ladderFullPause.setAttribute('aria-label', state.isPaused && canPause ? 'Продолжить' : 'Пауза');
 
   const list = els.ladderLiveList;
   const key = config.programRounds?.length ? JSON.stringify(config.programRounds) : [config.rounds, config.workSec, config.restSec, config.workStepSec, config.restStepSec, config.blockEnabled, config.blockCount, config.blockRestSec].join(':');
@@ -171,7 +179,7 @@ export function renderLiveLadder(els, state, ui = {}) {
     list.dataset.activeRound = '';
   }
 
-  const active = [PHASES.WORK, PHASES.REST, PHASES.COUNTDOWN].includes(state.phase) ? state.roundIndex : 0;
+  const active = !preview && [PHASES.WORK, PHASES.REST, PHASES.COUNTDOWN].includes(state.phase) ? state.roundIndex : 0;
   const currentProgramRound = config.programRounds?.[active-1];
   const currentBlock = active > 0 ? (currentProgramRound?.block ?? blockForRound(config, active)) : 0;
   for (const heading of list.querySelectorAll('.ladder-block-label')) {

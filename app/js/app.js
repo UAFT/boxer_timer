@@ -93,18 +93,18 @@ function setMetronomePanel(panel, { render = true } = {}) {
 }
 
 function renderCurrentState() {
-  renderTimer(els, { ...timer.state, config: timer.config, isPaused: timer.isPaused }, { metronomePanelOpen: isMetronomePanelOpen(), ladderExpanded: uiState.ladderExpanded });
+  renderTimer(els, { ...timer.state, config: timer.config, isPaused: timer.isPaused }, { metronomePanelOpen: isMetronomePanelOpen(), ladderExpanded: uiState.ladderExpanded, previewRounds: !programRunning && programEntries.length ? compileProgram(programEntries,profiles) : null });
   renderProgram();
 }
 
 const timer = new TimerEngine({
   onTick: (state) => {
-    renderTimer(els, state, { metronomePanelOpen: isMetronomePanelOpen(), ladderExpanded: uiState.ladderExpanded });
+    renderTimer(els, state, { metronomePanelOpen: isMetronomePanelOpen(), ladderExpanded: uiState.ladderExpanded, previewRounds: !programRunning && programEntries.length ? compileProgram(programEntries,profiles) : null });
     renderProgram();
     metronome.syncPhase(state);
   },
   onStateChange: (state) => {
-    renderTimer(els, state, { metronomePanelOpen: isMetronomePanelOpen(), ladderExpanded: uiState.ladderExpanded });
+    renderTimer(els, state, { metronomePanelOpen: isMetronomePanelOpen(), ladderExpanded: uiState.ladderExpanded, previewRounds: !programRunning && programEntries.length ? compileProgram(programEntries,profiles) : null });
     renderProgram();
     metronome.syncPhase(state);
   },
@@ -267,7 +267,7 @@ function handleOpenMetronomeCard(event) {
 
 function persistProgram() {
   localStorage.setItem(PROGRAM_KEY, JSON.stringify(programEntries));
-  renderProgram();
+  renderCurrentState();
 }
 function addProgramStage(presetId) {
   if (!PRESET_NAMES[presetId] || programRunning || programEntries.length >= 24) return;
@@ -361,11 +361,11 @@ function renderProgram() {
       card.append(stage);
       if (i<programEntries.length-1) {
         const rest=document.createElement('div');rest.className='program-rest';
-        const label=document.createElement('span');label.textContent='Отдых между этапами';
+        const label=document.createElement('span');label.className='program-rest-label';label.textContent='Отдых между этапами';
         const minus=document.createElement('button');minus.textContent='−';minus.disabled=programRunning;minus.addEventListener('click',()=>setProgramRest(i,-5));
         const time=document.createElement('strong');time.textContent=String(Math.floor(entry.restAfterSec/60)).padStart(2,'0')+':'+String(entry.restAfterSec%60).padStart(2,'0');
         const plus=document.createElement('button');plus.textContent='+';plus.disabled=programRunning;plus.addEventListener('click',()=>setProgramRest(i,5));
-        rest.append(label,minus,time,plus);card.append(rest);
+        const controls=document.createElement('div');controls.className='program-rest-controls';controls.append(minus,time,plus);rest.append(label,controls);card.append(rest);
       }
       list.append(card);
     });

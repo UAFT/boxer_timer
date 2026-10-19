@@ -5,7 +5,7 @@ export function resolveLanguage(preference, device) {
 const pairs = [
 ['Таймер спортсмена','Training Timer'],['Настройки','Settings'],['Пресеты таймера','Timer presets'],
 ['Готово','Finished'],['Готов','Ready'],['Работа','Work'],['Отдых','Rest'],['Отсчёт','Countdown'],['Пауза','Pause'],
-['Всего','Total'],['Осталось','Remaining'],['Старт','Start'],['Продолжить','Resume'],['Сброс','Reset'],
+['Вся программа','Full program'],['Текущий раунд','Current round'],['Программа готова','Program ready'],['Всего','Total'],['Осталось','Remaining'],['Старт','Start'],['Продолжить','Resume'],['Сброс','Reset'],
 ['Длина раунда','Round duration'],['Время отдыха','Rest duration'],['Раунды','Rounds'],
 ['Метроном','Metronome'],['Прямой','Straight'],['Дробный','Subdivision'],['уд/мин','BPM'],
 ['Вкл','On'],['Выкл','Off'],['Недоступно','Unavailable'],
