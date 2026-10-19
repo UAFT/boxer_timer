@@ -413,6 +413,9 @@ function renderProgram() {
   const panel=document.getElementById('programPanel');
   if (!panel) return;
   panel.hidden=false;
+  const nameEl=document.getElementById('programCurrentName');
+  nameEl.textContent=openedProgramName || '';
+  nameEl.hidden=!openedProgramName;
   document.getElementById('programStart').hidden=programRunning || !programEntries.length;
   document.getElementById('programCycleCount').textContent=String(programOptions.cycles);
   document.getElementById('programCycleRestRow').hidden=programOptions.cycles===1;
@@ -556,7 +559,7 @@ function bindProgram() {
     tab.addEventListener('contextmenu',e=>e.preventDefault());
     tab.addEventListener('click',e=>{if(consumed){e.stopImmediatePropagation();e.preventDefault();consumed=false;}},true);
   }
-  document.getElementById('programClear').addEventListener('click',()=>{if(!programRunning){programEntries=[];persistProgram();}});
+  document.getElementById('programClear').addEventListener('click',()=>{if(!programRunning){programEntries=[];openedProgramName='';openedProgramId=null;persistProgram();}});
   document.getElementById('programStart').addEventListener('click',async()=>{await audio.unlock();startProgram();});
   document.getElementById('programExit').addEventListener('click',exitProgram);
   bindProgramLibrary();
