@@ -1496,3 +1496,6 @@ html,body{width:100%;max-width:100%;overflow-x:clip}
 #programLibraryOpen:active,#programSaveOpen:active{background:#40517b}
 /* Faster bidirectional scrolling; only long round labels animate. */
 .ladder-live-row .ladder-plan.is-marquee .plan-moving-text{animation-duration:5.5s}
+
+/* Measure intrinsic label width even when the text is clipped by the row. */
+.ladder-live-row .ladder-plan.is-marquee .plan-moving-text{animation-duration:4s}

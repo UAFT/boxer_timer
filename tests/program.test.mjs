@@ -60,3 +60,11 @@ test('round names and descriptions survive normalization and compilation',()=>{
  assert.deepEqual(rows.map(x=>x.roundName),['Двойки','Тройки','Двойки','Тройки']);
  assert.equal(rows[0].roundDescription,'Два удара');
 });
+test('ladder block boundary uses configured block rest in compiled program',()=>{
+ const config={rounds:4,workSec:20,restSec:20,intervalMode:'ladder',workStepSec:0,restStepSec:0,blockEnabled:true,blockCount:2,blockRestSec:40};
+ assert.equal(totalRoundsForConfig(config),8);
+ assert.equal(restSecAfterRound(config,4),40);
+ const rows=compileProgram([{presetId:'classic2',settings:config}],profiles);
+ assert.equal(rows[3].restSec,40);
+ assert.equal(rows[7].restSec,0);
+});

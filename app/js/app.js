@@ -213,7 +213,7 @@ function handleSaveSettings() {
     const fields=['intervalMode','blockEnabled','blockCount','blockRestSec','workStepSec','restStepSec'];
     let changed=false;
     for (const entry of programEntries) {
-      if (entry.presetId!==activePresetId || !entry.settings) continue;
+      if (!entry.settings || entry.presetId!==activePresetId) continue;
       for (const field of fields) entry.settings[field]=activeSettings[field];
       changed=true;
     }

@@ -183,8 +183,8 @@ export function renderLiveLadder(els, state, ui = {}) {
       for (const label of list.querySelectorAll('.ladder-plan')) {
         const overflow=label.scrollWidth-label.clientWidth;
         label.style.setProperty('--plan-travel',Math.max(0,overflow)+'px');
-        label.classList.toggle('is-marquee',overflow>8);
-        if (overflow>8 && !label.querySelector('.plan-moving-text')) {
+        label.classList.toggle('is-marquee',overflow>2);
+        if (overflow>2 && !label.querySelector('.plan-moving-text')) {
           const moving=document.createElement('span');moving.className='plan-moving-text';
           moving.textContent=label.textContent;label.replaceChildren(moving);
         }
@@ -223,8 +223,8 @@ export function renderLadderPreview(els, settings) {
   const panel = document.getElementById('ladderPreview');
   if (!panel) return;
   const config = { ...settings, ...readSettingsForm(els) };
-  const rounds = Math.max(1, Number(config.rounds || 1));
-  const count = Math.min(rounds, 8);
+  const rounds = totalRoundsForConfig(config);
+  const count = Math.min(rounds, 12);
   const rows = [];
   for (let i = 1; i <= count; i += 1) {
     rows.push(`<div class="ladder-preview-row"><span>Раунд ${i}</span><strong>${formatTime(workSecForRound(config, i))}</strong><span>Отдых</span><strong>${i < rounds ? formatTime(restSecAfterRound(config, i)) : '—'}</strong></div>`);
