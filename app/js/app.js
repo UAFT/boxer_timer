@@ -313,7 +313,7 @@ function russianRoundCount(count) {
   const suffix = lastTwo >= 11 && lastTwo <= 14 ? 'раундов'
     : n % 10 === 1 ? 'раунд'
     : n % 10 >= 2 && n % 10 <= 4 ? 'раунда' : 'раундов';
-  return ` `;
+  return String(count) + ' ' + suffix;
 }
 
 function renderProgram() {
