@@ -1442,3 +1442,15 @@ button[data-block-target] {
 .round-edit-actions{display:flex;justify-content:flex-end;gap:9px}
 .round-edit-actions button{min-height:42px;border-radius:10px;padding:8px 15px;color:white;background:#303e62}
 #roundEditSave{background:#d7ac48;color:#132044;font-weight:700}
+
+/* Mobile viewport containment: prevent grid min-content from widening the app. */
+html,body{width:100%;max-width:100%;overflow-x:clip}
+.app-shell{width:100%;max-width:420px;min-width:0;grid-template-columns:minmax(0,1fr)}
+.app-shell>*,.app-shell .panel,.program-panel,.program-list,.program-stage-card,.program-stage,.program-stage-main,.program-rest,.program-round-editor,.program-round-edit-row{min-width:0;max-width:100%}
+.program-list,.program-stage-card{grid-template-columns:minmax(0,1fr)}
+.program-stage-card{width:100%;overflow:hidden}
+.program-round-edit-row{grid-template-columns:minmax(0,1fr) 34px 34px}
+.program-round-edit-row span{min-width:0;overflow-wrap:anywhere;word-break:break-word;white-space:normal}
+/* The program header and controls must not impose intrinsic width. */
+.program-top,.program-actions,.program-library-actions,.program-cycle-panel{min-width:0;max-width:100%}
+.round-edit-modal textarea{resize:none}
