@@ -1357,3 +1357,8 @@ button[data-block-target] {
   -webkit-touch-callout: none;
   touch-action: manipulation;
 }
+
+/* Fullscreen program schedule: stage and ladder-block contours. */
+.ladder-live-list .ladder-stage-outline {border:2px solid #e7ba52;border-radius:16px;padding:8px 6px;margin:10px 0 14px;background:rgba(12,24,57,.26)}
+.ladder-live-list .ladder-block-outline {border:1px solid rgba(231,186,82,.62);border-radius:12px;padding:5px 4px;margin:8px 0}
+.ladder-live-list .ladder-stage-outline:has(.ladder-live-row.is-active),.ladder-live-list .ladder-block-outline:has(.ladder-live-row.is-active) {border-color:#42d68b}
