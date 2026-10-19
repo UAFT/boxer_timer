@@ -52,3 +52,11 @@ test('program cycles preserve names, independent settings, stage rests and cycle
  profiles.classic3.workSec=600;
  assert.equal(compileProgram(stages,profiles,{cycles:1})[0].workSec,180);
 });
+test('round names and descriptions survive normalization and compilation',()=>{
+ const input=[{presetId:'classic3',title:'Техника',roundNames:['Двойки','Тройки'],roundDescriptions:['Два удара','Три удара'],settings:{rounds:2,workSec:180,restSec:60,intervalMode:'standard'}}];
+ const normalized=normalizeProgram(input);
+ assert.deepEqual(normalized[0].roundNames,['Двойки','Тройки']);
+ const rows=compileProgram(normalized,profiles,{cycles:2});
+ assert.deepEqual(rows.map(x=>x.roundName),['Двойки','Тройки','Двойки','Тройки']);
+ assert.equal(rows[0].roundDescription,'Два удара');
+});

@@ -1,3 +1,5 @@
+import { starterPrograms } from './core/starter-programs.js';
+import { announceRound, stopVoice } from './audio/voice-coach.js';
 import { installLocalization } from './i18n/locale.js';
 import { AUDIO_KEYS } from './core/constants.js';
 import { clonePreset } from './state/presets.js';
@@ -84,6 +86,7 @@ let openedProgramId = null;
 let openedProgramName = '';
 let libraryTab = 'mine';
 const builtInPrograms = [
+  ...starterPrograms,
   {id:'built-box',name:'Классический бокс',entries:[{presetId:'classic3',title:'Раунды',restAfterSec:0,settings:{...clonePreset('classic3'),rounds:12,workSec:180,restSec:60}}],options:{cycles:1,cycleRestSec:60}},
   {id:'built-tech',name:'Разминка и техника',entries:[{presetId:'classic3',title:'Разминка',restAfterSec:60,settings:{...clonePreset('classic3'),rounds:1,workSec:180}},{presetId:'classic2',title:'Техника',restAfterSec:0,settings:{...clonePreset('classic2'),rounds:6,workSec:60,restSec:30}}],options:{cycles:1,cycleRestSec:60}},
   {id:'built-speed',name:'Скоростная работа',entries:[{presetId:'tabata2020x24',title:'Скорость',restAfterSec:0,settings:{...clonePreset('tabata2020x24'),rounds:4,workSec:20,restSec:20,intervalMode:'ladder',blockEnabled:true,blockCount:2,blockRestSec:20,workStepSec:0,restStepSec:0}}],options:{cycles:1,cycleRestSec:60}}
@@ -135,6 +138,10 @@ const timer = new TimerEngine({
       audio.stopTag('transition');
     }
     await audio.play(spec.key, { tag: spec.tag, volume: spec.volume });
+    if (programRunning && activeSettings.audioEnabled && ['round-start-zero','rest-end-zero','round-end-zero'].includes(event.type)) {
+      const round=programSnapshot?.[Math.max(0,(event.roundIndex || timer.state.roundIndex)-1)];
+      announceRound(event.type,round,document.documentElement.lang?.startsWith('en')?'en':'ru');
+    }
   }
 });
 
@@ -182,6 +189,7 @@ async function handleToggleRun() {
 }
 
 function handleReset() {
+  stopVoice();
   if (programRunning) { exitProgram(); }
   audio.stopAll();
   timer.reset();
@@ -306,6 +314,17 @@ function setProgramRest(index,delta) {
   programEntries[index].restAfterSec = Math.max(0,Math.min(3600,programEntries[index].restAfterSec+delta));
   persistProgram();
 }
+function renameProgramRound(stageIndex, roundIndex, description=false) {
+  if (programRunning || !programEntries[stageIndex]) return;
+  const stage=programEntries[stageIndex];
+  const field=description?'roundDescriptions':'roundNames';
+  const values=Array.isArray(stage[field])?[...stage[field]]:[];
+  const value=window.prompt(description?'Описание упражнения':'Название упражнения',values[roundIndex]||'');
+  if (value===null) return;
+  values[roundIndex]=value.trim().slice(0,description?600:100);
+  stage[field]=values;
+  persistProgram();
+}
 function renameProgramStage(index) {
   if (programRunning || !programEntries[index]) return;
   const name = window.prompt('Название этапа', programEntries[index].title || '');
@@ -326,6 +345,7 @@ function startProgram() {
   timer.start();
 }
 function exitProgram() {
+  stopVoice();
   programRunning=false;
   programSnapshot=null;
   timer.applyConfig({ ...activeSettings, presetId: activePresetId });
@@ -397,6 +417,18 @@ function renderProgram() {
         }
       }
       card.append(stage);
+      if (!programRunning) {
+        const rounds=compileProgram([entry],profiles,{cycles:1}).length;
+        const editor=document.createElement('div');editor.className='program-round-editor';
+        for(let j=0;j<rounds;j++) {
+          const line=document.createElement('div');line.className='program-round-edit-row';
+          const label=document.createElement('span');label.textContent='Раунд '+(j+1)+' · '+(entry.roundNames?.[j]||'Без названия');
+          const edit=document.createElement('button');edit.type='button';edit.textContent='✎';edit.setAttribute('aria-label','Название раунда '+(j+1));edit.addEventListener('click',()=>renameProgramRound(i,j));
+          const desc=document.createElement('button');desc.type='button';desc.textContent='≡';desc.setAttribute('aria-label','Описание раунда '+(j+1));desc.addEventListener('click',()=>renameProgramRound(i,j,true));
+          line.append(label,edit,desc);editor.append(line);
+        }
+        card.append(editor);
+      }
       if (i<programEntries.length-1) {
         const rest=document.createElement('div');rest.className='program-rest';
         const label=document.createElement('span');label.className='program-rest-label';label.textContent='Отдых между этапами';
