@@ -474,7 +474,7 @@ function renderProgram() {
         const minus=document.createElement('button');minus.textContent='−';minus.disabled=programRunning;minus.addEventListener('click',()=>setProgramRest(i,-5));
         const time=document.createElement('strong');time.textContent=String(Math.floor(entry.restAfterSec/60)).padStart(2,'0')+':'+String(entry.restAfterSec%60).padStart(2,'0');
         const plus=document.createElement('button');plus.textContent='+';plus.disabled=programRunning;plus.addEventListener('click',()=>setProgramRest(i,5));
-        const controls=document.createElement('div');controls.className='program-rest-controls';controls.append(minus,time,plus);rest.append(label,controls);card.append(rest);
+        const controls=document.createElement('div');controls.className='program-rest-controls';controls.append(time,minus,plus);rest.append(label,controls);card.append(rest);
       }
       list.append(card);
     });

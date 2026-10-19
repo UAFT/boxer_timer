@@ -1454,3 +1454,12 @@ html,body{width:100%;max-width:100%;overflow-x:clip}
 /* The program header and controls must not impose intrinsic width. */
 .program-top,.program-actions,.program-library-actions,.program-cycle-panel{min-width:0;max-width:100%}
 .round-edit-modal textarea{resize:none}
+
+/* Inter-stage rest: time, minus and plus aligned with round edit columns. */
+.program-stage-card .program-rest{display:grid;grid-template-columns:minmax(0,1fr) 58px 34px 34px;gap:6px;align-items:center;width:100%;padding:5px 6px 8px!important}
+.program-stage-card .program-rest-label{grid-column:1;min-width:0;overflow-wrap:anywhere}
+.program-stage-card .program-rest-controls{display:contents}
+.program-stage-card .program-rest-controls strong{grid-column:2;text-align:center;min-width:0;font-size:14px;font-variant-numeric:tabular-nums}
+.program-stage-card .program-rest-controls button{width:34px;min-width:34px!important;max-width:34px;height:36px;min-height:36px!important;padding:0;font-size:19px;border-radius:9px}
+.program-stage-card .program-rest-controls button:first-of-type{grid-column:3}
+.program-stage-card .program-rest-controls button:last-of-type{grid-column:4}
