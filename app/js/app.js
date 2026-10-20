@@ -1,6 +1,7 @@
 import { CATEGORIES, LIBRARY, stageForWorkout } from './library/native-adapter.js';
 import { starterPrograms } from './core/starter-programs.js';
 import { announceRound, stopVoice } from './audio/voice-coach.js';
+import { installDeleteConfirmation } from './ui/delete-confirmation.js';
 import { installLocalization } from './i18n/locale.js';
 import { AUDIO_KEYS } from './core/constants.js';
 import { clonePreset } from './state/presets.js';
@@ -615,6 +616,7 @@ function bindProgramLibrary() {
   const byId=id=>document.getElementById(id);
   const library=byId('programLibraryModal');
   const save=byId('programSaveModal');
+  const confirmDeletion=installDeleteConfirmation();
   const close=()=>{library.hidden=true;save.hidden=true;};
   function persistLibrary() {localStorage.setItem(LIBRARY_KEY,JSON.stringify(savedPrograms));}
   function snapshot(name,id) {
@@ -690,12 +692,11 @@ function bindProgramLibrary() {
       row.append(open);
       if(libraryTab==='mine') {
         const del=document.createElement('button');del.className='program-library-entry-delete';del.textContent='×';del.setAttribute('aria-label','Удалить программу «'+entry.name+'»');
-        del.addEventListener('click',()=>{
-          if(!window.confirm('Удалить программу «'+entry.name+'»?'))return;
+        del.addEventListener('click',()=>confirmDeletion({name:entry.name,trigger:del,onConfirm:()=>{
           savedPrograms=savedPrograms.filter(x=>x.id!==entry.id);
           if(openedProgramId===entry.id)openedProgramId=null;
           persistLibrary();renderLibrary();renderCurrentState();
-        });
+        }}));
         row.append(del);
       }
       list.append(row);

@@ -13,6 +13,7 @@
     />
     <link rel="icon" href="./assets/icons/icon-192.png" />
     <link rel="stylesheet" href="./styles/main.css" />
+    <link rel="stylesheet" href="./styles/delete-confirmation.css" />
   </head>
   <body>
     <main class="app-shell">
@@ -165,6 +166,17 @@
         <div class="settings-head"><h2 id="programLibraryTitle">Мои программы</h2><button id="programLibraryBack" type="button" hidden>← Назад</button><button type="button" id="programLibraryClose" aria-label="Закрыть окно">×</button></div>
         <div class="program-library-tabs"><button type="button" id="programLibraryMine">Мои</button><button type="button" id="programLibraryTemplates">Библиотека</button></div>
         <div id="programLibraryList" class="program-library-list"></div>
+      </section>
+    </div>
+    <div class="modal-backdrop ft-delete-overlay" id="programDeleteConfirmModal" hidden>
+      <section class="settings-modal panel ft-delete-dialog" role="alertdialog" aria-modal="true" aria-labelledby="programDeleteConfirmTitle" aria-describedby="programDeleteConfirmMessage">
+        <h2 id="programDeleteConfirmTitle">Удалить программу?</h2>
+        <p id="programDeleteConfirmMessage" class="ft-delete-message">Программа будет удалена без возможности восстановления.</p>
+        <div class="ft-delete-name" id="programDeleteConfirmName"></div>
+        <div class="ft-delete-actions">
+          <button type="button" id="programDeleteConfirmCancel">Отмена</button>
+          <button type="button" id="programDeleteConfirmAccept">Удалить</button>
+        </div>
       </section>
     </div>
     <div class="modal-backdrop" id="stageSettingsModal" hidden>
