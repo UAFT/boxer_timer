@@ -1,3 +1,4 @@
+import { installWorkoutLibrary } from './library/library-ui.js';
 import { installLocalization } from './i18n/locale.js';
 import { AUDIO_KEYS } from './core/constants.js';
 import { clonePreset } from './state/presets.js';
@@ -77,6 +78,7 @@ let activeSettings = normalizeSettings(profiles[activePresetId], clonePreset(act
 let programEntries = [];
 try { programEntries = normalizeProgram(JSON.parse(localStorage.getItem(PROGRAM_KEY) || '[]')); } catch {}
 let programRunning = false;
+let libraryController = null;
 let programSnapshot = null;
 const uiState = {
   metronomePanel: 'collapsed',
@@ -149,6 +151,7 @@ function applySettings(nextSettings) {
 }
 
 async function handleToggleRun() {
+  if (libraryController?.isActive()) return;
   await audio.unlock();
   syncMetronome();
 
@@ -169,6 +172,7 @@ async function handleToggleRun() {
 }
 
 function handleReset() {
+  if (libraryController?.isActive()) { libraryController.stop(); return; }
   if (programRunning) { exitProgram(); }
   audio.stopAll();
   timer.reset();
@@ -401,6 +405,11 @@ function bootstrap() {
   });
   els.ladderFullPause.addEventListener('click', handleToggleRun);
   renderCurrentState();
+  libraryController = installWorkoutLibrary({
+    onStart: () => { void audio.unlock(); audio.stopAll(); metronome.stop(); if(programRunning)exitProgram(); timer.reset(); },
+    onStop: () => {},
+    onCue: (kind) => { audio.stopTag('transition'); void audio.play(kind==='end'?'cue_workout_end_v2':kind==='rest'?'cue_rest_start_v2':'cue_round_start_v2',{tag:'transition',volume:1.5}); }
+  });
   installLocalization(document.querySelectorAll('[data-language]'));
 }
 

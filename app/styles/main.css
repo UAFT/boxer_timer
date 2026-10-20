@@ -1347,3 +1347,28 @@ img {
 .program-stage-card .program-rest {padding:5px 4px 3px}
 @keyframes programStageGlow {0%,100%{box-shadow:0 0 0 1px rgba(66,214,139,.15)}50%{box-shadow:0 0 12px 2px rgba(66,214,139,.48)}}
 @media(prefers-reduced-motion:reduce){.program-stage-card.is-current{animation:none}}
+
+/* Workout library v1 — isolated from the existing timer controls */
+.library-panel{margin-top:18px;padding:16px;border:1px solid #d6ab52;color:#f5f6ff}
+.library-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.library-head button,.library-panel button{background:#263b65;color:#f5f6ff;border:1px solid #7284a9;border-radius:9px;padding:10px;cursor:pointer}
+.library-body{padding-top:14px}
+.library-categories{display:flex;gap:7px;overflow-x:auto;padding-bottom:12px;scroll-snap-type:x proximity}
+.library-categories button{white-space:nowrap;flex:0 0 auto;scroll-snap-align:start}
+.library-categories .active,.library-panel .library-primary{border-color:#e0b24d;background:#d6ab52;color:#172346;font-weight:700}
+.library-items{display:grid;gap:8px}
+.library-item{display:flex;flex-wrap:wrap;align-items:center;gap:8px;background:#182749;border-radius:12px;padding:10px}
+.library-item-desc{flex:1;min-width:125px;display:flex;flex-direction:column;gap:4px}
+.library-item-desc small,.library-muted{color:#b4bfd5;font-size:13px}
+.library-item .library-add{font-size:20px;padding:5px 13px}
+.library-detail{width:100%;white-space:pre-wrap;line-height:1.5;color:#dfe5f5;font-size:14px}
+.library-compose{border-top:1px solid #647391;margin-top:16px;padding-top:12px}
+.library-compose h3,.library-compose h4{margin:8px 0 12px}
+.library-selected{display:flex;align-items:center;gap:6px;padding:7px 0;border-bottom:1px solid #394969}
+.library-selected span{flex:1;font-size:14px}
+.library-selected button{padding:7px}
+.library-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.library-player{margin-top:14px;border:2px solid #d6ab52;border-radius:14px;padding:16px;background:#142343}
+.library-player h3{font-size:20px;margin:10px 0}
+.library-clock{font-size:clamp(46px,12vw,76px);font-variant-numeric:tabular-nums;text-align:center;font-weight:800;padding:14px 0}
+.library-player[hidden],.library-body[hidden]{display:none}
