@@ -1347,3 +1347,52 @@ img {
 .program-stage-card .program-rest {padding:5px 4px 3px}
 @keyframes programStageGlow {0%,100%{box-shadow:0 0 0 1px rgba(66,214,139,.15)}50%{box-shadow:0 0 12px 2px rgba(66,214,139,.48)}}
 @media(prefers-reduced-motion:reduce){.program-stage-card.is-current{animation:none}}
+
+/* Workout library v1 — isolated from the existing timer controls */
+.library-panel{margin-top:18px;padding:16px;border:1px solid #d6ab52;color:#f5f6ff}
+.library-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.library-head button,.library-panel button{background:#263b65;color:#f5f6ff;border:1px solid #7284a9;border-radius:9px;padding:10px;cursor:pointer}
+.library-body{padding-top:14px}
+.library-categories{display:flex;gap:7px;overflow-x:auto;padding-bottom:12px;scroll-snap-type:x proximity}
+.library-categories button{white-space:nowrap;flex:0 0 auto;scroll-snap-align:start}
+.library-categories .active,.library-panel .library-primary{border-color:#e0b24d;background:#d6ab52;color:#172346;font-weight:700}
+.library-items{display:grid;gap:8px}
+.library-item{display:flex;flex-wrap:wrap;align-items:center;gap:8px;background:#182749;border-radius:12px;padding:10px}
+.library-item-desc{flex:1;min-width:125px;display:flex;flex-direction:column;gap:4px}
+.library-item-desc small,.library-muted{color:#b4bfd5;font-size:13px}
+.library-item .library-add{font-size:20px;padding:5px 13px}
+.library-detail{width:100%;white-space:pre-wrap;line-height:1.5;color:#dfe5f5;font-size:14px}
+.library-compose{border-top:1px solid #647391;margin-top:16px;padding-top:12px}
+.library-compose h3,.library-compose h4{margin:8px 0 12px}
+.library-selected{display:flex;align-items:center;gap:6px;padding:7px 0;border-bottom:1px solid #394969}
+.library-selected span{flex:1;font-size:14px}
+.library-selected button{padding:7px}
+.library-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.library-player{margin-top:14px;border:2px solid #d6ab52;border-radius:14px;padding:16px;background:#142343}
+.library-player h3{font-size:20px;margin:10px 0}
+.library-clock{font-size:clamp(46px,12vw,76px);font-variant-numeric:tabular-nums;text-align:center;font-weight:800;padding:14px 0}
+.library-player[hidden],.library-body[hidden]{display:none}
+
+/* Library stays behind the existing Program entry, never as a page section. */
+.program-library-trigger{display:block;width:100%;min-height:42px;background:#23345e;border:1px solid #d6ab52;border-radius:13px;color:#f5f6ff;font-weight:700}
+.workout-library-backdrop[hidden]{display:none!important}
+.workout-library-backdrop{z-index:70;align-items:center;justify-items:center;padding:12px;overflow:hidden}
+.workout-library-open{overflow:hidden}
+.workout-library-backdrop .library-panel{width:min(100%,560px);max-height:calc(100dvh - 24px);overflow-y:auto;overscroll-behavior:contain;padding:16px}
+.workout-library-backdrop .library-categories{max-width:100%;min-width:0}
+.workout-library-backdrop .library-item{min-width:0}
+.workout-library-backdrop .library-head{position:sticky;top:-16px;background:#202d55;padding:12px 0;z-index:2}
+
+/* Strict mobile width containment and a single Program dialog. */
+html,body{width:100%;max-width:100%;overflow-x:hidden}
+.app-shell{min-width:0;max-width:100%;overflow-x:clip}
+.app-shell>*{min-width:0;max-width:100%}
+.preset-row{min-width:0;max-width:100%}
+.workout-library-backdrop{display:flex;flex-direction:column;gap:8px;overflow-y:auto;overscroll-behavior:contain}
+.workout-library-backdrop .library-panel,.workout-library-backdrop .library-existing-program{width:min(100%,560px);max-width:100%;flex:0 0 auto;min-width:0}
+.workout-library-backdrop .library-panel{max-height:none;overflow:visible;margin:0}
+.workout-library-backdrop .library-existing-program[hidden]{display:none}
+.workout-library-backdrop .library-selected{min-width:0}
+.workout-library-backdrop .library-selected span{min-width:0;overflow-wrap:anywhere}
+.workout-library-backdrop .library-item-desc{min-width:0}
+.workout-library-backdrop .library-categories{width:100%;overflow-x:auto}
