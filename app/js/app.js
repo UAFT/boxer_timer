@@ -385,6 +385,65 @@ function renameProgramStage(index) {
   programEntries[index].title = name.trim().slice(0,80);
   persistProgram();
 }
+
+let stageSettingsIndex = null;
+function openStageSettings(index) {
+  if(programRunning || !programEntries[index])return;
+  stageSettingsIndex=index;
+  const entry=programEntries[index], cfg=entry.settings || profiles[entry.presetId];
+  const id=name=>document.getElementById('stageSettings'+name);
+  id('Title').textContent='Этап '+(index+1)+' · '+(entry.title||'Без названия');
+  for(const [key,value] of [['Work',cfg.workSec],['Rest',cfg.restSec],['Rounds',cfg.rounds],
+    ['WorkStep',cfg.workStepSec||0],['RestStep',cfg.restStepSec||0],
+    ['Blocks',cfg.blockCount||2],['BlockRest',cfg.blockRestSec||60]])id(key).value=value;
+  id('Mode').value=cfg.intervalMode==='ladder'?'ladder':'standard';
+  id('BlockEnabled').checked=!!cfg.blockEnabled;
+  syncStageSettingsMode();
+  document.getElementById('stageSettingsModal').hidden=false;
+}
+function syncStageSettingsMode(){
+  const ladder=document.getElementById('stageSettingsMode').value==='ladder';
+  document.getElementById('stageSettingsLadder').hidden=!ladder;
+  document.getElementById('stageSettingsBlockFields').hidden=!ladder || !document.getElementById('stageSettingsBlockEnabled').checked;
+}
+function closeStageSettings(){
+  document.getElementById('stageSettingsModal').hidden=true;stageSettingsIndex=null;
+}
+function bindStageSettings(){
+  const id=name=>document.getElementById('stageSettings'+name);
+  id('Mode').addEventListener('change',syncStageSettingsMode);
+  id('BlockEnabled').addEventListener('change',syncStageSettingsMode);
+  id('Cancel').addEventListener('click',closeStageSettings);
+  document.getElementById('stageSettingsModal').addEventListener('click',event=>{
+    if(event.target.id==='stageSettingsModal')closeStageSettings();
+  });
+  id('Save').addEventListener('click',()=>{
+    const index=stageSettingsIndex;
+    if(index===null || programRunning || !programEntries[index])return;
+    const specs=[['Work',5,3600],['Rest',0,3600],['Rounds',1,99],['WorkStep',-600,600],
+      ['RestStep',-600,600],['Blocks',1,99],['BlockRest',0,3600]];
+    const values={};
+    for(const [key,min,max] of specs){
+      const input=id(key),n=Number(input.value);
+      if(!Number.isFinite(n)||!Number.isInteger(n)||n<min||n>max){
+        input.focus();input.reportValidity();return;
+      }
+      values[key]=n;
+    }
+    const entry=programEntries[index];
+    const cfg=structuredClone(entry.settings || profiles[entry.presetId]);
+    Object.assign(cfg,{workSec:values.Work,restSec:values.Rest,rounds:values.Rounds,
+      workStepSec:values.WorkStep,restStepSec:values.RestStep,
+      intervalMode:id('Mode').value==='ladder'?'ladder':'standard',
+      blockEnabled:id('Mode').value==='ladder'&&id('BlockEnabled').checked,
+      blockCount:values.Blocks,blockRestSec:values.BlockRest});
+    // Keep the original library task labels where possible; extra rounds remain editable.
+    entry.settings=cfg;
+    openedProgramId=null;openedProgramName='';
+    closeStageSettings();persistProgram();
+  });
+}
+
 function startProgram() {
   if (!programEntries.length) return;
   audio.stopAll();
@@ -439,7 +498,7 @@ function renderProgram() {
   document.getElementById('programLibraryOpen').disabled=programRunning;
   document.getElementById('programExit').hidden=!programRunning;
   for (const tab of els.presetTabs) {
-    const positions=programEntries.flatMap((entry,i)=>entry.presetId===tab.dataset.preset?[i+1]:[]);
+    const positions=[];
     tab.classList.toggle('has-program',positions.length>0);
     let badge=tab.querySelector('.preset-order');
     if (!badge) {badge=document.createElement('span');badge.className='preset-order';tab.append(badge);}
@@ -467,7 +526,7 @@ function renderProgram() {
         : russianRoundCount(cfg.rounds)+' по '+String(Math.floor(cfg.workSec/60)).padStart(2,'0')+':'+String(cfg.workSec%60).padStart(2,'0');
       main.append(heading,kind,detail);stage.append(main);
       if (!programRunning) {
-        const edit=document.createElement('button');edit.type='button';edit.textContent='✎';edit.className='program-stage-edit';edit.setAttribute('aria-label','Название этапа');edit.addEventListener('click',()=>renameProgramStage(i));stage.append(edit);
+        const edit=document.createElement('button');edit.type='button';edit.textContent='✎';edit.className='program-stage-edit';edit.setAttribute('aria-label','Настройки этапа '+(i+1));edit.addEventListener('click',()=>openStageSettings(i));stage.append(edit);
         for (const [label,fn] of [['↑',()=>moveProgramStage(i,-1)],['↓',()=>moveProgramStage(i,1)],['×',()=>removeProgramStage(i)]]) {
           const b=document.createElement('button');b.type='button';b.textContent=label;b.setAttribute('aria-label',label==='×'?'Удалить этап':label==='↑'?'Поднять этап':'Опустить этап');b.addEventListener('click',fn);stage.append(b);
         }
@@ -636,6 +695,7 @@ function bootstrap() {
   setSettingsForm(els, activeSettings);
   timer.applyConfig({ ...activeSettings, presetId: activePresetId });
   bindPresetTabs(els, handleSelectPreset);
+  bindStageSettings();
   bindProgram();
   bindRoundEditor();
   bindControls(els, {

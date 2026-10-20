@@ -165,6 +165,31 @@
         <div id="programLibraryList" class="program-library-list"></div>
       </section>
     </div>
+    <div class="modal-backdrop" id="stageSettingsModal" hidden>
+      <section class="settings-modal panel stage-settings-modal" role="dialog" aria-modal="true" aria-labelledby="stageSettingsTitle">
+        <div class="settings-head"><h2 id="stageSettingsTitle">Настройки этапа</h2></div>
+        <label class="stage-settings-field">Режим
+          <select id="stageSettingsMode"><option value="standard">Обычный</option><option value="ladder">Лестница</option></select>
+        </label>
+        <div class="stage-settings-grid">
+          <label>Работа (сек.)<input id="stageSettingsWork" type="number" min="5" max="3600" step="5" required></label>
+          <label>Отдых (сек.)<input id="stageSettingsRest" type="number" min="0" max="3600" step="5" required></label>
+          <label>Раунды<input id="stageSettingsRounds" type="number" min="1" max="99" step="1" required></label>
+        </div>
+        <div id="stageSettingsLadder" hidden>
+          <div class="stage-settings-grid">
+            <label>Шаг работы (сек.)<input id="stageSettingsWorkStep" type="number" min="-600" max="600" step="5" required></label>
+            <label>Шаг отдыха (сек.)<input id="stageSettingsRestStep" type="number" min="-600" max="600" step="5" required></label>
+          </div>
+          <label class="stage-settings-checkbox"><input type="checkbox" id="stageSettingsBlockEnabled"> Использовать блоки</label>
+          <div id="stageSettingsBlockFields" class="stage-settings-grid" hidden>
+            <label>Количество блоков<input id="stageSettingsBlocks" type="number" min="1" max="99" step="1" required></label>
+            <label>Отдых между блоками (сек.)<input id="stageSettingsBlockRest" type="number" min="0" max="3600" step="5" required></label>
+          </div>
+        </div>
+        <div class="stage-settings-actions"><button type="button" id="stageSettingsCancel">Отмена</button><button type="button" id="stageSettingsSave">Сохранить</button></div>
+      </section>
+    </div>
     <div class="modal-backdrop" id="programSaveModal" hidden>
       <section class="settings-modal panel program-library-modal" role="dialog" aria-modal="true" aria-labelledby="programSaveTitle">
         <div class="settings-head"><h2 id="programSaveTitle">Сохранить программу</h2><button type="button" id="programSaveClose">Закрыть</button></div>
