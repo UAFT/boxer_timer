@@ -22,7 +22,8 @@ test('EMOM one task per minute and AMRAP one continuous interval',()=>{
 test('Tabata 8 sets per exercise and 20/10, AFAP manually completed',()=>{
   const t=buildSteps(findWorkout('T04'));
   assert.equal(t.filter(x=>x.kind==='work').length,32);
-  assert.equal(t.filter(x=>x.kind==='rest').length,31);
+  assert.equal(t.filter(x=>x.kind==='rest').length,32);
+  assert.equal(buildSteps(findWorkout('T01')).reduce((n,x)=>n+x.seconds,0),240);
   assert.equal(t[0].seconds,20);
   assert.equal(t[1].seconds,10);
   assert.equal(buildSteps(findWorkout('F01'))[0].kind,'afap');
