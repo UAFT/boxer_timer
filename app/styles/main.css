@@ -1549,3 +1549,13 @@ html,body{width:100%;max-width:100%;overflow-x:clip}
 .ladder-live-row,.ladder-plan{min-width:0;max-width:100%;white-space:normal;overflow-wrap:anywhere;word-break:normal}
 .ladder-block-label{white-space:normal;overflow-wrap:anywhere}
 .stage-number-control button{touch-action:none;user-select:none;-webkit-user-select:none}
+
+/* Program builder: collapse only ordinary timer controls, never the metronome or plan. */
+.timer-reveal-toggle{width:100%;display:flex;justify-content:space-between;align-items:center;gap:8px;background:#17294a;border:1px solid #526b92;border-radius:13px;color:#e6edfa;padding:13px 15px;font-size:15px;text-align:left;margin:8px 0}
+.timer-reveal-toggle span{font-size:13px;color:#d8b35a}
+.timer-reveal-toggle[hidden]{display:none!important}
+body.program-timer-collapsed .preset-row,
+body.program-timer-collapsed .timer-card,
+body.program-timer-collapsed .param-grid:not(:has(#metronomeCard)){display:none!important}
+body.program-timer-running .preset-row,
+body.program-timer-running .param-grid:not(:has(#metronomeCard)){display:none!important}

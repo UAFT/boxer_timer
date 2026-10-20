@@ -110,20 +110,35 @@ function setMetronomePanel(panel, { render = true } = {}) {
 }
 
 function previewProgram() { return programEntries.length ? compileProgram(programEntries, profiles, programOptions) : null; }
+let manualTimerExpanded=false;
+function syncTimerVisibility(){
+  const hasProgram=programEntries.length>0;
+  const collapsed=hasProgram&&!programRunning&&!manualTimerExpanded;
+  const running=programRunning;
+  document.body.classList.toggle('program-timer-collapsed',collapsed);
+  document.body.classList.toggle('program-timer-running',running);
+  const button=document.getElementById('timerRevealToggle');
+  button.hidden=!hasProgram||running;
+  button.setAttribute('aria-expanded',String(!collapsed));
+  button.innerHTML=collapsed?'◷ Обычный таймер <span>Развернуть ▾</span>':'◷ Обычный таймер <span>Свернуть ▴</span>';
+}
 function renderCurrentState() {
   renderTimer(els, { ...timer.state, config: timer.config, isPaused: timer.isPaused }, { metronomePanelOpen: isMetronomePanelOpen(), ladderExpanded: uiState.ladderExpanded, previewRounds: !programRunning && programEntries.length ? previewProgram() : null });
   renderProgram();
+  syncTimerVisibility();
 }
 
 const timer = new TimerEngine({
   onTick: (state) => {
     renderTimer(els, state, { metronomePanelOpen: isMetronomePanelOpen(), ladderExpanded: uiState.ladderExpanded, previewRounds: !programRunning && programEntries.length ? previewProgram() : null });
     renderProgram();
+    syncTimerVisibility();
     metronome.syncPhase(state);
   },
   onStateChange: (state) => {
     renderTimer(els, state, { metronomePanelOpen: isMetronomePanelOpen(), ladderExpanded: uiState.ladderExpanded, previewRounds: !programRunning && programEntries.length ? previewProgram() : null });
     renderProgram();
+    syncTimerVisibility();
     metronome.syncPhase(state);
   },
   onEvent: async (event) => {
@@ -306,6 +321,7 @@ function persistOptions() {
 }
 function persistProgram() {
   localStorage.setItem(PROGRAM_KEY, JSON.stringify(programEntries));
+  if(!programEntries.length)manualTimerExpanded=false;
   renderCurrentState();
 }
 function addProgramStage(presetId) {
@@ -749,6 +765,10 @@ function bootstrap() {
   bindPresetTabs(els, handleSelectPreset);
   bindStageSettings();
   bindProgram();
+  document.getElementById('timerRevealToggle').addEventListener('click',()=>{
+    manualTimerExpanded=!manualTimerExpanded;
+    syncTimerVisibility();
+  });
   bindRoundEditor();
   bindControls(els, {
     onToggleRun: handleToggleRun,
