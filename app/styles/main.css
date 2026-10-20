@@ -1372,3 +1372,13 @@ img {
 .library-player h3{font-size:20px;margin:10px 0}
 .library-clock{font-size:clamp(46px,12vw,76px);font-variant-numeric:tabular-nums;text-align:center;font-weight:800;padding:14px 0}
 .library-player[hidden],.library-body[hidden]{display:none}
+
+/* Library stays behind the existing Program entry, never as a page section. */
+.program-library-trigger{display:block;width:100%;min-height:42px;background:#23345e;border:1px solid #d6ab52;border-radius:13px;color:#f5f6ff;font-weight:700}
+.workout-library-backdrop[hidden]{display:none!important}
+.workout-library-backdrop{z-index:70;align-items:center;justify-items:center;padding:12px;overflow:hidden}
+.workout-library-open{overflow:hidden}
+.workout-library-backdrop .library-panel{width:min(100%,560px);max-height:calc(100dvh - 24px);overflow-y:auto;overscroll-behavior:contain;padding:16px}
+.workout-library-backdrop .library-categories{max-width:100%;min-width:0}
+.workout-library-backdrop .library-item{min-width:0}
+.workout-library-backdrop .library-head{position:sticky;top:-16px;background:#202d55;padding:12px 0;z-index:2}
