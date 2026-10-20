@@ -1514,3 +1514,15 @@ html,body{width:100%;max-width:100%;overflow-x:clip}
 .stage-settings-actions{display:flex;gap:10px;margin-top:18px}
 .stage-settings-actions button{flex:1;padding:13px 8px;border-radius:9px;border:1px solid #63769d;background:#24345b;color:white}
 #stageSettingsSave{background:#166c53;border-color:#30a77b}
+
+.stage-settings-modal{border:1px solid rgba(216,172,75,.3);border-radius:24px}
+.stage-settings-modal h2{color:#e4b650;font-size:23px}
+.stage-settings-field input{box-sizing:border-box;width:100%;background:#112044;color:white;border:1px solid #cba448;border-radius:10px;padding:12px;font-size:17px}
+.stage-mode-choices{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.stage-mode-choices button{border:1px solid #586c91;background:#152543;color:#fff;border-radius:10px;padding:12px 6px;font-size:16px}
+.stage-mode-choices button.selected{border-color:#e0b34b;background:#34436b;color:#ffdc7b}
+.stage-mmss{display:flex;gap:3px;align-items:center}
+.stage-mmss input{width:100%;min-width:0;text-align:center}
+.stage-mmss span{font-size:10px;color:#aebbd2}
+.stage-settings-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+#stageSettingsSave{background:#d7ac49;border-color:#e7c066;color:#18203a;font-weight:700}

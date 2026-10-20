@@ -7,7 +7,7 @@ const make = (id, category, name, mode, tasks, opts={}) => ({
 export const CATEGORIES = [
   ['warmup','Разминка'], ['boxing','Основная тренировка · мешок'],
   ['interval','Интервальные 20/20'], ['amrap','AMRAP'], ['afap','AFAP'],
-  ['emom','EMOM'], ['tabata','Tabata'], ['cardio','Кардио'], ['cooldown','Заминка']
+  ['emom','EMOM'], ['tabata','Tabata'], ['cardio','Кардио'], ['abs','Пресс'], ['cooldown','Заминка']
 ];
 export const LIBRARY = [
   make('W01','warmup','Скакалка','interval',['Свободная скакалка'],{rounds:3,work:180,rest:60}),
@@ -42,6 +42,10 @@ export const LIBRARY = [
   make('C02','cardio','Бег по кругу','interval',['Лёгкий бег','Бег в среднем темпе','Лёгкий бег'],{work:180,rest:0}),
   make('C03','cardio','Battle ropes','interval',['Чередующиеся волны','Одновременные волны','Удары канатами'],{rounds:3,work:20,rest:40,equipment:'Тренировочные канаты'}),
   make('C04','cardio','Гребля / Air Bike','interval',['Работа на тренажёре'],{rounds:10,work:30,rest:30,equipment:'Гребной тренажёр или Air Bike'}),
+  make('P01','abs','Пресс · один подход','interval',['50 ситапов (или свой норматив)'],{rounds:1,work:180,rest:0,note:'Временное окно 3 минуты; счёт повторений вручную'}),
+  make('P02','abs','Пресс · интервалы 20/20','interval',['Ситап + прямые удары','Наклоны к пяткам','Велосипед','Скалолаз','Парашютист','Аквалангист'],{rounds:1,work:20,rest:20}),
+  make('P03','abs','Пресс · EMOM 25','emom',['25 ситапов; остаток минуты — отдых'],{rounds:3}),
+  make('P04','abs','Пресс · круг из 6 упражнений','interval',['Ситап + прямые удары','Наклоны к пяткам','Велосипед','Скалолаз','Парашютист','Аквалангист'],{rounds:1,work:30,rest:15}),
   make('D01','cooldown','Свободная растяжка','interval',['Самостоятельная растяжка'],{work:300,rest:0}),
   make('D02','cooldown','Восстановление','interval',['Лёгкая ходьба','Свободная растяжка'],{work:150,rest:0})
 ];

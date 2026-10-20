@@ -392,8 +392,9 @@ function openStageSettings(index) {
   stageSettingsIndex=index;
   const entry=programEntries[index], cfg=entry.settings || profiles[entry.presetId];
   const id=name=>document.getElementById('stageSettings'+name);
-  id('Title').textContent='Этап '+(index+1)+' · '+(entry.title||'Без названия');
-  for(const [key,value] of [['Work',cfg.workSec],['Rest',cfg.restSec],['Rounds',cfg.rounds],
+  id('Name').value=entry.title||'';
+  for(const key of ['Work','Rest']){const v=Number(cfg[key==='Work'?'workSec':'restSec'])||0;id(key+'Min').value=Math.floor(v/60);id(key+'Sec').value=v%60;}
+  for(const [key,value] of [['Rounds',cfg.rounds],
     ['WorkStep',cfg.workStepSec||0],['RestStep',cfg.restStepSec||0],
     ['Blocks',cfg.blockCount||2],['BlockRest',cfg.blockRestSec||60]])id(key).value=value;
   id('Mode').value=cfg.intervalMode==='ladder'?'ladder':'standard';
@@ -403,6 +404,7 @@ function openStageSettings(index) {
 }
 function syncStageSettingsMode(){
   const ladder=document.getElementById('stageSettingsMode').value==='ladder';
+  document.querySelectorAll('[data-stage-mode]').forEach(b=>{b.classList.toggle('selected',b.dataset.stageMode===(ladder?'ladder':'standard'));b.setAttribute('aria-pressed',String(b.classList.contains('selected')));});
   document.getElementById('stageSettingsLadder').hidden=!ladder;
   document.getElementById('stageSettingsBlockFields').hidden=!ladder || !document.getElementById('stageSettingsBlockEnabled').checked;
 }
@@ -411,7 +413,7 @@ function closeStageSettings(){
 }
 function bindStageSettings(){
   const id=name=>document.getElementById('stageSettings'+name);
-  id('Mode').addEventListener('change',syncStageSettingsMode);
+  document.querySelectorAll('[data-stage-mode]').forEach(b=>b.addEventListener('click',()=>{id('Mode').value=b.dataset.stageMode;syncStageSettingsMode();}));
   id('BlockEnabled').addEventListener('change',syncStageSettingsMode);
   id('Cancel').addEventListener('click',closeStageSettings);
   document.getElementById('stageSettingsModal').addEventListener('click',event=>{
@@ -420,7 +422,7 @@ function bindStageSettings(){
   id('Save').addEventListener('click',()=>{
     const index=stageSettingsIndex;
     if(index===null || programRunning || !programEntries[index])return;
-    const specs=[['Work',5,3600],['Rest',0,3600],['Rounds',1,99],['WorkStep',-600,600],
+    const specs=[['Rounds',1,99],['WorkStep',-600,600],
       ['RestStep',-600,600],['Blocks',1,99],['BlockRest',0,3600]];
     const values={};
     for(const [key,min,max] of specs){
@@ -430,6 +432,7 @@ function bindStageSettings(){
       }
       values[key]=n;
     }
+    for(const key of ['Work','Rest']){const min=Number(id(key+'Min').value),sec=Number(id(key+'Sec').value);if(!Number.isInteger(min)||!Number.isInteger(sec)||min<0||min>60||sec<0||sec>59||(key==='Work'&&min*60+sec<5)){id(key+'Min').focus();return;}values[key]=min*60+sec;}
     const entry=programEntries[index];
     const cfg=structuredClone(entry.settings || profiles[entry.presetId]);
     Object.assign(cfg,{workSec:values.Work,restSec:values.Rest,rounds:values.Rounds,
@@ -439,6 +442,7 @@ function bindStageSettings(){
       blockCount:values.Blocks,blockRestSec:values.BlockRest});
     // Keep the original library task labels where possible; extra rounds remain editable.
     entry.settings=cfg;
+    entry.title=id('Name').value.trim().slice(0,80);
     openedProgramId=null;openedProgramName='';
     closeStageSettings();persistProgram();
   });

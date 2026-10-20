@@ -167,13 +167,14 @@
     </div>
     <div class="modal-backdrop" id="stageSettingsModal" hidden>
       <section class="settings-modal panel stage-settings-modal" role="dialog" aria-modal="true" aria-labelledby="stageSettingsTitle">
-        <div class="settings-head"><h2 id="stageSettingsTitle">Настройки этапа</h2></div>
+        <div class="settings-head"><h2>Редактирование этапа</h2></div>
+        <label class="stage-settings-field">Название этапа<input id="stageSettingsName" maxlength="80" type="text"></label>
         <label class="stage-settings-field">Режим
-          <select id="stageSettingsMode"><option value="standard">Обычный</option><option value="ladder">Лестница</option></select>
+          <div class="stage-mode-choices"><button type="button" data-stage-mode="standard">Обычный</button><button type="button" data-stage-mode="ladder">Лестница</button></div><input type="hidden" id="stageSettingsMode" value="standard">
         </label>
         <div class="stage-settings-grid">
-          <label>Работа (сек.)<input id="stageSettingsWork" type="number" min="5" max="3600" step="5" required></label>
-          <label>Отдых (сек.)<input id="stageSettingsRest" type="number" min="0" max="3600" step="5" required></label>
+          <label>Работа<div class="stage-mmss"><input id="stageSettingsWorkMin" type="number" min="0" max="60" aria-label="Минуты работы"><span>мин</span><input id="stageSettingsWorkSec" type="number" min="0" max="59" aria-label="Секунды работы"><span>сек</span></div></label>
+          <label>Отдых<div class="stage-mmss"><input id="stageSettingsRestMin" type="number" min="0" max="60" aria-label="Минуты отдыха"><span>мин</span><input id="stageSettingsRestSec" type="number" min="0" max="59" aria-label="Секунды отдыха"><span>сек</span></div></label>
           <label>Раунды<input id="stageSettingsRounds" type="number" min="1" max="99" step="1" required></label>
         </div>
         <div id="stageSettingsLadder" hidden>
