@@ -1382,3 +1382,17 @@ img {
 .workout-library-backdrop .library-categories{max-width:100%;min-width:0}
 .workout-library-backdrop .library-item{min-width:0}
 .workout-library-backdrop .library-head{position:sticky;top:-16px;background:#202d55;padding:12px 0;z-index:2}
+
+/* Strict mobile width containment and a single Program dialog. */
+html,body{width:100%;max-width:100%;overflow-x:hidden}
+.app-shell{min-width:0;max-width:100%;overflow-x:clip}
+.app-shell>*{min-width:0;max-width:100%}
+.preset-row{min-width:0;max-width:100%}
+.workout-library-backdrop{display:flex;flex-direction:column;gap:8px;overflow-y:auto;overscroll-behavior:contain}
+.workout-library-backdrop .library-panel,.workout-library-backdrop .library-existing-program{width:min(100%,560px);max-width:100%;flex:0 0 auto;min-width:0}
+.workout-library-backdrop .library-panel{max-height:none;overflow:visible;margin:0}
+.workout-library-backdrop .library-existing-program[hidden]{display:none}
+.workout-library-backdrop .library-selected{min-width:0}
+.workout-library-backdrop .library-selected span{min-width:0;overflow-wrap:anywhere}
+.workout-library-backdrop .library-item-desc{min-width:0}
+.workout-library-backdrop .library-categories{width:100%;overflow-x:auto}

@@ -21,6 +21,11 @@ export function installWorkoutLibrary({onStart,onStop,onCue}={}) {
   panel.setAttribute('role','dialog');
   panel.setAttribute('aria-modal','true');
   panel.setAttribute('aria-label','Программа · библиотека тренировок');
+  const existingProgram=document.getElementById('programPanel');
+  if(existingProgram) {
+    existingProgram.classList.add('library-existing-program');
+    backdrop.append(existingProgram);
+  }
   backdrop.append(panel);
   document.body.append(backdrop);
   const open=()=>{backdrop.hidden=false;document.body.classList.add('workout-library-open');};
