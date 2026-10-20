@@ -575,15 +575,16 @@ function renderProgram() {
       const detail=document.createElement('small');const cfg=entry.settings || profiles[entry.presetId];
       const kind=document.createElement('small');kind.className='program-stage-kind';
       kind.textContent=cfg.intervalMode==='ladder' ? 'Лестница' : (entry.presetId==='tabata2020x24' ? 'Скоростной' : 'Обычный');
-      detail.textContent=stageTimingText(entry);
-      main.append(heading,kind,detail);stage.append(main);
+      detail.className='program-stage-timing';
+      detail.textContent=russianRoundCount(stageTiming(entry).rounds.length)+' · '+formatProgramTime(cfg.workSec)+' / '+formatProgramTime(cfg.restSec)+' · всего '+formatProgramTime(stageTiming(entry).total);
+      main.append(heading,kind);stage.append(main);
       if (!programRunning) {
         const edit=document.createElement('button');edit.type='button';edit.textContent='✎';edit.className='program-stage-edit';edit.setAttribute('aria-label','Настройки этапа '+(i+1));edit.addEventListener('click',()=>openStageSettings(i));stage.append(edit);
         for (const [label,fn] of [['↑',()=>moveProgramStage(i,-1)],['↓',()=>moveProgramStage(i,1)],['×',()=>removeProgramStage(i)]]) {
           const b=document.createElement('button');b.type='button';b.textContent=label;b.setAttribute('aria-label',label==='×'?'Удалить этап':label==='↑'?'Поднять этап':'Опустить этап');b.addEventListener('click',fn);stage.append(b);
         }
       }
-      card.append(stage);
+      card.append(stage,detail);
       if (!programRunning) {
         const rounds=compileProgram([entry],profiles,{cycles:1}).length;
         const editor=document.createElement('div');editor.className='program-round-editor';

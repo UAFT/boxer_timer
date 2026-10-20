@@ -1559,3 +1559,7 @@ body.program-timer-collapsed .timer-card,
 body.program-timer-collapsed .param-grid > .compact-param-card:not(.metronome-card){display:none!important}
 body.program-timer-running .preset-row,
 body.program-timer-running .param-grid > .compact-param-card:not(.metronome-card){display:none!important}
+
+/* Consistent full-width dark stage header and single-line compact timing. */
+.program-stage-card>.program-stage{background:#182448;border-radius:14px 14px 0 0;padding:10px 10px 3px}
+.program-stage-card>.program-stage-timing{display:block;background:#182448;border-radius:0 0 14px 14px;margin:0 0 10px;padding:3px 10px 12px;color:#e1b95e;font-size:clamp(11px,2.8vw,13px);line-height:1.35;white-space:nowrap;letter-spacing:-.15px;font-variant-numeric:tabular-nums}
