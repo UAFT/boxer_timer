@@ -160,7 +160,7 @@
     </div>
     <div class="modal-backdrop" id="programLibraryModal" hidden>
       <section class="settings-modal panel program-library-modal" role="dialog" aria-modal="true" aria-labelledby="programLibraryTitle">
-        <div class="settings-head"><h2 id="programLibraryTitle">Мои программы</h2><button id="programLibraryBack" type="button" hidden>← Назад</button><button type="button" id="programLibraryClose">Закрыть</button></div>
+        <div class="settings-head"><h2 id="programLibraryTitle">Мои программы</h2><button id="programLibraryBack" type="button" hidden>← Назад</button><button type="button" id="programLibraryClose" aria-label="Закрыть окно">×</button></div>
         <div class="program-library-tabs"><button type="button" id="programLibraryMine">Мои</button><button type="button" id="programLibraryTemplates">Библиотека</button></div>
         <div id="programLibraryList" class="program-library-list"></div>
       </section>
@@ -173,9 +173,9 @@
           <div class="stage-mode-choices"><button type="button" data-stage-mode="standard">Обычный</button><button type="button" data-stage-mode="ladder">Лестница</button></div><input type="hidden" id="stageSettingsMode" value="standard">
         </label>
         <div class="stage-settings-grid">
-          <label>Работа<div class="stage-mmss"><input id="stageSettingsWorkMin" type="number" min="0" max="60" aria-label="Минуты работы"><span>мин</span><input id="stageSettingsWorkSec" type="number" min="0" max="59" aria-label="Секунды работы"><span>сек</span></div></label>
-          <label>Отдых<div class="stage-mmss"><input id="stageSettingsRestMin" type="number" min="0" max="60" aria-label="Минуты отдыха"><span>мин</span><input id="stageSettingsRestSec" type="number" min="0" max="59" aria-label="Секунды отдыха"><span>сек</span></div></label>
-          <label>Раунды<input id="stageSettingsRounds" type="number" min="1" max="99" step="1" required></label>
+          <label>Работа<div class="stage-mmss"><input id="stageSettingsWorkMin" inputmode="numeric" type="number" min="0" max="60" aria-label="Минуты работы"><span>мин</span><input id="stageSettingsWorkSec" inputmode="numeric" type="number" min="0" max="59" aria-label="Секунды работы"><span>сек</span></div></label>
+          <label>Отдых<div class="stage-mmss"><input id="stageSettingsRestMin" inputmode="numeric" type="number" min="0" max="60" aria-label="Минуты отдыха"><span>мин</span><input id="stageSettingsRestSec" inputmode="numeric" type="number" min="0" max="59" aria-label="Секунды отдыха"><span>сек</span></div></label>
+          <label>Раунды<input id="stageSettingsRounds" inputmode="numeric" type="number" min="1" max="99" step="1" required></label>
         </div>
         <div id="stageSettingsLadder" hidden>
           <div class="stage-settings-grid">
@@ -193,7 +193,7 @@
     </div>
     <div class="modal-backdrop" id="programSaveModal" hidden>
       <section class="settings-modal panel program-library-modal" role="dialog" aria-modal="true" aria-labelledby="programSaveTitle">
-        <div class="settings-head"><h2 id="programSaveTitle">Сохранить программу</h2><button type="button" id="programSaveClose">Закрыть</button></div>
+        <div class="settings-head"><h2 id="programSaveTitle">Сохранить программу</h2><button type="button" id="programSaveClose" aria-label="Закрыть окно">×</button></div>
         <div id="programSaveCurrent" hidden></div>
         <div class="program-library-actions"><button type="button" id="programSaveOverwrite">Обновить программу</button><button type="button" id="programSaveCopy">Сохранить как новую</button></div>
         <div id="programSaveNewFields" hidden><label for="programNameInput">Название новой программы</label><input id="programNameInput" type="text" maxlength="80" /><button type="button" id="programSaveCreate">Сохранить новую программу</button></div>

@@ -1526,3 +1526,18 @@ html,body{width:100%;max-width:100%;overflow-x:clip}
 .stage-mmss span{font-size:10px;color:#aebbd2}
 .stage-settings-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
 #stageSettingsSave{background:#d7ac49;border-color:#e7c066;color:#18203a;font-weight:700}
+
+/* Stage editor: give seconds room, keep round count compact and provide native +/- controls. */
+.stage-settings-modal>.stage-settings-grid{grid-template-columns:minmax(0,1.25fr) minmax(0,1.25fr) minmax(0,.7fr);gap:8px}
+.stage-settings-modal>.stage-settings-grid label{font-size:12px}
+.stage-mmss{display:grid;grid-template-columns:minmax(0,1fr) 16px minmax(0,1fr) 16px;gap:3px}
+.stage-number-control{display:flex;flex-direction:column;align-items:stretch;min-width:0;gap:4px}
+.stage-number-control input{width:100%;min-width:0;padding:9px 2px;font-size:17px;appearance:textfield;-moz-appearance:textfield}
+.stage-number-control input::-webkit-inner-spin-button,.stage-number-control input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.stage-number-control button{background:#263965;border:1px solid #586c91;border-radius:6px;color:#fff;min-width:0;min-height:29px;padding:2px;font-size:18px}
+.stage-mmss span{align-self:center;font-size:10px}
+#programLibraryClose,#programSaveClose{width:40px;min-width:40px;height:40px;padding:0;border:1px solid #586c91;border-radius:11px;background:#263965;color:white;font-size:28px;line-height:1}
+.program-library-modal .settings-head h2{min-width:0;overflow-wrap:anywhere}
+.program-library-entry-open{display:flex;flex-direction:column;gap:6px;justify-content:center}
+.program-library-summary{font-size:12px;line-height:1.5;color:#c2cbe0;white-space:pre-line;font-weight:400}
+.native-library-timing{display:block;color:#d7b65d;font-size:12px;margin:5px 0}

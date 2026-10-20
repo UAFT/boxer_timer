@@ -415,6 +415,17 @@ function bindStageSettings(){
   const id=name=>document.getElementById('stageSettings'+name);
   document.querySelectorAll('[data-stage-mode]').forEach(b=>b.addEventListener('click',()=>{id('Mode').value=b.dataset.stageMode;syncStageSettingsMode();}));
   id('BlockEnabled').addEventListener('change',syncStageSettingsMode);
+  for(const key of ['WorkMin','WorkSec','RestMin','RestSec','Rounds']){
+    const input=id(key), unit=key==='Rounds'?1:1, min=key.endsWith('Sec')?0:key==='Rounds'?1:0;
+    const max=key.endsWith('Sec')?59:key==='Rounds'?99:60;
+    const parent=input.parentElement;
+    const control=document.createElement('div');control.className='stage-number-control';
+    const minus=document.createElement('button');minus.type='button';minus.textContent='−';minus.setAttribute('aria-label','Уменьшить '+key);
+    const plus=document.createElement('button');plus.type='button';plus.textContent='+';plus.setAttribute('aria-label','Увеличить '+key);
+    minus.addEventListener('click',()=>{input.value=String(Math.max(min,(Number(input.value)||0)-unit));});
+    plus.addEventListener('click',()=>{input.value=String(Math.min(max,(Number(input.value)||0)+unit));});
+    input.replaceWith(control);control.append(minus,input,plus);
+  }
   id('Cancel').addEventListener('click',closeStageSettings);
   document.getElementById('stageSettingsModal').addEventListener('click',event=>{
     if(event.target.id==='stageSettingsModal')closeStageSettings();
@@ -604,7 +615,13 @@ function bindProgramLibrary() {
         const info=document.createElement('div');info.className='native-library-info';
         const title=document.createElement('strong');title.textContent=workout.name;
         const description=document.createElement('small');description.textContent=workout.tasks.join(' · ');
-        info.append(title,description);
+        const preview=stageForWorkout(workout);
+        if(preview){
+          const cfg=preview.settings;
+          const timing=document.createElement('small');timing.className='native-library-timing';
+          timing.textContent=cfg.rounds+' р. · работа '+formatProgramTime(cfg.workSec)+' · отдых '+formatProgramTime(cfg.restSec);
+          info.append(title,timing,description);
+        }else info.append(title,description);
         const plus=document.createElement('button');plus.type='button';plus.className='native-library-add';plus.textContent='+';
         const supported=!!stageForWorkout(workout);plus.disabled=!supported || programRunning || programEntries.length>=24;
         plus.setAttribute('aria-label','Добавить '+workout.name);
@@ -620,7 +637,17 @@ function bindProgramLibrary() {
     }
     for(const entry of savedPrograms) {
       const row=document.createElement('div');row.className='program-library-entry';
-      const open=document.createElement('button');open.className='program-library-entry-open';open.textContent=entry.name;
+      const open=document.createElement('button');open.className='program-library-entry-open';
+      const title=document.createElement('strong');title.textContent=entry.name;open.append(title);
+      const stages=normalizeProgram(entry.entries);
+      const summary=document.createElement('small');summary.className='program-library-summary';
+      const fmt=n=>formatProgramTime(Math.max(0,Math.floor(Number(n)||0)));
+      summary.textContent=stages.map((stage,i)=>{
+        const cfg=stage.settings||profiles[stage.presetId];
+        const total=compileProgram([stage],profiles,{cycles:1}).length;
+        return (i+1)+'. '+(stage.title||PRESET_NAMES[stage.presetId])+' · '+total+' р. · работа '+fmt(cfg.workSec)+' · отдых '+fmt(cfg.restSec)+(cfg.intervalMode==='ladder'?' · лестница':'');
+      }).join('\n');
+      open.append(summary);
       open.addEventListener('click',()=>openEntry(entry,libraryTab!=='mine'));
       row.append(open);
       if(libraryTab==='mine') {
