@@ -1,0 +1,37 @@
+/* Program composer */
+.preset-tab {position:relative;touch-action:manipulation;user-select:none}
+.preset-tab.has-program {outline:2px solid #41d58b;outline-offset:-3px}
+.preset-order {position:absolute;bottom:3px;left:3px;right:3px;display:flex;justify-content:center;gap:3px;flex-wrap:wrap;pointer-events:none}
+.preset-order b {font-size:10px;min-width:15px;height:15px;border-radius:12px;background:#42d68b;color:#092819;display:grid;place-items:center}
+.program-panel {padding:14px;display:grid;gap:10px}
+.program-panel[hidden] {display:none}
+.program-top,.program-actions,.program-stage,.program-rest {display:flex;align-items:center;justify-content:space-between;gap:8px}
+.program-top button,.program-stage button,.program-rest button,.program-actions button {background:#243463;color:white;border-radius:10px;padding:8px 11px}
+.program-list {display:grid;gap:7px}
+.program-stage {background:#17234c;border-radius:13px;padding:8px}
+.program-stage.is-current {border:1px solid #ffcf5a;color:#ffcf5a}
+.program-stage-main {flex:1;min-width:0}
+.program-stage-main small {display:block;color:#aab8d5}
+.program-rest {padding:4px 8px;color:#bdc8e1;font-size:13px}
+.program-rest strong {min-width:48px;text-align:center}
+.program-actions button:first-child {background:#39c67d;color:#072919;font-weight:700;flex:1}
+.program-hint {font-size:11px;color:#9aaad0}
+@media(prefers-reduced-motion:reduce){.program-stage.is-current{animation:none}}
+
+.language-select-row{display:flex;align-items:center;justify-content:space-between;gap:1rem;color:#d9e3f7;font-size:1rem;flex-wrap:wrap}.language-select-row select{background:#111c44;color:#fff;border:1px solid #354778;border-radius:12px;padding:12px;min-width:145px;font:inherit}
+
+.language-choices{display:flex;gap:7px;flex-wrap:wrap;width:100%}
+.language-choices button{flex:1 1 90px;min-height:46px;border:1px solid #354778;border-radius:12px;background:#111c44;color:#d9e3f7;font:inherit;font-weight:650;padding:9px 10px;cursor:pointer}
+.language-choices button.is-active{background:linear-gradient(180deg,#d49a59,#9d6b40);color:#fff;border-color:#dda66d;box-shadow:0 0 0 1px #e8ae6a44}
+.language-choices button:focus-visible{outline:2px solid #60dfab;outline-offset:2px}
+
+/* Each program stage and its inter-stage rest form one visual unit. */
+.program-list {gap:10px}
+.program-stage-card {display:grid;gap:8px;padding:8px;border:2px solid #e7ba52;border-radius:16px;background:rgba(12,24,57,.22);transition:border-color .2s,box-shadow .2s}
+.program-stage-card.is-current {border-color:#42d68b;animation:programStageGlow 2s ease-in-out infinite}
+.program-stage {border:0;background:#17234c}
+.program-stage.is-current {border:0;color:inherit}
+.program-stage-card .program-rest {padding:5px 4px 3px}
+@keyframes programStageGlow {0%,100%{box-shadow:0 0 0 1px rgba(66,214,139,.15)}50%{box-shadow:0 0 12px 2px rgba(66,214,139,.48)}}
+@media(prefers-reduced-motion:reduce){.program-stage-card.is-current{animation:none}}
+

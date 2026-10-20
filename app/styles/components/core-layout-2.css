@@ -1,0 +1,341 @@
+
+.settings-grid {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.field {
+  display: grid;
+  gap: 8px;
+}
+
+.field-label {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.field-input {
+  min-height: 52px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(24, 33, 67, 0.9);
+  color: var(--text);
+  padding: 0 14px;
+}
+
+.checkbox-field {
+  min-height: 52px;
+  padding: 0 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(24, 33, 67, 0.9);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.modal-actions {
+  margin-top: 16px;
+}
+
+
+.compact-controls-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: stretch;
+}
+
+.compact-param-card {
+  padding: 10px;
+  min-height: 98px;
+}
+
+.compact-param-title {
+  min-height: 30px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  text-align: center;
+  font-size: 14px;
+  line-height: 1.02;
+  font-weight: 800;
+}
+
+.compact-param-row {
+  margin-top: 6px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 42px;
+  gap: 6px;
+  align-items: center;
+}
+
+.compact-param-value {
+  margin-top: 0;
+  min-height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: clamp(22px, 5.8vw, 34px);
+  letter-spacing: -0.05em;
+}
+
+.compact-stepper-col {
+  min-height: 46px;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+
+.compact-stepper-col .stepper-btn {
+  min-height: 36px;
+  border-radius: 12px;
+  font-size: 18px;
+}
+
+.compact-metro-card {
+  grid-column: 1 / -1;
+  padding: 10px;
+}
+
+.compact-metro-stage {
+  min-height: 58px;
+}
+
+.compact-metro-grid {
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1.35fr) minmax(0, 1.1fr) 44px 44px 54px;
+  grid-template-rows: 58px;
+  gap: 8px;
+}
+
+.compact-metro-grid .metro-grid-btn,
+.compact-metro-grid .metro-bpm-box,
+.compact-metro-grid .power-btn {
+  min-height: 58px;
+  height: 58px;
+  border-radius: 16px;
+}
+
+.compact-metro-grid .mode-chip {
+  font-size: 14px;
+  font-weight: 800;
+  padding: 0 10px;
+}
+
+.compact-metro-bpm-box {
+  padding: 4px 6px;
+}
+
+.compact-metro-grid .metro-bpm-value {
+  font-size: 20px;
+}
+
+.compact-metro-grid .metro-bpm-unit {
+  margin-top: 1px;
+  font-size: 10px;
+  letter-spacing: 0.03em;
+}
+
+.compact-metro-grid .metro-action-btn,
+.compact-metro-grid .power-btn {
+  font-size: 24px;
+}
+
+.compact-metro-grid .power-btn {
+  display: grid;
+  place-items: center;
+}
+
+
+@media (max-width: 640px) {
+  .app-shell {
+    width: min(100%, 400px);
+    padding:
+      max(8px, env(safe-area-inset-top))
+      8px
+      max(8px, env(safe-area-inset-bottom));
+    gap: 8px;
+  }
+
+  .brand-shell {
+    padding: 12px;
+  }
+
+  .brand-left {
+    gap: 10px;
+  }
+
+  .brand-logo {
+    width: 74px;
+    height: 74px;
+  }
+
+  .brand-title {
+    font-size: 24px;
+  }
+
+  .brand-subtitle {
+    font-size: 10px;
+    letter-spacing: 0.12em;
+  }
+
+  .gear-btn {
+    width: 52px;
+    height: 52px;
+    font-size: 24px;
+    border-radius: 18px;
+  }
+
+  .preset-row {
+    gap: 8px;
+  }
+
+  .preset-tab {
+    min-height: 52px;
+    border-radius: 18px;
+    font-size: 22px;
+  }
+
+  .timer-card {
+    padding: 12px;
+  }
+
+  .card-topline {
+    gap: 8px;
+  }
+
+  .phase-heading,
+  .round-heading {
+    font-size: 12px;
+  }
+
+  .main-time {
+    font-size: clamp(52px, 15vw, 78px);
+  }
+
+  .phase-caption,
+  .countdown-caption {
+    font-size: 12px;
+    min-height: 16px;
+  }
+
+  .summary-grid {
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .summary-box {
+    padding: 10px;
+    border-radius: 16px;
+  }
+
+  .summary-label {
+    font-size: 10px;
+  }
+
+  .summary-value {
+    font-size: clamp(22px, 6.5vw, 28px);
+  }
+
+  .progress-track {
+    margin-top: 8px;
+    height: 6px;
+  }
+
+  .primary-actions {
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .reset-btn,
+  .primary-btn {
+    min-height: 52px;
+    border-radius: 16px;
+  }
+
+  .primary-btn {
+    font-size: 18px;
+  }
+
+  .param-grid {
+    gap: 8px;
+  }
+
+  .compact-param-card {
+    padding: 9px;
+    border-radius: 16px;
+    min-height: 90px;
+  }
+
+  .compact-param-title {
+    min-height: 28px;
+    font-size: 13px;
+  }
+
+  .compact-param-row {
+    grid-template-columns: minmax(0, 1fr) 38px;
+    gap: 6px;
+  }
+
+  .compact-param-value {
+    min-height: 40px;
+    font-size: clamp(20px, 6vw, 28px);
+  }
+
+  .compact-stepper-col .stepper-btn {
+    min-height: 32px;
+    font-size: 17px;
+    border-radius: 12px;
+  }
+
+  .compact-metro-stage {
+    min-height: 52px;
+  }
+
+  .compact-metro-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.08fr) minmax(0, 1.04fr) 40px 40px 48px;
+    grid-template-rows: 52px;
+    gap: 6px;
+  }
+
+  .compact-metro-grid .metro-grid-btn,
+  .compact-metro-grid .metro-bpm-box,
+  .compact-metro-grid .power-btn {
+    min-height: 52px;
+    height: 52px;
+    border-radius: 14px;
+  }
+
+  .compact-metro-grid .mode-chip {
+    font-size: 14px;
+    border-radius: 12px;
+    font-weight: 800;
+  }
+
+  .compact-metro-grid .metro-bpm-value {
+    font-size: 18px;
+  }
+
+  .compact-metro-grid .metro-bpm-unit {
+    font-size: 9px;
+  }
+
+  .compact-metro-grid .metro-action-btn,
+  .compact-metro-grid .power-btn {
+    font-size: 21px;
+  }
+
+  .settings-modal {
+    max-height: min(90dvh, 760px);
+    padding: 14px;
+    border-radius: 18px;
+  }
+
+  .settings-head h2 {
+    font-size: 24px;
+  }
+
+  .field-input,
+  .checkbox-field {
+    min-height: 46px;
+  }
+}

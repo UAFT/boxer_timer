@@ -1,0 +1,332 @@
+
+@media (max-width: 430px), (max-height: 860px) {
+  .app-shell {
+    width: min(100%, 392px);
+    padding:
+      max(6px, env(safe-area-inset-top))
+      6px
+      max(6px, env(safe-area-inset-bottom));
+    gap: 6px;
+  }
+
+  .brand-shell {
+    padding: 10px;
+  }
+
+  .brand-logo {
+    width: 66px;
+    height: 66px;
+  }
+
+  .brand-title {
+    font-size: 21px;
+  }
+
+  .brand-subtitle {
+    margin-top: 2px;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+  }
+
+  .gear-btn {
+    width: 46px;
+    height: 46px;
+    font-size: 20px;
+    border-radius: 16px;
+  }
+
+  .compact-controls-grid {
+    gap: 6px;
+  }
+
+  .compact-param-card {
+    padding: 8px;
+    min-height: 82px;
+  }
+
+  .compact-param-title {
+    min-height: 24px;
+    font-size: 12px;
+  }
+
+  .compact-param-row {
+    margin-top: 4px;
+    grid-template-columns: minmax(0, 1fr) 34px;
+    gap: 5px;
+  }
+
+  .compact-param-value {
+    min-height: 36px;
+    font-size: clamp(18px, 5.6vw, 24px);
+  }
+
+  .compact-stepper-col .stepper-btn {
+    min-height: 28px;
+    font-size: 16px;
+    border-radius: 10px;
+  }
+
+  .compact-metro-stage {
+    min-height: 46px;
+  }
+
+  .compact-metro-grid {
+    grid-template-columns: minmax(0, 0.95fr) minmax(0, 1fr) minmax(0, 1fr) 34px 34px 42px;
+    grid-template-rows: 46px;
+    gap: 5px;
+  }
+
+  .compact-metro-grid .metro-grid-btn,
+  .compact-metro-grid .metro-bpm-box,
+  .compact-metro-grid .power-btn {
+    min-height: 46px;
+    height: 46px;
+    border-radius: 12px;
+  }
+
+  .compact-metro-grid .mode-chip {
+    font-size: 12px;
+    border-radius: 10px;
+    padding: 0 5px;
+    font-weight: 800;
+  }
+
+  .compact-metro-grid .metro-bpm-value {
+    font-size: 16px;
+  }
+
+  .compact-metro-grid .metro-bpm-unit {
+    font-size: 8px;
+  }
+
+  .compact-metro-grid .metro-action-btn,
+  .compact-metro-grid .power-btn {
+    font-size: 18px;
+  }
+
+  .preset-tab {
+    min-height: 46px;
+    font-size: 20px;
+    border-radius: 16px;
+  }
+
+  .timer-card {
+    padding: 10px;
+  }
+
+  .main-time {
+    font-size: clamp(46px, 14vw, 68px);
+  }
+
+  .summary-box,
+  .param-card {
+    padding: 9px;
+  }
+
+  .summary-value {
+    font-size: 20px;
+  }
+
+  .reset-btn,
+  .primary-btn {
+    min-height: 46px;
+    border-radius: 14px;
+  }
+
+  .primary-btn {
+    font-size: 17px;
+  }
+
+  .param-title {
+    font-size: 13px;
+  }
+
+  .param-subtitle {
+    font-size: 9px;
+  }
+
+  .param-copy,
+  .stepper-col {
+    min-height: 68px;
+  }
+
+  .param-value {
+    margin-top: 0;
+    font-size: clamp(22px, 6.5vw, 30px);
+  }
+
+  .stepper-col {
+    flex-basis: 38px;
+  }
+
+  .stepper-btn {
+    min-height: 34px;
+    font-size: 18px;
+  }
+}
+
+
+
+.settings-grid-rebuilt {
+  gap: 14px;
+}
+
+.settings-note {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.settings-card {
+  padding: 14px;
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(20, 31, 74, 0.9);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.02);
+}
+
+.settings-card-title {
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.settings-toggle-row {
+  margin-top: 10px;
+  min-height: 54px;
+  padding: 0 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(12, 22, 60, 0.92);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.settings-toggle-row input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--orange);
+}
+
+.settings-field-stack {
+  margin-top: 12px;
+}
+
+.settings-field-label {
+  margin-bottom: 8px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.choice-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.choice-row[aria-label="Старт раунда / конец отдыха"],
+.choice-row[aria-label="Старт отдыха / конец раунда"],
+.choice-row[aria-label="Конец серии"] {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.choice-chip {
+  min-height: 48px;
+  border-radius: 16px;
+  background: rgba(16, 28, 72, 0.9);
+  border: 1px solid rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.86);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.choice-chip.is-active {
+  background: linear-gradient(180deg, var(--orange-2) 0%, var(--orange) 100%);
+  color: #f6fff7;
+}
+
+@media (max-width: 640px) {
+  .settings-card {
+    padding: 12px;
+    border-radius: 18px;
+  }
+
+  .settings-card-title {
+    font-size: 14px;
+  }
+
+  .settings-toggle-row {
+    min-height: 50px;
+    padding: 0 12px;
+  }
+
+  .choice-row {
+    gap: 6px;
+  }
+
+  .choice-chip {
+    min-height: 44px;
+    border-radius: 14px;
+    font-size: 12px;
+  }
+}
+
+
+.settings-stepper {
+  display: grid;
+  grid-template-columns: 68px minmax(0, 1fr) 68px;
+  gap: 8px;
+}
+
+.settings-stepper-btn {
+  min-height: 48px;
+  border-radius: 16px;
+  background: rgba(16, 28, 72, 0.9);
+  border: 1px solid rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.92);
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.settings-stepper-value {
+  min-height: 48px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(12, 22, 60, 0.92);
+  color: rgba(255,255,255,0.92);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 0 10px;
+}
+
+@media (max-width: 640px) {
+  .settings-stepper {
+    grid-template-columns: 60px minmax(0, 1fr) 60px;
+    gap: 6px;
+  }
+
+  .settings-stepper-btn,
+  .settings-stepper-value {
+    min-height: 44px;
+    border-radius: 14px;
+  }
+
+  .settings-stepper-value {
+    font-size: 12px;
+  }
+}
+
+.ladder-explainer { color: var(--muted); font-size: 13px; line-height: 1.55; margin: 10px 0 14px; }
+.ladder-preview { margin-top: 16px; padding: 12px; border-radius: 16px; border: 1px solid rgba(255,255,255,.12); background: rgba(10,21,54,.8); }
+.ladder-preview-title { font-weight: 800; margin-bottom: 10px; }
+.ladder-preview-row { display: grid; grid-template-columns: minmax(0,1fr) 58px 48px 58px; align-items: center; gap: 6px; padding: 5px 0; font-size: 12px; }
+.ladder-preview-row strong { text-align: center; border-radius: 8px; padding: 8px 3px; background: #28c976; color: #07172c; font-variant-numeric: tabular-nums; }
+.ladder-preview-row strong:last-child { background: #263e79; color: #dbe9ff; }
+
+
