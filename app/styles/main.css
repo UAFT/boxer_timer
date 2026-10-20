@@ -1556,6 +1556,6 @@ html,body{width:100%;max-width:100%;overflow-x:clip}
 .timer-reveal-toggle[hidden]{display:none!important}
 body.program-timer-collapsed .preset-row,
 body.program-timer-collapsed .timer-card,
-body.program-timer-collapsed .param-grid:not(:has(#metronomeCard)){display:none!important}
+body.program-timer-collapsed .param-grid > .compact-param-card:not(.metronome-card){display:none!important}
 body.program-timer-running .preset-row,
-body.program-timer-running .param-grid:not(:has(#metronomeCard)){display:none!important}
+body.program-timer-running .param-grid > .compact-param-card:not(.metronome-card){display:none!important}
