@@ -1541,3 +1541,11 @@ html,body{width:100%;max-width:100%;overflow-x:clip}
 .program-library-entry-open{display:flex;flex-direction:column;gap:6px;justify-content:center}
 .program-library-summary{font-size:12px;line-height:1.5;color:#c2cbe0;white-space:pre-line;font-weight:400}
 .native-library-timing{display:block;color:#d7b65d;font-size:12px;margin:5px 0}
+
+.program-stage-main>small:last-child{color:#e1b95e;line-height:1.45}
+.program-library-stage-summary{display:flex;flex-direction:column;gap:3px;margin:7px 0}
+.program-library-stage-summary>span{color:#e8edf9}
+.program-library-stage-summary>small{color:#e1b95e;font-size:12px;line-height:1.4}
+.ladder-live-row,.ladder-plan{min-width:0;max-width:100%;white-space:normal;overflow-wrap:anywhere;word-break:normal}
+.ladder-block-label{white-space:normal;overflow-wrap:anywhere}
+.stage-number-control button{touch-action:none;user-select:none;-webkit-user-select:none}

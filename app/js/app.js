@@ -422,8 +422,20 @@ function bindStageSettings(){
     const control=document.createElement('div');control.className='stage-number-control';
     const minus=document.createElement('button');minus.type='button';minus.textContent='−';minus.setAttribute('aria-label','Уменьшить '+key);
     const plus=document.createElement('button');plus.type='button';plus.textContent='+';plus.setAttribute('aria-label','Увеличить '+key);
-    minus.addEventListener('click',()=>{input.value=String(Math.max(min,(Number(input.value)||0)-unit));});
-    plus.addEventListener('click',()=>{input.value=String(Math.min(max,(Number(input.value)||0)+unit));});
+    const adjust=(delta)=>{input.value=String(Math.max(min,Math.min(max,(Number(input.value)||0)+delta)));};
+    for(const [button,sign] of [[minus,-1],[plus,1]]){
+      let delay=null,repeat=null,held=false;
+      const stop=()=>{clearTimeout(delay);clearInterval(repeat);delay=null;repeat=null;};
+      button.addEventListener('pointerdown',e=>{
+        if(e.button!==0)return;
+        held=false;stop();
+        delay=setTimeout(()=>{held=true;adjust(sign*5);repeat=setInterval(()=>adjust(sign*5),110);},450);
+      });
+      button.addEventListener('pointerup',()=>{stop();if(!held)adjust(sign*unit);held=false;});
+      button.addEventListener('pointercancel',stop);
+      button.addEventListener('lostpointercapture',stop);
+      button.addEventListener('contextmenu',e=>e.preventDefault());
+    }
     input.replaceWith(control);control.append(minus,input,plus);
   }
   id('Cancel').addEventListener('click',closeStageSettings);
@@ -497,6 +509,17 @@ function russianBlockCount(count) {
 }
 
 function formatProgramTime(sec) {return String(Math.floor(sec/60)).padStart(2,'0')+':'+String(sec%60).padStart(2,'0');}
+function stageTiming(entry) {
+  const rounds=compileProgram([entry],profiles,{cycles:1});
+  const total=rounds.reduce((sum,round,i)=>sum+round.workSec+(i<rounds.length-1?round.restSec:0),0);
+  return {rounds,total};
+}
+function stageTimingText(entry) {
+  const cfg=entry.settings||profiles[entry.presetId];
+  const {rounds,total}=stageTiming(entry);
+  return russianRoundCount(rounds.length)+' · работа '+formatProgramTime(cfg.workSec)+' · отдых '+formatProgramTime(cfg.restSec)
+    +(cfg.intervalMode==='ladder'?' · лестница':'')+' · всего '+formatProgramTime(total);
+}
 function renderProgram() {
   const panel=document.getElementById('programPanel');
   if (!panel) return;
@@ -536,9 +559,7 @@ function renderProgram() {
       const detail=document.createElement('small');const cfg=entry.settings || profiles[entry.presetId];
       const kind=document.createElement('small');kind.className='program-stage-kind';
       kind.textContent=cfg.intervalMode==='ladder' ? 'Лестница' : (entry.presetId==='tabata2020x24' ? 'Скоростной' : 'Обычный');
-      detail.textContent=cfg.intervalMode==='ladder'
-        ? russianRoundCount(cfg.rounds)+(cfg.blockEnabled?' · '+russianBlockCount(cfg.blockCount):'')
-        : russianRoundCount(cfg.rounds)+' по '+String(Math.floor(cfg.workSec/60)).padStart(2,'0')+':'+String(cfg.workSec%60).padStart(2,'0');
+      detail.textContent=stageTimingText(entry);
       main.append(heading,kind,detail);stage.append(main);
       if (!programRunning) {
         const edit=document.createElement('button');edit.type='button';edit.textContent='✎';edit.className='program-stage-edit';edit.setAttribute('aria-label','Настройки этапа '+(i+1));edit.addEventListener('click',()=>openStageSettings(i));stage.append(edit);
@@ -619,7 +640,7 @@ function bindProgramLibrary() {
         if(preview){
           const cfg=preview.settings;
           const timing=document.createElement('small');timing.className='native-library-timing';
-          timing.textContent=cfg.rounds+' р. · работа '+formatProgramTime(cfg.workSec)+' · отдых '+formatProgramTime(cfg.restSec);
+          timing.textContent=stageTimingText(preview);
           info.append(title,timing,description);
         }else info.append(title,description);
         const plus=document.createElement('button');plus.type='button';plus.className='native-library-add';plus.textContent='+';
@@ -640,13 +661,13 @@ function bindProgramLibrary() {
       const open=document.createElement('button');open.className='program-library-entry-open';
       const title=document.createElement('strong');title.textContent=entry.name;open.append(title);
       const stages=normalizeProgram(entry.entries);
-      const summary=document.createElement('small');summary.className='program-library-summary';
-      const fmt=n=>formatProgramTime(Math.max(0,Math.floor(Number(n)||0)));
-      summary.textContent=stages.map((stage,i)=>{
-        const cfg=stage.settings||profiles[stage.presetId];
-        const total=compileProgram([stage],profiles,{cycles:1}).length;
-        return (i+1)+'. '+(stage.title||PRESET_NAMES[stage.presetId])+' · '+total+' р. · работа '+fmt(cfg.workSec)+' · отдых '+fmt(cfg.restSec)+(cfg.intervalMode==='ladder'?' · лестница':'');
-      }).join('\n');
+      const summary=document.createElement('div');summary.className='program-library-summary';
+      stages.forEach((stage,i)=>{
+        const line=document.createElement('div');line.className='program-library-stage-summary';
+        const name=document.createElement('span');name.textContent=(i+1)+'. '+(stage.title||PRESET_NAMES[stage.presetId]);
+        const timing=document.createElement('small');timing.textContent=stageTimingText(stage);
+        line.append(name,timing);summary.append(line);
+      });
       open.append(summary);
       open.addEventListener('click',()=>openEntry(entry,libraryTab!=='mine'));
       row.append(open);

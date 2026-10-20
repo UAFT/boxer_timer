@@ -170,7 +170,11 @@ export function renderLiveLadder(els, state, ui = {}) {
       const pr=config.programRounds?.[i-1];
       if (pr && pr.stageRound===1) { closeStage(); if (pr.stageIndex===0 && pr.cycles>1) rows.push('<div class="ladder-cycle-label">Цикл '+(pr.cycleIndex+1)+' из '+pr.cycles+'</div>'); rows.push('<div class="ladder-stage-outline">'); stageOpen=true; }
       if (pr && pr.blockCount>1 && pr.localRound===1) { closeBlock(); rows.push('<div class="ladder-block-outline">'); blockOpen=true; }
-      if (pr && pr.stageRound===1) rows.push('<div class="ladder-block-label" data-stage="'+pr.stageIndex+'">Этап '+(pr.stageIndex+1)+(pr.stageTitle?' · '+escapeStageTitle(pr.stageTitle):'')+' · '+programStageMode(pr)+'</div>');
+      if (pr && pr.stageRound===1) {
+        const stageRounds=config.programRounds.filter(r=>r.stageIndex===pr.stageIndex && r.cycleIndex===pr.cycleIndex);
+        const stageSeconds=stageRounds.reduce((sum,r,index)=>sum+r.workSec+(index<stageRounds.length-1?r.restSec:0),0);
+        rows.push('<div class="ladder-block-label" data-stage="'+pr.stageIndex+'">Этап '+(pr.stageIndex+1)+(pr.stageTitle?' · '+escapeStageTitle(pr.stageTitle):'')+' · '+programStageMode(pr)+' · всего '+formatTime(stageSeconds)+'</div>');
+      }
       if (pr && pr.blockCount>1 && pr.localRound===1) rows.push('<div class="ladder-block-label" data-block="'+pr.block+'" data-stage="'+pr.stageIndex+'">Блок '+pr.block+' из '+pr.blockCount+'</div>');
       if (!pr && blockCount(config) > 1 && localRoundFor(config,i) === 1) rows.push(`<div class="ladder-block-label" data-block="${blockForRound(config,i)}">Блок ${blockForRound(config,i)} из ${blockCount(config)}</div>`);
       const rest = i < totalRoundsForConfig(config) ? formatTime(restSecAfterRound(config, i)) : '—';
