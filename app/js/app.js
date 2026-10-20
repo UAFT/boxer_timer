@@ -1,3 +1,4 @@
+import { CATEGORIES, LIBRARY, stageForWorkout } from './library/native-adapter.js';
 import { starterPrograms } from './core/starter-programs.js';
 import { announceRound, stopVoice } from './audio/voice-coach.js';
 import { installLocalization } from './i18n/locale.js';
@@ -85,6 +86,7 @@ try { savedPrograms=normalizeLibrary(JSON.parse(localStorage.getItem(LIBRARY_KEY
 let openedProgramId = null;
 let openedProgramName = '';
 let libraryTab = 'mine';
+let libraryCategory = null;
 const builtInPrograms = [
   ...starterPrograms,
   {id:'built-box',name:'Классический бокс',entries:[{presetId:'classic3',title:'Раунды',restAfterSec:0,settings:{...clonePreset('classic3'),rounds:12,workSec:180,restSec:60}}],options:{cycles:1,cycleRestSec:60}},
@@ -521,7 +523,39 @@ function bindProgramLibrary() {
     const list=byId('programLibraryList');list.replaceChildren();
     byId('programLibraryMine').classList.toggle('is-active',libraryTab==='mine');
     byId('programLibraryTemplates').classList.toggle('is-active',libraryTab==='templates');
-    for(const entry of libraryTab==='mine'?savedPrograms:builtInPrograms) {
+    const back=byId('programLibraryBack');
+    back.hidden=libraryTab!=='templates' || !libraryCategory;
+    byId('programLibraryTitle').textContent=libraryTab==='mine'?'Мои программы':libraryCategory?(CATEGORIES.find(x=>x[0]===libraryCategory)?.[1]||'Библиотека'):'Разделы';
+    if(libraryTab==='templates' && !libraryCategory) {
+      for(const [id,label] of CATEGORIES) {
+        const button=document.createElement('button');button.type='button';
+        button.className='program-library-entry-open';button.textContent=label;
+        button.addEventListener('click',()=>{libraryCategory=id;renderLibrary();});
+        const row=document.createElement('div');row.className='program-library-entry';row.append(button);list.append(row);
+      }
+      return;
+    }
+    if(libraryTab==='templates') {
+      for(const workout of LIBRARY.filter(x=>x.category===libraryCategory)) {
+        const row=document.createElement('div');row.className='program-library-entry';
+        const info=document.createElement('div');info.className='native-library-info';
+        const title=document.createElement('strong');title.textContent=workout.name;
+        const description=document.createElement('small');description.textContent=workout.tasks.join(' · ');
+        info.append(title,description);
+        const plus=document.createElement('button');plus.type='button';plus.className='native-library-add';plus.textContent='+';
+        const supported=!!stageForWorkout(workout);plus.disabled=!supported || programRunning || programEntries.length>=24;
+        plus.setAttribute('aria-label','Добавить '+workout.name);
+        if(!supported) description.textContent+=' · требует отдельного режима таймера';
+        plus.addEventListener('click',()=>{
+          const stage=stageForWorkout(workout);if(!stage||programRunning||programEntries.length>=24)return;
+          programEntries.push(stage);openedProgramId=null;openedProgramName='';persistProgram();
+          plus.textContent='✓';setTimeout(()=>{plus.textContent='+';},800);
+        });
+        row.append(info,plus);list.append(row);
+      }
+      return;
+    }
+    for(const entry of savedPrograms) {
       const row=document.createElement('div');row.className='program-library-entry';
       const open=document.createElement('button');open.className='program-library-entry-open';open.textContent=entry.name;
       open.addEventListener('click',()=>openEntry(entry,libraryTab!=='mine'));
@@ -539,10 +573,11 @@ function bindProgramLibrary() {
       list.append(row);
     }
   }
-  byId('programLibraryOpen').addEventListener('click',()=>{libraryTab='mine';renderLibrary();library.hidden=false;});
+  byId('programLibraryOpen').addEventListener('click',()=>{libraryTab='mine';libraryCategory=null;renderLibrary();library.hidden=false;});
   byId('programLibraryClose').addEventListener('click',close);
-  byId('programLibraryMine').addEventListener('click',()=>{libraryTab='mine';renderLibrary();});
-  byId('programLibraryTemplates').addEventListener('click',()=>{libraryTab='templates';renderLibrary();});
+  byId('programLibraryBack').addEventListener('click',()=>{libraryCategory=null;renderLibrary();});
+  byId('programLibraryMine').addEventListener('click',()=>{libraryTab='mine';libraryCategory=null;renderLibrary();});
+  byId('programLibraryTemplates').addEventListener('click',()=>{libraryTab='templates';libraryCategory=null;renderLibrary();});
   const current=byId('programSaveCurrent'),fields=byId('programSaveNewFields');
   const overwrite=byId('programSaveOverwrite');
   byId('programSaveOpen').addEventListener('click',()=>{

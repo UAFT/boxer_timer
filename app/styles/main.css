@@ -1499,3 +1499,9 @@ html,body{width:100%;max-width:100%;overflow-x:clip}
 
 /* Measure intrinsic label width even when the text is clipped by the row. */
 .ladder-live-row .ladder-plan.is-marquee .plan-moving-text{animation-duration:4s}
+
+.native-library-info{display:flex;flex:1;min-width:0;flex-direction:column;gap:7px;overflow-wrap:anywhere}
+.native-library-info small{font-size:12px;opacity:.8;line-height:1.35}
+.native-library-add{min-width:50px;min-height:50px;border:2px solid #dcb75e;border-radius:12px;color:#f7d987;background:#263a67;font-size:28px}
+.native-library-add:disabled{opacity:.35}
+#programLibraryBack{background:#273b68;color:#fff;border:0;border-radius:9px;padding:8px}
