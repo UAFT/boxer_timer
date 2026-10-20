@@ -182,16 +182,16 @@ export function renderLiveLadder(els, state, ui = {}) {
     }
     closeStage();
     list.innerHTML = rows.join('');
-    // Only overflowing labels move. Rest duration stays reachable without touch.
+    // Measure the complete label, but move it only by the clipped portion.
     requestAnimationFrame(() => {
       for (const label of list.querySelectorAll('.ladder-plan')) {
-        const overflow=label.scrollWidth-label.clientWidth;
-        label.style.setProperty('--plan-travel',Math.max(0,overflow)+'px');
+        const moving=document.createElement('span');
+        moving.className='plan-moving-text';
+        moving.textContent=label.textContent;
+        label.replaceChildren(moving);
+        const overflow=Math.max(0,Math.ceil(moving.getBoundingClientRect().width-label.clientWidth));
+        label.style.setProperty('--plan-travel',overflow+'px');
         label.classList.toggle('is-marquee',overflow>2);
-        if (overflow>2 && !label.querySelector('.plan-moving-text')) {
-          const moving=document.createElement('span');moving.className='plan-moving-text';
-          moving.textContent=label.textContent;label.replaceChildren(moving);
-        }
       }
     });
     list.dataset.scheduleKey = key;

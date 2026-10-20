@@ -1563,3 +1563,12 @@ body.program-timer-running .param-grid > .compact-param-card:not(.metronome-card
 /* Consistent full-width dark stage header and single-line compact timing. */
 .program-stage-card>.program-stage{background:#182448;border-radius:14px 14px 0 0;padding:10px 10px 3px}
 .program-stage-card>.program-stage-timing{display:block;background:#182448;border-radius:0 0 14px 14px;margin:0 0 10px;padding:3px 10px 12px;color:#e1b95e;font-size:clamp(11px,2.8vw,13px);line-height:1.35;white-space:nowrap;letter-spacing:-.15px;font-variant-numeric:tabular-nums}
+
+/* Only overflowing text pans; preserve the row and fixed countdown. */
+.ladder-live-row .ladder-plan{white-space:nowrap!important;overflow:hidden!important;overflow-wrap:normal!important;word-break:normal!important}
+.ladder-live-row .plan-moving-text{display:inline-block;white-space:nowrap;max-width:none}
+.ladder-live-row .ladder-plan.is-marquee .plan-moving-text{animation:planAutoPan 5.5s ease-in-out 1.2s infinite alternate}
+body.program-timer-running .timer-card{display:none!important}
+body.program-timer-running:not(.program-timer-collapsed) .timer-card{display:block!important}
+body.program-timer-running.program-timer-collapsed .preset-row,
+body.program-timer-running.program-timer-collapsed .param-grid>.compact-param-card:not(.metronome-card){display:none!important}

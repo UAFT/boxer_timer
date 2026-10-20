@@ -113,12 +113,12 @@ function previewProgram() { return programEntries.length ? compileProgram(progra
 let manualTimerExpanded=false;
 function syncTimerVisibility(){
   const hasProgram=programEntries.length>0;
-  const collapsed=hasProgram&&!programRunning&&!manualTimerExpanded;
+  const collapsed=hasProgram&&!manualTimerExpanded;
   const running=programRunning;
   document.body.classList.toggle('program-timer-collapsed',collapsed);
   document.body.classList.toggle('program-timer-running',running);
   const button=document.getElementById('timerRevealToggle');
-  button.hidden=!hasProgram||running;
+  button.hidden=!hasProgram;
   button.setAttribute('aria-expanded',String(!collapsed));
   button.innerHTML=collapsed?'◷ Обычный таймер <span>Развернуть ▾</span>':'◷ Обычный таймер <span>Свернуть ▴</span>';
 }
