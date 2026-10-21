@@ -17,3 +17,30 @@
 .ft-exchange-toolbar button:focus-visible,.ft-import-dialog button:focus-visible,.ft-share-button:focus-visible{outline:3px solid #f2cc66;outline-offset:2px}
 
 .ft-exchange-toolbar[hidden]{display:none!important}
+
+/* One-row library navigation, three equal-height controls. */
+.program-library-modal .ft-library-nav{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.35fr) 48px;gap:8px;align-items:stretch;min-width:0}
+.program-library-modal .ft-library-nav>button{min-width:0;min-height:46px;padding:8px 5px;white-space:nowrap;font-size:clamp(13px,3.5vw,16px)}
+.program-library-modal #ftWorkoutImportBtn{display:flex;align-items:center;justify-content:center;width:48px;padding:7px}
+.ft-action-icon{display:block;width:22px;height:22px;flex:0 0 22px;pointer-events:none}
+.program-library-modal .ft-library-nav #ftWorkoutImportBtn .ft-action-icon{width:24px;height:24px;flex-basis:24px}
+
+/* The entire saved workout is a single card: title, duration, stages, and two top-right icons. */
+.program-library-modal .ft-saved-program-entry{position:relative;display:block;min-width:0;padding:12px;border:1px solid #435a88;border-radius:13px;background:#18264a}
+.program-library-modal .ft-saved-program-entry .ft-saved-program-open{display:block;width:100%;height:auto;min-width:0;padding:0;text-align:left;border:0;background:transparent;white-space:normal}
+.ft-saved-program-heading{display:flex;flex-wrap:wrap;align-items:baseline;column-gap:6px;row-gap:3px;padding-right:94px;min-height:44px}
+.ft-program-title{color:#fff;font-size:16px;line-height:1.35;overflow-wrap:anywhere}
+.ft-program-total{font-weight:700;color:#eabf64;font-size:14px;line-height:1.35}
+.ft-program-actions{position:absolute;right:12px;top:11px;display:flex;gap:6px;align-items:center}
+.program-library-modal .ft-saved-program-entry .ft-program-actions>button{box-sizing:border-box;width:40px;min-width:40px;height:42px;min-height:42px;max-width:40px;padding:7px;display:flex;align-items:center;justify-content:center;border:1px solid #5971a0;border-radius:10px;background:#29436b;color:#eef3fe}
+.program-library-modal .ft-saved-program-entry .ft-program-actions .ft-trash-button{border-color:#6e5368;background:#493046;color:#ffced3}
+.ft-program-actions>button:disabled{opacity:.5}
+.ft-program-stages{margin-top:8px;padding-top:9px;border-top:1px solid #394e76;display:flex;flex-direction:column;gap:10px}
+.ft-program-stage{display:flex;flex-direction:column;gap:3px;line-height:1.38;border-bottom:1px solid rgba(130,155,197,.15);padding-bottom:9px;min-width:0}
+.ft-program-stage:last-of-type{border-bottom:0;padding-bottom:2px}
+.ft-program-stage .ft-stage-label{color:#bac9e5;font-size:12px;font-weight:650}
+.ft-program-stage .ft-stage-title{font-size:15px;color:#f0f4fe;font-weight:750;overflow-wrap:anywhere}
+.ft-program-stage .ft-stage-details{font-size:13px;color:#becbe4;white-space:normal;overflow-wrap:normal}
+.ft-program-stage .ft-stage-total{font-size:14px;color:#eabf64;font-weight:750}
+.ft-program-stage .ft-stage-rest-after{color:#98adc9;font-size:12px}
+.ft-program-cycles{font-size:12px;color:#c2d1ea}

@@ -6,6 +6,7 @@ import { installTimerDisclosure } from './ui/timer-disclosure.js';
 import { renderStageTitle } from './ui/stage-title.js';
 import { installWorkoutExchange } from './sharing/workout-exchange-ui.js';
 import { storeImportedWorkout, resolveSenderSettings } from './sharing/workout-file.js';
+import { renderSavedProgramCard } from './ui/library-card-view.js';
 import { installLocalization } from './i18n/locale.js';
 import { AUDIO_KEYS } from './core/constants.js';
 import { clonePreset } from './state/presets.js';
@@ -618,6 +619,7 @@ function bindProgramLibrary() {
     onImported:program=>{
       const id='pimport-'+Date.now()+'-'+Math.random().toString(36).slice(2,10);
       savedPrograms=storeImportedWorkout(savedPrograms,program,localStorage,LIBRARY_KEY,id);
+      libraryTab='mine';libraryCategory=null;
       renderLibrary();
     }
   });
@@ -680,31 +682,16 @@ function bindProgramLibrary() {
       return;
     }
     for(const entry of savedPrograms) {
-      const row=document.createElement('div');row.className='program-library-entry';
-      const open=document.createElement('button');open.className='program-library-entry-open';
-      const title=document.createElement('strong');title.textContent=entry.name;open.append(title);
-      const stages=normalizeProgram(entry.entries);
-      const summary=document.createElement('div');summary.className='program-library-summary';
-      stages.forEach((stage,i)=>{
-        const line=document.createElement('div');line.className='program-library-stage-summary';
-        const name=document.createElement('span');name.textContent=(i+1)+'. '+(stage.title||PRESET_NAMES[stage.presetId]);
-        const timing=document.createElement('small');timing.textContent=stageTimingText(stage);
-        line.append(name,timing);summary.append(line);
-      });
-      open.append(summary);
-      open.addEventListener('click',()=>openEntry(entry,libraryTab!=='mine'));
-      row.append(open);
-      if(libraryTab==='mine') {
-        row.append(exchange.shareButton(entry));
-        const del=document.createElement('button');del.className='program-library-entry-delete';del.textContent='×';del.setAttribute('aria-label','Удалить программу «'+entry.name+'»');
-        del.addEventListener('click',()=>confirmDeletion({name:entry.name,trigger:del,onConfirm:()=>{
+      list.append(renderSavedProgramCard(document,entry,profiles,{
+        lang:document.documentElement.lang,
+        onOpen:()=>openEntry(entry,false),
+        onShareButton:()=>exchange.shareButton(entry),
+        onDelete:del=>confirmDeletion({name:entry.name,trigger:del,onConfirm:()=>{
           savedPrograms=savedPrograms.filter(x=>x.id!==entry.id);
           if(openedProgramId===entry.id)openedProgramId=null;
           persistLibrary();renderLibrary();renderCurrentState();
-        }}));
-        row.append(del);
-      }
-      list.append(row);
+        }})
+      }));
     }
   }
   byId('programLibraryOpen').addEventListener('click',()=>{libraryTab='mine';libraryCategory=null;renderLibrary();library.hidden=false;});

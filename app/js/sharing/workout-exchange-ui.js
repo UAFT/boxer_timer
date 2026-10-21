@@ -1,5 +1,6 @@
 import { parseWorkoutFile, WORKOUT_FILE_MAX_BYTES, WorkoutFileError } from './workout-file.js';
 import { shareWorkout } from './file-transfer.js';
+import { createActionIcon } from '../ui/library-card-view.js';
 
 const copies = {
   ru: {
@@ -48,7 +49,7 @@ export function installWorkoutExchange({doc = document, getSavedPrograms, onImpo
     const t=copy(doc);
     byId('ftWorkoutImportTitle').textContent=t.preview;
     byId('ftWorkoutImportName').textContent=program.name;
-    byId('ftWorkoutImportDetails').textContent=`:  · : `;
+    byId('ftWorkoutImportDetails').textContent=t.stages+': '+program.entries.length+' · '+t.cycles+': '+program.options.cycles;
     cancel.textContent=t.cancel;accept.textContent=t.save;
     accept.disabled=getSavedPrograms().length>=100;
     pending=program;dialog.hidden=false;
@@ -85,7 +86,8 @@ export function installWorkoutExchange({doc = document, getSavedPrograms, onImpo
   }
   function shareButton(program) {
     const button=doc.createElement('button');button.type='button';
-    button.className='ft-share-button';button.textContent=copy(doc).share;
+    button.className='ft-share-button';button.append(createActionIcon(doc,'share'));
+    button.title=copy(doc).share;
     button.setAttribute('aria-label',copy(doc).share+' «'+program.name+'»');
     button.disabled=isRunning();
     button.addEventListener('click',()=>shareSaved(program,button));
@@ -96,6 +98,6 @@ export function installWorkoutExchange({doc = document, getSavedPrograms, onImpo
     shareSaved,
     shareLabel:()=>copy(doc).share,
     importLabel:()=>copy(doc).import,
-    refresh() { trigger.textContent=copy(doc).import;trigger.disabled=isRunning(); }
+    refresh() { trigger.setAttribute('aria-label',copy(doc).import);trigger.title=copy(doc).import;trigger.disabled=isRunning(); }
   };
 }
