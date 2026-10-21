@@ -1,0 +1,19 @@
+/* Workout exchange: own toolbar, scoped button and confirmation panel. */
+.ft-exchange-toolbar{display:flex;flex-direction:column;gap:7px}
+.ft-exchange-toolbar>button{align-self:stretch;min-height:46px;background:#263b67;color:#f1f5ff;border:1px solid #627dae;border-radius:12px;font-size:16px;font-weight:700}
+.ft-exchange-status{font-size:13px;color:#e9bd60;line-height:1.4;min-height:0}
+.ft-exchange-status:empty{display:none}
+.ft-share-button{min-height:48px;max-width:92px;padding:7px 9px;border:1px solid #617ca7;border-radius:11px;color:#f0f5ff;background:#29436b;font:inherit;font-size:12px;font-weight:650;flex-shrink:0;overflow-wrap:anywhere}
+.ft-share-button:disabled{opacity:.55}
+.ft-import-overlay{z-index:55;background:rgba(5,11,29,.85)}
+.ft-import-dialog{width:min(94vw,420px);box-sizing:border-box;border:1px solid #586fa2;border-radius:20px;background:linear-gradient(155deg,#263961,#121e3d);padding:22px;color:#eff4ff;display:flex;flex-direction:column;gap:14px}
+.ft-import-dialog h2{font-size:21px;color:#f1c75e;margin:0}
+.ft-import-dialog .ft-import-name{font-weight:750;font-size:19px;overflow-wrap:anywhere;border-radius:11px;background:#1b2b4e;padding:12px}
+.ft-import-dialog .ft-import-details{color:#ced9ee;font-size:14px}
+.ft-import-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ft-import-actions button{min-height:48px;border-radius:11px;border:1px solid #6079a6;background:#25375a;color:#f7faff;padding:8px;font-size:14px}
+#ftWorkoutImportAccept{background:#329e70;border-color:#54b78d;font-weight:700}
+.ft-import-actions button:disabled{opacity:.55}
+.ft-exchange-toolbar button:focus-visible,.ft-import-dialog button:focus-visible,.ft-share-button:focus-visible{outline:3px solid #f2cc66;outline-offset:2px}
+
+.ft-exchange-toolbar[hidden]{display:none!important}

@@ -4,6 +4,8 @@ import { announceRound, stopVoice } from './audio/voice-coach.js';
 import { installDeleteConfirmation } from './ui/delete-confirmation.js';
 import { installTimerDisclosure } from './ui/timer-disclosure.js';
 import { renderStageTitle } from './ui/stage-title.js';
+import { installWorkoutExchange } from './sharing/workout-exchange-ui.js';
+import { storeImportedWorkout, resolveSenderSettings } from './sharing/workout-file.js';
 import { installLocalization } from './i18n/locale.js';
 import { AUDIO_KEYS } from './core/constants.js';
 import { clonePreset } from './state/presets.js';
@@ -609,6 +611,16 @@ function bindProgramLibrary() {
   const confirmDeletion=installDeleteConfirmation();
   const close=()=>{library.hidden=true;save.hidden=true;};
   function persistLibrary() {localStorage.setItem(LIBRARY_KEY,JSON.stringify(savedPrograms));}
+  const exchange=installWorkoutExchange({
+    getSavedPrograms:()=>savedPrograms,
+    isRunning:()=>programRunning,
+    prepareExport:program=>resolveSenderSettings(program,profiles),
+    onImported:program=>{
+      const id='pimport-'+Date.now()+'-'+Math.random().toString(36).slice(2,10);
+      savedPrograms=storeImportedWorkout(savedPrograms,program,localStorage,LIBRARY_KEY,id);
+      renderLibrary();
+    }
+  });
   function snapshot(name,id) {
     return {id,name,entries:normalizeProgram(programEntries.map(x=>({...x,settings:x.settings || structuredClone(profiles[x.presetId])}))),options:normalizeOptions(programOptions)};
   }
@@ -625,6 +637,8 @@ function bindProgramLibrary() {
   }
   function renderLibrary() {
     const list=byId('programLibraryList');list.replaceChildren();
+    byId('ftWorkoutExchangeToolbar').hidden=libraryTab!=='mine';
+    exchange.refresh();
     byId('programLibraryMine').classList.toggle('is-active',libraryTab==='mine');
     byId('programLibraryTemplates').classList.toggle('is-active',libraryTab==='templates');
     const back=byId('programLibraryBack');
@@ -681,6 +695,7 @@ function bindProgramLibrary() {
       open.addEventListener('click',()=>openEntry(entry,libraryTab!=='mine'));
       row.append(open);
       if(libraryTab==='mine') {
+        row.append(exchange.shareButton(entry));
         const del=document.createElement('button');del.className='program-library-entry-delete';del.textContent='×';del.setAttribute('aria-label','Удалить программу «'+entry.name+'»');
         del.addEventListener('click',()=>confirmDeletion({name:entry.name,trigger:del,onConfirm:()=>{
           savedPrograms=savedPrograms.filter(x=>x.id!==entry.id);

@@ -16,6 +16,7 @@
     <link rel="stylesheet" href="./styles/delete-confirmation.css" />
     <link rel="stylesheet" href="./styles/timer-disclosure.css" />
     <link rel="stylesheet" href="./styles/stage-title.css" />
+    <link rel="stylesheet" href="./styles/workout-exchange.css" />
   </head>
   <body>
     <main class="app-shell">
@@ -169,7 +170,23 @@
       <section class="settings-modal panel program-library-modal" role="dialog" aria-modal="true" aria-labelledby="programLibraryTitle">
         <div class="settings-head"><h2 id="programLibraryTitle">Мои программы</h2><button id="programLibraryBack" type="button" hidden>← Назад</button><button type="button" id="programLibraryClose" aria-label="Закрыть окно">×</button></div>
         <div class="program-library-tabs"><button type="button" id="programLibraryMine">Мои</button><button type="button" id="programLibraryTemplates">Библиотека</button></div>
+        <div class="ft-exchange-toolbar" id="ftWorkoutExchangeToolbar">
+          <button type="button" id="ftWorkoutImportBtn">Импортировать</button>
+          <input id="ftWorkoutImportFile" type="file" accept="*/*" hidden>
+          <div id="ftWorkoutExchangeStatus" class="ft-exchange-status" role="status" aria-live="polite"></div>
+        </div>
         <div id="programLibraryList" class="program-library-list"></div>
+      </section>
+    </div>
+    <div class="modal-backdrop ft-import-overlay" id="ftWorkoutImportModal" hidden>
+      <section class="ft-import-dialog panel" role="dialog" aria-modal="true" aria-labelledby="ftWorkoutImportTitle" aria-describedby="ftWorkoutImportDetails">
+        <h2 id="ftWorkoutImportTitle">Импорт программы</h2>
+        <div id="ftWorkoutImportName" class="ft-import-name"></div>
+        <div id="ftWorkoutImportDetails" class="ft-import-details"></div>
+        <div class="ft-import-actions">
+          <button type="button" id="ftWorkoutImportCancel">Отмена</button>
+          <button type="button" id="ftWorkoutImportAccept">Сохранить в «Мои»</button>
+        </div>
       </section>
     </div>
     <div class="modal-backdrop ft-delete-overlay" id="programDeleteConfirmModal" hidden>
