@@ -7,7 +7,7 @@ function intervalModeTitle(config) {
 }
 
 function programStageMode(round) {
-  return round.presetId === 'tabata2020x24' ? 'Скоростной' : (round.intervalMode === 'ladder' ? 'Лестница' : 'Обычный');
+  return round.presetId === 'tabata2020x24' ? 'Скоростной' : (round.intervalMode === 'ladder' ? 'Лестница' : '');
 }
 
 function phaseLabelText(state) {
@@ -137,7 +137,7 @@ export function renderLiveLadder(els, state, ui = {}) {
   const config = preview ? { ...state.config, programRounds: ui.previewRounds } : state.config;
   panel.hidden = config.intervalMode !== 'ladder' && !config.programRounds?.length;
   const ladderTitle = panel.querySelector('.ladder-live-head strong');
-  if (ladderTitle) ladderTitle.textContent = config.programRounds?.length ? 'ПЛАН ТРЕНИРОВКИ' : 'ЛЕСТНИЦА';
+  if (ladderTitle) ladderTitle.textContent = config.programRounds?.length ? 'ПЛАН ТРЕНИРОВКИ'+(ui.programName?' — '+ui.programName:'') : 'ЛЕСТНИЦА';
   if (panel.hidden) return;
   const expanded = Boolean(ui.ladderExpanded);
   panel.classList.toggle('is-expanded', expanded);
@@ -149,7 +149,7 @@ export function renderLiveLadder(els, state, ui = {}) {
   const remaining = preview ? total : remainingTotalSecForState(state);
   document.getElementById('ladderProgramTotal').textContent = formatTime(total);
   document.getElementById('ladderProgramRemaining').textContent = formatTime(remaining);
-  document.getElementById('ladderCurrentLabel').textContent = preview ? 'Программа готова' : 'Текущий раунд';
+  document.getElementById('ladderCurrentLabel').textContent = preview ? (ui.programName || 'Новая программа') : 'Текущий раунд';
   els.ladderFullTime.textContent = preview ? formatTime(total) : formatTime(state.remainingSec);
   const canPause = !preview && state.phase !== PHASES.IDLE && state.phase !== PHASES.FINISHED;
   const canStartProgram = preview && Boolean(ui.previewRounds?.length);
@@ -173,7 +173,7 @@ export function renderLiveLadder(els, state, ui = {}) {
       if (pr && pr.stageRound===1) {
         const stageRounds=config.programRounds.filter(r=>r.stageIndex===pr.stageIndex && r.cycleIndex===pr.cycleIndex);
         const stageSeconds=stageRounds.reduce((sum,r,index)=>sum+r.workSec+(index<stageRounds.length-1?r.restSec:0),0);
-        rows.push('<div class="ladder-block-label" data-stage="'+pr.stageIndex+'">Этап '+(pr.stageIndex+1)+(pr.stageTitle?' · '+escapeStageTitle(pr.stageTitle):'')+' · '+programStageMode(pr)+' · всего '+formatTime(stageSeconds)+'</div>');
+        rows.push('<div class="ladder-block-label" data-stage="'+pr.stageIndex+'">Этап '+(pr.stageIndex+1)+(pr.stageTitle?' · '+escapeStageTitle(pr.stageTitle):'')+(programStageMode(pr)?' · '+programStageMode(pr):'')+' · всего '+formatTime(stageSeconds)+'</div>');
       }
       if (pr && pr.blockCount>1 && pr.localRound===1) rows.push('<div class="ladder-block-label" data-block="'+pr.block+'" data-stage="'+pr.stageIndex+'">Блок '+pr.block+' из '+pr.blockCount+'</div>');
       if (!pr && blockCount(config) > 1 && localRoundFor(config,i) === 1) rows.push(`<div class="ladder-block-label" data-block="${blockForRound(config,i)}">Блок ${blockForRound(config,i)} из ${blockCount(config)}</div>`);

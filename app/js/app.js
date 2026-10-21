@@ -7,6 +7,7 @@ import { renderStageTitle } from './ui/stage-title.js';
 import { installWorkoutExchange } from './sharing/workout-exchange-ui.js';
 import { storeImportedWorkout, resolveSenderSettings } from './sharing/workout-file.js';
 import { renderSavedProgramCard } from './ui/library-card-view.js';
+import { syncEditorProgramHeader, editorProgramIdentity } from './ui/program-presentation.js';
 import { installLocalization } from './i18n/locale.js';
 import { AUDIO_KEYS } from './core/constants.js';
 import { clonePreset } from './state/presets.js';
@@ -119,7 +120,7 @@ function previewProgram() { return programEntries.length ? compileProgram(progra
 const timerDisclosure=installTimerDisclosure();
 function syncTimerVisibility(){timerDisclosure.sync(programEntries.length>0,programRunning);}
 function renderCurrentState() {
-  renderTimer(els, { ...timer.state, config: timer.config, isPaused: timer.isPaused }, { metronomePanelOpen: isMetronomePanelOpen(), ladderExpanded: uiState.ladderExpanded, previewRounds: !programRunning && programEntries.length ? previewProgram() : null });
+  renderTimer(els, { ...timer.state, config: timer.config, isPaused: timer.isPaused }, { metronomePanelOpen: isMetronomePanelOpen(), ladderExpanded: uiState.ladderExpanded, programName:openedProgramName, previewRounds: !programRunning && programEntries.length ? previewProgram() : null });
   renderProgram();
   syncTimerVisibility();
 }
@@ -478,7 +479,6 @@ function bindStageSettings(){
     // Keep the original library task labels where possible; extra rounds remain editable.
     entry.settings=cfg;
     entry.title=id('Name').value.trim().slice(0,80);
-    openedProgramId=null;openedProgramName='';
     closeStageSettings();persistProgram();
   });
 }
@@ -536,9 +536,7 @@ function renderProgram() {
   const panel=document.getElementById('programPanel');
   if (!panel) return;
   panel.hidden=false;
-  const nameEl=document.getElementById('programCurrentName');
-  nameEl.textContent=openedProgramName || '';
-  nameEl.hidden=!openedProgramName;
+  syncEditorProgramHeader(document,{name:openedProgramName,entries:programEntries,profiles,options:programOptions,lang:document.documentElement.lang});
   document.getElementById('programStart').hidden=programRunning || !programEntries.length;
   document.getElementById('programCycleCount').textContent=String(programOptions.cycles);
   document.getElementById('programCycleRestRow').hidden=programOptions.cycles===1;
@@ -570,7 +568,13 @@ function renderProgram() {
       const kind=document.createElement('small');kind.className='program-stage-kind';
       kind.textContent=cfg.intervalMode==='ladder' ? 'Лестница' : (entry.presetId==='tabata2020x24' ? 'Скоростной' : '');
       detail.className='program-stage-timing';
-      detail.textContent=russianRoundCount(stageTiming(entry).rounds.length)+' · '+formatProgramTime(cfg.workSec)+' / '+formatProgramTime(cfg.restSec)+' · всего '+formatProgramTime(stageTiming(entry).total);
+      const timing=stageTiming(entry), english=document.documentElement.lang==='en';
+      for(const [klass,text] of [
+        ['program-stage-count',english?timing.rounds.length+' rounds':russianRoundCount(timing.rounds.length)],
+        ['program-stage-work',(english?'work ':'работа ')+formatProgramTime(cfg.workSec)],
+        ['program-stage-rest',(english?'rest ':'отдых ')+formatProgramTime(cfg.restSec)],
+        ['program-stage-sum',(english?'total ':'всего ')+formatProgramTime(timing.total)]
+      ]){const item=document.createElement('span');item.className=klass;item.textContent=text;detail.append(item);}
       main.append(heading);if(kind.textContent)main.append(kind);stage.append(main);
       if (!programRunning) {
         const edit=document.createElement('button');edit.type='button';edit.textContent='✎';edit.className='program-stage-edit';edit.setAttribute('aria-label','Настройки этапа '+(i+1));edit.addEventListener('click',()=>openStageSettings(i));stage.append(edit);
@@ -674,7 +678,7 @@ function bindProgramLibrary() {
         if(!supported) description.textContent+=' · требует отдельного режима таймера';
         plus.addEventListener('click',()=>{
           const stage=stageForWorkout(workout);if(!stage||programRunning||programEntries.length>=24)return;
-          programEntries.push(stage);openedProgramId=null;openedProgramName='';persistProgram();
+          programEntries.push(stage);persistProgram();
           plus.textContent='✓';setTimeout(()=>{plus.textContent='+';},800);
         });
         row.append(info,plus);list.append(row);
@@ -702,14 +706,14 @@ function bindProgramLibrary() {
   const current=byId('programSaveCurrent'),fields=byId('programSaveNewFields');
   const overwrite=byId('programSaveOverwrite');
   byId('programSaveOpen').addEventListener('click',()=>{
-    const existing=savedPrograms.find(x=>x.id===openedProgramId);
+    const existing=editorProgramIdentity(openedProgramId,savedPrograms);
     current.hidden=!existing;current.textContent=existing?.name||'';
     overwrite.hidden=!existing;fields.hidden=true;
     byId('programNameInput').value='';save.hidden=false;
   });
   byId('programSaveClose').addEventListener('click',close);
   overwrite.addEventListener('click',()=>{
-    const existing=savedPrograms.find(x=>x.id===openedProgramId);
+    const existing=editorProgramIdentity(openedProgramId,savedPrograms);
     if(!existing)return;
     savedPrograms=savedPrograms.map(x=>x.id===existing.id?snapshot(existing.name,existing.id):x);
     openedProgramName=existing.name;persistLibrary();close();renderCurrentState();
