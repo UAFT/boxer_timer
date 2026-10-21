@@ -224,19 +224,26 @@
         <label class="stage-settings-field">Режим
           <div class="stage-mode-choices"><button type="button" data-stage-mode="standard">Обычный</button><button type="button" data-stage-mode="two_phase">Две фазы</button><button type="button" data-stage-mode="ladder">Лестница</button></div><input type="hidden" id="stageSettingsMode" value="standard">
         </label>
+        <div id="stageSettingsTwoPhase" class="ft-stage-two-phase" hidden>
+          <div class="ft-stage-phase-pair">
+            <div class="ft-stage-phase-item">
+              <label for="stageSettingsPhaseOne">Фаза 1</label>
+              <input id="stageSettingsPhaseOne" type="text" maxlength="100" autocomplete="off" placeholder="Фаза 1">
+              <div id="stageSettingsPhaseOneTimeSlot"></div>
+            </div>
+            <div class="ft-stage-phase-item">
+              <label for="stageSettingsPhaseTwo">Фаза 2</label>
+              <input id="stageSettingsPhaseTwo" type="text" maxlength="100" autocomplete="off" placeholder="Фаза 2">
+              <label class="ft-stage-phase-time">Время фазы 2
+                <div class="stage-mmss"><input id="stageSettingsPhaseTwoMin" type="number" inputmode="numeric" min="0" max="60" aria-label="Минуты второй фазы"><span>мин</span><input id="stageSettingsPhaseTwoSec" type="number" inputmode="numeric" min="0" max="59" aria-label="Секунды второй фазы"><span>сек</span></div>
+              </label>
+            </div>
+          </div>
+        </div>
         <div class="stage-settings-grid">
-          <label>Работа<div class="stage-mmss"><input id="stageSettingsWorkMin" inputmode="numeric" type="number" min="0" max="60" aria-label="Минуты работы"><span>мин</span><input id="stageSettingsWorkSec" inputmode="numeric" type="number" min="0" max="59" aria-label="Секунды работы"><span>сек</span></div></label>
+          <label><span id="stageSettingsWorkCaption">Работа</span><div class="stage-mmss"><input id="stageSettingsWorkMin" inputmode="numeric" type="number" min="0" max="60" aria-label="Минуты работы"><span>мин</span><input id="stageSettingsWorkSec" inputmode="numeric" type="number" min="0" max="59" aria-label="Секунды работы"><span>сек</span></div></label>
           <label>Отдых<div class="stage-mmss"><input id="stageSettingsRestMin" inputmode="numeric" type="number" min="0" max="60" aria-label="Минуты отдыха"><span>мин</span><input id="stageSettingsRestSec" inputmode="numeric" type="number" min="0" max="59" aria-label="Секунды отдыха"><span>сек</span></div></label>
           <label>Раунды<input id="stageSettingsRounds" inputmode="numeric" type="number" min="1" max="99" step="1" required></label>
-        </div>
-        <div id="stageSettingsTwoPhase" class="ft-stage-two-phase" hidden>
-          <div class="ft-phase-name-fields">
-            <label>Фаза 1<input id="stageSettingsPhaseOne" type="text" maxlength="100" autocomplete="off" placeholder="Фаза 1"></label>
-            <label>Фаза 2<input id="stageSettingsPhaseTwo" type="text" maxlength="100" autocomplete="off" placeholder="Фаза 2"></label>
-          </div>
-          <label>Время фазы 2
-            <div class="stage-mmss"><input id="stageSettingsPhaseTwoMin" type="number" inputmode="numeric" min="0" max="60" aria-label="Минуты второй фазы"><span>мин</span><input id="stageSettingsPhaseTwoSec" type="number" inputmode="numeric" min="0" max="59" aria-label="Секунды второй фазы"><span>сек</span></div>
-          </label>
         </div>
         <div id="stageSettingsLadder" hidden>
           <div class="stage-settings-grid">
@@ -282,7 +289,7 @@
 
           <section class="settings-card">
             <div class="settings-card-title">Режим интервалов</div>
-            <p class="ladder-explainer">Лестница: каждый следующий раунд и отдых могут становиться длиннее или короче на выбранный шаг. Количество раундов, длительность первого раунда и исходное время отдыха задаются на главном экране выбранного профиля.</p>
+            <p class="ladder-explainer" id="intervalModeExplainer" hidden>Лестница: каждый следующий раунд и отдых могут становиться длиннее или короче на выбранный шаг. Количество раундов, длительность первого раунда и исходное время отдыха задаются на главном экране выбранного профиля.</p>
             <div class="settings-field-stack">
               <div class="settings-field-label">Схема</div>
               <div class="choice-row" role="group" aria-label="Режим интервалов">
@@ -293,6 +300,7 @@
               <input type="hidden" id="intervalModeInput" value="standard" />
             </div>
 
+            <div id="ladderStepsFields">
             <div class="settings-field-stack">
               <div class="settings-field-label">Шаг работы по раундам</div>
               <div class="settings-stepper" role="group" aria-label="Шаг работы по раундам">
@@ -315,6 +323,7 @@
               <div class="settings-inline-note">Отрицательный шаг сокращает отдых, положительный — удлиняет. Нулевой шаг сохраняет одинаковый отдых.</div>
             </div>
 
+            </div>
             <section class="block-settings" id="blockSettings">
               <label class="settings-toggle-row"><input type="checkbox" id="blockEnabledInput" /><span>Лестница + Блок</span></label>
               <div class="settings-field-stack"><div class="settings-field-label">Количество блоков</div>

@@ -178,10 +178,10 @@ export function renderLadderPreview(els, settings) {
   for (let i = 1; i <= count; i += 1) {
     if(blockCount(config)>1 && localRoundFor(config,i)===1)rows.push(`<div class="settings-inline-note">Блок ${blockForRound(config,i)} из ${blockCount(config)}</div>`);
     if(config.intervalMode==='two_phase') {
-      rows.push(`<div class="ladder-preview-row"><span>Раунд  · Фаза 1</span><strong></strong><span>Фаза 2</span><strong></strong></div>`);
-      if(i<rounds)rows.push(`<div class="settings-inline-note">Отдых: </div>`);
+      rows.push('<div class="ladder-preview-row"><span>Раунд '+i+' · Фаза 1</span><strong>'+formatTime(workSecForRound(config,i))+'</strong><span>Фаза 2</span><strong>'+formatTime(config.phaseTwoSec||40)+'</strong></div>');
+      if(i<rounds)rows.push('<div class="settings-inline-note">Отдых: '+formatTime(restSecAfterRound(config,i))+'</div>');
     } else {
-    rows.push(`<div class="ladder-preview-row"><span>Раунд ${localRoundFor(config,i)}</span><strong>${formatTime(workSecForRound(config,i))}</strong><span>Отдых</span><strong>${i<rounds?formatTime(restSecAfterRound(config,i)):'—'}</strong></div>`);
+      rows.push('<div class="ladder-preview-row"><span>Раунд '+localRoundFor(config,i)+'</span><strong>'+formatTime(workSecForRound(config,i))+'</strong><span>Отдых</span><strong>'+(i<rounds?formatTime(restSecAfterRound(config,i)):'—')+'</strong></div>');
     }
     const pause=blockRestSecAfterRound(config,i);
     if(pause>0)rows.push(`<div class="settings-inline-note">Отдых между блоками: ${formatTime(pause)}</div>`);
@@ -193,6 +193,8 @@ export function setSettingsForm(els, settings) {
   els.audioEnabledInput.checked = settings.audioEnabled;
   els.warningSecondsInput.value = String(settings.warningSeconds ?? 4);
   els.intervalModeInput.value = settings.intervalMode || 'standard';
+  document.getElementById('ladderStepsFields').hidden=settings.intervalMode !== 'ladder';
+  document.getElementById('intervalModeExplainer').hidden=settings.intervalMode !== 'ladder';
   els.blockSettings.hidden = settings.intervalMode !== 'ladder';
   els.blockEnabledInput.checked = Boolean(settings.blockEnabled);
   els.blockCountInput.value = String(settings.blockCount ?? 1);

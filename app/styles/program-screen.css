@@ -101,3 +101,46 @@
 .ft-two-phase-plan .ft-round-rest.is-active{background:rgba(54,100,178,.28);outline-color:#5d9dec;color:#abcfff}
 .ft-two-phase-plan .ladder-count{font-variant-numeric:tabular-nums}
 .program-stage-timing .program-stage-phase-two{flex:0 0 100%;display:block;font-size:12px;color:#dec083}
+
+/* 0.2.105 follow-up: two-phase schedule is three short FULL-WIDTH rows per round. */
+.ladder-live-row.ft-two-phase-plan{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr)!important;
+  grid-auto-flow:row;
+  align-items:stretch!important;
+  gap:5px!important;
+  white-space:normal!important;
+  padding:8px!important;
+  margin:5px 0!important;
+  animation:none!important;
+}
+.ladder-live-row.ft-two-phase-plan.is-active{background:rgba(24,40,74,.48)!important;animation:none!important}
+.ladder-live-row.ft-two-phase-plan .ladder-plan{grid-column:1;font-weight:600;padding:2px 1px 5px;white-space:normal}
+.ladder-live-row.ft-two-phase-plan .ft-work-phase{
+  grid-column:1;box-sizing:border-box;width:100%;
+  display:flex;align-items:center;justify-content:space-between;
+  min-height:36px!important;padding:7px 9px!important;line-height:1.3!important;
+  border-radius:8px;gap:7px;margin:0;
+}
+.ladder-live-row.ft-two-phase-plan .ft-work-phase span{min-width:0;flex:1 1 auto;overflow-wrap:anywhere}
+.ladder-live-row.ft-two-phase-plan .ft-work-phase strong,.ladder-live-row.ft-two-phase-plan .ladder-count{flex:0 0 auto;white-space:nowrap;font-size:inherit}
+.ladder-live-row.ft-two-phase-plan .ft-work-phase .ladder-count:empty{display:none}
+.ladder-live-row.ft-two-phase-plan .ft-work-phase.is-active{animation:none!important}
+.ladder-live.is-expanded .ladder-live-row.ft-two-phase-plan{font-size:clamp(13px,3.4vw,16px)}
+/* Single compact logical line for phase durations; total below. */
+.program-stage-card>.program-stage-timing:has(.program-stage-two-phase-meta){display:block!important;white-space:normal!important}
+.program-stage-timing .program-stage-two-phase-meta{display:block;font-size:clamp(9px,2.55vw,12px);line-height:1.5;white-space:normal;overflow-wrap:normal;letter-spacing:-.22px}
+.program-stage-timing:has(.program-stage-two-phase-meta) .program-stage-sum{display:block!important;margin-top:6px}
+/* Phase time is directly beneath the corresponding editable name. */
+.ft-stage-two-phase .ft-stage-phase-pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0 14px;align-items:start}
+.ft-stage-two-phase .ft-stage-phase-item{display:flex;flex-direction:column;gap:7px;min-width:0}
+.ft-stage-two-phase .ft-stage-phase-item>label,.ft-stage-two-phase .ft-stage-phase-item>label.ft-stage-phase-time{font-size:14px;color:#d3ddf2}
+.ft-stage-two-phase .ft-stage-phase-item>input{box-sizing:border-box;min-width:0;width:100%;height:44px;padding:9px 8px;border-radius:10px;border:1px solid #879ac2;background:#142247;color:#fff;font-size:16px}
+.ft-stage-two-phase .ft-stage-phase-item #stageSettingsPhaseOneTimeSlot>label,.ft-stage-two-phase .ft-stage-phase-item>label.ft-stage-phase-time{display:flex;flex-direction:column;gap:7px;min-width:0}
+.ft-stage-two-phase .ft-stage-phase-item .stage-mmss{min-width:0;max-width:100%}
+.ft-stage-two-phase .ft-stage-phase-item .stage-number-control{min-width:0}
+#ladderStepsFields[hidden]{display:none!important}
+
+.stage-settings-modal:has(#stageSettingsTwoPhase:not([hidden]))>.stage-settings-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+
+#intervalModeExplainer[hidden]{display:none!important}

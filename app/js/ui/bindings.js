@@ -96,6 +96,8 @@ export function bindControls(els, handlers) {
       els.intervalModeInput.value = value;
       activateChoice(els.intervalModeButtons, (candidate) => candidate.dataset.intervalMode === value);
       els.blockSettings.hidden = value !== 'ladder';
+      document.getElementById('ladderStepsFields').hidden = value !== 'ladder';
+      document.getElementById('intervalModeExplainer').hidden = value !== 'ladder';
       handlers.onPreviewChange?.();
     });
   });

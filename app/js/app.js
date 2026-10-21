@@ -441,6 +441,15 @@ function openStageSettings(index) {
 function syncStageSettingsMode(){
   const mode=document.getElementById('stageSettingsMode').value;
   const ladder=mode==='ladder';
+  const work=document.getElementById('stageSettingsWorkMin').closest('label');
+  const workGrid=document.querySelector('#stageSettingsModal .stage-settings-grid');
+  const workSlot=document.getElementById('stageSettingsPhaseOneTimeSlot');
+  if(mode==='two_phase'){
+    workSlot.append(work);
+  }else if(work.parentElement!==workGrid){
+    workGrid.insertBefore(work,document.getElementById('stageSettingsRestMin').closest('label'));
+  }
+  document.getElementById('stageSettingsWorkCaption').textContent=mode==='two_phase'?'Время фазы 1':'Работа';
   document.querySelectorAll('[data-stage-mode]').forEach(b=>{b.classList.toggle('selected',b.dataset.stageMode===mode);b.setAttribute('aria-pressed',String(b.classList.contains('selected')));});
   document.getElementById('stageSettingsLadder').hidden=!ladder;
   document.getElementById('stageSettingsTwoPhase').hidden=mode!=='two_phase';
