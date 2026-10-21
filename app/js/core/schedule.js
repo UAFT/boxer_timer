@@ -1,4 +1,5 @@
 import { clampInt } from "./time.js";
+import { isBetweenBlocks, ladderLocalIndex } from "./ladder-blocks.js";
 
 function normalizeMode(mode) {
   return mode === "ladder" ? "ladder" : "standard";
@@ -29,14 +30,13 @@ export function workSecForRound(config, roundIndex) {
 
 export function restSecAfterRound(config, roundIndex) {
   if (config?.programRounds?.length) return config.programRounds[Math.max(0,Math.min(config.programRounds.length-1,roundIndex-1))].restSec;
-  const local = localRoundFor(config, roundIndex);
-  if (local === Math.max(1, Number(config.rounds) || 1) && Number(roundIndex) < totalRoundsForConfig(config)) {
+  if (isBetweenBlocks(config, roundIndex, totalRoundsForConfig(config))) {
     return clampInt(config?.blockRestSec, 0, 3600, 90);
   }
   const base = clampInt(config?.restSec, 0, 3600, 60);
   if (normalizeMode(config?.intervalMode) !== "ladder") return base;
   const step = clampInt(config?.restStepSec, -3600, 3600, 0);
-  const value = base + Math.max(0, Number(roundIndex || 1) - 1) * step;
+  const value = base + ladderLocalIndex(config, roundIndex) * step;
   return Math.min(3600, Math.max(0, value));
 }
 

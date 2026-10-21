@@ -50,3 +50,6 @@
 .ladder-live.is-expanded .ladder-current>strong{font-size:clamp(68px,19vw,106px);line-height:1.02}
 .ladder-live.is-expanded .ladder-current{padding-top:2px;padding-bottom:3px}
 @media(max-width:420px){.program-stage-card>.program-stage{grid-template-columns:minmax(0,1fr) 26px repeat(3,36px);gap:4px}}
+
+/* Numeric input must be visually centered within the round editor. */
+.stage-settings-modal #stageSettingsRounds{text-align:center!important;text-align-last:center;appearance:textfield;-moz-appearance:textfield;font-variant-numeric:tabular-nums}

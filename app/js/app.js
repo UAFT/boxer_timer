@@ -8,6 +8,8 @@ import { installWorkoutExchange } from './sharing/workout-exchange-ui.js';
 import { storeImportedWorkout, resolveSenderSettings } from './sharing/workout-file.js';
 import { renderSavedProgramCard, timeWords } from './ui/library-card-view.js';
 import { syncEditorProgramHeader, editorProgramIdentity } from './ui/program-presentation.js';
+import { renderPresetOrders } from './ui/preset-order.js';
+import { editableRestField } from './core/ladder-blocks.js';
 import { installLocalization } from './i18n/locale.js';
 import { AUDIO_KEYS } from './core/constants.js';
 import { clonePreset } from './state/presets.js';
@@ -240,11 +242,12 @@ function handleAdjustValue({ target, direction }, event) {
   event?.preventDefault?.();
   event?.stopPropagation?.();
 
+  const field = editableRestField(activeSettings, target);
   const rule = STEP_RULES[target];
   if (!rule) return;
   const sign = direction === 'down' ? -1 : 1;
-  const next = Math.min(rule.max, Math.max(rule.min, (activeSettings[target] ?? 0) + sign * rule.step));
-  const draft = { ...activeSettings, [target]: next };
+  const next = Math.min(rule.max, Math.max(rule.min, (activeSettings[field] ?? 0) + sign * rule.step));
+  const draft = { ...activeSettings, [field]: next };
 
   if (target === 'metronomeBpm') {
     if (next === 0) {
@@ -546,13 +549,7 @@ function renderProgram() {
   document.getElementById('programSaveOpen').disabled=programRunning || !programEntries.length;
   document.getElementById('programLibraryOpen').disabled=programRunning;
   document.getElementById('programExit').hidden=!programRunning;
-  for (const tab of els.presetTabs) {
-    const positions=[];
-    tab.classList.toggle('has-program',positions.length>0);
-    let badge=tab.querySelector('.preset-order');
-    if (!badge) {badge=document.createElement('span');badge.className='preset-order';tab.append(badge);}
-    badge.replaceChildren(...positions.map(i=>{const b=document.createElement('b');b.textContent=String(i);return b;}));
-  }
+  renderPresetOrders(els.presetTabs, programEntries);
   const list=document.getElementById('programList');
   const activeIndex=programRunning && timer.state.roundIndex>0 ? programSnapshot?.[timer.state.roundIndex-1]?.stageIndex : -1;
   // Stage entries reference live preset profiles; refresh details when a preset changes.
