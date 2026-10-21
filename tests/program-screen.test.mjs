@@ -20,7 +20,7 @@ test('existing saved program identity stays available for explicit overwrite aft
 test('program panel duration exactly matches compiled rounds including inter-stage and inter-cycle rests',()=>{
  const stages=[first,second],options={cycles:2,cycleRestSec:90};
  const rows=compileProgram(stages,profiles,options);
- assert.equal(programDurationSec(stages,profiles,options),rows.reduce((n,r)=>n+r.workSec+r.restSec,0));
+ assert.equal(programDurationSec(stages,profiles,options),rows.reduce((n,r)=>n+r.workSec+r.restSec+(r.blockRestSec||0),0));
  const heading=programHeading('Программа 1',stages,profiles,options,'ru');
  assert.equal(heading.name,'Программа 1');
  assert.ok(heading.duration.endsWith('минут') || heading.duration.includes('минут'));

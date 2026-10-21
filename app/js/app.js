@@ -41,9 +41,9 @@ const STEP_RULES = {
 };
 const DEFAULT_METRONOME_BPM = 20;
 const PRESTART_COUNTDOWN_EVENTS = new Set(['prestart-count-4', 'prestart-count-3', 'prestart-count-2', 'prestart-count-1']);
-const METRONOME_SUPPRESS_EVENTS = new Set(['round-end-zero', 'workout-end-zero']);
-const ROUND_START_SYNC_EVENTS = new Set(['round-start-zero', 'rest-end-zero']);
-const ZERO_TRANSITION_EVENTS = new Set(['round-start-zero', 'round-end-zero', 'rest-end-zero', 'workout-end-zero']);
+const METRONOME_SUPPRESS_EVENTS = new Set(['round-end-zero', 'block-rest-start-zero', 'workout-end-zero']);
+const ROUND_START_SYNC_EVENTS = new Set(['round-start-zero', 'rest-end-zero', 'block-rest-end-zero']);
+const ZERO_TRANSITION_EVENTS = new Set(['round-start-zero', 'round-end-zero', 'rest-end-zero', 'block-rest-start-zero', 'block-rest-end-zero', 'workout-end-zero']);
 
 const els = getDomRefs();
 const audio = new AudioEngine();
@@ -74,6 +74,13 @@ function resolveEventAudioSpec(event, settings) {
     return { key: 'cue_rest_start_v2', tag: 'transition', volume: 1.6 };
   }
   if (event.type === 'rest-end-zero') {
+    return { key: 'cue_round_start_v2', tag: 'transition', volume: 1.6 };
+  }
+  if (event.type === 'block-rest-start-zero') {
+    // A separate cue variant makes the block boundary recognizable by ear.
+    return { key: 'cue_rest_start_v1', tag: 'transition', volume: 1.6 };
+  }
+  if (event.type === 'block-rest-end-zero') {
     return { key: 'cue_round_start_v2', tag: 'transition', volume: 1.6 };
   }
   if (event.type === 'workout-end-zero') {
@@ -154,7 +161,7 @@ const timer = new TimerEngine({
       audio.stopTag('transition');
     }
     await audio.play(spec.key, { tag: spec.tag, volume: spec.volume });
-    if (programRunning && activeSettings.audioEnabled && ['round-start-zero','rest-end-zero','round-end-zero'].includes(event.type)) {
+    if (programRunning && activeSettings.audioEnabled && ['round-start-zero','rest-end-zero','round-end-zero','block-rest-end-zero'].includes(event.type)) {
       const round=programSnapshot?.[Math.max(0,(event.roundIndex || timer.state.roundIndex)-1)];
       announceRound(event.type,round,document.documentElement.lang?.startsWith('en')?'en':'ru');
     }
@@ -527,14 +534,16 @@ function russianBlockCount(count) {
 function formatProgramTime(sec) {return String(Math.floor(sec/60)).padStart(2,'0')+':'+String(sec%60).padStart(2,'0');}
 function stageTiming(entry) {
   const rounds=compileProgram([entry],profiles,{cycles:1});
-  const total=rounds.reduce((sum,round,i)=>sum+round.workSec+(i<rounds.length-1?round.restSec:0),0);
+  const total=rounds.reduce((sum,round)=>sum+round.workSec+round.restSec+(round.blockRestSec||0),0);
   return {rounds,total};
 }
 function stageTimingText(entry) {
   const cfg=entry.settings||profiles[entry.presetId];
   const {rounds,total}=stageTiming(entry);
-  return { detail: russianRoundCount(rounds.length)+' · работа '+formatProgramTime(cfg.workSec)+' · отдых '+formatProgramTime(cfg.restSec)
-    +(cfg.intervalMode==='ladder'?' · лестница':''), total };
+  const blocks=cfg.intervalMode==='ladder' && cfg.blockEnabled ? Math.max(1,Number(cfg.blockCount)||1) : 1;
+  return { detail: (blocks>1?russianRoundCount(cfg.rounds)+' × '+russianBlockCount(blocks):russianRoundCount(rounds.length))
+    +' · работа '+formatProgramTime(cfg.workSec)+' · отдых '+formatProgramTime(cfg.restSec)
+    +(blocks>1?' · между блоками '+formatProgramTime(cfg.blockRestSec):''), total };
 }
 function renderProgram() {
   const panel=document.getElementById('programPanel');
@@ -568,9 +577,13 @@ function renderProgram() {
       detail.className='program-stage-timing';
       const timing=stageTiming(entry), english=document.documentElement.lang==='en';
       for(const [klass,text] of [
-        ['program-stage-count',english?timing.rounds.length+' rounds':russianRoundCount(timing.rounds.length)],
+        ['program-stage-count',cfg.intervalMode==='ladder'&&cfg.blockEnabled&&cfg.blockCount>1
+          ? (english?cfg.rounds+' rounds × '+cfg.blockCount+' blocks':russianRoundCount(cfg.rounds)+' × '+russianBlockCount(cfg.blockCount))
+          : (english?timing.rounds.length+' rounds':russianRoundCount(timing.rounds.length))],
         ['program-stage-work',(english?'work ':'работа ')+formatProgramTime(cfg.workSec)],
         ['program-stage-rest',(english?'rest ':'отдых ')+formatProgramTime(cfg.restSec)],
+        ...(cfg.intervalMode==='ladder'&&cfg.blockEnabled&&cfg.blockCount>1
+          ? [['program-stage-block-rest',(english?'between blocks ':'между блоками ')+formatProgramTime(cfg.blockRestSec||0)]] : []),
         ['program-stage-sum',(english?'Total: ':'Всего: ')+formatProgramTime(timing.total)]
       ]){const item=document.createElement('span');item.className=klass;item.textContent=text;detail.append(item);}
       main.append(heading);if(kind.textContent)main.append(kind);stage.append(main);
@@ -586,7 +599,10 @@ function renderProgram() {
         const editor=document.createElement('div');editor.className='program-round-editor';
         for(let j=0;j<rounds;j++) {
           const line=document.createElement('div');line.className='program-round-edit-row';
-          const label=document.createElement('span');label.textContent='Раунд '+(j+1)+' · '+(entry.roundNames?.[j]||'Без названия');
+          const label=document.createElement('span');
+          const local=cfg.intervalMode==='ladder'&&cfg.blockEnabled ? (j%Math.max(1,cfg.rounds))+1 : j+1;
+          const block=cfg.intervalMode==='ladder'&&cfg.blockEnabled&&cfg.blockCount>1 ? 'Блок '+(Math.floor(j/Math.max(1,cfg.rounds))+1)+' · ' : '';
+          label.textContent=block+'Раунд '+local+' · '+(entry.roundNames?.[j]||'Без названия');
           const edit=document.createElement('button');edit.type='button';edit.textContent='✎';edit.setAttribute('aria-label','Название раунда '+(j+1));edit.addEventListener('click',()=>renameProgramRound(i,j,false,edit));
           const desc=document.createElement('button');desc.type='button';desc.textContent='≡';desc.setAttribute('aria-label','Описание раунда '+(j+1));desc.addEventListener('click',()=>renameProgramRound(i,j,true,desc));
           line.append(label,edit,desc);editor.append(line);

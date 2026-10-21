@@ -1,6 +1,6 @@
 // Block geometry is shared by the time schedule and the visible steppers.
-// Intra-block rest and inter-block rest are distinct controls. The two-phase
-// timer cannot play them consecutively on the same boundary.
+// Intra-block rest and inter-block rest are distinct controls. The timer
+// schedules them as successive phases at block boundaries.
 export function isBetweenBlocks(config, roundIndex, totalRounds) {
   const perBlock = Math.max(1, Number(config?.rounds) || 1);
   const count = Number(roundIndex) || 1;
@@ -12,10 +12,8 @@ export function ladderLocalIndex(config, roundIndex) {
   return (Math.max(1, Number(roundIndex) || 1) - 1) % perBlock;
 }
 
-// With one round per block the ONLY scheduled rest is between blocks.
-// Make the main-screen +/- adjust that effective rest instead of an unused field.
-export function editableRestField(config, target) {
-  if (target === 'restSec' && config?.intervalMode === 'ladder' && config?.blockEnabled
-    && Number(config?.rounds) === 1 && Number(config?.blockCount) > 1) return 'blockRestSec';
+// The ordinary rest is always edited as ordinary rest. A second independently
+// configured pause follows it at a block boundary (except after the final block).
+export function editableRestField(_config, target) {
   return target;
 }

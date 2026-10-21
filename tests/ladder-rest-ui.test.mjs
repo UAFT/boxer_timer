@@ -1,0 +1,51 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {clonePreset} from '../app/js/state/presets.js';
+import {compileProgram,normalizeLibrary} from '../app/js/core/program.js';
+import {programCardTimings,renderSavedProgramCard} from '../app/js/ui/library-card-view.js';
+import {programDurationSec} from '../app/js/ui/program-presentation.js';
+import {totalDurationSecForConfig,blockRestSecAfterRound} from '../app/js/core/schedule.js';
+const profile={...clonePreset('classic1'),intervalMode:'ladder',rounds:1,workSec:10,restSec:45,blockEnabled:true,blockCount:5,blockRestSec:60,workStepSec:0,restStepSec:0};
+const profiles={classic1:clonePreset('classic1')};
+const p={id:'ladder1',name:'Лестница — тест',entries:[{presetId:'classic1',title:'Лестница',settings:profile,restAfterSec:0}],options:{cycles:1,cycleRestSec:60}};
+test('5 blocks x 1 round @10/45 + 1m block rest: 7m50s in ALL calculation paths',()=>{
+ const rows=compileProgram(p.entries,profiles,p.options);
+ const expected=5*10+4*45+4*60;
+ assert.equal(expected,470);
+ assert.equal(rows.length,5);
+ assert.deepEqual(rows.map(r=>[r.restSec,r.blockRestSec]),[[45,60],[45,60],[45,60],[45,60],[0,0]]);
+ assert.equal(totalDurationSecForConfig(profile),expected);
+ assert.equal(totalDurationSecForConfig({programRounds:rows}),expected);
+ assert.equal(programDurationSec(p.entries,profiles,p.options),expected);
+ assert.equal(programCardTimings(p,profiles).total,expected);
+ assert.equal(programCardTimings(p,profiles).stages[0].duration,expected);
+ assert.deepEqual([programCardTimings(p,profiles).stages[0].roundsPerBlock,programCardTimings(p,profiles).stages[0].blocks],[1,5]);
+ assert.equal(programCardTimings(p,profiles).stages[0].blockRest,'01:00');
+});
+test('persisted and loaded program retains both configured pause values',()=>{
+ const normalized=normalizeLibrary(JSON.parse(JSON.stringify([p])));
+ assert.equal(normalized[0].entries[0].settings.restSec,45);
+ assert.equal(normalized[0].entries[0].settings.blockRestSec,60);
+ const compiled=compileProgram(normalized[0].entries,profiles);
+ assert.equal(compiled[0].restSec,45);
+ assert.equal(compiled[0].blockRestSec,60);
+});
+test('screen/cue mappings and structural descriptions remain separate',()=>{
+ const app=readFileSync(new URL('../app/js/app.js',import.meta.url),'utf8');
+ const render=readFileSync(new URL('../app/js/ui/render.js',import.meta.url),'utf8');
+ const engine=readFileSync(new URL('../app/js/timer/timer-engine.js',import.meta.url),'utf8');
+ assert.ok(app.includes("event.type === 'block-rest-start-zero'"));
+ assert.ok(app.includes("key: 'cue_rest_start_v1'"));
+ assert.ok(app.includes("event.type === 'block-rest-end-zero'"));
+ assert.ok(engine.includes('this.beginBlockRestPhase(roundIndex)'));
+ assert.ok(render.includes('Отдых между блоками:'));
+ assert.ok(render.includes(' · между блоками '));
+ assert.ok(app.includes("russianRoundCount(cfg.rounds)+' × '+russianBlockCount(cfg.blockCount)"));
+});
+test('existing normal timer stays two phase',()=>{
+ const normal={...clonePreset('classic3'),intervalMode:'standard',rounds:3,workSec:180,restSec:60,blockEnabled:false,blockCount:1};
+ assert.equal(blockRestSecAfterRound(normal,1),0);
+ assert.equal(totalDurationSecForConfig(normal),3*180+2*60);
+ assert.equal(compileProgram([{presetId:'classic1',settings:normal}],profiles).every(x=>x.blockRestSec===0),true);
+});

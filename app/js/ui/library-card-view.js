@@ -21,10 +21,10 @@ export function programCardTimings(program, profiles) {
   const stages=normalizeProgram(program.entries);
   const options=normalizeOptions(program.options);
   const all=compileProgram(stages,profiles,options);
-  const total=all.reduce((sum,round)=>sum+round.workSec+round.restSec,0);
+  const total=all.reduce((sum,round)=>sum+round.workSec+round.restSec+(round.blockRestSec||0),0);
   const stageData=stages.map((stage,index)=>{
     const rounds=compileProgram([stage],profiles,{cycles:1});
-    const duration=rounds.reduce((sum,r)=>sum+r.workSec+r.restSec,0);
+    const duration=rounds.reduce((sum,r)=>sum+r.workSec+r.restSec+(r.blockRestSec||0),0);
     const cfg=stage.settings||profiles[stage.presetId];
     const workTimes=rounds.map(r=>r.workSec);
     const workLow=Math.min(...workTimes),workHigh=Math.max(...workTimes);
@@ -34,7 +34,9 @@ export function programCardTimings(program, profiles) {
     const restLow=restTimes.length?Math.min(...restTimes):0;
     const restHigh=restTimes.length?Math.max(...restTimes):0;
     const rest=restLow===restHigh?timeClock(restLow):timeClock(restLow)+'–'+timeClock(restHigh);
-    return {index:index+1,title:stage.title||PRESET_NAMES[stage.presetId],rounds:rounds.length,work,rest,duration,
+    const blocks=cfg?.intervalMode==='ladder' && cfg.blockEnabled ? Number(cfg.blockCount)||1 : 1;
+    return {index:index+1,title:stage.title||PRESET_NAMES[stage.presetId],rounds:rounds.length,roundsPerBlock:Math.max(1,Number(cfg.rounds)||1),blocks,
+      work,rest,duration,blockRest:blocks>1?timeClock(cfg.blockRestSec||0):'',
       restAfter:index<stages.length-1?stage.restAfterSec:0,
       intervalMode:cfg?.intervalMode};
   });
@@ -75,10 +77,14 @@ export function renderSavedProgramCard(doc, program, profiles, {lang='ru',onOpen
     const block=doc.createElement('div');block.className='ft-program-stage';
     add(doc,block,'span','ft-stage-label',(ru?'Этап ':'Stage ')+stage.index);
     add(doc,block,'strong','ft-stage-title',stage.title);
-    const roundCount=ru?russianCount(stage.rounds):stage.rounds+' rounds';
+    const roundCount=ru?russianCount(stage.roundsPerBlock):stage.roundsPerBlock+' rounds';
+    const label=stage.blocks>1
+      ? (ru?roundCount+' × '+russianCount(stage.blocks,['блок','блока','блоков']):roundCount+' × '+stage.blocks+' blocks')
+      : (ru?russianCount(stage.rounds):stage.rounds+' rounds');
     add(doc,block,'span','ft-stage-details',ru?
-      roundCount+' · работа '+stage.work+' · отдых '+stage.rest:
-      roundCount+' · work '+stage.work+' · rest '+stage.rest);
+      label+' · работа '+stage.work+' · отдых '+stage.rest:
+      label+' · work '+stage.work+' · rest '+stage.rest);
+    if(stage.blocks>1)add(doc,block,'small','ft-stage-block-rest',(ru?'Отдых между блоками: ':'Between blocks: ')+stage.blockRest);
     add(doc,block,'span','ft-stage-total',(ru?'Всего: ':'Total: ')+timeWords(stage.duration,lang));
     if(stage.restAfter>0) add(doc,block,'small','ft-stage-rest-after',
       (ru?'Между этапами: ':'Between stages: ')+timeClock(stage.restAfter));

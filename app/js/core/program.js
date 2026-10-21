@@ -1,4 +1,4 @@
-import { totalRoundsForConfig, workSecForRound, restSecAfterRound } from './schedule.js';
+import { totalRoundsForConfig, workSecForRound, restSecAfterRound, blockRestSecAfterRound } from './schedule.js';
 export const PRESET_NAMES = { classic3: '3′', classic2: '2′', classic1: '1′', tabata2020x24: '⚡' };
 export const PROGRAM_KEY = 'andar.fight.timer.program.v1';
 export const LIBRARY_KEY = 'fighttech.program.library.v1';
@@ -29,6 +29,7 @@ export function compileProgram(entries, profiles, options = {}) {
       programRounds.push({
         workSec: workSecForRound(config,i),
         restSec: i<total ? restSecAfterRound(config,i) : (stageIndex<stages.length-1 ? stage.restAfterSec : cycleIndex<cycles-1 ? cycleRestSec : 0),
+        blockRestSec: i<total ? blockRestSecAfterRound(config,i) : 0,
         stageIndex, stageRound: i, stageRounds: total, presetId: stage.presetId,
         stageTitle: stage.title, roundName: stage.roundNames[i-1] || '', roundDescription: stage.roundDescriptions[i-1] || '', cycleIndex, cycles, cycleRestSec,
         intervalMode: config.intervalMode,

@@ -13,13 +13,14 @@ test('3-2-3 duplicate stages, independent boundary rests, full duration',()=>{
  assert.equal(rows.length,12);
  assert.deepEqual(rows.map(r=>r.workSec),[180,180,180,60,40,20,60,40,20,180,180,180]);
  assert.equal(rows[2].restSec,75);
- assert.equal(rows[5].restSec,90);
+ assert.equal(rows[5].restSec,30);
+ assert.equal(rows[5].blockRestSec,90);
  assert.equal(rows[8].restSec,45);
  const config={programRounds:rows,rounds:3};
  assert.equal(totalRoundsForConfig(config),12);
  assert.equal(restSecAfterRound(config,3),75);
  assert.equal(workSecForRound(config,4),60);
- assert.equal(totalDurationSecForConfig(config),rows.reduce((sum,r,i)=>sum+r.workSec+(i<rows.length-1?r.restSec:0),0));
+ assert.equal(totalDurationSecForConfig(config),rows.reduce((sum,r,i)=>sum+r.workSec+(i<rows.length-1?r.restSec+(r.blockRestSec||0):0),0));
 });
 test('engine automatically transitions from one preset to another',async()=>{
  globalThis.window={setInterval:()=>1,clearInterval:()=>{}};
@@ -63,8 +64,10 @@ test('round names and descriptions survive normalization and compilation',()=>{
 test('ladder block boundary uses configured block rest in compiled program',()=>{
  const config={rounds:4,workSec:20,restSec:20,intervalMode:'ladder',workStepSec:0,restStepSec:0,blockEnabled:true,blockCount:2,blockRestSec:40};
  assert.equal(totalRoundsForConfig(config),8);
- assert.equal(restSecAfterRound(config,4),40);
+ assert.equal(restSecAfterRound(config,4),20);
  const rows=compileProgram([{presetId:'classic2',settings:config}],profiles);
- assert.equal(rows[3].restSec,40);
+ assert.equal(rows[3].restSec,20);
+ assert.equal(rows[3].blockRestSec,40);
  assert.equal(rows[7].restSec,0);
+ assert.equal(rows[7].blockRestSec,0);
 });

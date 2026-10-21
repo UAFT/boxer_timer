@@ -53,3 +53,6 @@
 
 /* Numeric input must be visually centered within the round editor. */
 .stage-settings-modal #stageSettingsRounds{text-align:center!important;text-align-last:center;appearance:textfield;-moz-appearance:textfield;font-variant-numeric:tabular-nums}
+
+/* A separate block-rest line must never be presented as the normal round rest. */
+.program-stage-timing .program-stage-block-rest{display:block;flex:0 0 100%;font-size:12px;color:#d7bc74;white-space:nowrap}

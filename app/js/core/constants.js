@@ -5,6 +5,7 @@ export const PHASES = {
   COUNTDOWN: 'countdown',
   WORK: 'work',
   REST: 'rest',
+  BLOCK_REST: 'block_rest',
   FINISHED: 'finished'
 };
 

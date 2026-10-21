@@ -1,6 +1,6 @@
 import { PHASES } from '../core/constants.js';
 import { formatTime } from '../core/time.js';
-import { displayDurationsForState, remainingTotalSecForState, totalDurationSecForConfig, workSecForRound, restSecAfterRound, totalRoundsForConfig, blockCount, localRoundFor, blockForRound } from '../core/schedule.js';
+import { displayDurationsForState, remainingTotalSecForState, totalDurationSecForConfig, workSecForRound, restSecAfterRound, blockRestSecAfterRound, totalRoundsForConfig, blockCount, localRoundFor, blockForRound } from '../core/schedule.js';
 
 function intervalModeTitle(config) {
   return config?.programRounds?.length ? 'Программа' : (config?.presetId === 'tabata2020x24' ? 'Скоростной' : (config?.intervalMode === 'ladder' ? 'Лестница' : 'Обычный'));
@@ -20,6 +20,8 @@ function phaseLabelText(state) {
       return `Работа · ${modeTitle}`;
     case PHASES.REST:
       return `Отдых · ${modeTitle}`;
+    case PHASES.BLOCK_REST:
+      return `Между блоками · ${modeTitle}`;
     case PHASES.FINISHED:
       return 'Готово';
     default:
@@ -70,12 +72,12 @@ export function renderTimer(els, state, uiState = {}) {
   els.mainTime.textContent = formatTime(state.remainingSec);
   els.phaseLabel.textContent = state.config.programRounds?.length && state.phase === PHASES.WORK ? '' : phaseLabelText(state);
   els.roundLabel.textContent = roundLabelText(state);
-  const roundActive = [PHASES.WORK, PHASES.REST, PHASES.COUNTDOWN].includes(state.phase);
+  const roundActive = [PHASES.WORK, PHASES.REST, PHASES.BLOCK_REST, PHASES.COUNTDOWN].includes(state.phase);
   els.roundLabel.classList.toggle('round-active', roundActive);
   if (roundActive && state.config.programRounds?.length) {
     const r=state.config.programRounds[Math.max(0,state.roundIndex-1)];
     const stages=new Set(state.config.programRounds.map(x=>x.stageIndex)).size;
-    els.roundLabel.textContent='Этап '+(r.stageIndex+1)+'/'+stages+' · Раунд '+r.stageRound+'/'+r.stageRounds+(r.roundName?' · '+r.roundName:'');
+    els.roundLabel.textContent='Этап '+(r.stageIndex+1)+'/'+stages+(r.blockCount>1?' · Блок '+r.block+'/'+r.blockCount:'')+' · Раунд '+(r.blockCount>1?r.localRound:r.stageRound)+'/'+(r.blockCount>1?r.localRounds:r.stageRounds)+(r.roundName?' · '+r.roundName:'');
   } else if (roundActive) {
     const blocks = blockCount(state.config);
     els.roundLabel.innerHTML = blocks > 1
@@ -172,13 +174,15 @@ export function renderLiveLadder(els, state, ui = {}) {
       if (pr && pr.blockCount>1 && pr.localRound===1) { closeBlock(); rows.push('<div class="ladder-block-outline">'); blockOpen=true; }
       if (pr && pr.stageRound===1) {
         const stageRounds=config.programRounds.filter(r=>r.stageIndex===pr.stageIndex && r.cycleIndex===pr.cycleIndex);
-        const stageSeconds=stageRounds.reduce((sum,r,index)=>sum+r.workSec+(index<stageRounds.length-1?r.restSec:0),0);
+        const stageSeconds=stageRounds.reduce((sum,r,index)=>sum+r.workSec+(index<stageRounds.length-1?r.restSec+(r.blockRestSec||0):0),0);
         rows.push('<div class="ladder-block-label" data-stage="'+pr.stageIndex+'">Этап '+(pr.stageIndex+1)+(pr.stageTitle?' · '+escapeStageTitle(pr.stageTitle):'')+(programStageMode(pr)?' · '+programStageMode(pr):'')+' · всего '+formatTime(stageSeconds)+'</div>');
       }
       if (pr && pr.blockCount>1 && pr.localRound===1) rows.push('<div class="ladder-block-label" data-block="'+pr.block+'" data-stage="'+pr.stageIndex+'">Блок '+pr.block+' из '+pr.blockCount+'</div>');
       if (!pr && blockCount(config) > 1 && localRoundFor(config,i) === 1) rows.push(`<div class="ladder-block-label" data-block="${blockForRound(config,i)}">Блок ${blockForRound(config,i)} из ${blockCount(config)}</div>`);
       const rest = i < totalRoundsForConfig(config) ? formatTime(restSecAfterRound(config, i)) : '—';
-      rows.push(`<div class="ladder-live-row" data-round="${i}"><span class="ladder-plan">Раунд ${pr ? pr.localRound : localRoundFor(config, i)}${pr?.roundName ? ' · '+escapeStageTitle(pr.roundName) : ''} · ${formatTime(workSecForRound(config, i))} · отдых ${rest}</span><strong class="ladder-count"></strong></div>`);
+      const breakTime=blockRestSecAfterRound(config,i);
+      const blockDetail=breakTime?' · между блоками '+formatTime(breakTime):'';
+      rows.push(`<div class="ladder-live-row" data-round="${i}"><span class="ladder-plan">Раунд ${pr ? pr.localRound : localRoundFor(config, i)}${pr?.roundName ? ' · '+escapeStageTitle(pr.roundName) : ''} · ${formatTime(workSecForRound(config, i))} · отдых ${rest}${blockDetail}</span><strong class="ladder-count"></strong></div>`);
     }
     closeStage();
     list.innerHTML = rows.join('');
@@ -198,7 +202,7 @@ export function renderLiveLadder(els, state, ui = {}) {
     list.dataset.activeRound = '';
   }
 
-  const active = !preview && [PHASES.WORK, PHASES.REST, PHASES.COUNTDOWN].includes(state.phase) ? state.roundIndex : 0;
+  const active = !preview && [PHASES.WORK, PHASES.REST, PHASES.BLOCK_REST, PHASES.COUNTDOWN].includes(state.phase) ? state.roundIndex : 0;
   const currentProgramRound = config.programRounds?.[active-1];
   const currentBlock = active > 0 ? (currentProgramRound?.block ?? blockForRound(config, active)) : 0;
   for (const heading of list.querySelectorAll('.ladder-block-label')) {
@@ -208,7 +212,7 @@ export function renderLiveLadder(els, state, ui = {}) {
     const current = Number(row.dataset.round) === active;
     row.classList.toggle('is-active', current);
     const countdown = row.querySelector('.ladder-count');
-    countdown.textContent = current ? (state.phase === PHASES.REST ? 'Отдых ' : state.phase === PHASES.COUNTDOWN ? 'старт ' : '→ ') + formatTime(state.remainingSec) : '';
+    countdown.textContent = current ? (state.phase === PHASES.BLOCK_REST ? 'Между блоками ' : state.phase === PHASES.REST ? 'Отдых ' : state.phase === PHASES.COUNTDOWN ? 'старт ' : '→ ') + formatTime(state.remainingSec) : '';
   }
 
   if (list.dataset.activeRound !== String(active)) {
@@ -231,7 +235,10 @@ export function renderLadderPreview(els, settings) {
   const count = Math.min(rounds, 12);
   const rows = [];
   for (let i = 1; i <= count; i += 1) {
-    rows.push(`<div class="ladder-preview-row"><span>Раунд ${i}</span><strong>${formatTime(workSecForRound(config, i))}</strong><span>Отдых</span><strong>${i < rounds ? formatTime(restSecAfterRound(config, i)) : '—'}</strong></div>`);
+    if(blockCount(config)>1 && localRoundFor(config,i)===1)rows.push(`<div class="settings-inline-note">Блок ${blockForRound(config,i)} из ${blockCount(config)}</div>`);
+    rows.push(`<div class="ladder-preview-row"><span>Раунд ${localRoundFor(config,i)}</span><strong>${formatTime(workSecForRound(config,i))}</strong><span>Отдых</span><strong>${i<rounds?formatTime(restSecAfterRound(config,i)):'—'}</strong></div>`);
+    const pause=blockRestSecAfterRound(config,i);
+    if(pause>0)rows.push(`<div class="settings-inline-note">Отдых между блоками: ${formatTime(pause)}</div>`);
   }
   panel.innerHTML = `<div class="ladder-preview-title">Предварительный просмотр</div>${rows.join('')}${rounds > count ? `<div class="settings-inline-note">Показаны первые ${count} из ${rounds} раундов</div>` : ''}${config.intervalMode === 'ladder' && !config.workStepSec && !config.restStepSec ? '<div class="settings-inline-note">Оба шага равны нулю: все раунды будут одинаковыми.</div>' : ''}`;
 }

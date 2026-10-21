@@ -1,6 +1,6 @@
 import { PHASES } from '../core/constants.js';
 import { clampInt } from '../core/time.js';
-import { restSecAfterRound, workSecForRound, totalRoundsForConfig } from '../core/schedule.js';
+import { restSecAfterRound, blockRestSecAfterRound, workSecForRound, totalRoundsForConfig } from '../core/schedule.js';
 
 const DEFAULT_CONFIG = {
   rounds: 12,
@@ -33,7 +33,7 @@ function createIdleState(config) {
 
 function effectiveWarningSecondsForPhase(config, phase) {
   if (config?.countdownEnabled === false) return 0;
-  if (phase === PHASES.WORK || phase === PHASES.REST) return Math.max(0, Number(config?.warningSeconds ?? 0));
+  if (phase === PHASES.WORK || phase === PHASES.REST || phase === PHASES.BLOCK_REST) return Math.max(0, Number(config?.warningSeconds ?? 0));
   const value = Number(config?.warningSeconds ?? 0);
   return Number.isFinite(value) ? value : 0;
 }
@@ -60,6 +60,7 @@ function nextLabelForPhase(phase, remainingSec, warningSeconds) {
     return 'Идёт отдых';
   }
 
+  if (phase === PHASES.BLOCK_REST) return 'Отдых между блоками';
   return '—';
 }
 
@@ -181,6 +182,21 @@ export class TimerEngine {
     this.startInterval();
   }
 
+  beginBlockRestPhase(roundIndex) {
+    const sec=blockRestSecAfterRound(this.config,roundIndex);
+    this.state={
+      phase:PHASES.BLOCK_REST,
+      roundIndex,
+      totalRounds:totalRoundsForConfig(this.config),
+      remainingSec:sec,
+      phaseDurationSec:Math.max(1,sec),
+      nextLabel:'Отдых между блоками',
+      countdownText:'',progress:0
+    };
+    this.tickEndsAt=Date.now()+sec*1000;
+    this.emitState();this.emitTick();this.startInterval();
+  }
+
   beginRestPhase(roundIndex) {
     this.state = {
       phase: PHASES.REST,
@@ -214,21 +230,36 @@ export class TimerEngine {
         return;
       }
 
-      await this.emitEvent({ type: 'round-end-zero', roundIndex });
-
-      if (restSecAfterRound(this.config, roundIndex) > 0) {
+      const hasRoundRest=restSecAfterRound(this.config,roundIndex)>0;
+      const hasBlockRest=blockRestSecAfterRound(this.config,roundIndex)>0;
+      if (hasRoundRest) {
+        await this.emitEvent({type:'round-end-zero',roundIndex});
         this.beginRestPhase(roundIndex);
         return;
       }
-
-      await this.emitEvent({ type: 'round-start-zero', roundIndex: roundIndex + 1 });
+      if (hasBlockRest) {
+        await this.emitEvent({type:'block-rest-start-zero',roundIndex});
+        this.beginBlockRestPhase(roundIndex);
+        return;
+      }
+      await this.emitEvent({type:'round-start-zero',roundIndex:roundIndex+1});
       this.beginWorkPhase(roundIndex + 1);
       return;
     }
 
     if (phase === PHASES.REST) {
-      await this.emitEvent({ type: 'rest-end-zero', roundIndex });
-      this.beginWorkPhase(roundIndex + 1);
+      if (blockRestSecAfterRound(this.config,roundIndex)>0) {
+        await this.emitEvent({type:'block-rest-start-zero',roundIndex});
+        this.beginBlockRestPhase(roundIndex);
+      } else {
+        await this.emitEvent({type:'rest-end-zero',roundIndex});
+        this.beginWorkPhase(roundIndex+1);
+      }
+      return;
+    }
+    if (phase === PHASES.BLOCK_REST) {
+      await this.emitEvent({type:'block-rest-end-zero',roundIndex});
+      this.beginWorkPhase(roundIndex+1);
     }
   }
 
@@ -287,7 +318,7 @@ export class TimerEngine {
       this.state.remainingSec = nextRemainingSec;
       this.state.progress = this.computeProgress();
 
-      if (this.state.phase === PHASES.WORK || this.state.phase === PHASES.REST) {
+      if (this.state.phase === PHASES.WORK || this.state.phase === PHASES.REST || this.state.phase === PHASES.BLOCK_REST) {
         const effectiveWarningSeconds = effectiveWarningSecondsForPhase(this.config, this.state.phase);
         this.state.nextLabel = nextLabelForPhase(
           this.state.phase,
@@ -306,7 +337,7 @@ export class TimerEngine {
       {
         const effectiveWarningSeconds = effectiveWarningSecondsForPhase(this.config, this.state.phase);
         if (
-          (this.state.phase === PHASES.WORK || this.state.phase === PHASES.REST) &&
+          (this.state.phase === PHASES.WORK || this.state.phase === PHASES.REST || this.state.phase === PHASES.BLOCK_REST) &&
           effectiveWarningSeconds > 0 &&
           nextRemainingSec >= 1 &&
           nextRemainingSec <= effectiveWarningSeconds
