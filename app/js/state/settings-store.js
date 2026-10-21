@@ -13,7 +13,7 @@ function normalizeVariant(rawValue, fallbackValue = 'v2') {
 }
 
 function normalizeIntervalMode(rawMode, fallbackMode = 'standard') {
-  return rawMode === 'ladder' ? 'ladder' : (fallbackMode === 'ladder' ? 'ladder' : 'standard');
+  return ['standard','ladder','two_phase'].includes(rawMode) ? rawMode : (['standard','ladder','two_phase'].includes(fallbackMode)?fallbackMode:'standard');
 }
 
 function normalizeStepSeconds(rawValue, fallbackValue = 0) {
@@ -31,6 +31,9 @@ export function normalizeSettings(raw, fallback) {
     rounds: clampInt(raw?.rounds, 1, 99, fallback.rounds),
     workSec: clampInt(raw?.workSec, 1, 3600, fallback.workSec),
     restSec: clampInt(raw?.restSec, 0, 3600, fallback.restSec),
+    phaseTwoSec: clampInt(raw?.phaseTwoSec, 1, 3600, fallback.phaseTwoSec ?? 40),
+    phaseOneName: String(raw?.phaseOneName ?? fallback.phaseOneName ?? '').slice(0,100),
+    phaseTwoName: String(raw?.phaseTwoName ?? fallback.phaseTwoName ?? '').slice(0,100),
     countdownEnabled: true,
     warningSeconds: normalizeWarningSeconds(raw?.warningSeconds, fallback.warningSeconds ?? 10),
     audioEnabled: raw?.audioEnabled !== false,

@@ -21,10 +21,10 @@ export function programCardTimings(program, profiles) {
   const stages=normalizeProgram(program.entries);
   const options=normalizeOptions(program.options);
   const all=compileProgram(stages,profiles,options);
-  const total=all.reduce((sum,round)=>sum+round.workSec+round.restSec+(round.blockRestSec||0),0);
+  const total=all.reduce((sum,round)=>sum+round.workSec+(round.phaseTwoSec||0)+round.restSec+(round.blockRestSec||0),0);
   const stageData=stages.map((stage,index)=>{
     const rounds=compileProgram([stage],profiles,{cycles:1});
-    const duration=rounds.reduce((sum,r)=>sum+r.workSec+r.restSec+(r.blockRestSec||0),0);
+    const duration=rounds.reduce((sum,r)=>sum+r.workSec+(r.phaseTwoSec||0)+r.restSec+(r.blockRestSec||0),0);
     const cfg=stage.settings||profiles[stage.presetId];
     const workTimes=rounds.map(r=>r.workSec);
     const workLow=Math.min(...workTimes),workHigh=Math.max(...workTimes);
@@ -36,7 +36,7 @@ export function programCardTimings(program, profiles) {
     const rest=restLow===restHigh?timeClock(restLow):timeClock(restLow)+'–'+timeClock(restHigh);
     const blocks=cfg?.intervalMode==='ladder' && cfg.blockEnabled ? Number(cfg.blockCount)||1 : 1;
     return {index:index+1,title:stage.title||PRESET_NAMES[stage.presetId],rounds:rounds.length,roundsPerBlock:Math.max(1,Number(cfg.rounds)||1),blocks,
-      work,rest,duration,blockRest:blocks>1?timeClock(cfg.blockRestSec||0):'',
+      work,rest,duration,phaseTwo:cfg?.intervalMode==='two_phase'?timeClock(cfg.phaseTwoSec||40):'',blockRest:blocks>1?timeClock(cfg.blockRestSec||0):'',
       restAfter:index<stages.length-1?stage.restAfterSec:0,
       intervalMode:cfg?.intervalMode};
   });
@@ -84,6 +84,7 @@ export function renderSavedProgramCard(doc, program, profiles, {lang='ru',onOpen
     add(doc,block,'span','ft-stage-details',ru?
       label+' · работа '+stage.work+' · отдых '+stage.rest:
       label+' · work '+stage.work+' · rest '+stage.rest);
+    if(stage.phaseTwo)add(doc,block,'small','ft-stage-block-rest',(ru?'Фаза 2: ':'Phase 2: ')+stage.phaseTwo);
     if(stage.blocks>1)add(doc,block,'small','ft-stage-block-rest',(ru?'Отдых между блоками: ':'Between blocks: ')+stage.blockRest);
     add(doc,block,'span','ft-stage-total',(ru?'Всего: ':'Total: ')+timeWords(stage.duration,lang));
     if(stage.restAfter>0) add(doc,block,'small','ft-stage-rest-after',

@@ -4,7 +4,7 @@ import {buildLadderPlanRows,syncLadderPlanRows,ladderPlanPhaseCaption,ladderPlan
 import { displayDurationsForState, remainingTotalSecForState, totalDurationSecForConfig, workSecForRound, restSecAfterRound, blockRestSecAfterRound, totalRoundsForConfig, blockCount, localRoundFor, blockForRound } from '../core/schedule.js';
 
 function intervalModeTitle(config) {
-  return config?.programRounds?.length ? 'Программа' : (config?.presetId === 'tabata2020x24' ? 'Скоростной' : (config?.intervalMode === 'ladder' ? 'Лестница' : 'Обычный'));
+  return config?.programRounds?.length ? 'Программа' : (config?.presetId === 'tabata2020x24' ? 'Скоростной' : (config?.intervalMode === 'ladder' ? 'Лестница' : config?.intervalMode==='two_phase'?'Две фазы':'Обычный'));
 }
 
 function phaseLabelText(state) {
@@ -67,9 +67,9 @@ export function renderTimer(els, state, uiState = {}) {
   const metronomePanelOpen = !metronomeLocked && Boolean(uiState.metronomePanelOpen);
 
   els.mainTime.textContent = formatTime(state.remainingSec);
-  els.phaseLabel.textContent = state.config.programRounds?.length && state.phase === PHASES.WORK ? '' : phaseLabelText(state);
+  els.phaseLabel.textContent = state.config.programRounds?.length && state.phase === PHASES.WORK && !state.config.programRounds?.[state.roundIndex-1]?.phaseTwoSec ? '' : phaseLabelText(state);
   els.roundLabel.textContent = roundLabelText(state);
-  const roundActive = [PHASES.WORK, PHASES.REST, PHASES.BLOCK_REST, PHASES.COUNTDOWN].includes(state.phase);
+  const roundActive = [PHASES.WORK, PHASES.WORK_TWO, PHASES.REST, PHASES.BLOCK_REST, PHASES.COUNTDOWN].includes(state.phase);
   els.roundLabel.classList.toggle('round-active', roundActive);
   if (roundActive && state.config.programRounds?.length) {
     const r=state.config.programRounds[Math.max(0,state.roundIndex-1)];
@@ -87,7 +87,10 @@ export function renderTimer(els, state, uiState = {}) {
   els.progressFill.style.width = `${state.progress || 0}%`;
 
   const displayDurations = displayDurationsForState(state);
-  els.metricWork.textContent = formatTime(displayDurations.workSec);
+  const row=state.config.programRounds?.[Math.max(0,state.roundIndex-1)];
+  const hasPhaseTwo=row?row.phaseTwoSec>0:state.config.intervalMode==='two_phase';
+  const selected=state.phase===PHASES.WORK_TWO?2:state.phase===PHASES.WORK?1:(uiState.editablePhase||1);
+  els.metricWork.textContent = formatTime(hasPhaseTwo&&selected===2?(row?.phaseTwoSec||state.config.phaseTwoSec||40):displayDurations.workSec);
   els.metricRest.textContent = formatTime(displayDurations.restSec);
   els.metricRounds.textContent = String(state.config.rounds);
   els.metricMetronome.textContent = String(state.config.metronomeBpm ?? 0);
@@ -134,9 +137,9 @@ export function renderLiveLadder(els, state, ui = {}) {
   if (!panel) return;
   const preview = Boolean(ui.previewRounds?.length && !state.config.programRounds?.length);
   const config = preview ? { ...state.config, programRounds: ui.previewRounds } : state.config;
-  panel.hidden = config.intervalMode !== 'ladder' && !config.programRounds?.length;
+  panel.hidden = !['ladder','two_phase'].includes(config.intervalMode) && !config.programRounds?.length;
   const ladderTitle = panel.querySelector('.ladder-live-head strong');
-  if (ladderTitle) ladderTitle.textContent = config.programRounds?.length ? 'ПЛАН ТРЕНИРОВКИ'+(ui.programName?' — '+ui.programName:'') : 'ЛЕСТНИЦА';
+  if (ladderTitle) ladderTitle.textContent = config.programRounds?.length ? 'ПЛАН ТРЕНИРОВКИ'+(ui.programName?' — '+ui.programName:'') : (config.intervalMode==='two_phase'?'ДВЕ ФАЗЫ':'ЛЕСТНИЦА');
   if (panel.hidden) return;
   const expanded = Boolean(ui.ladderExpanded);
   panel.classList.toggle('is-expanded', expanded);
@@ -156,7 +159,7 @@ export function renderLiveLadder(els, state, ui = {}) {
   els.ladderFullPause.setAttribute('aria-label',control.label);
 
   const list = els.ladderLiveList;
-  const key = config.programRounds?.length ? JSON.stringify(config.programRounds) : [config.rounds, config.workSec, config.restSec, config.workStepSec, config.restStepSec, config.blockEnabled, config.blockCount, config.blockRestSec].join(':');
+  const key = config.programRounds?.length ? JSON.stringify(config.programRounds) : [config.rounds, config.workSec, config.restSec, config.workStepSec, config.restStepSec, config.blockEnabled, config.blockCount, config.blockRestSec,config.intervalMode,config.phaseTwoSec,config.phaseOneName,config.phaseTwoName].join(':');
   if (list.dataset.scheduleKey !== key) {
     list.innerHTML = buildLadderPlanRows(config);
     list.dataset.scheduleKey=key;
@@ -174,7 +177,12 @@ export function renderLadderPreview(els, settings) {
   const rows = [];
   for (let i = 1; i <= count; i += 1) {
     if(blockCount(config)>1 && localRoundFor(config,i)===1)rows.push(`<div class="settings-inline-note">Блок ${blockForRound(config,i)} из ${blockCount(config)}</div>`);
+    if(config.intervalMode==='two_phase') {
+      rows.push(`<div class="ladder-preview-row"><span>Раунд  · Фаза 1</span><strong></strong><span>Фаза 2</span><strong></strong></div>`);
+      if(i<rounds)rows.push(`<div class="settings-inline-note">Отдых: </div>`);
+    } else {
     rows.push(`<div class="ladder-preview-row"><span>Раунд ${localRoundFor(config,i)}</span><strong>${formatTime(workSecForRound(config,i))}</strong><span>Отдых</span><strong>${i<rounds?formatTime(restSecAfterRound(config,i)):'—'}</strong></div>`);
+    }
     const pause=blockRestSecAfterRound(config,i);
     if(pause>0)rows.push(`<div class="settings-inline-note">Отдых между блоками: ${formatTime(pause)}</div>`);
   }

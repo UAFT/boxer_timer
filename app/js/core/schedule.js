@@ -28,6 +28,15 @@ export function workSecForRound(config, roundIndex) {
   return Math.min(3600, Math.max(1, value));
 }
 
+// A second consecutive WORK phase belongs to the same round, not another round.
+export function phaseTwoSecForRound(config, roundIndex) {
+  if (config?.programRounds?.length) {
+    const row=config.programRounds[Math.max(0,Math.min(config.programRounds.length-1,roundIndex-1))];
+    return clampInt(row?.phaseTwoSec,0,3600,0);
+  }
+  return config?.intervalMode==='two_phase'?clampInt(config?.phaseTwoSec,1,3600,40):0;
+}
+
 export function restSecAfterRound(config, roundIndex) {
   if (config?.programRounds?.length) return config.programRounds[Math.max(0,Math.min(config.programRounds.length-1,roundIndex-1))].restSec;
   const base = clampInt(config?.restSec, 0, 3600, 60);
@@ -52,7 +61,7 @@ export function totalDurationSecForConfig(config) {
   const rounds = totalRoundsForConfig(config);
   let total = 0;
   for (let round = 1; round <= rounds; round += 1) {
-    total += workSecForRound(config, round);
+    total += workSecForRound(config, round) + phaseTwoSecForRound(config,round);
     if (round < rounds) total += restSecAfterRound(config, round) + blockRestSecAfterRound(config,round);
   }
   return total;
@@ -68,10 +77,11 @@ export function remainingTotalSecForState(state) {
 
   let remaining = Math.max(0, Number(state?.remainingSec || 0));
 
-  if (state?.phase === 'work') {
+  if (state?.phase === 'work' || state?.phase === 'work_two') {
+    if(state.phase==='work')remaining += phaseTwoSecForRound(config,roundIndex);
     if (roundIndex < rounds) remaining += restSecAfterRound(config, roundIndex) + blockRestSecAfterRound(config,roundIndex);
     for (let round = roundIndex + 1; round <= rounds; round += 1) {
-      remaining += workSecForRound(config, round);
+      remaining += workSecForRound(config, round) + phaseTwoSecForRound(config,round);
       if (round < rounds) remaining += restSecAfterRound(config, round) + blockRestSecAfterRound(config,round);
     }
     return remaining;
@@ -80,7 +90,7 @@ export function remainingTotalSecForState(state) {
   if (state?.phase === 'rest' || state?.phase === 'block_rest') {
     if (state.phase === 'rest') remaining += blockRestSecAfterRound(config,roundIndex);
     for (let round = roundIndex + 1; round <= rounds; round += 1) {
-      remaining += workSecForRound(config, round);
+      remaining += workSecForRound(config, round) + phaseTwoSecForRound(config,round);
       if (round < rounds) remaining += restSecAfterRound(config, round) + blockRestSecAfterRound(config,round);
     }
     return remaining;

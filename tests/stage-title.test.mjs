@@ -37,7 +37,7 @@ test('stage rendering hides ordinary only, special mode text remains unchanged',
   const app=readFileSync(new URL('../app/js/app.js',import.meta.url),'utf8');
   const html=readFileSync(new URL('../app/index.html',import.meta.url),'utf8');
   const style=readFileSync(new URL('../app/styles/stage-title.css',import.meta.url),'utf8');
-  assert.ok(app.includes("cfg.intervalMode==='ladder' ? '' : (entry.presetId==='tabata2020x24' ? 'Скоростной' : '')"));
+  assert.ok(app.includes("['ladder','two_phase'].includes(cfg.intervalMode)"));
   assert.ok(!app.includes("'Скоростной' : 'Обычный'"));
   assert.ok(app.includes('renderStageTitle(document,i+1,entry.title,{mode:cfg.intervalMode'));
   assert.ok(html.includes('./styles/stage-title.css'));

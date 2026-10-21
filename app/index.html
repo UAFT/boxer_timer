@@ -49,6 +49,10 @@
           <div class="round-heading" id="roundLabel">Раунд 0 из 0</div>
         </div>
 
+        <div class="ft-phase-switch" id="twoPhaseSwitch" role="group" aria-label="Выбор рабочей фазы" hidden>
+          <button type="button" data-phase-pick="1" aria-pressed="true">Фаза 1</button>
+          <button type="button" data-phase-pick="2" aria-pressed="false">Фаза 2</button>
+        </div>
         <div class="main-time" id="mainTime">03:00</div>
         <div class="phase-caption" id="phaseCaption"></div>
         <div class="countdown-caption" id="countdownCaption"></div>
@@ -162,6 +166,12 @@
         <h2 id="roundEditTitle">Название упражнения</h2>
         <label id="roundEditLabel" for="roundEditInput">Название упражнения</label>
         <textarea id="roundEditInput" rows="2" maxlength="100"></textarea>
+        <div id="roundEditPhases" class="ft-phase-name-fields" hidden>
+          <label for="roundEditPhaseOne">Фаза 1</label>
+          <input id="roundEditPhaseOne" type="text" maxlength="100" autocomplete="off">
+          <label for="roundEditPhaseTwo">Фаза 2</label>
+          <input id="roundEditPhaseTwo" type="text" maxlength="100" autocomplete="off">
+        </div>
         <div class="round-edit-actions">
           <button type="button" id="roundEditCancel">Отмена</button>
           <button type="button" id="roundEditSave">Сохранить</button>
@@ -212,12 +222,21 @@
         <div class="settings-head"><h2>Редактирование этапа</h2></div>
         <label class="stage-settings-field">Название этапа<input id="stageSettingsName" maxlength="80" type="text"></label>
         <label class="stage-settings-field">Режим
-          <div class="stage-mode-choices"><button type="button" data-stage-mode="standard">Обычный</button><button type="button" data-stage-mode="ladder">Лестница</button></div><input type="hidden" id="stageSettingsMode" value="standard">
+          <div class="stage-mode-choices"><button type="button" data-stage-mode="standard">Обычный</button><button type="button" data-stage-mode="two_phase">Две фазы</button><button type="button" data-stage-mode="ladder">Лестница</button></div><input type="hidden" id="stageSettingsMode" value="standard">
         </label>
         <div class="stage-settings-grid">
           <label>Работа<div class="stage-mmss"><input id="stageSettingsWorkMin" inputmode="numeric" type="number" min="0" max="60" aria-label="Минуты работы"><span>мин</span><input id="stageSettingsWorkSec" inputmode="numeric" type="number" min="0" max="59" aria-label="Секунды работы"><span>сек</span></div></label>
           <label>Отдых<div class="stage-mmss"><input id="stageSettingsRestMin" inputmode="numeric" type="number" min="0" max="60" aria-label="Минуты отдыха"><span>мин</span><input id="stageSettingsRestSec" inputmode="numeric" type="number" min="0" max="59" aria-label="Секунды отдыха"><span>сек</span></div></label>
           <label>Раунды<input id="stageSettingsRounds" inputmode="numeric" type="number" min="1" max="99" step="1" required></label>
+        </div>
+        <div id="stageSettingsTwoPhase" class="ft-stage-two-phase" hidden>
+          <div class="ft-phase-name-fields">
+            <label>Фаза 1<input id="stageSettingsPhaseOne" type="text" maxlength="100" autocomplete="off" placeholder="Фаза 1"></label>
+            <label>Фаза 2<input id="stageSettingsPhaseTwo" type="text" maxlength="100" autocomplete="off" placeholder="Фаза 2"></label>
+          </div>
+          <label>Время фазы 2
+            <div class="stage-mmss"><input id="stageSettingsPhaseTwoMin" type="number" inputmode="numeric" min="0" max="60" aria-label="Минуты второй фазы"><span>мин</span><input id="stageSettingsPhaseTwoSec" type="number" inputmode="numeric" min="0" max="59" aria-label="Секунды второй фазы"><span>сек</span></div>
+          </label>
         </div>
         <div id="stageSettingsLadder" hidden>
           <div class="stage-settings-grid">
@@ -268,6 +287,7 @@
               <div class="settings-field-label">Схема</div>
               <div class="choice-row" role="group" aria-label="Режим интервалов">
                 <button type="button" class="choice-chip" data-interval-mode="standard">Обычный</button>
+                <button type="button" class="choice-chip" data-interval-mode="two_phase">Две фазы</button>
                 <button type="button" class="choice-chip" data-interval-mode="ladder">Лестница</button>
               </div>
               <input type="hidden" id="intervalModeInput" value="standard" />

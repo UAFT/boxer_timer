@@ -40,7 +40,7 @@ test('tampered, unrelated, oversized or future-version files are rejected',()=>{
  const base=JSON.parse(serializeWorkoutFile(example));
  const bad=[
   {value:{...base,format:'malware'},code:'invalid'},
-  {value:{...base,version:2},code:'version'},
+  {value:{...base,version:3},code:'version'},
   {value:{...base,entries:[]},code:'invalid'},
   {value:{...base,entries:[{...base.entries[0],presetId:'bad'}]},code:'invalid'},
   {value:{...base,entries:[{...base.entries[0],settings:{...workout.settings,workSec:-1}}]},code:'invalid'},

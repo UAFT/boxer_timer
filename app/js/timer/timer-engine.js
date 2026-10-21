@@ -1,6 +1,6 @@
 import { PHASES } from '../core/constants.js';
 import { clampInt } from '../core/time.js';
-import { restSecAfterRound, blockRestSecAfterRound, workSecForRound, totalRoundsForConfig } from '../core/schedule.js';
+import { restSecAfterRound, phaseTwoSecForRound, blockRestSecAfterRound, workSecForRound, totalRoundsForConfig } from '../core/schedule.js';
 
 const DEFAULT_CONFIG = {
   rounds: 12,
@@ -33,7 +33,7 @@ function createIdleState(config) {
 
 function effectiveWarningSecondsForPhase(config, phase) {
   if (config?.countdownEnabled === false) return 0;
-  if (phase === PHASES.WORK || phase === PHASES.REST || phase === PHASES.BLOCK_REST) return Math.max(0, Number(config?.warningSeconds ?? 0));
+  if (phase === PHASES.WORK || phase === PHASES.WORK_TWO || phase === PHASES.REST || phase === PHASES.BLOCK_REST) return Math.max(0, Number(config?.warningSeconds ?? 0));
   const value = Number(config?.warningSeconds ?? 0);
   return Number.isFinite(value) ? value : 0;
 }
@@ -87,11 +87,14 @@ export class TimerEngine {
       rounds: clampInt(nextConfig?.rounds, 1, 99, DEFAULT_CONFIG.rounds),
       programRounds: Array.isArray(nextConfig?.programRounds) ? structuredClone(nextConfig.programRounds) : null,
       workSec: clampInt(nextConfig?.workSec, 1, 3600, DEFAULT_CONFIG.workSec),
+      phaseTwoSec: clampInt(nextConfig?.phaseTwoSec, 1, 3600, 40),
+      phaseOneName: String(nextConfig?.phaseOneName || '').slice(0,100),
+      phaseTwoName: String(nextConfig?.phaseTwoName || '').slice(0,100),
       restSec: clampInt(nextConfig?.restSec, 0, 3600, DEFAULT_CONFIG.restSec),
       blockEnabled: Boolean(nextConfig?.blockEnabled),
       blockCount: clampInt(nextConfig?.blockCount, 1, 99, 1),
       blockRestSec: Math.round(clampInt(nextConfig?.blockRestSec, 0, 3600, 90) / 5) * 5,
-      intervalMode: nextConfig?.intervalMode === 'ladder' ? 'ladder' : 'standard',
+      intervalMode: ['standard','ladder','two_phase'].includes(nextConfig?.intervalMode) ? nextConfig.intervalMode : 'standard',
       workStepSec: Math.round(clampInt(nextConfig?.workStepSec, -600, 600, DEFAULT_CONFIG.workStepSec) / 5) * 5,
       restStepSec: Math.round(clampInt(nextConfig?.restStepSec, -600, 600, DEFAULT_CONFIG.restStepSec) / 5) * 5,
       countdownEnabled: nextConfig?.countdownEnabled !== false,
@@ -182,6 +185,14 @@ export class TimerEngine {
     this.startInterval();
   }
 
+  beginWorkTwoPhase(roundIndex) {
+    const sec=phaseTwoSecForRound(this.config,roundIndex);
+    this.state={phase:PHASES.WORK_TWO,roundIndex,totalRounds:totalRoundsForConfig(this.config),
+      remainingSec:sec,phaseDurationSec:Math.max(1,sec),nextLabel:'Идёт фаза 2',countdownText:'',progress:0};
+    this.tickEndsAt=Date.now()+sec*1000;
+    this.emitState();this.emitTick();this.startInterval();
+  }
+
   beginBlockRestPhase(roundIndex) {
     const sec=blockRestSecAfterRound(this.config,roundIndex);
     this.state={
@@ -224,7 +235,13 @@ export class TimerEngine {
       return;
     }
 
-    if (phase === PHASES.WORK) {
+    if (phase === PHASES.WORK && phaseTwoSecForRound(this.config,roundIndex)>0) {
+      await this.emitEvent({type:'phase-two-start-zero',roundIndex});
+      this.beginWorkTwoPhase(roundIndex);
+      return;
+    }
+
+    if (phase === PHASES.WORK || phase === PHASES.WORK_TWO) {
       if (roundIndex >= totalRounds) {
         await this.finishWorkout(roundIndex);
         return;

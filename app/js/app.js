@@ -5,6 +5,8 @@ import { installDeleteConfirmation } from './ui/delete-confirmation.js';
 import { installTimerDisclosure } from './ui/timer-disclosure.js';
 import { renderStageTitle } from './ui/stage-title.js';
 import {stageTimingRows} from './ui/stage-timing-rows.js';
+import {installTwoPhaseToggle} from './ui/two-phase-toggle.js';
+import {stageTwoPhaseLoad,stageTwoPhaseSave,roundTwoPhaseLoad,roundTwoPhaseSave} from './ui/two-phase-editor.js';
 import { installWorkoutExchange } from './sharing/workout-exchange-ui.js';
 import { storeImportedWorkout, resolveSenderSettings } from './sharing/workout-file.js';
 import { renderSavedProgramCard, timeWords } from './ui/library-card-view.js';
@@ -34,6 +36,7 @@ import { bindControls, bindPresetTabs } from './ui/bindings.js';
 const DEFAULT_PRESET_ID = 'classic3';
 const STEP_RULES = {
   workSec: { step: 5, min: 5, max: 3600 },
+  phaseTwoSec: { step: 5, min: 5, max: 3600 },
   restSec: { step: 5, min: 0, max: 3600 },
   rounds: { step: 1, min: 1, max: 99 },
   metronomeBpm: { step: 1, min: 0, max: 300 },
@@ -43,8 +46,8 @@ const STEP_RULES = {
 const DEFAULT_METRONOME_BPM = 20;
 const PRESTART_COUNTDOWN_EVENTS = new Set(['prestart-count-4', 'prestart-count-3', 'prestart-count-2', 'prestart-count-1']);
 const METRONOME_SUPPRESS_EVENTS = new Set(['round-end-zero', 'block-rest-start-zero', 'workout-end-zero']);
-const ROUND_START_SYNC_EVENTS = new Set(['round-start-zero', 'rest-end-zero', 'block-rest-end-zero']);
-const ZERO_TRANSITION_EVENTS = new Set(['round-start-zero', 'round-end-zero', 'rest-end-zero', 'block-rest-start-zero', 'block-rest-end-zero', 'workout-end-zero']);
+const ROUND_START_SYNC_EVENTS = new Set(['round-start-zero', 'rest-end-zero', 'block-rest-end-zero', 'phase-two-start-zero']);
+const ZERO_TRANSITION_EVENTS = new Set(['round-start-zero', 'round-end-zero', 'rest-end-zero', 'block-rest-start-zero', 'block-rest-end-zero', 'phase-two-start-zero', 'workout-end-zero']);
 
 const els = getDomRefs();
 const audio = new AudioEngine();
@@ -71,6 +74,7 @@ function resolveEventAudioSpec(event, settings) {
   if (event.type === 'round-start-zero') {
     return { key: 'cue_round_start_v2', tag: 'transition', volume: 1.6 };
   }
+  if (event.type === 'phase-two-start-zero') return { key: 'cue_round_start_v1', tag:'transition', volume:1.6 };
   if (event.type === 'round-end-zero') {
     return { key: 'cue_rest_start_v2', tag: 'transition', volume: 1.6 };
   }
@@ -94,6 +98,7 @@ const profileState = loadProfileState();
 const profiles = { ...profileState.profiles };
 let activePresetId = profileState.activeId;
 let activeSettings = normalizeSettings(profiles[activePresetId], clonePreset(activePresetId));
+const phaseToggle=installTwoPhaseToggle({getSettings:()=>activeSettings,onSelect:()=>renderCurrentState()});
 let programEntries = [];
 try { programEntries = normalizeProgram(JSON.parse(localStorage.getItem(PROGRAM_KEY) || '[]')); } catch {}
 let programOptions = normalizeOptions({});
@@ -130,20 +135,23 @@ function previewProgram() { return programEntries.length ? compileProgram(progra
 const timerDisclosure=installTimerDisclosure();
 function syncTimerVisibility(){timerDisclosure.sync(programEntries.length>0,programRunning);}
 function renderCurrentState() {
-  renderTimer(els, { ...timer.state, config: timer.config, isPaused: timer.isPaused }, { metronomePanelOpen: isMetronomePanelOpen(), ladderExpanded: uiState.ladderExpanded, programName:openedProgramName, previewRounds: !programRunning && programEntries.length ? previewProgram() : null });
+  renderTimer(els, { ...timer.state, config: timer.config, isPaused: timer.isPaused }, { metronomePanelOpen: isMetronomePanelOpen(), ladderExpanded: uiState.ladderExpanded, programName:openedProgramName, previewRounds: !programRunning && programEntries.length ? previewProgram() : null, editablePhase:phaseToggle.selected() });
+  phaseToggle.render(activeSettings,timer?.state);
   renderProgram();
   syncTimerVisibility();
 }
 
 const timer = new TimerEngine({
   onTick: (state) => {
-    renderTimer(els, state, { metronomePanelOpen: isMetronomePanelOpen(), ladderExpanded: uiState.ladderExpanded, programName:openedProgramName, previewRounds: !programRunning && programEntries.length ? previewProgram() : null });
+    renderTimer(els, state, { metronomePanelOpen: isMetronomePanelOpen(), ladderExpanded: uiState.ladderExpanded, programName:openedProgramName, previewRounds: !programRunning && programEntries.length ? previewProgram() : null, editablePhase:phaseToggle.selected() });
+    phaseToggle.render(activeSettings,state);
     renderProgram();
     syncTimerVisibility();
     metronome.syncPhase(state);
   },
   onStateChange: (state) => {
-    renderTimer(els, state, { metronomePanelOpen: isMetronomePanelOpen(), ladderExpanded: uiState.ladderExpanded, programName:openedProgramName, previewRounds: !programRunning && programEntries.length ? previewProgram() : null });
+    renderTimer(els, state, { metronomePanelOpen: isMetronomePanelOpen(), ladderExpanded: uiState.ladderExpanded, programName:openedProgramName, previewRounds: !programRunning && programEntries.length ? previewProgram() : null, editablePhase:phaseToggle.selected() });
+    phaseToggle.render(activeSettings,state);
     renderProgram();
     syncTimerVisibility();
     metronome.syncPhase(state);
@@ -234,7 +242,7 @@ function handleSaveSettings() {
   // A program stage may carry a saved preset snapshot. Keep its ladder/block
   // controls in sync with the preset the user just edited in Settings.
   if (programEntries.length && !programRunning) {
-    const fields=['intervalMode','blockEnabled','blockCount','blockRestSec','workStepSec','restStepSec'];
+    const fields=['intervalMode','phaseTwoSec','phaseOneName','phaseTwoName','blockEnabled','blockCount','blockRestSec','workStepSec','restStepSec'];
     let changed=false;
     for (const entry of programEntries) {
       if (!entry.settings || entry.presetId!==activePresetId) continue;
@@ -250,8 +258,8 @@ function handleAdjustValue({ target, direction }, event) {
   event?.preventDefault?.();
   event?.stopPropagation?.();
 
-  const field = editableRestField(activeSettings, target);
-  const rule = STEP_RULES[target];
+  const field = target==='workSec' ? phaseToggle.workTarget() : editableRestField(activeSettings, target);
+  const rule = STEP_RULES[field];
   if (!rule) return;
   const sign = direction === 'down' ? -1 : 1;
   const next = Math.min(rule.max, Math.max(rule.min, (activeSettings[field] ?? 0) + sign * rule.step));
@@ -334,7 +342,7 @@ function persistProgram() {
 }
 function addProgramStage(presetId) {
   if (!PRESET_NAMES[presetId] || programRunning || programEntries.length >= 24) return;
-  programEntries.push({ presetId, title:'', restAfterSec: 60 });
+  programEntries.push({ presetId, title:'', restAfterSec: 60, ...(presetId===activePresetId && activeSettings.intervalMode==='two_phase'?{settings:structuredClone(activeSettings)}:{}) });
   timerDisclosure.keepExpandedOnPresetAdd();
   persistProgram();
 }
@@ -375,6 +383,7 @@ function renameProgramRound(stageIndex, roundIndex, description=false, trigger=n
   input.maxLength=description?600:100;
   input.rows=description?5:2;
   input.value=stage[field]?.[roundIndex]||'';
+  roundTwoPhaseLoad(stage,roundIndex,!description && (stage.settings || profiles[stage.presetId]).intervalMode==='two_phase');
   document.getElementById('roundEditModal').hidden=false;
   input.focus();
   input.setSelectionRange(input.value.length,input.value.length);
@@ -390,6 +399,7 @@ function bindRoundEditor() {
     const values=Array.isArray(stage[ctx.field])?[...stage[ctx.field]]:[];
     values[ctx.roundIndex]=input.value.trim().slice(0,ctx.description?600:100);
     stage[ctx.field]=values;
+    if(!ctx.description && (stage.settings || profiles[stage.presetId]).intervalMode==='two_phase')roundTwoPhaseSave(stage,ctx.roundIndex);
     closeRoundEditor();
     persistProgram();
   });
@@ -397,9 +407,9 @@ function bindRoundEditor() {
   modal.addEventListener('keydown',event=>{
     if(event.key==='Escape'){event.preventDefault();closeRoundEditor();}
     if(event.key==='Tab'){
-      const controls=[input,document.getElementById('roundEditCancel'),document.getElementById('roundEditSave')];
+      const controls=[input,...(document.getElementById('roundEditPhases').hidden?[]:[document.getElementById('roundEditPhaseOne'),document.getElementById('roundEditPhaseTwo')]),document.getElementById('roundEditCancel'),document.getElementById('roundEditSave')];
       const index=controls.indexOf(document.activeElement);
-      if(index>=0){event.preventDefault();controls[(index+(event.shiftKey?2:1))%3].focus();}
+      if(index>=0){event.preventDefault();controls[(index+(event.shiftKey?controls.length-1:1))%controls.length].focus();}
     }
   });
 }
@@ -422,15 +432,18 @@ function openStageSettings(index) {
   for(const [key,value] of [['Rounds',cfg.rounds],
     ['WorkStep',cfg.workStepSec||0],['RestStep',cfg.restStepSec||0],
     ['Blocks',cfg.blockCount||2],['BlockRest',cfg.blockRestSec||60]])id(key).value=value;
-  id('Mode').value=cfg.intervalMode==='ladder'?'ladder':'standard';
+  id('Mode').value=['ladder','two_phase'].includes(cfg.intervalMode)?cfg.intervalMode:'standard';
   id('BlockEnabled').checked=!!cfg.blockEnabled;
+  stageTwoPhaseLoad(cfg);
   syncStageSettingsMode();
   document.getElementById('stageSettingsModal').hidden=false;
 }
 function syncStageSettingsMode(){
-  const ladder=document.getElementById('stageSettingsMode').value==='ladder';
-  document.querySelectorAll('[data-stage-mode]').forEach(b=>{b.classList.toggle('selected',b.dataset.stageMode===(ladder?'ladder':'standard'));b.setAttribute('aria-pressed',String(b.classList.contains('selected')));});
+  const mode=document.getElementById('stageSettingsMode').value;
+  const ladder=mode==='ladder';
+  document.querySelectorAll('[data-stage-mode]').forEach(b=>{b.classList.toggle('selected',b.dataset.stageMode===mode);b.setAttribute('aria-pressed',String(b.classList.contains('selected')));});
   document.getElementById('stageSettingsLadder').hidden=!ladder;
+  document.getElementById('stageSettingsTwoPhase').hidden=mode!=='two_phase';
   document.getElementById('stageSettingsBlockFields').hidden=!ladder || !document.getElementById('stageSettingsBlockEnabled').checked;
 }
 function closeStageSettings(){
@@ -440,7 +453,7 @@ function bindStageSettings(){
   const id=name=>document.getElementById('stageSettings'+name);
   document.querySelectorAll('[data-stage-mode]').forEach(b=>b.addEventListener('click',()=>{id('Mode').value=b.dataset.stageMode;syncStageSettingsMode();}));
   id('BlockEnabled').addEventListener('change',syncStageSettingsMode);
-  for(const key of ['WorkMin','WorkSec','RestMin','RestSec','Rounds']){
+  for(const key of ['WorkMin','WorkSec','RestMin','RestSec','PhaseTwoMin','PhaseTwoSec','Rounds']){
     const input=id(key), unit=key==='Rounds'?1:1, min=key.endsWith('Sec')?0:key==='Rounds'?1:0;
     const max=key.endsWith('Sec')?59:key==='Rounds'?99:60;
     const parent=input.parentElement;
@@ -485,9 +498,10 @@ function bindStageSettings(){
     const cfg=structuredClone(entry.settings || profiles[entry.presetId]);
     Object.assign(cfg,{workSec:values.Work,restSec:values.Rest,rounds:values.Rounds,
       workStepSec:values.WorkStep,restStepSec:values.RestStep,
-      intervalMode:id('Mode').value==='ladder'?'ladder':'standard',
+      intervalMode:['ladder','two_phase'].includes(id('Mode').value)?id('Mode').value:'standard',
       blockEnabled:id('Mode').value==='ladder'&&id('BlockEnabled').checked,
       blockCount:values.Blocks,blockRestSec:values.BlockRest});
+    if(cfg.intervalMode==='two_phase' && !stageTwoPhaseSave(cfg))return;
     // Keep the original library task labels where possible; extra rounds remain editable.
     entry.settings=cfg;
     entry.title=id('Name').value.trim().slice(0,80);
@@ -535,7 +549,7 @@ function russianBlockCount(count) {
 function formatProgramTime(sec) {return String(Math.floor(sec/60)).padStart(2,'0')+':'+String(sec%60).padStart(2,'0');}
 function stageTiming(entry) {
   const rounds=compileProgram([entry],profiles,{cycles:1});
-  const total=rounds.reduce((sum,round)=>sum+round.workSec+round.restSec+(round.blockRestSec||0),0);
+  const total=rounds.reduce((sum,round)=>sum+round.workSec+(round.phaseTwoSec||0)+round.restSec+(round.blockRestSec||0),0);
   return {rounds,total};
 }
 function stageTimingText(entry) {
@@ -572,10 +586,10 @@ function renderProgram() {
       const stage=document.createElement('div');stage.className='program-stage';
       const main=document.createElement('div');main.className='program-stage-main';
       const cfg=entry.settings || profiles[entry.presetId];
-      const heading=renderStageTitle(document,i+1,entry.title,{mode:cfg.intervalMode==='ladder'?'Лестница':''});
+      const heading=renderStageTitle(document,i+1,entry.title,{mode:cfg.intervalMode==='ladder'?'Лестница':cfg.intervalMode==='two_phase'?'Две фазы':''});
       const detail=document.createElement('small');
       const kind=document.createElement('small');kind.className='program-stage-kind';
-      kind.textContent=cfg.intervalMode==='ladder' ? '' : (entry.presetId==='tabata2020x24' ? 'Скоростной' : '');
+      kind.textContent=['ladder','two_phase'].includes(cfg.intervalMode) ? '' : (entry.presetId==='tabata2020x24' ? 'Скоростной' : '');
       detail.className='program-stage-timing';
       const timing=stageTiming(entry), english=document.documentElement.lang==='en';
       for(const [klass,text] of stageTimingRows(cfg,timing,english)){const item=document.createElement('span');item.className=klass;item.textContent=text;detail.append(item);}
@@ -595,7 +609,7 @@ function renderProgram() {
           const label=document.createElement('span');
           const local=cfg.intervalMode==='ladder'&&cfg.blockEnabled ? (j%Math.max(1,cfg.rounds))+1 : j+1;
           const block=cfg.intervalMode==='ladder'&&cfg.blockEnabled&&cfg.blockCount>1 ? 'Блок '+(Math.floor(j/Math.max(1,cfg.rounds))+1)+' · ' : '';
-          label.textContent=block+'Раунд '+local+' · '+(entry.roundNames?.[j]||'Без названия');
+          label.textContent=block+'Раунд '+local+' · '+(entry.roundNames?.[j]|| (cfg.intervalMode==='two_phase' ? [entry.phaseOneOverrides?.[j]||cfg.phaseOneName||'Фаза 1',entry.phaseTwoOverrides?.[j]||cfg.phaseTwoName||'Фаза 2'].join(' / ') : 'Без названия'));
           const edit=document.createElement('button');edit.type='button';edit.textContent='✎';edit.setAttribute('aria-label','Название раунда '+(j+1));edit.addEventListener('click',()=>renameProgramRound(i,j,false,edit));
           const desc=document.createElement('button');desc.type='button';desc.textContent='≡';desc.setAttribute('aria-label','Описание раунда '+(j+1));desc.addEventListener('click',()=>renameProgramRound(i,j,true,desc));
           line.append(label,edit,desc);editor.append(line);

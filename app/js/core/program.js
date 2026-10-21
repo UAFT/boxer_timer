@@ -1,4 +1,4 @@
-import { totalRoundsForConfig, workSecForRound, restSecAfterRound, blockRestSecAfterRound } from './schedule.js';
+import { totalRoundsForConfig, workSecForRound, phaseTwoSecForRound, restSecAfterRound, blockRestSecAfterRound } from './schedule.js';
 export const PRESET_NAMES = { classic3: '3′', classic2: '2′', classic1: '1′', tabata2020x24: '⚡' };
 export const PROGRAM_KEY = 'andar.fight.timer.program.v1';
 export const LIBRARY_KEY = 'fighttech.program.library.v1';
@@ -13,6 +13,8 @@ export function normalizeProgram(raw) {
     presetId: x.presetId,
     title: typeof x.title==='string' ? x.title.slice(0,80) : '',
     roundNames: Array.isArray(x.roundNames) ? x.roundNames.slice(0,200).map(n=>String(n||'').slice(0,100)) : [],
+    phaseOneOverrides: Array.isArray(x.phaseOneOverrides) ? x.phaseOneOverrides.slice(0,200).map(n=>String(n||'').slice(0,100)) : [],
+    phaseTwoOverrides: Array.isArray(x.phaseTwoOverrides) ? x.phaseTwoOverrides.slice(0,200).map(n=>String(n||'').slice(0,100)) : [],
     roundDescriptions: Array.isArray(x.roundDescriptions) ? x.roundDescriptions.slice(0,200).map(n=>String(n||'').slice(0,600)) : [],
     settings: x.settings && typeof x.settings==='object' && !Array.isArray(x.settings) ? structuredClone(x.settings) : null,
     restAfterSec: Math.max(0, Math.min(3600, Math.round((Number(x.restAfterSec) || 0) / 5) * 5))
@@ -28,6 +30,9 @@ export function compileProgram(entries, profiles, options = {}) {
     for (let i=1;i<=total;i++) {
       programRounds.push({
         workSec: workSecForRound(config,i),
+        phaseTwoSec: phaseTwoSecForRound(config,i),
+        phaseOneName: stage.phaseOneOverrides?.[i-1] || config.phaseOneName || '',
+        phaseTwoName: stage.phaseTwoOverrides?.[i-1] || config.phaseTwoName || '',
         restSec: i<total ? restSecAfterRound(config,i) : (stageIndex<stages.length-1 ? stage.restAfterSec : cycleIndex<cycles-1 ? cycleRestSec : 0),
         blockRestSec: i<total ? blockRestSecAfterRound(config,i) : 0,
         stageIndex, stageRound: i, stageRounds: total, presetId: stage.presetId,

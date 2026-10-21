@@ -4,6 +4,7 @@ export const PHASES = {
   IDLE: 'idle',
   COUNTDOWN: 'countdown',
   WORK: 'work',
+  WORK_TWO: 'work_two',
   REST: 'rest',
   BLOCK_REST: 'block_rest',
   FINISHED: 'finished'

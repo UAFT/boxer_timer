@@ -2,7 +2,7 @@ import { PRESET_NAMES, normalizeOptions, normalizeProgram } from '../core/progra
 import { clonePreset } from '../state/presets.js';
 
 export const WORKOUT_FILE_FORMAT = 'fighttech.workout';
-export const WORKOUT_FILE_VERSION = 1;
+export const WORKOUT_FILE_VERSION = 2;
 export const WORKOUT_FILE_MAX_BYTES = 128 * 1024;
 
 export class WorkoutFileError extends Error {
@@ -13,7 +13,7 @@ const plain = v => v !== null && typeof v === 'object' && !Array.isArray(v) && O
 const integer = (x, min, max) => Number.isInteger(x) && x >= min && x <= max;
 const string = (x, max, nonempty = false) => typeof x === 'string' && x.length <= max && (!nonempty || !!x.trim());
 const configBounds = {
-  rounds: [1,99],workSec:[5,3600],restSec:[0,3600],
+  rounds: [1,99],workSec:[5,3600],phaseTwoSec:[5,3600],restSec:[0,3600],
   workStepSec:[-600,600],restStepSec:[-600,600],blockCount:[1,99],blockRestSec:[0,3600],
   metronomeBpm:[0,300],warningSeconds:[0,10]
 };
@@ -23,12 +23,13 @@ function checkSettings(settings, presetId) {
   for (const [k,v] of Object.entries(settings)) {
     if (k === '__proto__' || k === 'constructor' || k === 'prototype') invalid();
     if (v !== null && typeof v !== 'string' && typeof v !== 'number' && typeof v !== 'boolean') invalid();
-    if (typeof v === 'string' && v.length > 90) invalid();
+    if (typeof v === 'string' && v.length > 100) invalid();
     if (typeof v === 'number' && (!Number.isFinite(v) || Math.abs(v) > 100000)) invalid();
     if (configBounds[k] && !integer(v,...configBounds[k])) invalid();
   }
   for (const k of ['rounds','workSec','restSec']) if (!integer(settings[k],...configBounds[k])) invalid();
-  if (settings.intervalMode != null && !['standard','ladder'].includes(settings.intervalMode)) invalid();
+  if (settings.intervalMode != null && !['standard','ladder','two_phase'].includes(settings.intervalMode)) invalid();
+  if (settings.intervalMode==='two_phase' && !integer(settings.phaseTwoSec,5,3600)) invalid();
   if (settings.blockEnabled != null && typeof settings.blockEnabled !== 'boolean') invalid();
   if (settings.blockEnabled && !integer(settings.blockCount,1,99)) invalid();
   if (settings.countdownEnabled != null && typeof settings.countdownEnabled !== 'boolean') invalid();
@@ -40,7 +41,7 @@ function checkEntries(entries, options) {
   for (const entry of entries) {
     if (!plain(entry) || !Object.hasOwn(PRESET_NAMES,entry.presetId)) invalid();
     if (!string(entry.title,80) || !integer(entry.restAfterSec,0,3600)) invalid();
-    for (const [key,length] of [['roundNames',100],['roundDescriptions',600]]) {
+    for (const [key,length] of [['roundNames',100],['phaseOneOverrides',100],['phaseTwoOverrides',100],['roundDescriptions',600]]) {
       if (entry[key] != null && (!Array.isArray(entry[key]) || entry[key].length > 200 || entry[key].some(x=>!string(x,length)))) invalid();
     }
     if (!plain(entry.settings)) invalid(); // v1 files always carry sender settings
@@ -54,7 +55,8 @@ export function parseWorkoutFile(contents) {
   let value;
   try { value = JSON.parse(contents); } catch { throw new WorkoutFileError('invalid'); }
   if (!plain(value) || value.format !== WORKOUT_FILE_FORMAT) throw new WorkoutFileError('invalid');
-  if (value.version !== WORKOUT_FILE_VERSION) throw new WorkoutFileError('version');
+  if (![1,WORKOUT_FILE_VERSION].includes(value.version)) throw new WorkoutFileError('version');
+  if(value.version===1 && value.entries?.some(e=>e?.settings?.intervalMode==='two_phase' || e?.phaseOneOverrides?.length || e?.phaseTwoOverrides?.length))invalid();
   if (!string(value.name,80,true) || !plain(value.options) || !integer(value.options.cycles,1,20)
       || !integer(value.options.cycleRestSec,0,3600)) invalid();
   checkEntries(value.entries,value.options);
@@ -64,8 +66,10 @@ export function parseWorkoutFile(contents) {
 }
 export function serializeWorkoutFile(program) {
   if (!program || typeof program !== 'object') invalid();
-  const value={format:WORKOUT_FILE_FORMAT,version:WORKOUT_FILE_VERSION,
-    name:program.name,entries:normalizeProgram(program.entries),options:normalizeOptions(program.options)};
+  const entries=normalizeProgram(program.entries);
+  const usesTwo=entries.some(e=>e.settings?.intervalMode==='two_phase'||e.phaseOneOverrides?.length||e.phaseTwoOverrides?.length);
+  const value={format:WORKOUT_FILE_FORMAT,version:usesTwo?WORKOUT_FILE_VERSION:1,
+    name:program.name,entries,options:normalizeOptions(program.options)};
   const json=JSON.stringify(value,null,2);
   // The same validation contract applies to our own exports.
   parseWorkoutFile(json);

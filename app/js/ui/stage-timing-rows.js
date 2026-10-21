@@ -8,6 +8,7 @@ export function stageTimingRows(config,{total,rounds},english=false){
  return [
   ['program-stage-count',english?count+' rounds':countRu(count,'раунд','раунда','раундов')],
   ['program-stage-work',(english?'work ':'работа ')+clock(config.workSec)],
+  ...(config.intervalMode==='two_phase'?[['program-stage-phase-two',(english?'Phase 2 ':'Фаза 2 ')+clock(config.phaseTwoSec||40)]]:[]),
   ['program-stage-rest',(english?'rest ':'отдых ')+clock(config.restSec)],
   ...(hasBlocks?[['program-stage-block-rest',(english?blocks+' blocks · between blocks ':countRu(blocks,'блок','блока','блоков')+' · отдых между блоками ')+clock(config.blockRestSec||0)]]:[]),
   ['program-stage-sum',(english?'Total: ':'Всего: ')+clock(total)]

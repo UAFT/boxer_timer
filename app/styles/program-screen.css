@@ -75,3 +75,29 @@
 .program-stage-card>.program-stage-timing .program-stage-sum{flex:0 0 100%;display:block;margin-top:5px}
 /* Long "Этап 1 — Лестница" remains legible before the control buttons. */
 .program-stage-card .program-stage-number{white-space:normal;line-height:1.24;font-weight:700}
+
+/* TWO_PHASE: same existing timer; only a small 2-position selector above the dial. */
+.ft-phase-switch{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:#121f45;border:1px solid #41557f;border-radius:15px;padding:4px;margin:8px 13px 2px;touch-action:pan-y;user-select:none}
+.ft-phase-switch[hidden],.ft-stage-two-phase[hidden],.ft-phase-name-fields[hidden]{display:none!important}
+.ft-phase-switch button{min-width:0;min-height:44px;border:0;background:transparent;color:#dce4fa;font-size:clamp(13px,3.8vw,17px);font-weight:700;border-radius:11px;transition:background .12s,color .12s}
+.ft-phase-switch button.is-active{background:linear-gradient(150deg,#f0b85d,#bb824d);color:#172245}
+.ft-phase-name-fields{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:8px 0}
+.ft-phase-name-fields label{display:flex;min-width:0;flex-direction:column;gap:7px;color:#cdd8ef}
+.ft-phase-name-fields input{width:100%;min-width:0;box-sizing:border-box;padding:12px 9px;background:#132146;border:1px solid #8295bb;border-radius:10px;font-size:16px;color:white}
+#roundEditPhases{display:grid;grid-template-columns:1fr;gap:6px;margin:12px 0}
+#roundEditPhases input{margin-bottom:4px}
+.ft-stage-two-phase>.ft-phase-name-fields{margin:10px 0}
+.ft-stage-two-phase>.ft-phase-name-fields>label{font-size:14px}
+.ft-stage-two-phase>label{display:block;color:#cdd8ef;margin-bottom:14px}
+.ft-stage-two-phase .stage-mmss{max-width:390px}
+.stage-mode-choices{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+.stage-mode-choices button{min-width:0;padding:12px 4px!important;font-size:clamp(13px,3.3vw,16px)!important}
+.ft-two-phase-plan{display:grid;gap:5px;min-width:0}
+.ft-two-phase-plan .ft-work-phase{display:flex;justify-content:space-between;min-width:0;gap:8px;padding:9px;border-radius:8px;color:#d6def3;background:rgba(50,70,121,.32)}
+.ft-two-phase-plan .ft-work-phase>span{min-width:0;overflow-wrap:anywhere}
+.ft-two-phase-plan .ft-work-phase strong{font-variant-numeric:tabular-nums;white-space:nowrap}
+.ft-two-phase-plan .ft-work-phase.is-active{background:rgba(37,143,100,.25);color:#5ae6aa;outline:1px solid #38c985}
+.ft-two-phase-plan .ft-work-phase.phase-two.is-active{background:rgba(178,115,37,.20);outline-color:#e6ad4f;color:#ffd381}
+.ft-two-phase-plan .ft-round-rest.is-active{background:rgba(54,100,178,.28);outline-color:#5d9dec;color:#abcfff}
+.ft-two-phase-plan .ladder-count{font-variant-numeric:tabular-nums}
+.program-stage-timing .program-stage-phase-two{flex:0 0 100%;display:block;font-size:12px;color:#dec083}

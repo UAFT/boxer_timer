@@ -45,7 +45,7 @@ export class MetronomeEngine {
       this.enabled &&
       this.bpm > 0 &&
       !state.isPaused &&
-      state.phase === PHASES.WORK &&
+      (state.phase === PHASES.WORK || state.phase === PHASES.WORK_TWO) &&
       Date.now() >= this.suppressUntilMs
     );
   }
@@ -77,11 +77,11 @@ export class MetronomeEngine {
     const configuredWarningSeconds = Number(state?.config?.warningSeconds ?? 0);
     const countdownEnabled = state?.config?.countdownEnabled !== false;
     const effectiveWarningSeconds =
-      state?.phase === PHASES.WORK
+      (state?.phase === PHASES.WORK || state?.phase === PHASES.WORK_TWO)
         ? (countdownEnabled ? 4 : 0)
         : configuredWarningSeconds;
     return Boolean(
-      state?.phase === PHASES.WORK &&
+      (state?.phase === PHASES.WORK || state?.phase === PHASES.WORK_TWO) &&
       effectiveWarningSeconds > 0 &&
       remainingSec > 0 &&
       remainingSec <= effectiveWarningSeconds

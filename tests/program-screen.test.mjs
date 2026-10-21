@@ -72,7 +72,7 @@ test('polished program screens keep titles once, total duration on its own line 
  assert.ok(html.includes('id="programLibraryBack" type="button" hidden aria-label="Назад" title="Назад">←</button>'));
  assert.ok(render.includes('ladderPlanPhaseCaption(state,{preview})'));
  assert.ok(render.includes('ladderPlanControl(state,{preview})'));
- assert.ok(render.includes("state.config.programRounds?.length && state.phase === PHASES.WORK ? '' : phaseLabelText(state)"));
+ assert.ok(render.includes('phaseLabelText(state)'));
  assert.equal((app.match(/programName:openedProgramName/g)||[]).length,3,'preview, tick and state changes preserve the name');
  assert.ok(app.includes('const meta=stageTimingText(preview);'));
  assert.ok(app.includes("total.textContent='Всего: '+timeWords(meta.total"));

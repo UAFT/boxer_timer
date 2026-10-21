@@ -5,7 +5,7 @@ export function editorProgramIdentity(savedId,savedPrograms){
   return savedPrograms.find(p=>p.id===savedId)||null;
 }
 export function programDurationSec(entries,profiles,options){
-  return compileProgram(entries,profiles,options).reduce((n,r)=>n+r.workSec+r.restSec+(r.blockRestSec||0),0);
+  return compileProgram(entries,profiles,options).reduce((n,r)=>n+r.workSec+(r.phaseTwoSec||0)+r.restSec+(r.blockRestSec||0),0);
 }
 export function programHeading(name,entries,profiles,options,lang='ru'){
   if(!entries.length)return {name:'',duration:'',visible:false};
