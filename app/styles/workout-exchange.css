@@ -44,3 +44,16 @@
 .ft-program-stage .ft-stage-total{font-size:14px;color:#eabf64;font-weight:750}
 .ft-program-stage .ft-stage-rest-after{color:#98adc9;font-size:12px}
 .ft-program-cycles{font-size:12px;color:#c2d1ea}
+
+/* Saved title and total always occupy separate rows. */
+.ft-saved-program-heading{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-height:53px;padding-right:94px}
+.ft-program-title{display:block;max-width:100%}
+.ft-program-total{display:block;font-variant-numeric:tabular-nums}
+/* One symmetrical library title strip: left arrow, centered category, right close. */
+.program-library-modal .ft-library-header{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;gap:6px;align-items:center;justify-items:center}
+.program-library-modal #programLibraryTitle{grid-row:1;grid-column:2;text-align:center;font-size:clamp(20px,5.4vw,27px);margin:0;min-width:0;overflow-wrap:anywhere}
+.program-library-modal #programLibraryBack{grid-row:1;grid-column:1;width:44px;min-width:44px;height:44px;padding:0;border-radius:11px;border:1px solid #617ca7;background:#29436b;color:#f0f5ff;font-size:27px;line-height:1}
+.program-library-modal #programLibraryBack[hidden]{display:block!important;visibility:hidden;pointer-events:none}
+.program-library-modal #programLibraryClose{grid-row:1;grid-column:3;justify-self:end;width:44px;min-width:44px;height:44px;padding:0;border-radius:11px}
+.native-library-info .native-library-timing{display:block;color:#c9d6e9;font-size:clamp(10px,2.6vw,12px);letter-spacing:-.22px;line-height:1.35;margin:0;white-space:normal}
+.native-library-info .native-library-total{display:block;color:#e9bc60;font-size:13px;font-weight:750;opacity:1;margin:0}

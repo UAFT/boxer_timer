@@ -34,6 +34,7 @@ test('editor heading displays name and time, remains visible after appending uns
  syncEditorProgramHeader(doc,{name:'Программа 1',entries:[first],profiles,options:{cycles:1}});
  assert.equal(elements.programActiveInfo.hidden,false);
  assert.equal(elements.programCurrentName.textContent,'Программа 1');
+ assert.ok(elements.programCurrentDuration.textContent.startsWith('— '),'time is separated by an em dash');
  const old=elements.programCurrentDuration.textContent;
  syncEditorProgramHeader(doc,{name:'Программа 1',entries:[first,second],profiles,options:{cycles:1}});
  assert.notEqual(elements.programCurrentDuration.textContent,old);
@@ -57,4 +58,29 @@ test('program editor and plan screen owner-approved structure and labels',()=>{
  assert.ok(!render.includes("preview ? 'Программа готова'"));
  assert.ok(render.includes("(programStageMode(pr)?' · '+programStageMode(pr):'')"));
  assert.ok(css.includes('.program-stage-timing .program-stage-rest{display:block;flex-basis:100%}'));
+});
+
+
+test('polished program screens keep titles once, total duration on its own line in saved cards, and stage metadata separate',()=>{
+ const html=readFileSync(new URL('../app/index.html',import.meta.url),'utf8');
+ const app=readFileSync(new URL('../app/js/app.js',import.meta.url),'utf8');
+ const render=readFileSync(new URL('../app/js/ui/render.js',import.meta.url),'utf8');
+ const css=readFileSync(new URL('../app/styles/program-screen.css',import.meta.url),'utf8');
+ const savedStyle=readFileSync(new URL('../app/styles/workout-exchange.css',import.meta.url),'utf8');
+ const savedView=readFileSync(new URL('../app/js/ui/library-card-view.js',import.meta.url),'utf8');
+ assert.ok(html.includes('class="settings-head ft-library-header"'));
+ assert.ok(html.includes('id="programLibraryBack" type="button" hidden aria-label="Назад" title="Назад">←</button>'));
+ assert.ok(render.includes("config.programRounds?.length ? '' : (preview ? 'Лестница готова' : 'Текущий раунд')"));
+ assert.ok(render.includes("state.config.programRounds?.length && state.phase === PHASES.WORK ? '' : phaseLabelText(state)"));
+ assert.equal((app.match(/programName:openedProgramName/g)||[]).length,3,'preview, tick and state changes preserve the name');
+ assert.ok(app.includes('const meta=stageTimingText(preview);'));
+ assert.ok(app.includes("total.textContent='Всего: '+timeWords(meta.total"));
+ assert.ok(css.includes('.program-stage-timing .program-stage-rest{flex-basis:auto!important}'));
+ assert.ok(css.includes('.program-stage-timing .program-stage-sum{display:block;flex:0 0 100%'));
+ assert.ok(css.includes('.program-stage-card .program-stage-workout{grid-column:1/-1'));
+ assert.ok(savedStyle.includes('.ft-saved-program-heading{display:flex;flex-direction:column'));
+ assert.ok(savedStyle.includes('.ft-library-header{display:grid;grid-template-columns:44px minmax(0,1fr) 44px'));
+ assert.ok(savedView.includes("'ft-program-total',timeWords(timing.total,lang)"));
+ const cssTimer=readFileSync(new URL('../app/styles/timer-disclosure.css',import.meta.url),'utf8');
+ assert.ok(cssTimer.includes('width:36px;height:36px'));
 });

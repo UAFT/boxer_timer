@@ -39,7 +39,7 @@ test('stage hierarchy and top-right icons render in one saved-program card',()=>
  assert.equal(card.className,'program-library-entry ft-saved-program-entry');
  const title=findAll(card,'ft-program-title')[0];
  assert.equal(title.textContent,'Программа 1');
- assert.equal(findAll(card,'ft-program-total')[0].textContent,'— 45 минут');
+ assert.equal(findAll(card,'ft-program-total')[0].textContent,'45 минут');
  assert.deepEqual(findAll(card,'ft-stage-label').map(x=>x.textContent),['Этап 1','Этап 2']);
  assert.equal(findAll(card,'ft-stage-title')[0].textContent,'Кардио — Скакалка 3 × 3');
  assert.equal(findAll(card,'ft-stage-details')[0].textContent,'3 раунда · работа 03:00 · отдых 01:00');

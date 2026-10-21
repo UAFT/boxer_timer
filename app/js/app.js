@@ -6,7 +6,7 @@ import { installTimerDisclosure } from './ui/timer-disclosure.js';
 import { renderStageTitle } from './ui/stage-title.js';
 import { installWorkoutExchange } from './sharing/workout-exchange-ui.js';
 import { storeImportedWorkout, resolveSenderSettings } from './sharing/workout-file.js';
-import { renderSavedProgramCard } from './ui/library-card-view.js';
+import { renderSavedProgramCard, timeWords } from './ui/library-card-view.js';
 import { syncEditorProgramHeader, editorProgramIdentity } from './ui/program-presentation.js';
 import { installLocalization } from './i18n/locale.js';
 import { AUDIO_KEYS } from './core/constants.js';
@@ -127,13 +127,13 @@ function renderCurrentState() {
 
 const timer = new TimerEngine({
   onTick: (state) => {
-    renderTimer(els, state, { metronomePanelOpen: isMetronomePanelOpen(), ladderExpanded: uiState.ladderExpanded, previewRounds: !programRunning && programEntries.length ? previewProgram() : null });
+    renderTimer(els, state, { metronomePanelOpen: isMetronomePanelOpen(), ladderExpanded: uiState.ladderExpanded, programName:openedProgramName, previewRounds: !programRunning && programEntries.length ? previewProgram() : null });
     renderProgram();
     syncTimerVisibility();
     metronome.syncPhase(state);
   },
   onStateChange: (state) => {
-    renderTimer(els, state, { metronomePanelOpen: isMetronomePanelOpen(), ladderExpanded: uiState.ladderExpanded, previewRounds: !programRunning && programEntries.length ? previewProgram() : null });
+    renderTimer(els, state, { metronomePanelOpen: isMetronomePanelOpen(), ladderExpanded: uiState.ladderExpanded, programName:openedProgramName, previewRounds: !programRunning && programEntries.length ? previewProgram() : null });
     renderProgram();
     syncTimerVisibility();
     metronome.syncPhase(state);
@@ -530,8 +530,8 @@ function stageTiming(entry) {
 function stageTimingText(entry) {
   const cfg=entry.settings||profiles[entry.presetId];
   const {rounds,total}=stageTiming(entry);
-  return russianRoundCount(rounds.length)+' · работа '+formatProgramTime(cfg.workSec)+' · отдых '+formatProgramTime(cfg.restSec)
-    +(cfg.intervalMode==='ladder'?' · лестница':'')+' · всего '+formatProgramTime(total);
+  return { detail: russianRoundCount(rounds.length)+' · работа '+formatProgramTime(cfg.workSec)+' · отдых '+formatProgramTime(cfg.restSec)
+    +(cfg.intervalMode==='ladder'?' · лестница':''), total };
 }
 function renderProgram() {
   const panel=document.getElementById('programPanel');
@@ -574,7 +574,7 @@ function renderProgram() {
         ['program-stage-count',english?timing.rounds.length+' rounds':russianRoundCount(timing.rounds.length)],
         ['program-stage-work',(english?'work ':'работа ')+formatProgramTime(cfg.workSec)],
         ['program-stage-rest',(english?'rest ':'отдых ')+formatProgramTime(cfg.restSec)],
-        ['program-stage-sum',(english?'total ':'всего ')+formatProgramTime(timing.total)]
+        ['program-stage-sum',(english?'Total: ':'Всего: ')+formatProgramTime(timing.total)]
       ]){const item=document.createElement('span');item.className=klass;item.textContent=text;detail.append(item);}
       main.append(heading);if(kind.textContent)main.append(kind);stage.append(main);
       if (!programRunning) {
@@ -670,8 +670,11 @@ function bindProgramLibrary() {
         if(preview){
           const cfg=preview.settings;
           const timing=document.createElement('small');timing.className='native-library-timing';
-          timing.textContent=stageTimingText(preview);
-          info.append(title,timing,description);
+          const meta=stageTimingText(preview);
+          timing.textContent=meta.detail;
+          const total=document.createElement('small');total.className='native-library-total';
+          total.textContent='Всего: '+timeWords(meta.total,document.documentElement.lang);
+          info.append(title,timing,total,description);
         }else info.append(title,description);
         const plus=document.createElement('button');plus.type='button';plus.className='native-library-add';plus.textContent='+';
         const supported=!!stageForWorkout(workout);plus.disabled=!supported || programRunning || programEntries.length>=24;

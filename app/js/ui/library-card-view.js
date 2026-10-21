@@ -68,7 +68,7 @@ export function renderSavedProgramCard(doc, program, profiles, {lang='ru',onOpen
   const open=doc.createElement('button');open.type='button';open.className='program-library-entry-open ft-saved-program-open';
   const heading=doc.createElement('div');heading.className='ft-saved-program-heading';
   add(doc,heading,'strong','ft-program-title',program.name);
-  add(doc,heading,'span','ft-program-total','— '+timeWords(timing.total,lang));
+  add(doc,heading,'span','ft-program-total',timeWords(timing.total,lang));
   open.append(heading);
   const summary=doc.createElement('div');summary.className='program-library-summary ft-program-stages';
   for(const stage of timing.stages) {

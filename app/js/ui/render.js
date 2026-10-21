@@ -68,7 +68,7 @@ export function renderTimer(els, state, uiState = {}) {
   const metronomePanelOpen = !metronomeLocked && Boolean(uiState.metronomePanelOpen);
 
   els.mainTime.textContent = formatTime(state.remainingSec);
-  els.phaseLabel.textContent = phaseLabelText(state);
+  els.phaseLabel.textContent = state.config.programRounds?.length && state.phase === PHASES.WORK ? '' : phaseLabelText(state);
   els.roundLabel.textContent = roundLabelText(state);
   const roundActive = [PHASES.WORK, PHASES.REST, PHASES.COUNTDOWN].includes(state.phase);
   els.roundLabel.classList.toggle('round-active', roundActive);
@@ -149,7 +149,7 @@ export function renderLiveLadder(els, state, ui = {}) {
   const remaining = preview ? total : remainingTotalSecForState(state);
   document.getElementById('ladderProgramTotal').textContent = formatTime(total);
   document.getElementById('ladderProgramRemaining').textContent = formatTime(remaining);
-  document.getElementById('ladderCurrentLabel').textContent = preview ? (ui.programName || 'Новая программа') : 'Текущий раунд';
+  document.getElementById('ladderCurrentLabel').textContent = config.programRounds?.length ? '' : (preview ? 'Лестница готова' : 'Текущий раунд');
   els.ladderFullTime.textContent = preview ? formatTime(total) : formatTime(state.remainingSec);
   const canPause = !preview && state.phase !== PHASES.IDLE && state.phase !== PHASES.FINISHED;
   const canStartProgram = preview && Boolean(ui.previewRounds?.length);

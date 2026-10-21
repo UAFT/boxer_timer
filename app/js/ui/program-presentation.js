@@ -18,7 +18,7 @@ export function syncEditorProgramHeader(doc,{name,entries,profiles,options,lang}
   const details=programHeading(name,entries,profiles,options,lang);
   const container=doc.getElementById('programActiveInfo');
   doc.getElementById('programCurrentName').textContent=details.name;
-  doc.getElementById('programCurrentDuration').textContent=details.duration;
+  doc.getElementById('programCurrentDuration').textContent=details.visible?'— '+details.duration:'';
   container.hidden=!details.visible;
   return details;
 }

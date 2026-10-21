@@ -28,3 +28,10 @@ body.program-timer-collapsed .timer-reveal-toggle{
 }
 body.program-timer-collapsed .timer-reveal-toggle .timer-disclosure-title{display:block}
 body.program-timer-collapsed .timer-reveal-toggle .timer-disclosure-icon{transform:rotate(180deg);color:#f0c469}
+
+/* Compact corner action; stage and round heading centered while program is running. */
+body:not(.program-timer-collapsed) .timer-card .timer-reveal-toggle:not([hidden]){width:36px;height:36px;padding:7px;right:11px;top:9px;border-radius:10px}
+body:not(.program-timer-collapsed) .timer-card .timer-reveal-toggle:not([hidden]) .timer-disclosure-icon{width:19px;height:19px}
+body.program-timer-running:not(.program-timer-collapsed) .timer-card .card-topline{justify-content:center;flex-wrap:wrap;padding-left:35px!important;padding-right:35px!important;min-height:30px}
+body.program-timer-running .timer-card .phase-heading:empty{display:none}
+body.program-timer-running .timer-card .round-heading{width:100%;text-align:center;max-width:100%;overflow-wrap:anywhere;line-height:1.25}
