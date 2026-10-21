@@ -2,6 +2,7 @@ import { CATEGORIES, LIBRARY, stageForWorkout } from './library/native-adapter.j
 import { starterPrograms } from './core/starter-programs.js';
 import { announceRound, stopVoice } from './audio/voice-coach.js';
 import { installDeleteConfirmation } from './ui/delete-confirmation.js';
+import { installTimerDisclosure } from './ui/timer-disclosure.js';
 import { installLocalization } from './i18n/locale.js';
 import { AUDIO_KEYS } from './core/constants.js';
 import { clonePreset } from './state/presets.js';
@@ -111,18 +112,8 @@ function setMetronomePanel(panel, { render = true } = {}) {
 }
 
 function previewProgram() { return programEntries.length ? compileProgram(programEntries, profiles, programOptions) : null; }
-let manualTimerExpanded=false;
-function syncTimerVisibility(){
-  const hasProgram=programEntries.length>0;
-  const collapsed=hasProgram&&!manualTimerExpanded;
-  const running=programRunning;
-  document.body.classList.toggle('program-timer-collapsed',collapsed);
-  document.body.classList.toggle('program-timer-running',running);
-  const button=document.getElementById('timerRevealToggle');
-  button.hidden=!hasProgram;
-  button.setAttribute('aria-expanded',String(!collapsed));
-  button.innerHTML=collapsed?'◷ Обычный таймер <span>Развернуть ▾</span>':'◷ Обычный таймер <span>Свернуть ▴</span>';
-}
+const timerDisclosure=installTimerDisclosure();
+function syncTimerVisibility(){timerDisclosure.sync(programEntries.length>0,programRunning);}
 function renderCurrentState() {
   renderTimer(els, { ...timer.state, config: timer.config, isPaused: timer.isPaused }, { metronomePanelOpen: isMetronomePanelOpen(), ladderExpanded: uiState.ladderExpanded, previewRounds: !programRunning && programEntries.length ? previewProgram() : null });
   renderProgram();
@@ -322,7 +313,7 @@ function persistOptions() {
 }
 function persistProgram() {
   localStorage.setItem(PROGRAM_KEY, JSON.stringify(programEntries));
-  if(!programEntries.length)manualTimerExpanded=false;
+  if(!programEntries.length)timerDisclosure.reset();
   renderCurrentState();
 }
 function addProgramStage(presetId) {
@@ -767,10 +758,6 @@ function bootstrap() {
   bindPresetTabs(els, handleSelectPreset);
   bindStageSettings();
   bindProgram();
-  document.getElementById('timerRevealToggle').addEventListener('click',()=>{
-    manualTimerExpanded=!manualTimerExpanded;
-    syncTimerVisibility();
-  });
   bindRoundEditor();
   bindControls(els, {
     onToggleRun: handleToggleRun,

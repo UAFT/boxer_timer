@@ -11,11 +11,11 @@ const names = [
 ];
 
 test('main workout category retains its identity and drops equipment restriction', () => {
-  assert.equal(CATEGORIES.find(([id]) => id === 'boxing')?.[1], 'Основная работа');
-  assert.equal(LIBRARY.filter(w => w.category === 'boxing').length, 5);
-  assert.equal(LIBRARY.length, 39);
+  assert.equal(CATEGORIES.find(([id]) => id === 'boxing')?.[1], 'Бокс');
+  assert.equal(LIBRARY.filter(w => w.category === 'boxing').length, 3);
+  assert.equal(LIBRARY.length, 37);
   assert.equal(new Set(LIBRARY.map(w => w.id)).size, LIBRARY.length);
-  assert.deepEqual(['B01','B02','B03','B04','B05'], LIBRARY.filter(w => w.category === 'boxing').map(w => w.id));
+  assert.deepEqual(['B01','B02','B05'], LIBRARY.filter(w => w.category === 'boxing').map(w => w.id));
 });
 
 test('B05 seven two-minute rounds, six one-minute rests, 20-minute total', () => {

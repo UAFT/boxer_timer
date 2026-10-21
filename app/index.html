@@ -14,6 +14,7 @@
     <link rel="icon" href="./assets/icons/icon-192.png" />
     <link rel="stylesheet" href="./styles/main.css" />
     <link rel="stylesheet" href="./styles/delete-confirmation.css" />
+    <link rel="stylesheet" href="./styles/timer-disclosure.css" />
   </head>
   <body>
     <main class="app-shell">
@@ -28,8 +29,6 @@
         <button class="gear-btn" type="button" id="settingsBtn" aria-label="Настройки">⚙</button>
       </header>
 
-      <button type="button" id="timerRevealToggle" class="timer-reveal-toggle" hidden aria-expanded="false">◷ Обычный таймер <span>Развернуть ▾</span></button>
-
       <section class="preset-row" role="tablist" aria-label="Пресеты таймера">
         <button class="preset-tab is-active" type="button" data-preset="classic3">3′</button>
         <button class="preset-tab" type="button" data-preset="classic2">2′</button>
@@ -37,7 +36,11 @@
         <button class="preset-tab" type="button" data-preset="tabata2020x24" aria-label="Скоростной" title="Скоростной · 20/20 · 24 раунда">⚡</button>
       </section>
 
-      <section class="timer-card panel">
+      <section class="timer-card panel" id="timerCard">
+        <button type="button" id="timerRevealToggle" class="timer-reveal-toggle" hidden aria-expanded="false" aria-controls="timerCard" aria-label="Развернуть таймер">
+          <span class="timer-disclosure-title">Обычный таймер</span>
+          <svg class="timer-disclosure-icon" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3l10 10m-7-1h7V5M29 29L19 19m7 1h-7v7"/></svg>
+        </button>
         <div class="card-topline">
           <div class="phase-heading" id="phaseLabel">Готов</div>
           <div class="round-heading" id="roundLabel">Раунд 0 из 0</div>
