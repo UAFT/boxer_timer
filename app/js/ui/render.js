@@ -1,13 +1,10 @@
 import { PHASES } from '../core/constants.js';
 import { formatTime } from '../core/time.js';
+import {buildLadderPlanRows,syncLadderPlanRows,ladderPlanPhaseCaption,ladderPlanControl} from './ladder-plan-rows.js';
 import { displayDurationsForState, remainingTotalSecForState, totalDurationSecForConfig, workSecForRound, restSecAfterRound, blockRestSecAfterRound, totalRoundsForConfig, blockCount, localRoundFor, blockForRound } from '../core/schedule.js';
 
 function intervalModeTitle(config) {
   return config?.programRounds?.length ? 'Программа' : (config?.presetId === 'tabata2020x24' ? 'Скоростной' : (config?.intervalMode === 'ladder' ? 'Лестница' : 'Обычный'));
-}
-
-function programStageMode(round) {
-  return round.presetId === 'tabata2020x24' ? 'Скоростной' : (round.intervalMode === 'ladder' ? 'Лестница' : '');
 }
 
 function phaseLabelText(state) {
@@ -151,80 +148,21 @@ export function renderLiveLadder(els, state, ui = {}) {
   const remaining = preview ? total : remainingTotalSecForState(state);
   document.getElementById('ladderProgramTotal').textContent = formatTime(total);
   document.getElementById('ladderProgramRemaining').textContent = formatTime(remaining);
-  document.getElementById('ladderCurrentLabel').textContent = config.programRounds?.length ? '' : (preview ? 'Лестница готова' : 'Текущий раунд');
+  document.getElementById('ladderCurrentLabel').textContent = ladderPlanPhaseCaption(state,{preview});
   els.ladderFullTime.textContent = preview ? formatTime(total) : formatTime(state.remainingSec);
-  const canPause = !preview && state.phase !== PHASES.IDLE && state.phase !== PHASES.FINISHED;
-  const canStartProgram = preview && Boolean(ui.previewRounds?.length);
-  els.ladderFullPause.disabled = !canPause && !canStartProgram;
-  const showPlay = canStartProgram || (state.isPaused && canPause);
-  els.ladderFullPause.innerHTML = showPlay ? '<span aria-hidden="true">▶</span>' : '<span aria-hidden="true">Ⅱ</span>';
-  els.ladderFullPause.setAttribute('aria-label', canStartProgram ? 'Запустить программу' : (state.isPaused && canPause ? 'Продолжить' : 'Пауза'));
+  const control=ladderPlanControl(state,{preview});
+  els.ladderFullPause.disabled=control.disabled;
+  els.ladderFullPause.innerHTML=control.play?'<span aria-hidden="true">▶</span>':'<span aria-hidden="true">Ⅱ</span>';
+  els.ladderFullPause.setAttribute('aria-label',control.label);
 
   const list = els.ladderLiveList;
   const key = config.programRounds?.length ? JSON.stringify(config.programRounds) : [config.rounds, config.workSec, config.restSec, config.workStepSec, config.restStepSec, config.blockEnabled, config.blockCount, config.blockRestSec].join(':');
   if (list.dataset.scheduleKey !== key) {
-    const rows = [];
-    let stageOpen = false;
-    let blockOpen = false;
-    const closeBlock = () => { if (blockOpen) { rows.push('</div>'); blockOpen = false; } };
-    const closeStage = () => { closeBlock(); if (stageOpen) { rows.push('</div>'); stageOpen = false; } };
-    for (let i = 1; i <= totalRoundsForConfig(config); i += 1) {
-      const pr=config.programRounds?.[i-1];
-      if (pr && pr.stageRound===1) { closeStage(); if (pr.stageIndex===0 && pr.cycles>1) rows.push('<div class="ladder-cycle-label">Цикл '+(pr.cycleIndex+1)+' из '+pr.cycles+'</div>'); rows.push('<div class="ladder-stage-outline">'); stageOpen=true; }
-      if (pr && pr.blockCount>1 && pr.localRound===1) { closeBlock(); rows.push('<div class="ladder-block-outline">'); blockOpen=true; }
-      if (pr && pr.stageRound===1) {
-        const stageRounds=config.programRounds.filter(r=>r.stageIndex===pr.stageIndex && r.cycleIndex===pr.cycleIndex);
-        const stageSeconds=stageRounds.reduce((sum,r,index)=>sum+r.workSec+(index<stageRounds.length-1?r.restSec+(r.blockRestSec||0):0),0);
-        rows.push('<div class="ladder-block-label" data-stage="'+pr.stageIndex+'">Этап '+(pr.stageIndex+1)+(pr.stageTitle?' · '+escapeStageTitle(pr.stageTitle):'')+(programStageMode(pr)?' · '+programStageMode(pr):'')+' · всего '+formatTime(stageSeconds)+'</div>');
-      }
-      if (pr && pr.blockCount>1 && pr.localRound===1) rows.push('<div class="ladder-block-label" data-block="'+pr.block+'" data-stage="'+pr.stageIndex+'">Блок '+pr.block+' из '+pr.blockCount+'</div>');
-      if (!pr && blockCount(config) > 1 && localRoundFor(config,i) === 1) rows.push(`<div class="ladder-block-label" data-block="${blockForRound(config,i)}">Блок ${blockForRound(config,i)} из ${blockCount(config)}</div>`);
-      const rest = i < totalRoundsForConfig(config) ? formatTime(restSecAfterRound(config, i)) : '—';
-      const breakTime=blockRestSecAfterRound(config,i);
-      const blockDetail=breakTime?' · между блоками '+formatTime(breakTime):'';
-      rows.push(`<div class="ladder-live-row" data-round="${i}"><span class="ladder-plan">Раунд ${pr ? pr.localRound : localRoundFor(config, i)}${pr?.roundName ? ' · '+escapeStageTitle(pr.roundName) : ''} · ${formatTime(workSecForRound(config, i))} · отдых ${rest}${blockDetail}</span><strong class="ladder-count"></strong></div>`);
-    }
-    closeStage();
-    list.innerHTML = rows.join('');
-    // Measure the complete label, but move it only by the clipped portion.
-    requestAnimationFrame(() => {
-      for (const label of list.querySelectorAll('.ladder-plan')) {
-        const moving=document.createElement('span');
-        moving.className='plan-moving-text';
-        moving.textContent=label.textContent;
-        label.replaceChildren(moving);
-        const overflow=Math.max(0,Math.ceil(moving.getBoundingClientRect().width-label.clientWidth));
-        label.style.setProperty('--plan-travel',overflow+'px');
-        label.classList.toggle('is-marquee',overflow>2);
-      }
-    });
-    list.dataset.scheduleKey = key;
-    list.dataset.activeRound = '';
+    list.innerHTML = buildLadderPlanRows(config);
+    list.dataset.scheduleKey=key;
+    list.dataset.activeRound='';
   }
-
-  const active = !preview && [PHASES.WORK, PHASES.REST, PHASES.BLOCK_REST, PHASES.COUNTDOWN].includes(state.phase) ? state.roundIndex : 0;
-  const currentProgramRound = config.programRounds?.[active-1];
-  const currentBlock = active > 0 ? (currentProgramRound?.block ?? blockForRound(config, active)) : 0;
-  for (const heading of list.querySelectorAll('.ladder-block-label')) {
-    heading.classList.toggle('is-active', currentProgramRound ? Number(heading.dataset.stage)===currentProgramRound.stageIndex && (!heading.dataset.block || Number(heading.dataset.block)===currentBlock) : Number(heading.dataset.block)===currentBlock);
-  }
-  for (const row of list.querySelectorAll('.ladder-live-row')) {
-    const current = Number(row.dataset.round) === active;
-    row.classList.toggle('is-active', current);
-    const countdown = row.querySelector('.ladder-count');
-    countdown.textContent = current ? (state.phase === PHASES.BLOCK_REST ? 'Между блоками ' : state.phase === PHASES.REST ? 'Отдых ' : state.phase === PHASES.COUNTDOWN ? 'старт ' : '→ ') + formatTime(state.remainingSec) : '';
-  }
-
-  if (list.dataset.activeRound !== String(active)) {
-    list.dataset.activeRound = String(active);
-    if (!active) list.scrollTop = 0;
-    else {
-      const row = list.querySelector(`[data-round="${active}"]`);
-      if (row && row.offsetTop + row.offsetHeight > list.scrollTop + list.clientHeight) {
-        list.scrollTo({ top: row.offsetTop + row.offsetHeight - list.clientHeight, behavior: 'smooth' });
-      }
-    }
-  }
+  syncLadderPlanRows(list,state,{preview});
 }
 
 export function renderLadderPreview(els, settings) {

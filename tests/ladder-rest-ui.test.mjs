@@ -34,14 +34,18 @@ test('persisted and loaded program retains both configured pause values',()=>{
 test('screen/cue mappings and structural descriptions remain separate',()=>{
  const app=readFileSync(new URL('../app/js/app.js',import.meta.url),'utf8');
  const render=readFileSync(new URL('../app/js/ui/render.js',import.meta.url),'utf8');
+ const plan=readFileSync(new URL('../app/js/ui/ladder-plan-rows.js',import.meta.url),'utf8');
  const engine=readFileSync(new URL('../app/js/timer/timer-engine.js',import.meta.url),'utf8');
  assert.ok(app.includes("event.type === 'block-rest-start-zero'"));
  assert.ok(app.includes("key: 'cue_rest_start_v1'"));
  assert.ok(app.includes("event.type === 'block-rest-end-zero'"));
  assert.ok(engine.includes('this.beginBlockRestPhase(roundIndex)'));
  assert.ok(render.includes('Отдых между блоками:'));
- assert.ok(render.includes(' · между блоками '));
- assert.ok(app.includes("russianRoundCount(cfg.rounds)+' × '+russianBlockCount(cfg.blockCount)"));
+ assert.ok(plan.includes('Отдых между блоками'));
+ assert.ok(render.includes('buildLadderPlanRows(config)'));
+ assert.ok(app.includes('stageTimingRows(cfg,timing,english)'));
+ const presentation=readFileSync(new URL('../app/js/ui/stage-timing-rows.js',import.meta.url),'utf8');
+ assert.ok(presentation.includes('отдых между блоками'));
 });
 test('existing normal timer stays two phase',()=>{
  const normal={...clonePreset('classic3'),intervalMode:'standard',rounds:3,workSec:180,restSec:60,blockEnabled:false,blockCount:1};

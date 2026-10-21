@@ -15,12 +15,12 @@ export function stageTitleParts(title) {
   return savedTitleLookup.get(source) || { category: null, workout: source };
 }
 
-export function renderStageTitle(doc, index, title) {
+export function renderStageTitle(doc, index, title, {mode} = {}) {
   const group = doc.createElement('div');
   group.className = 'program-stage-title-stack';
   const number = doc.createElement('span');
   number.className = 'program-stage-number';
-  number.textContent = 'Этап ' + index;
+  number.textContent = 'Этап ' + index + (mode ? ' — ' + mode : '');
   group.append(number);
   const parts = stageTitleParts(title);
   if (parts.category) {
@@ -29,7 +29,7 @@ export function renderStageTitle(doc, index, title) {
     category.textContent = parts.category;
     group.append(category);
   }
-  if (parts.workout) {
+  if (parts.workout && parts.workout !== mode) {
     const name = doc.createElement('strong');
     name.className = 'program-stage-workout';
     name.textContent = parts.workout;

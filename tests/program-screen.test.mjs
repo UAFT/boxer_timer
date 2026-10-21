@@ -51,12 +51,12 @@ test('program editor and plan screen owner-approved structure and labels',()=>{
  assert.ok(bar.indexOf('programSaveOpen')<bar.indexOf('programClear'));
  assert.ok(html.includes('id="programCurrentDuration"'));
  assert.ok(app.includes('syncEditorProgramHeader'));
- assert.ok(app.includes("['program-stage-rest'"));
+ assert.ok(app.includes('stageTimingRows(cfg,timing,english)'));
  assert.ok(!app.includes("entry.title=id('Name').value.trim().slice(0,80);\n    openedProgramId=null"));
  assert.ok(!app.includes("programEntries.push(stage);openedProgramId=null"));
  assert.ok(render.includes("'ПЛАН ТРЕНИРОВКИ'+(ui.programName?"));
  assert.ok(!render.includes("preview ? 'Программа готова'"));
- assert.ok(render.includes("(programStageMode(pr)?' · '+programStageMode(pr):'')"));
+ assert.ok(render.includes('buildLadderPlanRows(config)'));
  assert.ok(css.includes('.program-stage-timing .program-stage-rest{display:block;flex-basis:100%}'));
 });
 
@@ -70,7 +70,8 @@ test('polished program screens keep titles once, total duration on its own line 
  const savedView=readFileSync(new URL('../app/js/ui/library-card-view.js',import.meta.url),'utf8');
  assert.ok(html.includes('class="settings-head ft-library-header"'));
  assert.ok(html.includes('id="programLibraryBack" type="button" hidden aria-label="Назад" title="Назад">←</button>'));
- assert.ok(render.includes("config.programRounds?.length ? '' : (preview ? 'Лестница готова' : 'Текущий раунд')"));
+ assert.ok(render.includes('ladderPlanPhaseCaption(state,{preview})'));
+ assert.ok(render.includes('ladderPlanControl(state,{preview})'));
  assert.ok(render.includes("state.config.programRounds?.length && state.phase === PHASES.WORK ? '' : phaseLabelText(state)"));
  assert.equal((app.match(/programName:openedProgramName/g)||[]).length,3,'preview, tick and state changes preserve the name');
  assert.ok(app.includes('const meta=stageTimingText(preview);'));

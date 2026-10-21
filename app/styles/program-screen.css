@@ -56,3 +56,22 @@
 
 /* A separate block-rest line must never be presented as the normal round rest. */
 .program-stage-timing .program-stage-block-rest{display:block;flex:0 0 100%;font-size:12px;color:#d7bc74;white-space:nowrap}
+
+/* Ladder plan: phase is above the clock, not squeezed into the round row. */
+.ladder-live.is-expanded .ladder-current>span:not(:empty){min-height:23px;font-weight:600;color:#bacde6}
+.ladder-live-row,.ladder-rest-row{box-sizing:border-box;max-width:100%;min-width:0;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px;border-radius:10px;padding:9px 8px;line-height:1.35;font-variant-numeric:tabular-nums}
+.ladder-live-row .ladder-plan,.ladder-rest-row>span{min-width:0;max-width:100%;white-space:normal!important;overflow:visible!important;text-overflow:clip!important;overflow-wrap:anywhere;word-break:normal;touch-action:auto!important}
+.ladder-live-row .ladder-count,.ladder-rest-row .ladder-count{min-width:0;white-space:nowrap;font-variant-numeric:tabular-nums;font-size:clamp(12px,3.3vw,17px);color:#65efa5}
+.ladder-rest-row{margin:6px 3px 12px;border:1px solid rgba(113,157,217,.35);color:#bbcee8;background:rgba(40,62,107,.35);font-size:clamp(12px,3.4vw,16px)}
+.ladder-rest-row>.ladder-rest-duration{font-weight:650;color:#e2bc68;white-space:nowrap;font-size:clamp(12px,3.4vw,16px)}
+.ladder-rest-row.is-active{border-color:#42d68b;color:#65efa5;background:rgba(29,127,80,.24);animation:ladderGlow 1.7s ease-in-out infinite}
+.ladder-rest-row.is-active>.ladder-rest-duration{display:none}
+.ladder-live-list .ladder-stage-outline:has(.ladder-rest-row.is-active){border-color:#42d68b}
+/* The previous auto-scrolling text could overlap its fixed active countdown. */
+.ladder-live-row .ladder-plan .plan-moving-text{animation:none!important;transform:none!important;white-space:normal!important}
+.ladder-live-row .ladder-plan.is-marquee{animation:none!important;overflow:visible!important}
+/* Contract: round/work/rest on line 1, blocks/inter-block rest on line 2, total on line 3. */
+.program-stage-card>.program-stage-timing .program-stage-block-rest{flex:0 0 100%;display:block;font-size:clamp(11px,2.8vw,13px);line-height:1.4;white-space:normal;color:#ddc17b;margin-top:3px}
+.program-stage-card>.program-stage-timing .program-stage-sum{flex:0 0 100%;display:block;margin-top:5px}
+/* Long "Этап 1 — Лестница" remains legible before the control buttons. */
+.program-stage-card .program-stage-number{white-space:normal;line-height:1.24;font-weight:700}

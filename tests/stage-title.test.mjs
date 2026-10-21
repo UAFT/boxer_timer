@@ -37,11 +37,20 @@ test('stage rendering hides ordinary only, special mode text remains unchanged',
   const app=readFileSync(new URL('../app/js/app.js',import.meta.url),'utf8');
   const html=readFileSync(new URL('../app/index.html',import.meta.url),'utf8');
   const style=readFileSync(new URL('../app/styles/stage-title.css',import.meta.url),'utf8');
-  assert.ok(app.includes("cfg.intervalMode==='ladder' ? 'Лестница' : (entry.presetId==='tabata2020x24' ? 'Скоростной' : '')"));
+  assert.ok(app.includes("cfg.intervalMode==='ladder' ? '' : (entry.presetId==='tabata2020x24' ? 'Скоростной' : '')"));
   assert.ok(!app.includes("'Скоростной' : 'Обычный'"));
-  assert.ok(app.includes('renderStageTitle(document,i+1,entry.title)'));
+  assert.ok(app.includes('renderStageTitle(document,i+1,entry.title,{mode:cfg.intervalMode'));
   assert.ok(html.includes('./styles/stage-title.css'));
   assert.ok(style.includes('.program-stage-number'));
   assert.ok(style.includes('.program-stage-category'));
   assert.ok(style.includes('.program-stage-workout'));
+});
+
+
+test('ladder stage shows mode beside stage index without duplicating a bare ladder title',()=>{
+ const doc=fakeDoc();
+ const simple=renderStageTitle(doc,1,'Лестница',{mode:'Лестница'});
+ assert.deepEqual(simple.children.map(x=>x.textContent),['Этап 1 — Лестница']);
+ const named=renderStageTitle(doc,2,'Мой силовой комплекс',{mode:'Лестница'});
+ assert.deepEqual(named.children.map(x=>x.textContent),['Этап 2 — Лестница','Мой силовой комплекс']);
 });

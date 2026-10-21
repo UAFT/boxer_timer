@@ -4,6 +4,7 @@ import { announceRound, stopVoice } from './audio/voice-coach.js';
 import { installDeleteConfirmation } from './ui/delete-confirmation.js';
 import { installTimerDisclosure } from './ui/timer-disclosure.js';
 import { renderStageTitle } from './ui/stage-title.js';
+import {stageTimingRows} from './ui/stage-timing-rows.js';
 import { installWorkoutExchange } from './sharing/workout-exchange-ui.js';
 import { storeImportedWorkout, resolveSenderSettings } from './sharing/workout-file.js';
 import { renderSavedProgramCard, timeWords } from './ui/library-card-view.js';
@@ -570,22 +571,14 @@ function renderProgram() {
       const card=document.createElement('div');card.className='program-stage-card';card.dataset.stage=String(i);
       const stage=document.createElement('div');stage.className='program-stage';
       const main=document.createElement('div');main.className='program-stage-main';
-      const heading=renderStageTitle(document,i+1,entry.title);
-      const detail=document.createElement('small');const cfg=entry.settings || profiles[entry.presetId];
+      const cfg=entry.settings || profiles[entry.presetId];
+      const heading=renderStageTitle(document,i+1,entry.title,{mode:cfg.intervalMode==='ladder'?'Лестница':''});
+      const detail=document.createElement('small');
       const kind=document.createElement('small');kind.className='program-stage-kind';
-      kind.textContent=cfg.intervalMode==='ladder' ? 'Лестница' : (entry.presetId==='tabata2020x24' ? 'Скоростной' : '');
+      kind.textContent=cfg.intervalMode==='ladder' ? '' : (entry.presetId==='tabata2020x24' ? 'Скоростной' : '');
       detail.className='program-stage-timing';
       const timing=stageTiming(entry), english=document.documentElement.lang==='en';
-      for(const [klass,text] of [
-        ['program-stage-count',cfg.intervalMode==='ladder'&&cfg.blockEnabled&&cfg.blockCount>1
-          ? (english?cfg.rounds+' rounds × '+cfg.blockCount+' blocks':russianRoundCount(cfg.rounds)+' × '+russianBlockCount(cfg.blockCount))
-          : (english?timing.rounds.length+' rounds':russianRoundCount(timing.rounds.length))],
-        ['program-stage-work',(english?'work ':'работа ')+formatProgramTime(cfg.workSec)],
-        ['program-stage-rest',(english?'rest ':'отдых ')+formatProgramTime(cfg.restSec)],
-        ...(cfg.intervalMode==='ladder'&&cfg.blockEnabled&&cfg.blockCount>1
-          ? [['program-stage-block-rest',(english?'between blocks ':'между блоками ')+formatProgramTime(cfg.blockRestSec||0)]] : []),
-        ['program-stage-sum',(english?'Total: ':'Всего: ')+formatProgramTime(timing.total)]
-      ]){const item=document.createElement('span');item.className=klass;item.textContent=text;detail.append(item);}
+      for(const [klass,text] of stageTimingRows(cfg,timing,english)){const item=document.createElement('span');item.className=klass;item.textContent=text;detail.append(item);}
       main.append(heading);if(kind.textContent)main.append(kind);stage.append(main);
       if (!programRunning) {
         const edit=document.createElement('button');edit.type='button';edit.textContent='✎';edit.className='program-stage-edit';edit.setAttribute('aria-label','Настройки этапа '+(i+1));edit.addEventListener('click',()=>openStageSettings(i));stage.append(edit);
