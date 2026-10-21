@@ -3,6 +3,7 @@ import { starterPrograms } from './core/starter-programs.js';
 import { announceRound, stopVoice } from './audio/voice-coach.js';
 import { installDeleteConfirmation } from './ui/delete-confirmation.js';
 import { installTimerDisclosure } from './ui/timer-disclosure.js';
+import { renderStageTitle } from './ui/stage-title.js';
 import { installLocalization } from './i18n/locale.js';
 import { AUDIO_KEYS } from './core/constants.js';
 import { clonePreset } from './state/presets.js';
@@ -561,15 +562,13 @@ function renderProgram() {
       const card=document.createElement('div');card.className='program-stage-card';card.dataset.stage=String(i);
       const stage=document.createElement('div');stage.className='program-stage';
       const main=document.createElement('div');main.className='program-stage-main';
-      const heading=document.createElement('strong');heading.className='program-stage-heading';
-      heading.textContent='Этап '+(i+1);
-      if (entry.title) {const title=document.createElement('span');title.className='program-stage-user-title';title.textContent=entry.title;heading.append(title);}
+      const heading=renderStageTitle(document,i+1,entry.title);
       const detail=document.createElement('small');const cfg=entry.settings || profiles[entry.presetId];
       const kind=document.createElement('small');kind.className='program-stage-kind';
-      kind.textContent=cfg.intervalMode==='ladder' ? 'Лестница' : (entry.presetId==='tabata2020x24' ? 'Скоростной' : 'Обычный');
+      kind.textContent=cfg.intervalMode==='ladder' ? 'Лестница' : (entry.presetId==='tabata2020x24' ? 'Скоростной' : '');
       detail.className='program-stage-timing';
       detail.textContent=russianRoundCount(stageTiming(entry).rounds.length)+' · '+formatProgramTime(cfg.workSec)+' / '+formatProgramTime(cfg.restSec)+' · всего '+formatProgramTime(stageTiming(entry).total);
-      main.append(heading,kind);stage.append(main);
+      main.append(heading);if(kind.textContent)main.append(kind);stage.append(main);
       if (!programRunning) {
         const edit=document.createElement('button');edit.type='button';edit.textContent='✎';edit.className='program-stage-edit';edit.setAttribute('aria-label','Настройки этапа '+(i+1));edit.addEventListener('click',()=>openStageSettings(i));stage.append(edit);
         for (const [label,fn] of [['↑',()=>moveProgramStage(i,-1)],['↓',()=>moveProgramStage(i,1)],['×',()=>removeProgramStage(i)]]) {

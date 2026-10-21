@@ -1,0 +1,6 @@
+/* Stage title hierarchy: stage number -> library category -> workout name. */
+.program-stage-title-stack{display:flex;flex-direction:column;gap:3px;min-width:0;max-width:100%;line-height:1.25}
+.program-stage-number{display:block;color:#c4cfe8;font-size:clamp(12px,3vw,14px);font-weight:600}
+.program-stage-category{display:block;color:#d7e2f8;font-size:clamp(15px,4vw,17px);font-weight:650;overflow-wrap:anywhere}
+.program-stage-workout{display:block;color:#fff;font-size:clamp(17px,4.6vw,20px);font-weight:750;overflow-wrap:anywhere;hyphens:none}
+.program-stage-main>.program-stage-kind{color:#e1b95e;font-size:13px;line-height:1.3}
