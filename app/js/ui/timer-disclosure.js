@@ -25,5 +25,11 @@ export function installTimerDisclosure(doc = document) {
     expanded = !expanded;
     sync(hasProgram,running);
   });
-  return { sync, reset() {expanded=false;} };
+  return {
+    sync,
+    // A held preset creates a program while the user is still composing it.
+    // Keep the whole timer and its preset row visible for further holds.
+    keepExpandedOnPresetAdd() { expanded = true; },
+    reset() {expanded=false;}
+  };
 }

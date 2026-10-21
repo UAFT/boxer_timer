@@ -57,3 +57,36 @@ test('collapse control is nested in timer card, no external strip, other app mod
   assert.ok(!catalog.includes("make('B04'"));
   assert.ok(catalog.includes("make('B05'"));
 });
+
+
+test('preset holds preserve expanded timer, while saved program open still defaults to collapsed',()=>{
+  const {doc,button,classes}=mockDoc();
+  const disclosure=installTimerDisclosure(doc);
+  disclosure.sync(false,false);
+  disclosure.keepExpandedOnPresetAdd();
+  disclosure.sync(true,false);
+  assert.equal(classes.has('program-timer-collapsed'),false,'first held preset must not collapse buttons');
+  assert.equal(button.attrs['aria-expanded'],'true');
+  for (let i=0;i<4;i++){
+    disclosure.keepExpandedOnPresetAdd();
+    disclosure.sync(true,false);
+    assert.equal(classes.has('program-timer-collapsed'),false,'repeat holds stay available');
+  }
+  button.click();
+  assert.equal(classes.has('program-timer-collapsed'),true,'explicit user collapse still works');
+  button.click();
+  assert.equal(classes.has('program-timer-collapsed'),false,'manual reopen still works');
+  disclosure.sync(false,false);
+  disclosure.reset();
+  disclosure.sync(true,false);
+  assert.equal(classes.has('program-timer-collapsed'),true,'loading a saved program retains old default');
+});
+
+test('only the long-press add path keeps the timer open; library and timer-engine code unchanged',()=>{
+  const app=readFileSync(new URL('../app/js/app.js',import.meta.url),'utf8');
+  const body=app.slice(app.indexOf('function addProgramStage('),app.indexOf('function removeProgramStage('));
+  assert.ok(body.includes('timerDisclosure.keepExpandedOnPresetAdd();'));
+  assert.ok(body.indexOf('programEntries.push(')<body.indexOf('timerDisclosure.keepExpandedOnPresetAdd();'));
+  assert.ok(body.indexOf('timerDisclosure.keepExpandedOnPresetAdd();')<body.indexOf('persistProgram();'));
+  assert.ok(app.includes('hold=setTimeout(()=>{hold=null;consumed=true;addProgramStage(tab.dataset.preset);},550);'));
+});

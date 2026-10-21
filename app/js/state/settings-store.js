@@ -1,5 +1,6 @@
 import { STORAGE_KEY } from '../core/constants.js';
 import { clampInt } from '../core/time.js';
+import { clonePreset } from './presets.js';
 
 const WARNING_VALUES = new Set([0, 4, 10]);
 
@@ -68,12 +69,21 @@ const PROFILE_IDS = ['classic3', 'classic2', 'classic1', 'tabata2020x24'];
 export function loadProfileState() {
   let saved = null;
   try { saved = JSON.parse(window.localStorage.getItem(PROFILE_KEY) || 'null'); } catch {}
-  if (saved?.profiles && typeof saved.profiles === 'object') {
-    return { activeId: PROFILE_IDS.includes(saved.activeId) ? saved.activeId : 'classic3', profiles: saved.profiles };
+  // A fresh/partially migrated installation must have a profile for EVERY tab.
+  // A long press adds its program stage without selecting the tab first.
+  const profiles = Object.fromEntries(PROFILE_IDS.map(id => [id, clonePreset(id)]));
+  if (saved?.profiles && typeof saved.profiles === 'object' && !Array.isArray(saved.profiles)) {
+    for (const id of PROFILE_IDS) {
+      if (saved.profiles[id] && typeof saved.profiles[id] === 'object' && !Array.isArray(saved.profiles[id])) {
+        profiles[id] = saved.profiles[id];
+      }
+    }
+    return { activeId: PROFILE_IDS.includes(saved.activeId) ? saved.activeId : 'classic3', profiles };
   }
   let legacy = null;
   try { legacy = JSON.parse(window.localStorage.getItem(STORAGE_KEY) || 'null'); } catch {}
-  return { activeId: 'classic3', profiles: legacy ? { classic3: legacy } : {} };
+  if (legacy && typeof legacy === 'object' && !Array.isArray(legacy)) profiles.classic3 = legacy;
+  return { activeId: 'classic3', profiles };
 }
 
 export function saveProfileState(activeId, profiles) {

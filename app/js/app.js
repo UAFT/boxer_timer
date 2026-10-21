@@ -324,6 +324,7 @@ function persistProgram() {
 function addProgramStage(presetId) {
   if (!PRESET_NAMES[presetId] || programRunning || programEntries.length >= 24) return;
   programEntries.push({ presetId, title:'', restAfterSec: 60 });
+  timerDisclosure.keepExpandedOnPresetAdd();
   persistProgram();
 }
 function removeProgramStage(index) {
