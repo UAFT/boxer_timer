@@ -162,3 +162,141 @@ input::placeholder,textarea::placeholder{color:#75838d;opacity:1}
 .stage-settings-modal .stage-settings-grid input,.stage-settings-modal .stage-settings-grid select,.stage-settings-modal .stage-mmss input,.round-edit-modal textarea,.round-edit-modal #roundEditPhaseOne,.round-edit-modal #roundEditPhaseTwo{background:var(--ft-raised)!important;color:var(--ft-ink)!important;border-color:var(--ft-line)!important}
 .stage-settings-modal .stage-mode-choices button:not(.is-active){background:var(--ft-raised)!important;color:var(--ft-ink)!important;border-color:var(--ft-line)!important}
 .stage-settings-modal .stage-mode-choices button.is-active{background:var(--ft-steel-gradient)!important;color:#fff!important}
+
+/* Studio Slate v1.1: owner phone review — neutral surfaces, steel only for
+   selected actions.  This block intentionally wins over legacy navy/gold rules. */
+:root{
+ --ft-stage-bg:#f3f5f7;
+ --ft-input-bg:#f4f6f8;
+ --ft-border-soft:#cbd3d9;
+ --ft-positive:#365f60;
+}
+/* Program editor: old navy stage title/timing panes were leaking through. */
+.program-panel .program-stage-card,
+.program-panel .program-stage-card>.program-stage,
+.program-panel .program-stage-card>.program-stage-timing,
+.program-panel .program-stage-card .program-round-editor,
+.program-panel .program-stage-card .program-round-edit-row{
+ background:var(--ft-stage-bg)!important;color:var(--ft-ink)!important;
+ border-color:var(--ft-line)!important;
+}
+.program-panel .program-stage-card>.program-stage{border-radius:12px 12px 0 0}
+.program-panel .program-stage-card>.program-stage-timing{border-radius:0 0 12px 12px}
+.program-panel .program-stage-card .program-stage-main,
+.program-panel .program-stage-card .program-stage-user-title,
+.program-panel .program-stage-card .program-stage-workout,
+.program-panel .program-stage-card .program-stage-heading,
+.program-panel .program-stage-card .program-stage-title-stack{color:var(--ft-ink)}
+.program-panel .program-stage-card .program-stage-number,
+.program-panel .program-stage-card .program-stage-category,
+.program-panel .program-stage-card .program-stage-timing .program-stage-count,
+.program-panel .program-stage-card .program-stage-timing .program-stage-work,
+.program-panel .program-stage-card .program-stage-timing .program-stage-rest,
+.program-panel .program-stage-card .program-rest-label{color:var(--ft-secondary)}
+.program-panel .program-stage-card .program-stage-timing .program-stage-sum{color:var(--ft-steel)}
+.program-panel .program-round-edit-row button,
+.program-panel .program-cycle-controls button{background:var(--ft-raised)!important;color:var(--ft-ink)!important;border-color:var(--ft-line)!important}
+.program-panel .program-stage-card.is-current{box-shadow:inset 3px 0 0 var(--ft-steel),var(--ft-shadow)}
+/* The selected category tab remains steel; browsing cards and + are grey. */
+.program-library-modal .program-library-list .program-library-entry,
+.program-library-modal .program-library-list .ft-saved-program-entry{
+ background:var(--ft-surface)!important;border:1px solid var(--ft-border-soft)!important;
+ box-shadow:none!important;color:var(--ft-ink)!important;
+}
+.program-library-modal .program-library-list .program-library-entry-open,
+.program-library-modal .program-library-list .native-library-add,
+.program-library-modal .program-library-list .program-library-entry-delete{
+ background:var(--ft-card)!important;color:var(--ft-ink)!important;
+ border:1px solid var(--ft-line)!important;box-shadow:none!important;
+}
+.program-library-modal .program-library-list .ft-saved-program-entry .ft-saved-program-open{
+ background:transparent!important;border:0!important;box-shadow:none!important;
+}
+.program-library-modal .program-library-list .native-library-add{
+ border-radius:12px;font-weight:500;
+}
+/* Text on saved programs: no tinted/green card backgrounds or low contrast. */
+.program-library-modal .ft-saved-program-entry .ft-program-title,
+.program-library-modal .ft-saved-program-entry .ft-program-stage .ft-stage-title{color:var(--ft-ink)!important}
+.program-library-modal .ft-saved-program-entry .ft-program-total,
+.program-library-modal .ft-saved-program-entry .ft-program-stage .ft-stage-total{color:var(--ft-steel)!important}
+.program-library-modal .ft-saved-program-entry .ft-program-stage .ft-stage-label,
+.program-library-modal .ft-saved-program-entry .ft-program-stage .ft-stage-details,
+.program-library-modal .ft-saved-program-entry .ft-program-stage .ft-stage-rest-after,
+.program-library-modal .ft-saved-program-entry .ft-program-stage .ft-stage-block-rest,
+.program-library-modal .ft-saved-program-entry .ft-program-cycles{color:var(--ft-secondary)!important}
+.program-library-modal .ft-saved-program-entry .ft-program-stages,
+.program-library-modal .ft-saved-program-entry .ft-program-stage{background:transparent!important;border-color:var(--ft-line)!important}
+.program-library-modal .ft-saved-program-entry .ft-program-actions .ft-share-button{background:var(--ft-raised)!important;color:var(--ft-ink)!important;border-color:var(--ft-line)!important}
+.program-library-modal .ft-saved-program-entry .ft-program-actions .ft-trash-button{background:var(--ft-red-soft)!important;color:#923a39!important;border-color:#d3a6a0!important}
+.program-library-modal .program-library-list .native-library-info>strong{color:var(--ft-ink)!important}
+.program-library-modal .program-library-list .native-library-info>small:not(.native-library-total),
+.program-library-modal .program-library-list .native-library-timing{color:var(--ft-secondary)!important;opacity:1}
+.program-library-modal .program-library-list .native-library-total{color:var(--ft-steel)!important}
+/* Stage editor, round renaming, and delete/confirm: fully neutral, not navy. */
+.stage-settings-modal,.round-edit-modal,.ft-import-dialog,.ft-delete-dialog,
+#programSaveModal .settings-modal{background:linear-gradient(170deg,#fbfcfd,#e9edf0)!important;color:var(--ft-ink)!important;border-color:var(--ft-line)!important}
+.stage-settings-modal>.settings-head h2,
+.stage-settings-modal h2,.round-edit-modal h2,
+.ft-import-dialog h2,.ft-delete-dialog h2{color:var(--ft-ink)!important}
+.stage-settings-modal .stage-settings-field input,
+.stage-settings-modal .stage-settings-grid input,
+.stage-settings-modal .stage-mmss input,
+.stage-settings-modal .ft-stage-phase-item>input,
+.stage-settings-modal .stage-number-control input,
+.round-edit-modal textarea,
+.round-edit-modal input,
+#programSaveNewFields input{background:var(--ft-input-bg)!important;color:var(--ft-ink)!important;border:1px solid var(--ft-border-soft)!important}
+.stage-settings-modal .stage-settings-field,
+.stage-settings-modal .stage-settings-field>label,
+.stage-settings-modal .stage-settings-grid label,
+.stage-settings-modal .ft-stage-two-phase label,
+.stage-settings-modal .ft-stage-phase-item>label,
+.stage-settings-modal .stage-mmss span,
+.round-edit-modal label{color:var(--ft-secondary)!important}
+.stage-settings-modal .stage-number-control button,
+.stage-settings-modal .stage-settings-actions #stageSettingsCancel,
+.stage-settings-modal .stage-mode-choices button:not(.selected),
+.round-edit-modal .round-edit-actions button:not(#roundEditSave){background:var(--ft-raised)!important;color:var(--ft-ink)!important;border:1px solid var(--ft-line)!important;box-shadow:var(--ft-shadow)!important}
+.stage-settings-modal .stage-mode-choices button.selected,
+.stage-settings-modal #stageSettingsSave,
+.round-edit-modal #roundEditSave{background:var(--ft-steel-gradient)!important;color:white!important;border:1px solid #577c7a!important;box-shadow:var(--ft-shadow-button)!important}
+.stage-settings-modal .stage-settings-checkbox,.stage-settings-modal .stage-settings-checkbox input{accent-color:var(--ft-steel)}
+#programSaveCurrent{background:var(--ft-card);color:var(--ft-ink)}
+#programSaveCreate{background:var(--ft-steel-gradient);color:white;border:1px solid #577c7a}
+/* All ordinary labels and input captions must remain readable on silver. */
+.program-panel .program-hint,.program-panel .program-rest,
+.program-panel .program-cycle-panel,.stage-settings-modal .ft-stage-two-phase,
+.stage-settings-modal #stageSettingsLadder,
+.round-edit-modal .round-edit-actions{color:var(--ft-ink)}
+/* Custom in-app language picker (no native Android selection sheet). */
+.settings-modal .ft-language-picker{position:relative;width:100%;min-width:0}
+.settings-modal .ft-language-picker #languageSelect{
+ position:absolute!important;width:1px!important;height:1px!important;
+ padding:0!important;margin:-1px!important;overflow:hidden!important;
+ clip:rect(0 0 0 0)!important;clip-path:inset(50%)!important;
+ white-space:nowrap!important;border:0!important;pointer-events:none!important;
+}
+.settings-modal .ft-language-trigger{
+ box-sizing:border-box;width:100%;min-height:48px;display:flex;align-items:center;
+ justify-content:space-between;gap:12px;padding:12px 15px;
+ background:var(--ft-raised);color:var(--ft-ink);border:1px solid var(--ft-line);
+ border-radius:12px;box-shadow:var(--ft-shadow);font:inherit;font-size:16px;
+ font-weight:600;text-align:left;
+}
+.settings-modal .ft-language-trigger[aria-expanded=true]{border-color:var(--ft-steel)}
+.settings-modal .ft-language-chevron{width:9px;height:9px;border-right:2px solid currentColor;
+ border-bottom:2px solid currentColor;transform:rotate(45deg);margin:-5px 3px 0 0;flex-shrink:0}
+.settings-modal .ft-language-trigger[aria-expanded=true] .ft-language-chevron{transform:rotate(225deg);margin:4px 3px 0 0}
+.settings-modal .ft-language-list{
+ position:absolute;top:calc(100% + 5px);left:0;right:0;z-index:90;
+ padding:5px;display:grid;gap:2px;background:var(--ft-surface);
+ border:1px solid var(--ft-line);border-radius:12px;box-shadow:0 9px 22px rgba(25,38,48,.18);
+}
+.settings-modal .ft-language-list[hidden]{display:none!important}
+.settings-modal .ft-language-list button{
+ min-height:48px;text-align:left;padding:10px 13px;font:inherit;
+ background:transparent;color:var(--ft-ink);border:0;border-radius:9px;box-shadow:none;
+}
+.settings-modal .ft-language-list button:hover,.settings-modal .ft-language-list button:focus-visible{background:#e5ebee}
+.settings-modal .ft-language-list button[aria-selected=true]{background:#dce9e6;color:#244c4b;font-weight:750}

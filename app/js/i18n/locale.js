@@ -1,3 +1,4 @@
+import { installCustomLanguageSelect } from './custom-language-select.js';
 export const LANGUAGE_KEY = 'fighttech.language.v1';
 export function resolveLanguage(preference, device) {
   return preference === 'ru' || preference === 'en' ? preference : /^ru\b|^ru-/i.test(device) ? 'ru' : 'en';
@@ -94,6 +95,7 @@ export function installLocalization(buttons) {
       refresh();
     });
   }
+  installCustomLanguageSelect(languageDropdown);
   for (const button of buttons) button.addEventListener('click', () => {
     preference = button.dataset.language;
     localStorage.setItem(LANGUAGE_KEY,preference);

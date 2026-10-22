@@ -36,3 +36,11 @@ Language: single native dropdown Auto / Russian / English; persisted in existing
 
 ## Safety
 Presentation only. No app.js growth, schedule engine edits, new mode, background implementation, new settings beyond language dropdown. Existing generated dist is pre-dirty: only build in isolated copy/worktree. Smoke physical owner Android before shipping additional features.
+
+## v1.1 Owner Android corrections (2026-10-22)
+- No wallpaper/render redesign. Source-level visual fixes only.
+- New custom in-app language list replacing the Android native selection sheet; it keeps the existing `languageSelect` and persistent RU/EN/Auto contract, supports keyboard and closes on outside tap.
+- Standard/saved/library workout cards are matte silver-gray, not steel; the category labels, plus buttons, stage header, round control and modal editors also use neutral surfaces.
+- Steel-green reserved for selected tab/mode and positive/start/save primary actions.
+- Program stage title/timing, edit/rename dialogs, stage +/- inputs and saved-program text all use light surface and high contrast text.
+- Timer, metronome, preset ordering, plan computation, work/rest schedule not modified.
