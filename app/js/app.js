@@ -7,6 +7,7 @@ import { renderStageTitle } from './ui/stage-title.js';
 import {stageTimingRows} from './ui/stage-timing-rows.js';
 import {installTwoPhaseToggle} from './ui/two-phase-toggle.js';
 import {installIntervalModeCombo} from './ui/interval-mode-combo.js';
+import {isPlaybackProtected, applyPresetWithoutInterrupting, applyLiveMetronome} from './ui/playback-guard.js';
 import {loadRoundTimingEditor,readRoundTimingEditor,saveRoundTiming} from './ui/round-time-editor.js';
 import {hasLadder} from './core/ladder-blocks.js';
 import {stageTwoPhaseLoad,stageTwoPhaseSave,roundTwoPhaseLoad,roundTwoPhaseSave} from './ui/two-phase-editor.js';
@@ -138,30 +139,34 @@ function setMetronomePanel(panel, { render = true } = {}) {
 function previewProgram() { return programEntries.length ? compileProgram(programEntries, profiles, programOptions) : null; }
 const timerDisclosure=installTimerDisclosure();
 function syncTimerVisibility(){timerDisclosure.sync(programEntries.length>0,programRunning);}
+function liveTimerSettings() {
+  return isPlaybackProtected(timer,programRunning) ? timer.config : activeSettings;
+}
 function renderCurrentState() {
   renderTimer(els, { ...timer.state, config: timer.config, isPaused: timer.isPaused }, { metronomePanelOpen: isMetronomePanelOpen(), ladderExpanded: uiState.ladderExpanded, programName:openedProgramName, previewRounds: !programRunning && programEntries.length ? previewProgram() : null, editablePhase:phaseToggle.selected() });
-  phaseToggle.render(activeSettings,timer?.state);
+  phaseToggle.render(liveTimerSettings(),timer?.state);
   renderProgram();
   syncTimerVisibility();
 }
 
-const timer = new TimerEngine({
+let timer;
+timer = new TimerEngine({
   onTick: (state) => {
     renderTimer(els, state, { metronomePanelOpen: isMetronomePanelOpen(), ladderExpanded: uiState.ladderExpanded, programName:openedProgramName, previewRounds: !programRunning && programEntries.length ? previewProgram() : null, editablePhase:phaseToggle.selected() });
-    phaseToggle.render(activeSettings,state);
+    phaseToggle.render(liveTimerSettings(),state);
     renderProgram();
     syncTimerVisibility();
     metronome.syncPhase(state);
   },
   onStateChange: (state) => {
     renderTimer(els, state, { metronomePanelOpen: isMetronomePanelOpen(), ladderExpanded: uiState.ladderExpanded, programName:openedProgramName, previewRounds: !programRunning && programEntries.length ? previewProgram() : null, editablePhase:phaseToggle.selected() });
-    phaseToggle.render(activeSettings,state);
+    phaseToggle.render(liveTimerSettings(),state);
     renderProgram();
     syncTimerVisibility();
     metronome.syncPhase(state);
   },
   onEvent: async (event) => {
-    const spec = resolveEventAudioSpec(event, activeSettings);
+    const spec = resolveEventAudioSpec(event, timer.config);
     if (!spec) return;
     if (METRONOME_SUPPRESS_EVENTS.has(event.type)) {
       metronome.suppressFor(450);
@@ -174,7 +179,7 @@ const timer = new TimerEngine({
       audio.stopTag('transition');
     }
     await audio.play(spec.key, { tag: spec.tag, volume: spec.volume });
-    if (programRunning && activeSettings.audioEnabled && ['round-start-zero','rest-end-zero','round-end-zero','block-rest-end-zero'].includes(event.type)) {
+    if (programRunning && timer.config.audioEnabled && ['round-start-zero','rest-end-zero','round-end-zero','block-rest-end-zero'].includes(event.type)) {
       const round=programSnapshot?.[Math.max(0,(event.roundIndex || timer.state.roundIndex)-1)];
       announceRound(event.type,round,document.documentElement.lang?.startsWith('en')?'en':'ru');
     }
@@ -182,24 +187,27 @@ const timer = new TimerEngine({
 });
 
 function syncMetronome() {
+  const settings = liveTimerSettings();
   metronome.setConfig({
-    enabled: activeSettings.metronomeEnabled && isMetronomePanelOpen() && !isMetronomeLocked(activeSettings),
-    bpm: activeSettings.metronomeBpm,
-    mode: activeSettings.metronomeMode
+    enabled: settings.metronomeEnabled && isMetronomePanelOpen() && !isMetronomeLocked(settings),
+    bpm: settings.metronomeBpm,
+    mode: settings.metronomeMode
   });
 }
 
-function applySettings(nextSettings) {
+function applySettings(nextSettings, { liveMetronome = false } = {}) {
   activeSettings = coerceMetronomeForWarning(normalizeSettings(nextSettings, clonePreset(activePresetId)));
   if (isMetronomeLocked(activeSettings)) {
     setMetronomePanel('collapsed', { render: false });
   }
   profiles[activePresetId] = { ...activeSettings };
   saveProfileState(activePresetId, profiles);
-  audio.setEnabled(activeSettings.audioEnabled);
+  // Browsing/adjusting a preset must never reset or replace the active workout.
+  const updatedLive = applyPresetWithoutInterrupting(timer,
+    { ...activeSettings, presetId: activePresetId }, {programRunning});
+  if (updatedLive) audio.setEnabled(activeSettings.audioEnabled);
+  else if (liveMetronome) applyLiveMetronome(timer,activeSettings);
   syncMetronome();
-  if (programRunning) exitProgram();
-  timer.applyConfig({ ...activeSettings, presetId: activePresetId });
   setSettingsForm(els, activeSettings);
   renderCurrentState();
 }
@@ -233,7 +241,6 @@ function handleReset() {
 }
 
 function handleSelectPreset(presetId) {
-  if (programRunning) exitProgram();
   if (!presetId || !['classic3', 'classic2', 'classic1', 'tabata2020x24'].includes(presetId)) return;
   activePresetId = presetId;
   setActivePreset(els, activePresetId);
@@ -279,7 +286,7 @@ function handleAdjustValue({ target, direction }, event) {
     }
   }
 
-  applySettings(draft);
+  applySettings(draft,{liveMetronome:target==='metronomeBpm'});
 }
 
 
@@ -308,7 +315,7 @@ function handleToggleMetronome(event) {
   }
 
   setMetronomePanel(willEnable ? 'expanded' : 'collapsed', { render: false });
-  applySettings(draft);
+  applySettings(draft,{liveMetronome:true});
 }
 
 function handleSelectMetronomeMode(mode) {
@@ -318,7 +325,7 @@ function handleSelectMetronomeMode(mode) {
     draft.metronomeBpm = DEFAULT_METRONOME_BPM;
   }
   setMetronomePanel('expanded', { render: false });
-  applySettings(draft);
+  applySettings(draft,{liveMetronome:true});
 }
 
 function handleOpenMetronomeCard(event) {
@@ -332,7 +339,7 @@ function handleOpenMetronomeCard(event) {
   }
 
   setMetronomePanel('expanded', { render: false });
-  applySettings(draft);
+  applySettings(draft,{liveMetronome:true});
 }
 
 
@@ -539,7 +546,7 @@ function bindStageSettings(){
 }
 
 function startProgram() {
-  if (!programEntries.length) return;
+  if (!programEntries.length || isPlaybackProtected(timer,programRunning)) return;
   audio.stopAll();
   metronome.stop();
   programSnapshot = compileProgram(programEntries,profiles,programOptions);
@@ -595,12 +602,13 @@ function renderProgram() {
   panel.hidden=false;
   syncEditorProgramHeader(document,{name:openedProgramName,entries:programEntries,profiles,options:programOptions,lang:document.documentElement.lang});
   document.getElementById('programStart').hidden=programRunning || !programEntries.length;
+  document.getElementById('programStart').disabled=isPlaybackProtected(timer,programRunning);
   document.getElementById('programCycleCount').textContent=String(programOptions.cycles);
   document.getElementById('programCycleRestRow').hidden=programOptions.cycles===1;
   document.getElementById('programCycleRestValue').textContent=formatProgramTime(programOptions.cycleRestSec);
   document.querySelector('.program-cycle-panel').querySelectorAll('button').forEach(b=>b.disabled=programRunning);
   document.getElementById('programSaveOpen').disabled=programRunning || !programEntries.length;
-  document.getElementById('programLibraryOpen').disabled=programRunning;
+  document.getElementById('programLibraryOpen').disabled=false;
   document.getElementById('programExit').hidden=!programRunning;
   renderPresetOrders(els.presetTabs, programEntries);
   const list=document.getElementById('programList');
@@ -682,7 +690,7 @@ function bindProgramLibrary() {
     return {id,name,entries:normalizeProgram(programEntries.map(x=>({...x,settings:x.settings || structuredClone(profiles[x.presetId])}))),options:normalizeOptions(programOptions)};
   }
   function openEntry(entry, builtIn=false) {
-    if (programRunning) return;
+    if (isPlaybackProtected(timer,programRunning)) return;
     programEntries=normalizeProgram(entry.entries);
     programOptions=normalizeOptions(entry.options);
     openedProgramId=builtIn?null:entry.id;
@@ -804,7 +812,7 @@ function bindProgram() {
   }
   document.getElementById('programClear').addEventListener('click',()=>{if(!programRunning){programEntries=[];openedProgramName='';openedProgramId=null;persistProgram();}});
   document.getElementById('programStart').addEventListener('click',async()=>{await audio.unlock();startProgram();});
-  document.getElementById('programExit').addEventListener('click',exitProgram);
+  document.getElementById('programExit').addEventListener('click',()=>{if(programRunning)exitProgram();});
   bindProgramLibrary();
 }
 
