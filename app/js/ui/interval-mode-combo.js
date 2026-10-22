@@ -18,6 +18,11 @@ export function installIntervalModeCombo({buttons,modeInput,enabledInput,onChang
   for(const button of buttons){
     let timer=null,held=false,start=null;
     const cancel=()=>{if(timer!==null)clearTimeout(timer);timer=null;start=null;};
+    // Android WebView may treat a long press as selecting button text.
+    // Suppress selection without cancelling pointer/click events used by the
+    // two-phase + ladder hold gesture.
+    button.addEventListener('selectstart', event=>event.preventDefault());
+    button.addEventListener('dragstart', event=>event.preventDefault());
     button.addEventListener('pointerdown',event=>{
       if(event.button!==0 || button.disabled)return;
       held=false;cancel();

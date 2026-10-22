@@ -62,7 +62,7 @@ export function buildLadderPlanRows(config){
       '<div class="ft-work-phase phase-two" data-phase="two"><span>Фаза 2'+(two?' · '+two:'')+'</span><strong>'+formatTime(phaseTwo)+'</strong><b class="ladder-count"></b></div>'+
       (i<totalRoundsForConfig(config)?'<div class="ft-work-phase ft-round-rest" data-phase="rest"><span>Отдых</span><strong>'+rest+'</strong><b class="ladder-count"></b></div>':'')+'</div>');
   } else {
-   rows.push('<div class="ladder-live-row" data-round="'+i+'"><span class="ladder-plan">Раунд '+round+title+' · работа '+formatTime(workSecForRound(config,i))+' · отдых '+rest+'</span><strong class="ladder-count"></strong></div>');
+   rows.push('<div class="ladder-live-row" data-round="'+i+'"><span class="ladder-plan"><span class="ladder-plan-name">Раунд '+round+title+'</span><span class="ladder-plan-timing">работа '+formatTime(workSecForRound(config,i))+' · отдых '+rest+'</span></span><strong class="ladder-count"></strong></div>');
   }
   const between=blockRestSecAfterRound(config,i);
   if(between>0){

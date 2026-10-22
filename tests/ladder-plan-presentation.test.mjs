@@ -29,7 +29,7 @@ test('standalone ladder displays separate rest rows between blocks, without fina
  const html=buildLadderPlanRows(cfg);
  assert.equal((html.match(/class="ladder-live-row"/g)||[]).length,5);
  assert.equal((html.match(/class="ladder-rest-row"/g)||[]).length,4);
- assert.ok(html.includes('Раунд 1 · работа 00:10 · отдых 00:10'));
+ assert.ok(html.includes('<span class="ladder-plan-name">Раунд 1</span><span class="ladder-plan-timing">работа 00:10 · отдых 00:10</span>'));
  assert.ok(html.includes('<span>Отдых между блоками</span>'));
  assert.ok(html.indexOf('data-round="1"')<html.indexOf('data-after-round="1"'));
  assert.ok(html.indexOf('data-after-round="1"')<html.indexOf('Блок 2 из 5'));

@@ -312,3 +312,111 @@ input::placeholder,textarea::placeholder{color:#75838d;opacity:1}
 .round-edit-modal #roundEditResetTiming{border:1px solid var(--ft-line);border-radius:9px;background:var(--ft-raised);color:var(--ft-steel);padding:9px 12px;margin-top:8px}
 .ladder-live.is-expanded .ladder-current>span:not(:empty){color:#3c595c!important;font-size:clamp(14px,3.8vw,17px);font-weight:650}
 #stageSettingsPhaseTwoStepField[hidden],#roundEditTimes[hidden],#phaseTwoStepFields[hidden]{display:none!important}
+
+
+/* Studio Slate v1.2 — small owner-requested polish, no layout redesign.
+   Keep the program/timer mechanics unchanged, normalize the visual primitives. */
+
+/* Long-press on the interval-mode chips is an action, never text selection.
+   Selection suppression must not block the pointer sequence / button click. */
+.settings-modal button[data-interval-mode],
+.settings-modal button[data-interval-mode] *,
+.stage-settings-modal .stage-mode-choices button {
+  -webkit-user-select:none!important;
+  user-select:none!important;
+  -webkit-touch-callout:none!important;
+  -webkit-tap-highlight-color:transparent;
+  touch-action:manipulation;
+}
+
+/* A selected preset is visually different from an added program stage.
+   The selected one has a graphite contour; membership stays steel and
+   keeps the ordered badges when multiple stages use the same preset. */
+.preset-row .preset-tab.is-active {
+  outline:3px solid #223e43!important;
+  outline-offset:-4px;
+  box-shadow:var(--ft-shadow-button),inset 0 0 0 2px #bcd4cf!important;
+}
+.preset-row .preset-tab.is-active:not(.has-program){
+  border-color:#365f60!important;
+}
+.preset-row .preset-tab.has-program:not(.is-active) {
+  outline:2px solid #7faaa5;
+  outline-offset:-3px;
+}
+
+/* Keep long round names separate from the timing line in both regular and
+   ladder plan views; do not insert artificial newlines into exercise names. */
+.ladder-live-row:not(.ft-two-phase-plan) .ladder-plan{
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:flex-start;
+  gap:4px;
+  min-width:0;
+}
+.ladder-live-row .ladder-plan-name{
+  display:block;
+  overflow-wrap:anywhere;
+  white-space:normal;
+  font-weight:550;
+  line-height:1.36;
+}
+.ladder-live-row .ladder-plan-timing{
+  display:block;
+  white-space:normal;
+  color:var(--ft-secondary);
+  font-size:clamp(12px,3.2vw,15px);
+  line-height:1.35;
+}
+.ladder-live-row.is-active .ladder-plan-timing{color:var(--ft-steel)}
+
+/* Remove legacy lemon/yellow accents from the editor title.
+   Rest-between-blocks keeps readable steel contrast while running. */
+.program-panel .program-active-info .program-current-name,
+.program-panel .program-active-info .program-current-duration,
+.program-panel .program-current-duration::first-letter{
+  color:var(--ft-steel)!important;
+}
+.ladder-live-list .ladder-rest-row.is-active .ladder-count,
+.ladder-live-list .ladder-rest-row.is-active .ladder-rest-duration{
+  color:var(--ft-steel)!important;
+  font-weight:750!important;
+  text-shadow:none!important;
+}
+.ladder-live-list .ladder-rest-row.is-active{
+  background:#dce9e6!important;
+  border-color:var(--ft-steel)!important;
+  color:var(--ft-ink)!important;
+}
+
+/* All small program management controls share one surface, outline, shadow,
+   icon weight and corner radius. Keep their existing positions and sizes. */
+.program-library-modal .ft-library-header>button,
+.program-library-modal #ftWorkoutImportBtn,
+.program-library-modal .ft-saved-program-entry .ft-program-actions>button,
+.program-panel .program-stage-card .program-stage>button,
+.program-panel .program-stage-card .program-round-edit-row button{
+  background:var(--ft-raised)!important;
+  color:var(--ft-ink)!important;
+  border:1px solid var(--ft-line)!important;
+  border-radius:var(--ft-radius-control)!important;
+  box-shadow:var(--ft-shadow)!important;
+  font-weight:600;
+}
+.program-library-modal .ft-saved-program-entry .ft-program-actions .ft-trash-button{
+  background:var(--ft-red-soft)!important;
+  color:#923a39!important;
+  border-color:#d3a6a0!important;
+}
+.program-library-modal :is(#ftWorkoutImportBtn,.ft-program-actions>button) .ft-action-icon{
+  width:21px;
+  height:21px;
+  flex-basis:21px;
+  stroke-width:1.9;
+}
+.program-library-modal .ft-library-header>button:focus-visible,
+.program-library-modal #ftWorkoutImportBtn:focus-visible,
+.program-library-modal .ft-saved-program-entry .ft-program-actions>button:focus-visible{
+  outline:3px solid var(--ft-steel);
+  outline-offset:2px;
+}
