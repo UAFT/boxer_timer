@@ -1,4 +1,5 @@
 import { installIntervalModeCombo } from './interval-mode-combo.js';
+import {syncLadderStepLabels} from './ladder-step-labels.js';
 function activateChoice(buttons, matcher) {
   buttons.forEach((button) => {
     const isActive = matcher(button);
@@ -97,6 +98,7 @@ export function bindControls(els, handlers) {
     onChange:()=>{
       const mode=els.intervalModeInput.value;
       const ladder=mode==='ladder'||(mode==='two_phase'&&els.ladderEnabledInput.checked);
+      syncLadderStepLabels(document,{intervalMode:mode,ladderEnabled:els.ladderEnabledInput.checked});
       els.blockSettings.hidden=!ladder;
       document.getElementById('ladderStepsFields').hidden=!ladder;
       document.getElementById('phaseTwoStepFields').hidden=mode!=='two_phase'||!ladder;

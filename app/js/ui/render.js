@@ -1,3 +1,4 @@
+import {syncLadderStepLabels} from './ladder-step-labels.js';
 import { PHASES } from '../core/constants.js';
 import {hasLadder} from '../core/ladder-blocks.js';
 import { formatTime } from '../core/time.js';
@@ -195,6 +196,7 @@ export function setSettingsForm(els, settings) {
   els.warningSecondsInput.value = String(settings.warningSeconds ?? 4);
   els.intervalModeInput.value = settings.intervalMode || 'standard';
   els.ladderEnabledInput.checked = Boolean(settings.ladderEnabled);
+  syncLadderStepLabels(document,{intervalMode:els.intervalModeInput.value,ladderEnabled:els.ladderEnabledInput.checked});
   const ladder=hasLadder(settings);
   document.getElementById('ladderStepsFields').hidden=!ladder;
   document.getElementById('phaseTwoStepFields').hidden=!ladder||settings.intervalMode!=='two_phase';

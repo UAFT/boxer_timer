@@ -322,24 +322,16 @@
 
             <div id="ladderStepsFields">
             <div class="settings-field-stack">
-              <div class="settings-field-label">Шаг работы по раундам</div>
-              <div class="settings-stepper" role="group" aria-label="Шаг работы по раундам">
+              <div class="settings-field-label" id="workStepSecLabel">Шаг работы по раундам</div>
+              <div class="settings-stepper" id="workStepSecControl" role="group" aria-label="Шаг работы по раундам">
                 <button type="button" class="settings-stepper-btn" data-ladder-target="workStepSec" data-ladder-direction="down">−5</button>
                 <div class="settings-stepper-value" id="workStepSecDisplay">без шага</div>
                 <button type="button" class="settings-stepper-btn" data-ladder-target="workStepSec" data-ladder-direction="up">+5</button>
               </div>
               <input type="hidden" id="workStepSecInput" value="0" />
-              <div class="settings-inline-note">Отрицательный шаг сокращает каждый следующий раунд, положительный — удлиняет. Изменение по 5 секунд.</div>
+              <div class="settings-inline-note" id="workStepSecNote">Отрицательный шаг сокращает каждый следующий раунд, положительный — удлиняет. Изменение по 5 секунд.</div>
             </div>
 
-            <div class="settings-field-stack">
-              <div class="settings-field-label">Шаг отдыха по раундам</div>
-              <div class="settings-stepper" role="group" aria-label="Шаг отдыха по раундам">
-                <button type="button" class="settings-stepper-btn" data-ladder-target="restStepSec" data-ladder-direction="down">−5</button>
-                <div class="settings-stepper-value" id="restStepSecDisplay">без шага</div>
-                <button type="button" class="settings-stepper-btn" data-ladder-target="restStepSec" data-ladder-direction="up">+5</button>
-              </div>
-              <input type="hidden" id="restStepSecInput" value="0" />
               <div class="settings-field-stack" id="phaseTwoStepFields" hidden>
                 <div class="settings-field-label">Шаг фазы 2 по раундам</div>
                 <div class="settings-stepper" role="group" aria-label="Шаг фазы 2 по раундам">
@@ -349,6 +341,15 @@
                 </div>
                 <input type="hidden" id="phaseTwoStepSecInput" value="0" />
               </div>
+
+            <div class="settings-field-stack">
+              <div class="settings-field-label">Шаг отдыха по раундам</div>
+              <div class="settings-stepper" role="group" aria-label="Шаг отдыха по раундам">
+                <button type="button" class="settings-stepper-btn" data-ladder-target="restStepSec" data-ladder-direction="down">−5</button>
+                <div class="settings-stepper-value" id="restStepSecDisplay">без шага</div>
+                <button type="button" class="settings-stepper-btn" data-ladder-target="restStepSec" data-ladder-direction="up">+5</button>
+              </div>
+              <input type="hidden" id="restStepSecInput" value="0" />
               <div class="settings-inline-note">Отрицательный шаг сокращает отдых, положительный — удлиняет. Нулевой шаг сохраняет одинаковый отдых.</div>
             </div>
 

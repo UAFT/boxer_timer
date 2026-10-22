@@ -420,3 +420,17 @@ input::placeholder,textarea::placeholder{color:#75838d;opacity:1}
   outline:3px solid var(--ft-steel);
   outline-offset:2px;
 }
+
+
+/* Studio Slate v1.3: pending two-phase rounds all use the same quiet
+   graphite-silver fill, regardless of nth-child parity or block position.
+   Active rounds keep their existing explicit workout-state highlight. */
+.ladder-live-list .ladder-live-row.ft-two-phase-plan:not(.is-active),
+.ladder-live-list .ladder-live-row.ft-two-phase-plan:nth-child(even):not(.is-active) {
+  background:#f0f3f5!important;
+  color:var(--ft-secondary)!important;
+}
+.ladder-live-list .ladder-live-row.ft-two-phase-plan:not(.is-active) .ft-work-phase {
+  background:var(--ft-card)!important;
+  color:var(--ft-ink)!important;
+}

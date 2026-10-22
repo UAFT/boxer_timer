@@ -54,8 +54,8 @@ test('program plan shows correct stage round phase and individual timings',()=>{
  assert.ok(text.includes('00:45'));
  assert.ok(text.includes('00:35'));
  assert.ok(text.includes('00:20'));
- assert.equal(ladderPlanPhaseCaption({config:{programRounds:rows},roundIndex:2,phase:'work_two'}),'Этап 1 · Раунд 2 · Фаза 2');
- assert.equal(ladderPlanPhaseCaption({config:{programRounds:rows},roundIndex:3,phase:'rest'}),'Этап 1 · Раунд 3 · Отдых');
+ assert.equal(ladderPlanPhaseCaption({config:{programRounds:rows},roundIndex:2,phase:'work_two'}),'Этап 1 из 1 · Раунд 2 · Фаза 2');
+ assert.equal(ladderPlanPhaseCaption({config:{programRounds:rows},roundIndex:3,phase:'rest'}),'Этап 1 из 1 · Раунд 3 · Отдых');
 });
 test('single timer engine follows combined phase1->phase2->rest->next automatically',async()=>{
  const prev=globalThis.window;globalThis.window={setInterval:()=>123,clearInterval:()=>{}};

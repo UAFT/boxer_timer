@@ -40,7 +40,7 @@ test('saved program mode uses the exact same plan contract with one stage and fi
  const program=buildLadderPlanRows({programRounds:rows});
  assert.equal((program.match(/class="ladder-rest-row"/g)||[]).length,4);
  assert.equal((program.match(/class="ladder-live-row"/g)||[]).length,5);
- assert.ok(program.includes('Этап 1 · Лестница · всего 02:10'));
+ assert.ok(program.includes('Этап 1 из 1 · Лестница · всего 02:10'));
  assert.equal(program.includes('Лестница · Лестница'),false);
  assert.ok(program.indexOf('data-after-round="1"')<program.indexOf('Блок 2 из 5'));
 });
