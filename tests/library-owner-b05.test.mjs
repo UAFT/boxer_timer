@@ -13,7 +13,7 @@ const names = [
 test('main workout category retains its identity and drops equipment restriction', () => {
   assert.equal(CATEGORIES.find(([id]) => id === 'boxing')?.[1], 'Бокс');
   assert.equal(LIBRARY.filter(w => w.category === 'boxing').length, 3);
-  assert.equal(LIBRARY.length, 37);
+  assert.equal(LIBRARY.length, 40);
   assert.equal(new Set(LIBRARY.map(w => w.id)).size, LIBRARY.length);
   assert.deepEqual(['B01','B02','B05'], LIBRARY.filter(w => w.category === 'boxing').map(w => w.id));
 });

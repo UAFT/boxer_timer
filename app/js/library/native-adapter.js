@@ -5,6 +5,31 @@ import { clonePreset } from '../state/presets.js';
 export { CATEGORIES, LIBRARY };
 export function stageForWorkout(workout) {
   if (!workout || workout.mode === 'afap') return null; // manual-stop clock is not supported by legacy engine
+  if(workout.mode==='two_phase') {
+    // Use the existing program compiler. The mixed workout varies phase 1
+    // with sparse timing/name overrides, never a new clock implementation.
+    const count=Number(workout.rounds);
+    if(!Number.isInteger(count)||count<1||count>200)return null;
+    const steps=buildSteps(workout);
+    if(steps.some(step=>!Number.isInteger(step.seconds)||step.seconds<1||step.seconds>3600))return null;
+    const settings={
+      ...clonePreset('classic1'),
+      intervalMode:'two_phase',ladderEnabled:false,blockEnabled:false,
+      rounds:count,workSec:workout.work,phaseTwoSec:workout.phaseTwoSec,
+      restSec:workout.rest,workStepSec:0,restStepSec:0,phaseTwoStepSec:0,
+      phaseOneName:workout.phaseOneName,phaseTwoName:workout.phaseTwoName
+    };
+    return {
+      presetId:'classic1',title:'Двухфазные — '+workout.name,
+      settings,restAfterSec:60,
+      // No duplicated round labels: the editor/plan derives them from the
+      // current phase names, including later user edits to each round.
+      phaseOneOverrides:workout.phaseOneOverrides||[],
+      phaseTwoOverrides:workout.phaseTwoOverrides||[],
+      roundTimingOverrides:workout.roundTimingOverrides||[]
+    };
+  }
+
   const steps = buildSteps(workout);
   const work = steps.filter(s=>s.kind==='work');
   if (!work.length || work.length>200 || work.some(s=>s.seconds<1 || s.seconds>3600)) return null;

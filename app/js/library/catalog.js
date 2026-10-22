@@ -5,10 +5,21 @@ const make = (id, category, name, mode, tasks, opts={}) => ({
   equipment: opts.equipment || '', note: opts.note || '', source: opts.source || 'UAFT draft'
 });
 export const CATEGORIES = [
-  ['warmup','Разминка'], ['boxing','Бокс'],
+  ['warmup','Разминка'], ['boxing','Бокс'], ['two_phase','Двухфазные'],
   ['interval','Интервальные 20/20'], ['amrap','AMRAP'], ['afap','AFAP'],
   ['emom','EMOM'], ['tabata','Tabata'], ['cardio','Кардио'], ['abs','Пресс'], ['cooldown','Заминка']
 ];
+// Two-phase library exercises use the existing two-phase stage and per-round
+// override fields. Each catalog entry is independent of the user's presets.
+const makeTwoPhase = (id,name,first,rounds,work,rest,opts={}) => ({
+  ...make(id,'two_phase',name,'two_phase',opts.tasks || [first,'Бой с тенью'],
+    {rounds,work,rest,equipment:opts.equipment || '',source:'Fight Tech owner · 2026-10-22'}),
+  phaseOneName:first,
+  phaseTwoName:'Бой с тенью',
+  phaseTwoSec:60,
+  phaseOneOverrides:opts.phaseOneOverrides || [],
+  roundTimingOverrides:opts.roundTimingOverrides || []
+});
 export const LIBRARY = [
   make('W01','warmup','Скакалка','interval',['Свободная скакалка'],{rounds:3,work:180,rest:60}),
   make('W02','warmup','Суставная гимнастика','interval',['Плечи и руки','Таз и корпус','Колени и голеностоп','Лёгкие движения'],{work:60,rest:0}),
@@ -17,6 +28,15 @@ export const LIBRARY = [
   make('B01','boxing','Комплекс 1','interval',['Работа в челноке','Защита + комбинация ударов','Боковые одиночные и сдвоенные','Одиночные акцентированные удары в корпус','Ближний бой','Вольный бой'],{work:60,rest:30,note:'Черновая копия заданий со скриншота; оригинальная личная программа не меняется.'}),
   make('B02','boxing','Комплекс 2','interval',['Акцентированные одиночные','Любые двойки','Любые тройки','Серия, акцент корпус','Вольная работа','Вольная работа, акцент корпус'],{work:60,rest:30,note:'Черновая копия заданий со скриншота; оригинальная личная программа не меняется.'}),
   make('B05','boxing','Работа с гантелями','interval',['Прямые удары','Боковые удары','Удары снизу','Защитные действия','Свободный стиль в сильной стойке','Свободный стиль в слабой стойке','Ускорение'],{work:120,rest:60,equipment:'Гантели',source:'Owner-approved training 2026-10-21'}),
+  makeTwoPhase('TP01','Сила + лёгкость','Кувалда',5,60,60,{equipment:'Кувалда'}),
+  makeTwoPhase('TP02','Сила + лёгкость 2','Медицинбол',5,60,60,{equipment:'Медицинбол'}),
+  makeTwoPhase('TP03','Сила + лёгкость — микс','Кувалда',6,30,40,{
+    equipment:'Кувалда, медицинбол',
+    tasks:['Раунды 1–3: кувалда 00:30 → бой с тенью 01:00',
+      'Раунды 4–6: медицинбол 01:00 → бой с тенью 01:00'],
+    phaseOneOverrides:['','','','Медицинбол','Медицинбол','Медицинбол'],
+    roundTimingOverrides:[null,null,null,{workSec:60},{workSec:60},{workSec:60}]
+  }),
   make('I01','interval','Собственный вес 20/20','interval',['Отжимания','Приседания','Ситапы'],{rounds:4}),
   make('I02','interval','Скакалка и корпус 20/20','interval',['Скакалка','Отжимания','Ситапы'],{rounds:4}),
   make('I03','interval','Гиря 20/20','interval',['Махи гирей','Отжимания','Ситапы'],{rounds:4,equipment:'Гиря'}),
@@ -51,6 +71,18 @@ export const LIBRARY = [
 export function findWorkout(id) { return LIBRARY.find(x=>x.id===id); }
 export function buildSteps(workout) {
   if (!workout) return [];
+  if (workout.mode==='two_phase') {
+    const steps=[];
+    for(let i=0;i<workout.rounds;i++) {
+      const overrides=workout.roundTimingOverrides?.[i] || {};
+      const oneName=workout.phaseOneOverrides?.[i] || workout.phaseOneName;
+      const twoName=workout.phaseTwoOverrides?.[i] || workout.phaseTwoName;
+      steps.push({kind:'work',phase:1,round:i+1,title:oneName,seconds:overrides.workSec ?? workout.work});
+      steps.push({kind:'work',phase:2,round:i+1,title:twoName,seconds:overrides.phaseTwoSec ?? workout.phaseTwoSec});
+      if(i<workout.rounds-1)steps.push({kind:'rest',round:i+1,title:'Отдых',seconds:overrides.restSec ?? workout.rest});
+    }
+    return steps;
+  }
   if (workout.mode==='afap') return [{kind:'afap',title:workout.name,seconds:0,description:workout.tasks.join(' → ')}];
   if (workout.mode==='amrap') return [{kind:'work',title:workout.name,seconds:workout.duration,description:'Повторяй круги: '+workout.tasks.join(' → ')}];
   const steps=[];
