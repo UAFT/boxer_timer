@@ -3,12 +3,13 @@ const clock=sec=>String(Math.floor(sec/60)).padStart(2,'0')+':'+String(sec%60).p
 function countRu(n,one,few,many){const v=Math.abs(Number(n));return n+' '+(v%100>=11&&v%100<=14?many:v%10===1?one:v%10>=2&&v%10<=4?few:many);}
 export function stageTimingRows(config,{total,rounds},english=false){
  if(config.intervalMode==='two_phase'){
+  const extra=(config.ladderEnabled?(english?' · ladder':' · лестница'):'')+(rounds.some(r=>r.timingOverridden)?(english?' · custom':' · индивидуально'):'');
   return [
-   ['program-stage-two-phase-meta',(english?rounds.length+' rounds · phase 1 ':countRu(rounds.length,'раунд','раунда','раундов')+' · фаза 1 ')+clock(config.workSec)+(english?' · phase 2 ':' · фаза 2 ')+clock(config.phaseTwoSec||40)+(english?' · rest ':' · отдых ')+clock(config.restSec)],
+   ['program-stage-two-phase-meta',(english?rounds.length+' rounds · phase 1 ':countRu(rounds.length,'раунд','раунда','раундов')+' · фаза 1 ')+clock(config.workSec)+(english?' · phase 2 ':' · фаза 2 ')+clock(config.phaseTwoSec||40)+(english?' · rest ':' · отдых ')+clock(config.restSec)+extra],
    ['program-stage-sum',(english?'Total: ':'Всего: ')+clock(total)]
   ];
  }
- const hasBlocks=config.intervalMode==='ladder'&&Boolean(config.blockEnabled)&&Number(config.blockCount)>1;
+ const hasBlocks=(config.intervalMode==='ladder'||(config.intervalMode==='two_phase'&&config.ladderEnabled))&&Boolean(config.blockEnabled)&&Number(config.blockCount)>1;
  const count=hasBlocks?Number(config.rounds):rounds.length;
  const blocks=Number(config.blockCount);
  return [

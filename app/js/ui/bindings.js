@@ -1,3 +1,4 @@
+import { installIntervalModeCombo } from './interval-mode-combo.js';
 function activateChoice(buttons, matcher) {
   buttons.forEach((button) => {
     const isActive = matcher(button);
@@ -90,16 +91,18 @@ export function bindControls(els, handlers) {
     });
   });
 
-  els.intervalModeButtons.forEach((button) => {
-    button.addEventListener('click', () => {
-      const value = button.dataset.intervalMode ?? 'standard';
-      els.intervalModeInput.value = value;
-      activateChoice(els.intervalModeButtons, (candidate) => candidate.dataset.intervalMode === value);
-      els.blockSettings.hidden = value !== 'ladder';
-      document.getElementById('ladderStepsFields').hidden = value !== 'ladder';
-      document.getElementById('intervalModeExplainer').hidden = value !== 'ladder';
+  installIntervalModeCombo({
+    buttons:els.intervalModeButtons,modeInput:els.intervalModeInput,
+    enabledInput:els.ladderEnabledInput,
+    onChange:()=>{
+      const mode=els.intervalModeInput.value;
+      const ladder=mode==='ladder'||(mode==='two_phase'&&els.ladderEnabledInput.checked);
+      els.blockSettings.hidden=!ladder;
+      document.getElementById('ladderStepsFields').hidden=!ladder;
+      document.getElementById('phaseTwoStepFields').hidden=mode!=='two_phase'||!ladder;
+      document.getElementById('intervalModeExplainer').hidden=!ladder;
       handlers.onPreviewChange?.();
-    });
+    }
   });
 
   els.blockEnabledInput.addEventListener('change', () => handlers.onPreviewChange?.());

@@ -4,6 +4,20 @@ export const PROGRAM_KEY = 'andar.fight.timer.program.v1';
 export const LIBRARY_KEY = 'fighttech.program.library.v1';
 export const PROGRAM_OPTIONS_KEY = 'fighttech.program.options.v1';
 const bounded = (value, min, max, fallback) => Number.isFinite(Number(value)) ? Math.max(min,Math.min(max,Math.round(Number(value)))) : fallback;
+// Sparse manual overrides: a missing key follows the automatic ladder. Zero rest is valid.
+export function normalizeRoundTimingOverrides(raw) {
+  return (Array.isArray(raw)?raw:[]).slice(0,200).map(row=>{
+    if(!row || typeof row!=='object' || Array.isArray(row))return null;
+    const result={};
+    for(const field of ['workSec','phaseTwoSec','restSec']){
+      if(row[field]!==undefined && row[field]!==null && row[field]!=='' &&
+        Number.isFinite(Number(row[field])) && Number.isInteger(Number(row[field])) &&
+        Number(row[field]) >= (field==='restSec'?0:1) && Number(row[field])<=3600)
+        result[field]=Number(row[field]);
+    }
+    return Object.keys(result).length?result:null;
+  });
+}
 export function normalizeOptions(raw) { return { cycles: bounded(raw?.cycles,1,20,1), cycleRestSec: bounded(raw?.cycleRestSec,0,3600,60) }; }
 export function normalizeLibrary(raw) { return (Array.isArray(raw)?raw:[]).slice(0,100).filter(x=>x && typeof x.id==='string' && typeof x.name==='string').map(x=>({id:x.id,name:x.name.slice(0,80),entries:normalizeProgram(x.entries),options:normalizeOptions(x.options)})); }
 
@@ -16,6 +30,7 @@ export function normalizeProgram(raw) {
     phaseOneOverrides: Array.isArray(x.phaseOneOverrides) ? x.phaseOneOverrides.slice(0,200).map(n=>String(n||'').slice(0,100)) : [],
     phaseTwoOverrides: Array.isArray(x.phaseTwoOverrides) ? x.phaseTwoOverrides.slice(0,200).map(n=>String(n||'').slice(0,100)) : [],
     roundDescriptions: Array.isArray(x.roundDescriptions) ? x.roundDescriptions.slice(0,200).map(n=>String(n||'').slice(0,600)) : [],
+    roundTimingOverrides: normalizeRoundTimingOverrides(x.roundTimingOverrides),
     settings: x.settings && typeof x.settings==='object' && !Array.isArray(x.settings) ? structuredClone(x.settings) : null,
     restAfterSec: Math.max(0, Math.min(3600, Math.round((Number(x.restAfterSec) || 0) / 5) * 5))
   }));
@@ -28,18 +43,22 @@ export function compileProgram(entries, profiles, options = {}) {
     const config = structuredClone(stage.settings || profiles[stage.presetId]);
     const total = totalRoundsForConfig(config);
     for (let i=1;i<=total;i++) {
+      const override=normalizeRoundTimingOverrides(stage.roundTimingOverrides)[i-1]||{};
+      const phaseTwo=phaseTwoSecForRound(config,i);
       programRounds.push({
-        workSec: workSecForRound(config,i),
-        phaseTwoSec: phaseTwoSecForRound(config,i),
+        workSec: override.workSec ?? workSecForRound(config,i),
+        phaseTwoSec: phaseTwo>0?(override.phaseTwoSec ?? phaseTwo):0,
         phaseOneName: stage.phaseOneOverrides?.[i-1] || config.phaseOneName || '',
         phaseTwoName: stage.phaseTwoOverrides?.[i-1] || config.phaseTwoName || '',
-        restSec: i<total ? restSecAfterRound(config,i) : (stageIndex<stages.length-1 ? stage.restAfterSec : cycleIndex<cycles-1 ? cycleRestSec : 0),
+        restSec: i<total ? (override.restSec ?? restSecAfterRound(config,i)) : (stageIndex<stages.length-1 ? stage.restAfterSec : cycleIndex<cycles-1 ? cycleRestSec : 0),
         blockRestSec: i<total ? blockRestSecAfterRound(config,i) : 0,
         stageIndex, stageRound: i, stageRounds: total, presetId: stage.presetId,
         stageTitle: stage.title, roundName: stage.roundNames[i-1] || '', roundDescription: stage.roundDescriptions[i-1] || '', cycleIndex, cycles, cycleRestSec,
         intervalMode: config.intervalMode,
-        block: config.intervalMode==='ladder' && config.blockEnabled ? Math.floor((i-1)/config.rounds)+1 : 1,
-        blockCount: config.intervalMode==='ladder' && config.blockEnabled ? config.blockCount : 1,
+        ladderEnabled: Boolean(config.ladderEnabled),
+        timingOverridden: Object.keys(override).length>0,
+        block: (config.intervalMode==='ladder'||(config.intervalMode==='two_phase'&&config.ladderEnabled)) && config.blockEnabled ? Math.floor((i-1)/config.rounds)+1 : 1,
+        blockCount: (config.intervalMode==='ladder'||(config.intervalMode==='two_phase'&&config.ladderEnabled)) && config.blockEnabled ? config.blockCount : 1,
         localRound: (i-1)%config.rounds+1,
         localRounds: config.rounds
       });

@@ -95,6 +95,8 @@ export class TimerEngine {
       blockCount: clampInt(nextConfig?.blockCount, 1, 99, 1),
       blockRestSec: Math.round(clampInt(nextConfig?.blockRestSec, 0, 3600, 90) / 5) * 5,
       intervalMode: ['standard','ladder','two_phase'].includes(nextConfig?.intervalMode) ? nextConfig.intervalMode : 'standard',
+      ladderEnabled: Boolean(nextConfig?.ladderEnabled) && nextConfig?.intervalMode === 'two_phase',
+      phaseTwoStepSec: Math.round(clampInt(nextConfig?.phaseTwoStepSec,-600,600,0)/5)*5,
       workStepSec: Math.round(clampInt(nextConfig?.workStepSec, -600, 600, DEFAULT_CONFIG.workStepSec) / 5) * 5,
       restStepSec: Math.round(clampInt(nextConfig?.restStepSec, -600, 600, DEFAULT_CONFIG.restStepSec) / 5) * 5,
       countdownEnabled: nextConfig?.countdownEnabled !== false,

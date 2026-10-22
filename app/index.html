@@ -173,6 +173,16 @@
           <label for="roundEditPhaseTwo">Фаза 2</label>
           <input id="roundEditPhaseTwo" type="text" maxlength="100" autocomplete="off">
         </div>
+        <fieldset id="roundEditTimes" class="ft-round-times" hidden>
+          <legend>Время этого раунда</legend>
+          <div class="ft-round-time-grid">
+            <label>Работа / Фаза 1<input id="roundEditWorkTime" type="text" inputmode="numeric" maxlength="5" aria-label="Время работы ММ:СС"></label>
+            <label>Фаза 2<input id="roundEditPhaseTwoTime" type="text" inputmode="numeric" maxlength="5" aria-label="Время фазы 2 ММ:СС"></label>
+            <label>Отдых<input id="roundEditRestTime" type="text" inputmode="numeric" maxlength="5" aria-label="Отдых ММ:СС"></label>
+          </div>
+          <p id="roundEditLastRestNote" hidden>После последнего раунда отдых задаётся между этапами.</p>
+          <button type="button" id="roundEditResetTiming" hidden>Вернуть по лестнице</button>
+        </fieldset>
         <div class="round-edit-actions">
           <button type="button" id="roundEditCancel">Отмена</button>
           <button type="button" id="roundEditSave">Сохранить</button>
@@ -223,7 +233,7 @@
         <div class="settings-head"><h2>Редактирование этапа</h2></div>
         <label class="stage-settings-field">Название этапа<input id="stageSettingsName" maxlength="80" type="text"></label>
         <label class="stage-settings-field">Режим
-          <div class="stage-mode-choices"><button type="button" data-stage-mode="standard">Обычный</button><button type="button" data-stage-mode="two_phase">Две фазы</button><button type="button" data-stage-mode="ladder">Лестница</button></div><input type="hidden" id="stageSettingsMode" value="standard">
+          <div class="stage-mode-choices"><button type="button" data-stage-mode="standard">Обычный</button><button type="button" data-stage-mode="two_phase">Две фазы</button><button type="button" data-stage-mode="ladder">Лестница</button></div><input type="hidden" id="stageSettingsMode" value="standard"><input type="checkbox" id="stageSettingsLadderEnabled" hidden>
         </label>
         <div id="stageSettingsTwoPhase" class="ft-stage-two-phase" hidden>
           <div class="ft-stage-phase-pair">
@@ -250,6 +260,7 @@
           <div class="stage-settings-grid">
             <label>Шаг работы (сек.)<input id="stageSettingsWorkStep" type="number" min="-600" max="600" step="5" required></label>
             <label>Шаг отдыха (сек.)<input id="stageSettingsRestStep" type="number" min="-600" max="600" step="5" required></label>
+            <label id="stageSettingsPhaseTwoStepField" hidden>Шаг фазы 2 (сек.)<input id="stageSettingsPhaseTwoStep" type="number" min="-600" max="600" step="5" required></label>
           </div>
           <label class="stage-settings-checkbox"><input type="checkbox" id="stageSettingsBlockEnabled"> Использовать блоки</label>
           <div id="stageSettingsBlockFields" class="stage-settings-grid" hidden>
@@ -306,7 +317,7 @@
                 <button type="button" class="choice-chip" data-interval-mode="two_phase">Две фазы</button>
                 <button type="button" class="choice-chip" data-interval-mode="ladder">Лестница</button>
               </div>
-              <input type="hidden" id="intervalModeInput" value="standard" />
+              <input type="hidden" id="intervalModeInput" value="standard" /><input type="checkbox" id="ladderEnabledInput" hidden />
             </div>
 
             <div id="ladderStepsFields">
@@ -329,6 +340,15 @@
                 <button type="button" class="settings-stepper-btn" data-ladder-target="restStepSec" data-ladder-direction="up">+5</button>
               </div>
               <input type="hidden" id="restStepSecInput" value="0" />
+              <div class="settings-field-stack" id="phaseTwoStepFields" hidden>
+                <div class="settings-field-label">Шаг фазы 2 по раундам</div>
+                <div class="settings-stepper" role="group" aria-label="Шаг фазы 2 по раундам">
+                  <button type="button" class="settings-stepper-btn" data-ladder-target="phaseTwoStepSec" data-ladder-direction="down">−5</button>
+                  <div class="settings-stepper-value" id="phaseTwoStepSecDisplay">без шага</div>
+                  <button type="button" class="settings-stepper-btn" data-ladder-target="phaseTwoStepSec" data-ladder-direction="up">+5</button>
+                </div>
+                <input type="hidden" id="phaseTwoStepSecInput" value="0" />
+              </div>
               <div class="settings-inline-note">Отрицательный шаг сокращает отдых, положительный — удлиняет. Нулевой шаг сохраняет одинаковый отдых.</div>
             </div>
 

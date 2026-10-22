@@ -20,9 +20,9 @@ test('standalone plan ready has usable Play, running toggles Pause, paused toggl
 test('phase caption follows timer state, not a fixed current round label',()=>{
  assert.equal(ladderPlanPhaseCaption({phase:PHASES.IDLE}),'');
  assert.equal(ladderPlanPhaseCaption({phase:PHASES.COUNTDOWN}),'Старт');
- assert.equal(ladderPlanPhaseCaption({phase:PHASES.WORK}),'Раунд');
- assert.equal(ladderPlanPhaseCaption({phase:PHASES.REST}),'Отдых');
- assert.equal(ladderPlanPhaseCaption({phase:PHASES.BLOCK_REST}),'Отдых между блоками');
+ assert.equal(ladderPlanPhaseCaption({phase:PHASES.WORK,roundIndex:2,config:cfg}),'Раунд 2 · Работа');
+ assert.equal(ladderPlanPhaseCaption({phase:PHASES.REST,roundIndex:2,config:cfg}),'Раунд 2 · Отдых');
+ assert.equal(ladderPlanPhaseCaption({phase:PHASES.BLOCK_REST,roundIndex:2,config:cfg}),'Раунд 2 · Отдых между блоками');
  assert.equal(ladderPlanPhaseCaption({phase:PHASES.WORK},{preview:true}),'');
 });
 test('standalone ladder displays separate rest rows between blocks, without final rest',()=>{

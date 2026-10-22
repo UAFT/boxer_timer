@@ -1,10 +1,11 @@
 // Block geometry is shared by the time schedule and the visible steppers.
 // Intra-block rest and inter-block rest are distinct controls. The timer
 // schedules them as successive phases at block boundaries.
+export const hasLadder = config => config?.intervalMode === 'ladder' || (config?.intervalMode === 'two_phase' && Boolean(config?.ladderEnabled));
 export function isBetweenBlocks(config, roundIndex, totalRounds) {
   const perBlock = Math.max(1, Number(config?.rounds) || 1);
   const count = Number(roundIndex) || 1;
-  return count % perBlock === 0 && count < totalRounds && config?.intervalMode === 'ladder' && Boolean(config?.blockEnabled);
+  return count % perBlock === 0 && count < totalRounds && hasLadder(config) && Boolean(config?.blockEnabled);
 }
 
 export function ladderLocalIndex(config, roundIndex) {

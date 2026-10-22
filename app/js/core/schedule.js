@@ -1,12 +1,8 @@
 import { clampInt } from "./time.js";
-import { isBetweenBlocks, ladderLocalIndex } from "./ladder-blocks.js";
-
-function normalizeMode(mode) {
-  return mode === "ladder" ? "ladder" : "standard";
-}
+import { isBetweenBlocks, ladderLocalIndex, hasLadder } from "./ladder-blocks.js";
 
 export function blockCount(config) {
-  return config?.intervalMode === 'ladder' && config?.blockEnabled ? Math.max(1, Math.min(99, Number(config.blockCount) || 1)) : 1;
+  return hasLadder(config) && config?.blockEnabled ? Math.max(1, Math.min(99, Number(config.blockCount) || 1)) : 1;
 }
 export function totalRoundsForConfig(config) {
   if (config?.programRounds?.length) return config.programRounds.length;
@@ -22,7 +18,7 @@ export function blockForRound(config, roundIndex) {
 export function workSecForRound(config, roundIndex) {
   if (config?.programRounds?.length) return config.programRounds[Math.max(0,Math.min(config.programRounds.length-1,roundIndex-1))].workSec;
   const base = clampInt(config?.workSec, 1, 3600, 180);
-  if (normalizeMode(config?.intervalMode) !== "ladder") return base;
+  if (!hasLadder(config)) return base;
   const step = clampInt(config?.workStepSec, -3600, 3600, 0);
   const value = base + Math.max(0, localRoundFor(config, Number(roundIndex || 1)) - 1) * step;
   return Math.min(3600, Math.max(1, value));
@@ -34,13 +30,17 @@ export function phaseTwoSecForRound(config, roundIndex) {
     const row=config.programRounds[Math.max(0,Math.min(config.programRounds.length-1,roundIndex-1))];
     return clampInt(row?.phaseTwoSec,0,3600,0);
   }
-  return config?.intervalMode==='two_phase'?clampInt(config?.phaseTwoSec,1,3600,40):0;
+  if (config?.intervalMode !== 'two_phase') return 0;
+  const base=clampInt(config?.phaseTwoSec,1,3600,40);
+  if (!hasLadder(config)) return base;
+  const step=clampInt(config?.phaseTwoStepSec,-3600,3600,0);
+  return Math.max(1,Math.min(3600,base+ladderLocalIndex(config,roundIndex)*step));
 }
 
 export function restSecAfterRound(config, roundIndex) {
   if (config?.programRounds?.length) return config.programRounds[Math.max(0,Math.min(config.programRounds.length-1,roundIndex-1))].restSec;
   const base = clampInt(config?.restSec, 0, 3600, 60);
-  if (normalizeMode(config?.intervalMode) !== "ladder") return base;
+  if (!hasLadder(config)) return base;
   const step = clampInt(config?.restStepSec, -3600, 3600, 0);
   const value = base + ladderLocalIndex(config, roundIndex) * step;
   return Math.min(3600, Math.max(0, value));

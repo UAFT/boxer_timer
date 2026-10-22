@@ -300,3 +300,15 @@ input::placeholder,textarea::placeholder{color:#75838d;opacity:1}
 }
 .settings-modal .ft-language-list button:hover,.settings-modal .ft-language-list button:focus-visible{background:#e5ebee}
 .settings-modal .ft-language-list button[aria-selected=true]{background:#dce9e6;color:#244c4b;font-weight:750}
+
+/* Round-level timing editor and high-contrast plan phase context. */
+.round-edit-modal .ft-round-times{margin:0;border:1px solid var(--ft-line);border-radius:12px;padding:12px;min-width:0}
+.round-edit-modal .ft-round-times legend{color:var(--ft-ink);font-weight:650;padding:0 4px}
+.round-edit-modal .ft-round-time-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.round-edit-modal .ft-round-time-grid label{display:grid;gap:5px;font-size:12px;min-width:0}
+.round-edit-modal .ft-round-time-grid input{width:100%;min-width:0;box-sizing:border-box;padding:10px 5px!important;text-align:center;font-size:17px}
+.round-edit-modal .ft-round-time-grid input.is-manual{border-color:var(--ft-steel)!important}
+.round-edit-modal #roundEditLastRestNote{font-size:12px;color:var(--ft-secondary);margin:6px 0}
+.round-edit-modal #roundEditResetTiming{border:1px solid var(--ft-line);border-radius:9px;background:var(--ft-raised);color:var(--ft-steel);padding:9px 12px;margin-top:8px}
+.ladder-live.is-expanded .ladder-current>span:not(:empty){color:#3c595c!important;font-size:clamp(14px,3.8vw,17px);font-weight:650}
+#stageSettingsPhaseTwoStepField[hidden],#roundEditTimes[hidden],#phaseTwoStepFields[hidden]{display:none!important}

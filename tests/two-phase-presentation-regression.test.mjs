@@ -29,7 +29,7 @@ test('two phase plan groups each round then full-width phase 1, phase 2, rest; n
  assert.ok(css.includes('.ladder-live-row.ft-two-phase-plan{'));
  assert.ok(css.includes('grid-template-columns:minmax(0,1fr)!important'));
 });
-test('two-phase editor has direct names and phase-specific time, ladder-only options hidden',()=>{
+test('two-phase editor has direct names and phase-specific time, ladder controls available only if combined',()=>{
  const html=read('../app/index.html');
  assert.ok(html.includes('id="stageSettingsPhaseOneTimeSlot"'));
  assert.ok(html.includes('id="stageSettingsPhaseTwoMin"'));
@@ -39,7 +39,8 @@ test('two-phase editor has direct names and phase-specific time, ladder-only opt
  assert.ok(app.includes("workSlot.append(work)"));
  assert.ok(app.includes("Время фазы 1"));
  assert.ok(app.includes("workGrid.insertBefore(work"));
- assert.ok(bindings.includes("document.getElementById('ladderStepsFields').hidden = value !== 'ladder'"));
- assert.ok(render.includes("document.getElementById('ladderStepsFields').hidden=settings.intervalMode !== 'ladder'"));
+ assert.ok(bindings.includes("installIntervalModeCombo"));
+ assert.ok(bindings.includes("document.getElementById('ladderStepsFields').hidden=!ladder"));
+ assert.ok(render.includes("document.getElementById('ladderStepsFields').hidden=!ladder"));
  assert.ok(render.includes("'<div class=\"ladder-preview-row\"><span>Раунд '+i+' · Фаза 1"));
 });

@@ -1,7 +1,8 @@
 import { PHASES } from '../core/constants.js';
+import {hasLadder} from '../core/ladder-blocks.js';
 import { formatTime } from '../core/time.js';
 import {buildLadderPlanRows,syncLadderPlanRows,ladderPlanPhaseCaption,ladderPlanControl} from './ladder-plan-rows.js';
-import { displayDurationsForState, remainingTotalSecForState, totalDurationSecForConfig, workSecForRound, restSecAfterRound, blockRestSecAfterRound, totalRoundsForConfig, blockCount, localRoundFor, blockForRound } from '../core/schedule.js';
+import { displayDurationsForState, remainingTotalSecForState, totalDurationSecForConfig, workSecForRound, phaseTwoSecForRound, restSecAfterRound, blockRestSecAfterRound, totalRoundsForConfig, blockCount, localRoundFor, blockForRound } from '../core/schedule.js';
 
 function intervalModeTitle(config) {
   return config?.programRounds?.length ? 'Программа' : (config?.presetId === 'tabata2020x24' ? 'Скоростной' : (config?.intervalMode === 'ladder' ? 'Лестница' : config?.intervalMode==='two_phase'?'Две фазы':'Обычный'));
@@ -49,7 +50,7 @@ function stepLabel(sec) {
 }
 
 function intervalCaption(config) {
-  if (config.intervalMode !== 'ladder') return '';
+  if (!hasLadder(config)) return '';
   return `Лестница · работа ${stepLabel(config.workStepSec)} · отдых ${stepLabel(config.restStepSec)}`;
 }
 
@@ -139,7 +140,7 @@ export function renderLiveLadder(els, state, ui = {}) {
   const config = preview ? { ...state.config, programRounds: ui.previewRounds } : state.config;
   panel.hidden = !['ladder','two_phase'].includes(config.intervalMode) && !config.programRounds?.length;
   const ladderTitle = panel.querySelector('.ladder-live-head strong');
-  if (ladderTitle) ladderTitle.textContent = config.programRounds?.length ? 'ПЛАН ТРЕНИРОВКИ'+(ui.programName?' — '+ui.programName:'') : (config.intervalMode==='two_phase'?'ДВЕ ФАЗЫ':'ЛЕСТНИЦА');
+  if (ladderTitle) ladderTitle.textContent = config.programRounds?.length ? 'ПЛАН ТРЕНИРОВКИ'+(ui.programName?' — '+ui.programName:'') : (config.intervalMode==='two_phase'?(config.ladderEnabled?'ДВЕ ФАЗЫ · ЛЕСТНИЦА':'ДВЕ ФАЗЫ'):'ЛЕСТНИЦА');
   if (panel.hidden) return;
   const expanded = Boolean(ui.ladderExpanded);
   panel.classList.toggle('is-expanded', expanded);
@@ -159,7 +160,7 @@ export function renderLiveLadder(els, state, ui = {}) {
   els.ladderFullPause.setAttribute('aria-label',control.label);
 
   const list = els.ladderLiveList;
-  const key = config.programRounds?.length ? JSON.stringify(config.programRounds) : [config.rounds, config.workSec, config.restSec, config.workStepSec, config.restStepSec, config.blockEnabled, config.blockCount, config.blockRestSec,config.intervalMode,config.phaseTwoSec,config.phaseOneName,config.phaseTwoName].join(':');
+  const key = config.programRounds?.length ? JSON.stringify(config.programRounds) : [config.rounds, config.workSec, config.restSec, config.workStepSec, config.restStepSec, config.phaseTwoStepSec, config.ladderEnabled, config.blockEnabled, config.blockCount, config.blockRestSec,config.intervalMode,config.phaseTwoSec,config.phaseOneName,config.phaseTwoName].join(':');
   if (list.dataset.scheduleKey !== key) {
     list.innerHTML = buildLadderPlanRows(config);
     list.dataset.scheduleKey=key;
@@ -178,7 +179,7 @@ export function renderLadderPreview(els, settings) {
   for (let i = 1; i <= count; i += 1) {
     if(blockCount(config)>1 && localRoundFor(config,i)===1)rows.push(`<div class="settings-inline-note">Блок ${blockForRound(config,i)} из ${blockCount(config)}</div>`);
     if(config.intervalMode==='two_phase') {
-      rows.push('<div class="ladder-preview-row"><span>Раунд '+i+' · Фаза 1</span><strong>'+formatTime(workSecForRound(config,i))+'</strong><span>Фаза 2</span><strong>'+formatTime(config.phaseTwoSec||40)+'</strong></div>');
+      rows.push('<div class="ladder-preview-row"><span>Раунд '+i+' · Фаза 1</span><strong>'+formatTime(workSecForRound(config,i))+'</strong><span>Фаза 2</span><strong>'+formatTime(phaseTwoSecForRound(config,i))+'</strong></div>');
       if(i<rounds)rows.push('<div class="settings-inline-note">Отдых: '+formatTime(restSecAfterRound(config,i))+'</div>');
     } else {
       rows.push('<div class="ladder-preview-row"><span>Раунд '+localRoundFor(config,i)+'</span><strong>'+formatTime(workSecForRound(config,i))+'</strong><span>Отдых</span><strong>'+(i<rounds?formatTime(restSecAfterRound(config,i)):'—')+'</strong></div>');
@@ -186,16 +187,19 @@ export function renderLadderPreview(els, settings) {
     const pause=blockRestSecAfterRound(config,i);
     if(pause>0)rows.push(`<div class="settings-inline-note">Отдых между блоками: ${formatTime(pause)}</div>`);
   }
-  panel.innerHTML = `<div class="ladder-preview-title">Предварительный просмотр</div>${rows.join('')}${rounds > count ? `<div class="settings-inline-note">Показаны первые ${count} из ${rounds} раундов</div>` : ''}${config.intervalMode === 'ladder' && !config.workStepSec && !config.restStepSec ? '<div class="settings-inline-note">Оба шага равны нулю: все раунды будут одинаковыми.</div>' : ''}`;
+  panel.innerHTML = `<div class="ladder-preview-title">Предварительный просмотр</div>${rows.join('')}${rounds > count ? `<div class="settings-inline-note">Показаны первые ${count} из ${rounds} раундов</div>` : ''}${hasLadder(config) && !config.workStepSec && !config.restStepSec && !config.phaseTwoStepSec ? '<div class="settings-inline-note">Все шаги равны нулю: все раунды будут одинаковыми.</div>' : ''}`;
 }
 
 export function setSettingsForm(els, settings) {
   els.audioEnabledInput.checked = settings.audioEnabled;
   els.warningSecondsInput.value = String(settings.warningSeconds ?? 4);
   els.intervalModeInput.value = settings.intervalMode || 'standard';
-  document.getElementById('ladderStepsFields').hidden=settings.intervalMode !== 'ladder';
-  document.getElementById('intervalModeExplainer').hidden=settings.intervalMode !== 'ladder';
-  els.blockSettings.hidden = settings.intervalMode !== 'ladder';
+  els.ladderEnabledInput.checked = Boolean(settings.ladderEnabled);
+  const ladder=hasLadder(settings);
+  document.getElementById('ladderStepsFields').hidden=!ladder;
+  document.getElementById('phaseTwoStepFields').hidden=!ladder||settings.intervalMode!=='two_phase';
+  document.getElementById('intervalModeExplainer').hidden=!ladder;
+  els.blockSettings.hidden = !ladder;
   els.blockEnabledInput.checked = Boolean(settings.blockEnabled);
   els.blockCountInput.value = String(settings.blockCount ?? 1);
   els.blockRestSecInput.value = String(settings.blockRestSec ?? 90);
@@ -203,10 +207,17 @@ export function setSettingsForm(els, settings) {
   els.blockRestSecDisplay.textContent = formatTime(Number(els.blockRestSecInput.value));
   els.workStepSecInput.value = String(settings.workStepSec ?? 0);
   els.restStepSecInput.value = String(settings.restStepSec ?? 0);
+  els.phaseTwoStepSecInput.value = String(settings.phaseTwoStepSec ?? 0);
+  els.phaseTwoStepSecDisplay.textContent=stepLabel(settings.phaseTwoStepSec??0);
   if (els.workStepSecDisplay) els.workStepSecDisplay.textContent = stepLabel(settings.workStepSec ?? 0);
   if (els.restStepSecDisplay) els.restStepSecDisplay.textContent = stepLabel(settings.restStepSec ?? 0);
   applyChoiceButtons(els.warningChoiceButtons, els.warningSecondsInput.value, 'warningSeconds');
-  applyChoiceButtons(els.intervalModeButtons, els.intervalModeInput.value, 'intervalMode');
+  els.intervalModeButtons.forEach(button=>{
+    const selected=button.dataset.intervalMode===els.intervalModeInput.value ||
+      (button.dataset.intervalMode==='ladder'&&settings.intervalMode==='two_phase'&&settings.ladderEnabled);
+    button.classList.toggle('is-active',selected);
+    button.setAttribute('aria-pressed',String(selected));
+  });
   renderLadderPreview(els, settings);
 }
 
@@ -215,7 +226,9 @@ export function readSettingsForm(els) {
     audioEnabled: els.audioEnabledInput.checked,
     warningSeconds: Number(els.warningSecondsInput.value || '0'),
     intervalMode: els.intervalModeInput.value || 'standard',
-    blockEnabled: els.intervalModeInput.value === 'ladder' && els.blockEnabledInput.checked,
+    ladderEnabled: els.intervalModeInput.value === 'two_phase' && els.ladderEnabledInput.checked,
+    phaseTwoStepSec:Number(els.phaseTwoStepSecInput.value||'0'),
+    blockEnabled: (els.intervalModeInput.value === 'ladder' || (els.intervalModeInput.value === 'two_phase' && els.ladderEnabledInput.checked)) && els.blockEnabledInput.checked,
     blockCount: Number(els.blockCountInput.value),
     blockRestSec: Number(els.blockRestSecInput.value),
     workStepSec: Number(els.workStepSecInput.value || '0'),

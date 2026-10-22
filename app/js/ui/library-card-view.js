@@ -34,9 +34,9 @@ export function programCardTimings(program, profiles) {
     const restLow=restTimes.length?Math.min(...restTimes):0;
     const restHigh=restTimes.length?Math.max(...restTimes):0;
     const rest=restLow===restHigh?timeClock(restLow):timeClock(restLow)+'–'+timeClock(restHigh);
-    const blocks=cfg?.intervalMode==='ladder' && cfg.blockEnabled ? Number(cfg.blockCount)||1 : 1;
+    const blocks=(cfg?.intervalMode==='ladder'||(cfg?.intervalMode==='two_phase'&&cfg?.ladderEnabled)) && cfg.blockEnabled ? Number(cfg.blockCount)||1 : 1;
     return {index:index+1,title:stage.title||PRESET_NAMES[stage.presetId],rounds:rounds.length,roundsPerBlock:Math.max(1,Number(cfg.rounds)||1),blocks,
-      work,rest,duration,phaseTwo:cfg?.intervalMode==='two_phase'?timeClock(cfg.phaseTwoSec||40):'',blockRest:blocks>1?timeClock(cfg.blockRestSec||0):'',
+      work,rest,duration,phaseTwo:cfg?.intervalMode==='two_phase'?(cfg.ladderEnabled?timeClock(Math.min(...rounds.map(r=>r.phaseTwoSec)))+'–'+timeClock(Math.max(...rounds.map(r=>r.phaseTwoSec))):timeClock(cfg.phaseTwoSec||40)):'',blockRest:blocks>1?timeClock(cfg.blockRestSec||0):'',
       restAfter:index<stages.length-1?stage.restAfterSec:0,
       intervalMode:cfg?.intervalMode};
   });

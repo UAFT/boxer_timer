@@ -41,6 +41,8 @@ export function normalizeSettings(raw, fallback) {
     metronomeBpm: clampInt(raw?.metronomeBpm, 0, 300, fallback.metronomeBpm ?? 20),
     metronomeMode: normalizeMetronomeMode(raw?.metronomeMode, fallback.metronomeMode),
     intervalMode: normalizeIntervalMode(raw?.intervalMode, fallback.intervalMode),
+    ladderEnabled: Boolean(raw?.ladderEnabled) && normalizeIntervalMode(raw?.intervalMode, fallback.intervalMode) === 'two_phase',
+    phaseTwoStepSec: normalizeStepSeconds(raw?.phaseTwoStepSec, fallback.phaseTwoStepSec ?? 0),
     blockEnabled: Boolean(raw?.blockEnabled),
     blockCount: clampInt(raw?.blockCount, 1, 99, fallback.blockCount ?? 1),
     blockRestSec: Math.round(clampInt(raw?.blockRestSec, 0, 3600, fallback.blockRestSec ?? 90) / 5) * 5,

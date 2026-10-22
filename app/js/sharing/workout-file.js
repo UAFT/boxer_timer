@@ -14,7 +14,7 @@ const integer = (x, min, max) => Number.isInteger(x) && x >= min && x <= max;
 const string = (x, max, nonempty = false) => typeof x === 'string' && x.length <= max && (!nonempty || !!x.trim());
 const configBounds = {
   rounds: [1,99],workSec:[5,3600],phaseTwoSec:[5,3600],restSec:[0,3600],
-  workStepSec:[-600,600],restStepSec:[-600,600],blockCount:[1,99],blockRestSec:[0,3600],
+  workStepSec:[-600,600],restStepSec:[-600,600],phaseTwoStepSec:[-600,600],blockCount:[1,99],blockRestSec:[0,3600],
   metronomeBpm:[0,300],warningSeconds:[0,10]
 };
 function checkSettings(settings, presetId) {
@@ -30,6 +30,7 @@ function checkSettings(settings, presetId) {
   for (const k of ['rounds','workSec','restSec']) if (!integer(settings[k],...configBounds[k])) invalid();
   if (settings.intervalMode != null && !['standard','ladder','two_phase'].includes(settings.intervalMode)) invalid();
   if (settings.intervalMode==='two_phase' && !integer(settings.phaseTwoSec,5,3600)) invalid();
+  if (settings.ladderEnabled != null && typeof settings.ladderEnabled !== 'boolean') invalid();
   if (settings.blockEnabled != null && typeof settings.blockEnabled !== 'boolean') invalid();
   if (settings.blockEnabled && !integer(settings.blockCount,1,99)) invalid();
   if (settings.countdownEnabled != null && typeof settings.countdownEnabled !== 'boolean') invalid();
@@ -44,9 +45,19 @@ function checkEntries(entries, options) {
     for (const [key,length] of [['roundNames',100],['phaseOneOverrides',100],['phaseTwoOverrides',100],['roundDescriptions',600]]) {
       if (entry[key] != null && (!Array.isArray(entry[key]) || entry[key].length > 200 || entry[key].some(x=>!string(x,length)))) invalid();
     }
+    if (entry.roundTimingOverrides != null) {
+      if (!Array.isArray(entry.roundTimingOverrides) || entry.roundTimingOverrides.length>200) invalid();
+      for(const override of entry.roundTimingOverrides){
+        if(override===null)continue;
+        if(!plain(override) || Object.keys(override).length>3) invalid();
+        for(const [k,v] of Object.entries(override)){
+          if(!['workSec','phaseTwoSec','restSec'].includes(k) || !integer(v,k==='restSec'?0:1,3600))invalid();
+        }
+      }
+    }
     if (!plain(entry.settings)) invalid(); // v1 files always carry sender settings
     const cfg = checkSettings(entry.settings,entry.presetId);
-    total += cfg.rounds * (cfg.blockEnabled && cfg.intervalMode === 'ladder' ? cfg.blockCount : 1);
+    total += cfg.rounds * (cfg.blockEnabled && (cfg.intervalMode === 'ladder'||(cfg.intervalMode==='two_phase'&&cfg.ladderEnabled)) ? cfg.blockCount : 1);
   }
   if (total * options.cycles > 10000) invalid();
 }
@@ -56,7 +67,7 @@ export function parseWorkoutFile(contents) {
   try { value = JSON.parse(contents); } catch { throw new WorkoutFileError('invalid'); }
   if (!plain(value) || value.format !== WORKOUT_FILE_FORMAT) throw new WorkoutFileError('invalid');
   if (![1,WORKOUT_FILE_VERSION].includes(value.version)) throw new WorkoutFileError('version');
-  if(value.version===1 && value.entries?.some(e=>e?.settings?.intervalMode==='two_phase' || e?.phaseOneOverrides?.length || e?.phaseTwoOverrides?.length))invalid();
+  if(value.version===1 && value.entries?.some(e=>e?.settings?.intervalMode==='two_phase' || e?.phaseOneOverrides?.length || e?.phaseTwoOverrides?.length || e?.roundTimingOverrides?.some(Boolean)))invalid();
   if (!string(value.name,80,true) || !plain(value.options) || !integer(value.options.cycles,1,20)
       || !integer(value.options.cycleRestSec,0,3600)) invalid();
   checkEntries(value.entries,value.options);
@@ -67,7 +78,7 @@ export function parseWorkoutFile(contents) {
 export function serializeWorkoutFile(program) {
   if (!program || typeof program !== 'object') invalid();
   const entries=normalizeProgram(program.entries);
-  const usesTwo=entries.some(e=>e.settings?.intervalMode==='two_phase'||e.phaseOneOverrides?.length||e.phaseTwoOverrides?.length);
+  const usesTwo=entries.some(e=>e.settings?.intervalMode==='two_phase'||e.phaseOneOverrides?.length||e.phaseTwoOverrides?.length||e.roundTimingOverrides?.some(Boolean));
   const value={format:WORKOUT_FILE_FORMAT,version:usesTwo?WORKOUT_FILE_VERSION:1,
     name:program.name,entries,options:normalizeOptions(program.options)};
   const json=JSON.stringify(value,null,2);

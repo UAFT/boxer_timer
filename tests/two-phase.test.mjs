@@ -65,9 +65,9 @@ test('working phase 1 -> phase 2 -> rest -> next round -> finish, stable events'
  }finally{globalThis.window=original;}
 });
 test('paused second phase resumes with its same time; active title changes by phase',()=>{
- assert.equal(ladderPlanPhaseCaption({phase:PHASES.WORK,config:settings}),'Фаза 1');
- assert.equal(ladderPlanPhaseCaption({phase:PHASES.WORK_TWO,config:settings}),'Фаза 2');
- assert.equal(ladderPlanPhaseCaption({phase:PHASES.REST,config:settings}),'Отдых');
+ assert.equal(ladderPlanPhaseCaption({phase:PHASES.WORK,roundIndex:1,config:settings}),'Раунд 1 · Фаза 1');
+ assert.equal(ladderPlanPhaseCaption({phase:PHASES.WORK_TWO,roundIndex:1,config:settings}),'Раунд 1 · Фаза 2');
+ assert.equal(ladderPlanPhaseCaption({phase:PHASES.REST,roundIndex:1,config:settings}),'Раунд 1 · Отдых');
  assert.equal(ladderPlanPhaseCaption({phase:PHASES.IDLE,config:settings}),'');
 });
 

@@ -3,18 +3,21 @@ import {totalRoundsForConfig,workSecForRound,phaseTwoSecForRound,restSecAfterRou
 import {formatTime} from '../core/time.js';
 import {PHASES} from '../core/constants.js';
 const escapeHtml=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const modeName=round=>round.presetId==='tabata2020x24'?'Скоростной':round.intervalMode==='ladder'?'Лестница':round.phaseTwoSec>0?'Две фазы':'';
+const modeName=round=>round.presetId==='tabata2020x24'?'Скоростной':round.phaseTwoSec>0?(round.ladderEnabled?'Две фазы · Лестница':'Две фазы'):round.intervalMode==='ladder'?'Лестница':'';
 export function ladderPlanPhaseCaption(state,{preview=false}={}){
  if(preview||state.phase===PHASES.IDLE)return '';
- switch(state.phase){
-  case PHASES.COUNTDOWN:return 'Старт';
-  case PHASES.WORK:return state.config?.intervalMode==='two_phase'||state.config?.programRounds?.[state.roundIndex-1]?.phaseTwoSec?'Фаза 1':'Раунд';
-  case PHASES.WORK_TWO:return 'Фаза 2';
-  case PHASES.REST:return 'Отдых';
-  case PHASES.BLOCK_REST:return 'Отдых между блоками';
-  case PHASES.FINISHED:return 'Завершено';
-  default:return '';
- }
+ if(state.phase===PHASES.FINISHED)return 'Завершено';
+ if(state.phase===PHASES.COUNTDOWN)return 'Старт';
+ const row=state.config?.programRounds?.[Math.max(0,(state.roundIndex||1)-1)];
+ const two=Boolean(row?.phaseTwoSec)||state.config?.intervalMode==='two_phase';
+ const phase=state.phase===PHASES.WORK?(two?'Фаза 1':'Работа')
+  :state.phase===PHASES.WORK_TWO?'Фаза 2'
+  :state.phase===PHASES.REST?'Отдых'
+  :state.phase===PHASES.BLOCK_REST?'Отдых между блоками':'';
+ const stage=row?'Этап '+(row.stageIndex+1)+' · ':'';
+ const block=row?.blockCount>1?'Блок '+row.block+'/'+row.blockCount+' · ':'';
+ const round=row?(row.blockCount>1?row.localRound:row.stageRound):state.roundIndex;
+ return stage+block+'Раунд '+round+(phase?' · '+phase:'');
 }
 export function ladderPlanControl(state,{preview=false}={}){
  const idle=state.phase===PHASES.IDLE||state.phase===PHASES.FINISHED;
