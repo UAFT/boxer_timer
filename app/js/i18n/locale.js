@@ -81,6 +81,19 @@ export function installLocalization(buttons) {
       button.setAttribute('aria-pressed',String(active));
     }
   }
+  const languageDropdown = document.getElementById('languageSelect');
+  if (languageDropdown) {
+    languageDropdown.value = preference;
+    languageDropdown.addEventListener('change', () => {
+      const chosen = languageDropdown.value;
+      if (!['ru','en','auto'].includes(chosen)) return;
+      preference = chosen;
+      localStorage.setItem(LANGUAGE_KEY,preference);
+      lang = resolveLanguage(preference,navigator.language);
+      syncButtons();
+      refresh();
+    });
+  }
   for (const button of buttons) button.addEventListener('click', () => {
     preference = button.dataset.language;
     localStorage.setItem(LANGUAGE_KEY,preference);

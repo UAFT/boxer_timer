@@ -1,0 +1,164 @@
+/* Fight Tech Studio Slate v1 — light silver, owner-approved screenshot.
+ * VISUAL-ONLY override after existing CSS. No timer/state/schedule changes. */
+:root {
+ color-scheme:light;
+ --ft-bg:#e9edf0;--ft-surface:#f9fafb;--ft-card:#eff2f5;
+ --ft-raised:#f4f6f8;--ft-well:#e4e8ec;--ft-line:#d0d7dc;
+ --ft-ink:#1b2229;--ft-secondary:#687580;--ft-tertiary:#788591;
+ --ft-steel:#365f60;--ft-steel-hover:#527c7b;
+ --ft-steel-gradient:linear-gradient(145deg,#688b89 0%,#416e6c 47%,#2d5353 100%);
+ --ft-orange:#cb884e;--ft-orange-gradient:linear-gradient(135deg,#efb66e,#c9854e);
+ --ft-red:#bb5450;--ft-red-soft:#f9e8e6;
+ --ft-shadow:0 5px 14px rgba(35,48,61,.075),0 1px 3px rgba(35,48,61,.06);
+ --ft-shadow-button:0 4px 9px rgba(30,67,67,.17),inset 0 1px 0 rgba(255,255,255,.18);
+ --ft-radius-panel:19px;--ft-radius-card:13px;--ft-radius-control:11px;
+ --ft-space-1:4px;--ft-space-2:8px;--ft-space-3:12px;--ft-space-4:16px;--ft-space-6:24px;
+ --ft-touch-target:44px;
+ --bg-0:var(--ft-bg);--bg-1:#eff2f5;--bg-2:#e9edf0;
+ --panel:linear-gradient(155deg,#f7f9fa,#e6ebef);
+ --panel-dark:linear-gradient(165deg,#f7f9fa,#e6ebef);
+ --line:var(--ft-line);--text:var(--ft-ink);--muted:var(--ft-secondary);
+ --orange:var(--ft-steel);--orange-2:var(--ft-steel-hover);--orange-dark:#234c4c;
+ --metro-mask-bg:#365b5c;--metro-mask-line:#b7d1d0;
+ --blue-chip:var(--ft-card);--danger:#eddddd;--shadow:var(--ft-shadow);
+ font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+html,body{background:linear-gradient(180deg,#f0f2f4 0%,#e5e9ed 100%);color:var(--ft-ink)}
+.app-shell{gap:10px}
+.panel{background:var(--panel);border:1px solid var(--ft-line);border-radius:var(--ft-radius-panel);box-shadow:var(--ft-shadow);backdrop-filter:none}
+.brand-shell{padding:12px 13px}
+.brand-logo{width:77px;height:77px;filter:brightness(.22)}
+.brand-title{color:var(--ft-ink);font-size:clamp(23px,5.7vw,30px)}
+.brand-subtitle{color:var(--ft-secondary)}
+.gear-btn{width:49px;height:49px;border-radius:13px;background:var(--ft-raised);border:1px solid var(--ft-line);box-shadow:var(--ft-shadow);color:var(--ft-ink)}
+:is(button,input,textarea,select):focus-visible{outline:3px solid #6f9691;outline-offset:2px}
+:is(.preset-tab,.reset-btn,.ghost-btn,.stepper-btn,.metro-grid-btn,.mode-chip,.choice-chip,.settings-stepper-btn,.program-top button,.program-stage button,.program-rest button,.program-actions button,.program-library-actions button,.program-library-tabs button,.program-library-entry button,.program-cycle-controls button,.round-edit-actions button,.stage-settings-actions button,.ft-import-actions button,.ft-share-button,.ft-program-actions button){background:var(--ft-raised);color:var(--ft-ink);border:1px solid var(--ft-line);box-shadow:var(--ft-shadow);border-radius:var(--ft-radius-control)}
+:is(.preset-tab,.mode-chip,.choice-chip,.program-library-tabs button).is-active,
+:is(.primary-btn,.program-actions button:first-child,#programStart,#programSaveCreate,#programSaveOverwrite,#programSaveCopy,#stageSettingsSave,#roundEditSave,#ftWorkoutImportAccept){background:var(--ft-steel-gradient);border:1px solid #577c7a;box-shadow:var(--ft-shadow-button);color:#fff}
+.preset-row{gap:8px}
+.preset-tab{min-height:56px;border-radius:13px;font-size:clamp(23px,5vw,30px)}
+.preset-tab.is-active,.preset-row .preset-tab.has-program{background:var(--ft-steel-gradient);color:#fff;border-color:#577c7a;box-shadow:var(--ft-shadow-button)}
+.preset-tab.has-program{outline:2px solid #80a4a0;outline-offset:-3px}
+.preset-row .preset-tab.has-program .preset-order b,.preset-order b{background:#f1f5f4;color:#274a49;border:1px solid #668b89}
+.timer-card{background:linear-gradient(162deg,#fbfcfd,#e4e9ed);padding:13px}
+.phase-heading,.round-heading{color:var(--ft-secondary)}
+.main-time,.ladder-current>strong{color:var(--ft-ink);font-variant-numeric:tabular-nums}
+.summary-box,.param-card{background:linear-gradient(150deg,#f8f9fa,#e8edf0);border-color:var(--ft-line);border-radius:var(--ft-radius-card)}
+.summary-box{min-height:72px}
+.summary-label,.param-subtitle{color:var(--ft-secondary)}
+.summary-value,.param-value,.compact-param-value{color:var(--ft-ink)}
+.progress-track{background:#d7dee3}
+.progress-fill{background:var(--ft-steel-gradient)}
+.primary-actions{gap:9px}
+.reset-btn,.primary-btn{min-height:57px;border-radius:12px}
+.reset-btn{background:var(--ft-raised);color:var(--ft-ink);border:1px solid var(--ft-line)}
+.primary-btn{font-weight:750}
+.compact-param-card{padding:9px 7px}
+.compact-param-title{color:var(--ft-ink);font-size:clamp(11px,3vw,15px)}
+.compact-stepper-col .stepper-btn{min-height:44px}
+.metronome-card{background:linear-gradient(160deg,#f4f7f8,#e8edef);border-color:var(--ft-line)}
+.metro-mask{background:var(--ft-steel-gradient);color:#fff;border:1px solid #719795;box-shadow:var(--ft-shadow-button);border-radius:12px}
+.metro-mask-title,.metro-mask-note{color:#fff}
+.metro-bpm-box,.metro-grid-box{background:var(--ft-card);color:var(--ft-ink);border-color:var(--ft-line)}
+.power-btn.is-on{background:var(--ft-steel-gradient);color:#fff}
+.ft-phase-switch{background:#e0e5e9;border:1px solid var(--ft-line);border-radius:13px}
+.ft-phase-switch button{color:var(--ft-ink)}
+.ft-phase-switch button.is-active{background:var(--ft-steel-gradient);color:#fff;box-shadow:var(--ft-shadow-button)}
+.timer-reveal-toggle,body:not(.program-timer-collapsed) .timer-card .timer-reveal-toggle:not([hidden]){background:var(--ft-raised);border:1px solid var(--ft-line);color:var(--ft-ink)}
+body.program-timer-collapsed .timer-card{background:linear-gradient(140deg,#f8fafb,#e5eaed);border-color:var(--ft-line)}
+body.program-timer-collapsed .timer-reveal-toggle{color:var(--ft-ink)}
+body.program-timer-collapsed .timer-reveal-toggle .timer-disclosure-icon{color:var(--ft-steel)}
+.program-panel{background:var(--panel);color:var(--ft-ink)}
+.program-panel .program-main-actions #programClear{background:var(--ft-raised);border-color:var(--ft-line);color:var(--ft-ink)}
+.program-panel .program-main-actions button{color:var(--ft-ink)}
+.program-panel .program-main-actions #programLibraryOpen{border-color:#708f8d}
+.program-active-info .program-current-name,.program-current-duration{color:var(--ft-steel)}
+.program-stage-card{background:var(--ft-surface);border:1px solid var(--ft-line);border-radius:var(--ft-radius-card);box-shadow:var(--ft-shadow)}
+.program-stage-card.is-current{border-color:var(--ft-steel);animation:none;box-shadow:inset 3px 0 0 var(--ft-steel),var(--ft-shadow)}
+.program-stage,.program-stage.is-current{background:transparent;color:var(--ft-ink)}
+.program-stage-main small,.program-stage-number,.program-stage-category{color:var(--ft-secondary)}
+.program-stage-user-title,.program-stage-workout{color:var(--ft-ink)}
+.program-stage-card>.program-stage-timing{color:var(--ft-secondary)}
+.program-stage-timing .program-stage-sum,.program-stage-timing .program-stage-block-rest,.program-stage-timing .program-stage-phase-two{color:var(--ft-steel)}
+.program-round-editor,.program-rest{color:var(--ft-ink)}
+.program-rest-label,.program-hint{color:var(--ft-secondary)}
+.program-cycle-panel{background:var(--ft-card);border-color:var(--ft-line);border-radius:var(--ft-radius-card)}
+.program-cycle-controls strong{color:var(--ft-ink)}
+.program-actions button:first-child{color:#fff}
+.ladder-live,.ladder-live.is-expanded{background:#ebeff2;color:var(--ft-ink);border-color:var(--ft-line)}
+.ladder-live.is-expanded{box-shadow:none;border:0;border-radius:0}
+.ladder-live-head,.ladder-current>span,.ladder-live-head button{color:var(--ft-secondary)}
+.ladder-live-head strong{color:var(--ft-ink)}
+.ladder-summary-box{background:var(--ft-surface);color:var(--ft-ink);box-shadow:var(--ft-shadow)}
+.ladder-summary-box>span{color:var(--ft-secondary)}
+.ladder-full-controls #ladderFullPause,.ladder-live.is-expanded .ladder-full-controls #ladderFullPause{background:var(--ft-steel-gradient);color:#fff}
+.ladder-live-row{color:var(--ft-secondary);background:#f4f6f8}
+.ladder-live-row:nth-child(even){background:#f0f3f5}
+.ladder-live-row.is-active{animation:none;color:var(--ft-steel);background:#dce9e6}
+.ladder-count,.ladder-live-row .ladder-count,.ladder-block-label.is-active,.round-heading.round-active .round-number{color:var(--ft-steel);animation:none}
+.ladder-block-label,.ladder-cycle-label{color:var(--ft-secondary)}
+.ladder-live-list .ladder-stage-outline{background:var(--ft-surface);border-color:var(--ft-line)}
+.ladder-live-list .ladder-block-outline{background:var(--ft-raised);border-color:var(--ft-line)}
+.ladder-live-list .ladder-stage-outline:has(.ladder-live-row.is-active),.ladder-live-list .ladder-block-outline:has(.ladder-live-row.is-active),.ladder-live-list .ladder-stage-outline:has(.ladder-rest-row.is-active){border-color:var(--ft-steel)}
+.ladder-rest-row{background:var(--ft-card);color:var(--ft-secondary);border-color:var(--ft-line)}
+.ladder-rest-row>.ladder-rest-duration{color:var(--ft-steel)}
+.ladder-rest-row.is-active{background:#dce9e6;border-color:var(--ft-steel);animation:none;color:var(--ft-steel)}
+.ft-two-phase-plan .ft-work-phase{background:var(--ft-card);color:var(--ft-ink)}
+.ft-two-phase-plan .ft-work-phase.is-active,.ft-two-phase-plan .ft-work-phase.phase-two.is-active{background:#dbe8e6;outline-color:var(--ft-steel);color:#234e4b}
+.ft-two-phase-plan .ft-round-rest.is-active{background:#f6eadc;outline-color:var(--ft-orange);color:#955c2f}
+.modal-backdrop,.ft-import-overlay,.ft-delete-overlay{background:rgba(27,40,49,.42)}
+.settings-modal,.stage-settings-modal,.round-edit-modal,.ft-import-dialog,.ft-delete-dialog{background:linear-gradient(165deg,#fbfcfd,#e9edf0);border:1px solid var(--ft-line);color:var(--ft-ink);box-shadow:0 18px 42px rgba(31,42,50,.2)}
+.settings-head h2,.stage-settings-modal h2,.round-edit-modal h2,.ft-import-dialog h2,.ft-delete-dialog h2{color:var(--ft-ink)}
+.settings-note,.settings-field-label,.field-label,.round-edit-modal label,.ft-stage-two-phase>label,.ft-phase-name-fields label,.ladder-explainer,.settings-inline-note,.ft-delete-message,.ft-import-details{color:var(--ft-secondary)}
+.settings-card,.settings-toggle-row,.block-settings,.ladder-preview{background:var(--ft-surface);border:1px solid var(--ft-line);border-radius:var(--ft-radius-card);color:var(--ft-ink)}
+.settings-card-title,.settings-field-stack,.settings-stepper-value,.ladder-preview-title{color:var(--ft-ink)}
+.settings-stepper-value,.ladder-preview-row{background:var(--ft-card);color:var(--ft-ink)}
+.ladder-preview-row strong{background:var(--ft-steel-gradient);color:#fff}
+.ladder-preview-row strong:last-child{background:var(--ft-well);color:var(--ft-ink)}
+:is(.field-input,.stage-settings-modal input,.stage-settings-modal textarea,.round-edit-modal textarea,.round-edit-modal input,.program-library-modal input,.ft-phase-name-fields input,.settings-modal select,.settings-modal input[type=text]){background:var(--ft-raised);border:1px solid #bdc8cf;border-radius:var(--ft-radius-control);color:var(--ft-ink);color-scheme:light}
+input::placeholder,textarea::placeholder{color:#75838d;opacity:1}
+.settings-head #closeSettingsBtn,.settings-head>button,.round-edit-actions button,.stage-settings-actions button{background:var(--ft-raised);color:var(--ft-ink);border:1px solid var(--ft-line)}
+:is(.choice-chip,.settings-stepper-btn,.stage-mode-choices button).is-active{background:var(--ft-steel-gradient);color:#fff}
+.ft-import-dialog .ft-import-name,.ft-delete-name{background:var(--ft-card);border-color:var(--ft-line);color:var(--ft-ink)}
+.ft-delete-actions button{background:var(--ft-raised);color:var(--ft-ink);border:1px solid var(--ft-line)}
+#programDeleteConfirmAccept,.program-library-modal .ft-saved-program-entry .ft-program-actions .ft-trash-button{background:var(--ft-red-soft);border-color:#d3a6a0;color:#923a39}
+.program-library-modal .ft-saved-program-entry,.program-library-entry{background:var(--ft-surface);border:1px solid var(--ft-line);color:var(--ft-ink)}
+.program-library-modal .ft-saved-program-entry .ft-program-actions>button,.program-library-modal #programLibraryBack,.ft-share-button{background:var(--ft-raised);color:var(--ft-ink);border-color:var(--ft-line)}
+.ft-program-title,.ft-program-stage .ft-stage-title{color:var(--ft-ink)}
+.ft-program-total,.ft-program-stage .ft-stage-total,.ft-exchange-status{color:var(--ft-steel)}
+.ft-program-stages,.ft-program-stage{border-color:var(--ft-line)}
+.ft-program-stage .ft-stage-label,.ft-program-stage .ft-stage-details,.ft-program-stage .ft-stage-rest-after,.ft-program-cycles{color:var(--ft-secondary)}
+.ft-exchange-toolbar>button{background:var(--ft-raised);border-color:var(--ft-line);color:var(--ft-ink)}
+.language-select-row{display:grid;grid-template-columns:1fr;gap:7px;color:var(--ft-secondary);font-size:14px}
+.language-select-row select{display:block;width:100%;min-height:48px;border-radius:12px;border:1px solid var(--ft-line);background:var(--ft-raised);color:var(--ft-ink);padding:10px 14px;font:inherit;font-size:16px;font-weight:600;box-shadow:var(--ft-shadow);color-scheme:light}
+.countdown-caption{color:var(--ft-orange)}
+:is(.program-library-modal button,.settings-modal button,.preset-tab,.stepper-btn,.primary-btn,.reset-btn){touch-action:manipulation}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+/* Existing program controls had higher-specificity navy/gold declarations. */
+.program-panel .program-main-actions #programLibraryOpen,
+.program-panel .program-main-actions #programSaveOpen,
+.program-panel .program-main-actions #programClear,
+.program-stage-card .program-stage>button,
+.program-stage-card .program-rest button,
+.program-round-editor button,
+.program-cycle-controls button {
+ background:var(--ft-raised)!important;color:var(--ft-ink)!important;
+ border:1px solid var(--ft-line)!important;box-shadow:var(--ft-shadow)!important;
+ border-radius:var(--ft-radius-control)!important;
+}
+.program-panel .program-main-actions #programLibraryOpen{border-color:#90aba9!important}
+.program-stage-card .program-stage button:focus-visible,.program-stage-card .program-rest button:focus-visible{outline:3px solid var(--ft-steel);outline-offset:2px}
+.program-panel .program-stage-card .program-stage-number,.program-panel .program-stage-card .program-stage-category{color:var(--ft-secondary)}
+.program-panel .program-stage-card .program-stage-workout{color:var(--ft-ink)}
+.program-panel .program-stage-card .program-stage-timing{color:var(--ft-secondary)}
+.program-panel .program-stage-card .program-stage-timing .program-stage-sum{color:var(--ft-steel)}
+.program-panel #programStart,.program-panel .program-actions button:first-child{background:var(--ft-steel-gradient)!important;color:#fff!important}
+.program-library-modal .ft-library-nav>button:not(.is-active){background:var(--ft-raised)!important;color:var(--ft-ink)!important;border-color:var(--ft-line)!important}
+.program-library-modal .ft-library-nav>button.is-active{background:var(--ft-steel-gradient)!important;color:#fff!important;border-color:#577c7a!important}
+.program-library-modal .program-library-list .native-library-add,.program-library-modal .program-library-list .program-library-entry-open{background:var(--ft-steel-gradient);color:#fff}
+.program-library-modal .program-library-list .native-library-info,.program-library-modal .program-library-list .native-library-timing{color:var(--ft-secondary)}
+.program-library-modal #programLibraryClose,.program-library-modal #programLibraryBack,.settings-modal #programSaveClose,.settings-modal .settings-head>button{background:var(--ft-raised);color:var(--ft-ink);border:1px solid var(--ft-line)}
+.program-stage-card .program-round-edit-row button{background:var(--ft-raised);color:var(--ft-ink);border-color:var(--ft-line)}
+.stage-settings-modal .stage-settings-grid input,.stage-settings-modal .stage-settings-grid select,.stage-settings-modal .stage-mmss input,.round-edit-modal textarea,.round-edit-modal #roundEditPhaseOne,.round-edit-modal #roundEditPhaseTwo{background:var(--ft-raised)!important;color:var(--ft-ink)!important;border-color:var(--ft-line)!important}
+.stage-settings-modal .stage-mode-choices button:not(.is-active){background:var(--ft-raised)!important;color:var(--ft-ink)!important;border-color:var(--ft-line)!important}
+.stage-settings-modal .stage-mode-choices button.is-active{background:var(--ft-steel-gradient)!important;color:#fff!important}
