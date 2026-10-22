@@ -38,7 +38,8 @@ test('editor always shows canonical mode before title, no stray mode label benea
   const style=readFileSync(new URL('../app/styles/fight-tech-ui-kit.css',import.meta.url),'utf8');
   assert.match(app,/renderStageTitle\(document,i\+1,entry.title,\{config:/);
   assert.doesNotMatch(app,/kind\.textContent=/);
-  assert.match(style,/\.program-stage-card>\.program-stage \.program-stage-number \{/);
+  assert.match(style,/\.program-stage-card>\.program-stage>\.program-stage-main\{/);
+  assert.match(style,/display:flex!important/);
   assert.match(style,/white-space:nowrap!important/);
 });
 

@@ -4,6 +4,7 @@ import { announceRound, stopVoice } from './audio/voice-coach.js';
 import { installDeleteConfirmation } from './ui/delete-confirmation.js';
 import { installTimerDisclosure } from './ui/timer-disclosure.js';
 import { renderStageTitle } from './ui/stage-title.js';
+import {installStageTimeSteppers} from './ui/stage-time-stepper.js';
 import {stageTimingRows} from './ui/stage-timing-rows.js';
 import {installTwoPhaseToggle} from './ui/two-phase-toggle.js';
 import {installIntervalModeCombo} from './ui/interval-mode-combo.js';
@@ -488,29 +489,7 @@ function bindStageSettings(){
   installIntervalModeCombo({buttons:[...document.querySelectorAll('[data-stage-mode]')].map(b=>{b.dataset.intervalMode=b.dataset.stageMode;return b;}),
     modeInput:id('Mode'),enabledInput:id('LadderEnabled'),onChange:syncStageSettingsMode});
   id('BlockEnabled').addEventListener('change',syncStageSettingsMode);
-  for(const key of ['WorkMin','WorkSec','RestMin','RestSec','PhaseTwoMin','PhaseTwoSec','Rounds']){
-    const input=id(key), unit=key==='Rounds'?1:1, min=key.endsWith('Sec')?0:key==='Rounds'?1:0;
-    const max=key.endsWith('Sec')?59:key==='Rounds'?99:60;
-    const parent=input.parentElement;
-    const control=document.createElement('div');control.className='stage-number-control';
-    const minus=document.createElement('button');minus.type='button';minus.textContent='−';minus.setAttribute('aria-label','Уменьшить '+key);
-    const plus=document.createElement('button');plus.type='button';plus.textContent='+';plus.setAttribute('aria-label','Увеличить '+key);
-    const adjust=(delta)=>{input.value=String(Math.max(min,Math.min(max,(Number(input.value)||0)+delta)));};
-    for(const [button,sign] of [[minus,-1],[plus,1]]){
-      let delay=null,repeat=null,held=false;
-      const stop=()=>{clearTimeout(delay);clearInterval(repeat);delay=null;repeat=null;};
-      button.addEventListener('pointerdown',e=>{
-        if(e.button!==0)return;
-        held=false;stop();
-        delay=setTimeout(()=>{held=true;adjust(sign*5);repeat=setInterval(()=>adjust(sign*5),110);},450);
-      });
-      button.addEventListener('pointerup',()=>{stop();if(!held)adjust(sign*unit);held=false;});
-      button.addEventListener('pointercancel',stop);
-      button.addEventListener('lostpointercapture',stop);
-      button.addEventListener('contextmenu',e=>e.preventDefault());
-    }
-    input.replaceWith(control);control.append(minus,input,plus);
-  }
+  installStageTimeSteppers({lookup:id});
   id('Cancel').addEventListener('click',closeStageSettings);
   document.getElementById('stageSettingsModal').addEventListener('click',event=>{
     if(event.target.id==='stageSettingsModal')closeStageSettings();

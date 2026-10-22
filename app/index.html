@@ -246,14 +246,14 @@
               <label for="stageSettingsPhaseTwo">Фаза 2</label>
               <input id="stageSettingsPhaseTwo" type="text" maxlength="100" autocomplete="off" placeholder="Фаза 2">
               <label class="ft-stage-phase-time">Время фазы 2
-                <div class="stage-mmss"><input id="stageSettingsPhaseTwoMin" type="number" inputmode="numeric" min="0" max="60" aria-label="Минуты второй фазы"><span>мин</span><input id="stageSettingsPhaseTwoSec" type="number" inputmode="numeric" min="0" max="59" aria-label="Секунды второй фазы"><span>сек</span></div>
+                <div class="stage-mmss"><input id="stageSettingsPhaseTwoMin" type="number" inputmode="numeric" min="0" max="60" aria-label="Минуты второй фазы"><span>мин</span><input id="stageSettingsPhaseTwoSec" type="number" inputmode="numeric" min="0" max="59" aria-label="Секунды второй фазы" step="5"><span>сек</span></div>
               </label>
             </div>
           </div>
         </div>
         <div class="stage-settings-grid">
-          <label><span id="stageSettingsWorkCaption">Работа</span><div class="stage-mmss"><input id="stageSettingsWorkMin" inputmode="numeric" type="number" min="0" max="60" aria-label="Минуты работы"><span>мин</span><input id="stageSettingsWorkSec" inputmode="numeric" type="number" min="0" max="59" aria-label="Секунды работы"><span>сек</span></div></label>
-          <label>Отдых<div class="stage-mmss"><input id="stageSettingsRestMin" inputmode="numeric" type="number" min="0" max="60" aria-label="Минуты отдыха"><span>мин</span><input id="stageSettingsRestSec" inputmode="numeric" type="number" min="0" max="59" aria-label="Секунды отдыха"><span>сек</span></div></label>
+          <label><span id="stageSettingsWorkCaption">Работа</span><div class="stage-mmss"><input id="stageSettingsWorkMin" inputmode="numeric" type="number" min="0" max="60" aria-label="Минуты работы"><span>мин</span><input id="stageSettingsWorkSec" inputmode="numeric" type="number" min="0" max="59" aria-label="Секунды работы" step="5"><span>сек</span></div></label>
+          <label>Отдых<div class="stage-mmss"><input id="stageSettingsRestMin" inputmode="numeric" type="number" min="0" max="60" aria-label="Минуты отдыха"><span>мин</span><input id="stageSettingsRestSec" inputmode="numeric" type="number" min="0" max="59" aria-label="Секунды отдыха" step="5"><span>сек</span></div></label>
           <label>Раунды<input id="stageSettingsRounds" inputmode="numeric" type="number" min="1" max="99" step="1" required></label>
         </div>
         <div id="stageSettingsLadder" hidden>

@@ -454,26 +454,55 @@ input::placeholder,textarea::placeholder{color:#75838d;opacity:1}
   overflow-wrap:anywhere;
 }
 
-/* Editor: keep the entire "Этап N — Режим" line unbroken on a phone.
-   Keep existing four action buttons aligned top-right, place the semantic
-   heading immediately below them with a full-width row; name below heading. */
-.program-panel .program-stage-card>.program-stage .program-stage-number {
-  grid-column:1/-1;
-  grid-row:2;
-  white-space:nowrap!important;
-  font-size:clamp(11px,3vw,14px);
+/* Studio Slate v1.5: mode and user title share the SAME TOP ROW as the
+   four action buttons. The stacked heading stays in column one; never
+   unwrap individual heading spans into grid rows below the buttons. */
+.program-panel .program-stage-card>.program-stage>.program-stage-main{
+  display:block!important;
+  grid-column:1;
+  grid-row:1;
+  align-self:start;
+  min-width:0;
+  margin:0;
+  padding:0;
+}
+.program-panel .program-stage-card>.program-stage>.program-stage-main>.program-stage-title-stack{
+  display:flex!important;
+  flex-direction:column;
+  align-items:flex-start;
+  justify-content:flex-start;
+  gap:5px;
+  min-width:0;
+  line-height:1.25;
+}
+.program-panel .program-stage-card>.program-stage .program-stage-number{
+  grid-column:auto;
+  grid-row:auto;
+  align-self:auto;
+  margin:0;
+  white-space:normal!important;
+  font-size:clamp(11px,2.85vw,14px);
   line-height:1.3;
-  margin-top:1px;
+  font-weight:700;
+  overflow-wrap:normal;
 }
-.program-panel .program-stage-card>.program-stage .program-stage-category {
-  grid-column:1/-1;
-  grid-row:3;
+.program-panel .program-stage-card>.program-stage .program-stage-category{
+  grid-column:auto;
+  grid-row:auto;
+  align-self:auto;
+  margin:0;
   white-space:normal;
-  margin-top:0;
+  line-height:1.22;
 }
-.program-panel .program-stage-card>.program-stage .program-stage-workout {
-  grid-column:1/-1;
-  grid-row:4;
+.program-panel .program-stage-card>.program-stage .program-stage-workout{
+  grid-column:auto;
+  grid-row:auto;
+  align-self:auto;
+  margin:0;
+  white-space:normal;
+  font-size:clamp(16px,4.35vw,20px);
+  line-height:1.25;
+  overflow-wrap:anywhere;
 }
 .program-panel .program-stage-card>.program-stage>button:nth-child(2),
 .program-panel .program-stage-card>.program-stage>button:nth-child(3),
