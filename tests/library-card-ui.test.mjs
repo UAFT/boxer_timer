@@ -57,9 +57,10 @@ test('stage hierarchy and top-right icons render in one saved-program card',()=>
  assert.equal(findAll(card,'ft-stage-rest-after')[0].textContent,'Между этапами: 03:00');
  const actions=findAll(card,'ft-program-actions')[0];
  assert.ok(actions);
- assert.equal(actions.children.length,2);
+ assert.equal(actions.children.length,3);
+ assert.equal(findAll(card,'ft-saved-program-add').length,1);
  assert.equal(findAll(card,'ft-trash-button').length,1);
- assert.equal(findAll(card,'ft-action-icon').length,1);
+ assert.equal(findAll(card,'ft-action-icon').length,2);
  card.children[0].onclick();
  assert.equal(details.hidden,true,'second tap collapses the card');
  assert.equal(card.children[0].attributes['aria-expanded'],'false');
@@ -67,8 +68,9 @@ test('stage hierarchy and top-right icons render in one saved-program card',()=>
  assert.equal(findAll(card,'ft-stage-label').length,2,'details are retained across toggles');
  card.children[0].onclick();
  findAll(card,'ft-saved-program-load')[0].onclick();
- actions.children[1].onclick();
- assert.equal(opened,1);assert.equal(deleted,1);
+ actions.children[0].onclick(); // Quick + loads without expanding first.
+ actions.children[2].onclick();
+ assert.equal(opened,2);assert.equal(deleted,1);
 });
 
 test('saved AFAP program presents unbounded time rather than misleading zero',()=>{

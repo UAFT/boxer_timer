@@ -486,6 +486,10 @@ function syncStageSettingsMode(){
     const selected=b.dataset.stageMode===mode || (mode==='two_phase'&&ladder&&b.dataset.stageMode==='ladder');
     b.classList.toggle('selected',selected);b.setAttribute('aria-pressed',String(selected));
   });
+  const combo=document.getElementById('stageDualLadderPlus');
+  const combined=mode==='two_phase'&&ladder;
+  combo.classList.toggle('selected',combined);
+  combo.setAttribute('aria-pressed',String(combined));
   document.getElementById('stageSettingsLadder').hidden=!ladder;
   document.getElementById('stageSettingsPhaseTwoStepField').hidden=mode!=='two_phase'||!ladder;
   document.getElementById('stageSettingsTwoPhase').hidden=mode!=='two_phase';
@@ -498,6 +502,12 @@ function bindStageSettings(){
   const id=name=>document.getElementById('stageSettings'+name);
   installIntervalModeCombo({buttons:[...document.querySelectorAll('[data-stage-mode]')].map(b=>{b.dataset.intervalMode=b.dataset.stageMode;return b;}),
     modeInput:id('Mode'),enabledInput:id('LadderEnabled'),onChange:syncStageSettingsMode});
+  document.getElementById('stageDualLadderPlus').addEventListener('click',()=>{
+    // Same two-phase + ladder combination as holding Ladder; no new mode.
+    const paired=id('Mode').value==='two_phase'&&id('LadderEnabled').checked;
+    id('Mode').value='two_phase';id('LadderEnabled').checked=!paired;
+    syncStageSettingsMode();
+  });
   id('BlockEnabled').addEventListener('change',syncStageSettingsMode);
   installStageTimeSteppers({lookup:id});
   id('Cancel').addEventListener('click',closeStageSettings);
@@ -717,9 +727,9 @@ function bindProgramLibrary() {
           const cfg=preview.settings;
           const timing=document.createElement('small');timing.className='native-library-timing';
           const meta=stageTimingText(preview);
-          timing.textContent=meta.detail;
+          timing.textContent=cfg.intervalMode==='count_up'?'Прямой отсчёт · завершение вручную':meta.detail;
           const total=document.createElement('small');total.className='native-library-total';
-          total.textContent='Всего: '+timeWords(meta.total,document.documentElement.lang);
+          total.textContent=cfg.intervalMode==='count_up'?'Без ограничения времени':'Всего: '+timeWords(meta.total,document.documentElement.lang);
           info.append(title,timing,total,description);
         }else info.append(title,description);
         const plus=document.createElement('button');plus.type='button';plus.className='native-library-add';plus.textContent='+';

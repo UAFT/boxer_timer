@@ -234,7 +234,7 @@
         <div class="settings-head"><h2>Редактирование этапа</h2></div>
         <label class="stage-settings-field">Название этапа<input id="stageSettingsName" maxlength="80" type="text"></label>
         <label class="stage-settings-field">Режим
-          <div class="stage-mode-choices"><button type="button" data-stage-mode="standard">Обычный</button><button type="button" data-stage-mode="two_phase">Две фазы</button><button type="button" data-stage-mode="ladder">Лестница</button><button type="button" data-stage-mode="count_up">Таймер</button></div><input type="hidden" id="stageSettingsMode" value="standard"><input type="checkbox" id="stageSettingsLadderEnabled" hidden>
+          <div class="stage-mode-choices"><button type="button" data-stage-mode="standard">Обычный</button><button type="button" data-stage-mode="two_phase">Две фазы</button><button type="button" id="stageDualLadderPlus" class="ft-stage-combo-button" aria-label="Совместить две фазы и лестницу" aria-pressed="false" title="Две фазы + Лестница">+</button><button type="button" data-stage-mode="ladder">Лестница</button><button type="button" data-stage-mode="count_up">Таймер</button></div><input type="hidden" id="stageSettingsMode" value="standard"><input type="checkbox" id="stageSettingsLadderEnabled" hidden>
         </label>
         <div id="stageSettingsTwoPhase" class="ft-stage-two-phase" hidden>
           <div class="ft-stage-phase-pair">

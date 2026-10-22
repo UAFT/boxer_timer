@@ -50,7 +50,8 @@ export function createActionIcon(doc, kind) {
   const paths={
     share:['circle:18,5,2','circle:6,12,2','circle:18,19,2','path:M8 11l8-5','path:M8 13l8 5'],
     trash:['path:M3 6h18','path:M8 6V4h8v2','path:M19 6l-1 15H6L5 6','path:M10 10v7','path:M14 10v7'],
-    download:['path:M12 3v13','path:M7 11l5 5 5-5','path:M4 18v3h16v-3']
+    download:['path:M12 3v13','path:M7 11l5 5 5-5','path:M4 18v3h16v-3'],
+    plus:['path:M12 5v14','path:M5 12h14']
   };
   const svg=doc.createElementNS('http://www.w3.org/2000/svg','svg');
   svg.setAttribute('viewBox','0 0 24 24');svg.setAttribute('fill','none');
@@ -123,7 +124,11 @@ export function renderSavedProgramCard(doc, program, profiles, {lang='ru',onOpen
   open.addEventListener('click',expand);
   row.append(open,summary);
   const controls=doc.createElement('div');controls.className='ft-program-actions';
-  controls.append(onShareButton());
+  const quickAdd=doc.createElement('button');quickAdd.type='button';quickAdd.className='ft-saved-program-add';
+  quickAdd.setAttribute('aria-label',(ru?'Открыть программу ':'Open workout ')+program.name);
+  quickAdd.title=ru?'Открыть программу':'Open workout';quickAdd.append(createActionIcon(doc,'plus'));
+  quickAdd.addEventListener('click',()=>onOpen?.());
+  controls.append(quickAdd,onShareButton());
   const remove=doc.createElement('button');remove.type='button';remove.className='program-library-entry-delete ft-trash-button';
   remove.setAttribute('aria-label',(ru?'Удалить программу ':'Delete program ')+program.name);
   remove.title=ru?'Удалить':'Delete';remove.append(createActionIcon(doc,'trash'));

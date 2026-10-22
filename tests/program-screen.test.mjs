@@ -75,7 +75,7 @@ test('polished program screens keep titles once, total duration on its own line 
  assert.ok(render.includes('phaseLabelText(state)'));
  assert.equal((app.match(/programName:openedProgramName/g)||[]).length,3,'preview, tick and state changes preserve the name');
  assert.ok(app.includes('const meta=stageTimingText(preview);'));
- assert.ok(app.includes("total.textContent='Всего: '+timeWords(meta.total"));
+ assert.ok(app.includes("cfg.intervalMode==='count_up'?'Без ограничения времени':'Всего: '+timeWords(meta.total"));
  assert.ok(css.includes('.program-stage-timing .program-stage-rest{flex-basis:auto!important}'));
  assert.ok(css.includes('.program-stage-timing .program-stage-sum{display:block;flex:0 0 100%'));
  assert.ok(css.includes('.program-stage-card .program-stage-workout{grid-column:1/-1'));

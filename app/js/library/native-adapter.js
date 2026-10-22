@@ -4,7 +4,17 @@ import { clonePreset } from '../state/presets.js';
 // Adapter: catalog entries become ordinary legacy program stages. No second timer.
 export { CATEGORIES, LIBRARY };
 export function stageForWorkout(workout) {
-  if (!workout || workout.mode === 'afap') return null; // manual-stop clock is not supported by legacy engine
+  if (!workout) return null;
+  if (workout.mode === 'afap') {
+    // Use the existing count-up engine. Finishing is manual; the next stage
+    // (if present) starts after restAfterSec, not after a fabricated timeout.
+    return {
+      presetId:'classic1',title:'AFAP — '+workout.name,
+      settings:{...clonePreset('classic1'),intervalMode:'count_up',ladderEnabled:false,blockEnabled:false,
+        rounds:1,workStepSec:0,restStepSec:0},
+      roundNames:[workout.name],roundDescriptions:[workout.tasks.join(' · ')],restAfterSec:60
+    };
+  }
   if(workout.mode==='two_phase') {
     // Use the existing program compiler. The mixed workout varies phase 1
     // with sparse timing/name overrides, never a new clock implementation.

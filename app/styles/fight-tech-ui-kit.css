@@ -567,3 +567,60 @@ body.ft-unbounded-program:not(.ft-count-up-standalone) .timer-card .summary-grid
 /* Swipe the numeric chip only; surrounding dialog remains vertically scrollable. */
 .stage-settings-modal input.ft-swipe-time,
 .round-edit-modal input.ft-swipe-time{touch-action:none;cursor:ns-resize}
+
+/* Owner phone audit: neutral preview durations, compact program actions,
+   symmetric stepper numbers and a visible two-phase + ladder control. */
+.settings-modal .ladder-preview-row strong,
+.settings-modal .ladder-preview-row strong:last-child{
+  background:var(--ft-well)!important;color:var(--ft-ink)!important;
+  box-shadow:none!important;
+}
+.settings-modal .settings-stepper-value{
+  display:flex;align-items:center;justify-content:center;text-align:center;
+  font-size:clamp(15px,3.7vw,18px)!important;font-weight:800!important;
+  font-variant-numeric:tabular-nums;
+}
+.program-library-modal .ft-saved-program-entry .ft-saved-program-open{
+  padding-right:146px!important;
+}
+.program-library-modal .ft-saved-program-entry .ft-saved-program-heading{
+  padding-right:0!important;
+}
+.program-library-modal .ft-saved-program-entry .ft-program-actions .ft-saved-program-add{
+  background:var(--ft-raised)!important;color:var(--ft-ink)!important;
+  border-color:var(--ft-line)!important;
+}
+.program-library-modal .ft-saved-program-entry .ft-program-actions .ft-saved-program-add:focus-visible{
+  outline:3px solid var(--ft-steel);outline-offset:2px;
+}
+.stage-settings-modal .stage-mode-choices{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr) 28px minmax(0,1fr) minmax(0,1fr)!important;
+  gap:4px!important;align-items:center;
+}
+.stage-settings-modal .stage-mode-choices .ft-stage-combo-button{
+  box-sizing:border-box;display:grid;place-items:center;min-width:28px!important;
+  width:28px!important;height:48px!important;min-height:48px!important;
+  padding:0!important;font-size:21px!important;line-height:1!important;
+  border-radius:10px!important;background:var(--ft-raised)!important;
+  color:var(--ft-steel)!important;border:1px solid var(--ft-line)!important;
+  box-shadow:none!important;
+}
+.stage-settings-modal .stage-mode-choices .ft-stage-combo-button.selected{
+  background:#dce9e6!important;color:#234e4b!important;
+  border-color:var(--ft-steel)!important;
+}
+/* Same lightweight one-line exercise field for standard, ladder and speed. */
+.round-edit-modal #roundEditInput{
+  box-sizing:border-box;width:100%;height:48px!important;min-height:48px!important;
+  max-height:48px!important;resize:none!important;overflow-y:auto;
+  padding:11px 14px!important;line-height:1.3;font-size:16px!important;
+  border:1px solid var(--ft-border-soft)!important;border-radius:10px!important;
+  background:var(--ft-input-bg)!important;
+}
+.round-edit-modal #roundEditInput:focus,
+.round-edit-modal #roundEditPhaseOne:focus,
+.round-edit-modal #roundEditPhaseTwo:focus{
+  outline:3px solid #6b9993!important;outline-offset:2px!important;
+  border-color:var(--ft-steel)!important;
+}
