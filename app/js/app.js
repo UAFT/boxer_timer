@@ -9,7 +9,7 @@ import {stageTimingRows} from './ui/stage-timing-rows.js';
 import {installTwoPhaseToggle} from './ui/two-phase-toggle.js';
 import {installIntervalModeCombo} from './ui/interval-mode-combo.js';
 import {isPlaybackProtected, applyPresetWithoutInterrupting, applyLiveMetronome} from './ui/playback-guard.js';
-import {loadRoundTimingEditor,readRoundTimingEditor,saveRoundTiming} from './ui/round-time-editor.js';
+import {loadRoundTimingEditor,readRoundTimingEditor,saveRoundTiming,installRoundTimeSwipes} from './ui/round-time-editor.js';
 import {hasLadder} from './core/ladder-blocks.js';
 import {stageTwoPhaseLoad,stageTwoPhaseSave,roundTwoPhaseLoad,roundTwoPhaseSave} from './ui/two-phase-editor.js';
 import { installWorkoutExchange } from './sharing/workout-exchange-ui.js';
@@ -257,7 +257,7 @@ function handleSaveSettings() {
     const fields=['intervalMode','phaseTwoSec','phaseOneName','phaseTwoName','ladderEnabled','phaseTwoStepSec','blockEnabled','blockCount','blockRestSec','workStepSec','restStepSec'];
     let changed=false;
     for (const entry of programEntries) {
-      if (!entry.settings || entry.presetId!==activePresetId) continue;
+      if (!entry.settings || entry.presetId!==activePresetId || entry.settings.intervalMode==='count_up' || activeSettings.intervalMode==='count_up') continue;
       for (const field of fields) entry.settings[field]=activeSettings[field];
       changed=true;
     }
@@ -355,7 +355,7 @@ function persistProgram() {
 }
 function addProgramStage(presetId) {
   if (!PRESET_NAMES[presetId] || programRunning || programEntries.length >= 24) return;
-  programEntries.push({ presetId, title:'', restAfterSec: 60, ...(presetId===activePresetId && activeSettings.intervalMode==='two_phase'?{settings:structuredClone(activeSettings)}:{}) });
+  programEntries.push({ presetId, title:'', restAfterSec: 60, ...(presetId===activePresetId && ['two_phase','count_up'].includes(activeSettings.intervalMode)?{settings:structuredClone(activeSettings)}:{}) });
   timerDisclosure.keepExpandedOnPresetAdd();
   persistProgram();
 }
@@ -397,13 +397,19 @@ function renameProgramRound(stageIndex, roundIndex, description=false, trigger=n
   input.rows=description?5:2;
   input.value=stage[field]?.[roundIndex]||'';
   const roundConfig=stage.settings || profiles[stage.presetId];
-  roundTwoPhaseLoad(stage,roundIndex,!description && roundConfig.intervalMode==='two_phase');
+  const usePhases=!description && roundConfig.intervalMode==='two_phase';
+  document.getElementById('roundEditLabel').hidden=usePhases;
+  input.hidden=usePhases;
+  roundTwoPhaseLoad(stage,roundIndex,usePhases);
   loadRoundTimingEditor(stage,roundIndex,roundConfig,{hidden:description});
   document.getElementById('roundEditModal').hidden=false;
-  input.focus();
-  input.setSelectionRange(input.value.length,input.value.length);
+  // A two-phase round has exactly two names, not an additional generic name.
+  const first=usePhases?document.getElementById('roundEditPhaseOne'):input;
+  first.focus();
+  if (first===input)input.setSelectionRange(input.value.length,input.value.length);
 }
 function bindRoundEditor() {
+  installRoundTimeSwipes();
   const modal=document.getElementById('roundEditModal');
   const input=document.getElementById('roundEditInput');
   document.getElementById('roundEditCancel').addEventListener('click',closeRoundEditor);
@@ -414,9 +420,11 @@ function bindRoundEditor() {
     const roundConfig=stage.settings || profiles[stage.presetId];
     const timings=ctx.description?{}:readRoundTimingEditor(roundConfig,ctx.roundIndex);
     if(timings===null)return;
-    const values=Array.isArray(stage[ctx.field])?[...stage[ctx.field]]:[];
-    values[ctx.roundIndex]=input.value.trim().slice(0,ctx.description?600:100);
-    stage[ctx.field]=values;
+    if(ctx.description || roundConfig.intervalMode!=='two_phase'){
+      const values=Array.isArray(stage[ctx.field])?[...stage[ctx.field]]:[];
+      values[ctx.roundIndex]=input.value.trim().slice(0,ctx.description?600:100);
+      stage[ctx.field]=values;
+    }
     if(!ctx.description){
       if(roundConfig.intervalMode==='two_phase')roundTwoPhaseSave(stage,ctx.roundIndex);
       saveRoundTiming(stage,ctx.roundIndex,roundConfig,timings);
@@ -428,7 +436,7 @@ function bindRoundEditor() {
   modal.addEventListener('keydown',event=>{
     if(event.key==='Escape'){event.preventDefault();closeRoundEditor();}
     if(event.key==='Tab'){
-      const controls=[input,...(document.getElementById('roundEditPhases').hidden?[]:[document.getElementById('roundEditPhaseOne'),document.getElementById('roundEditPhaseTwo')]),...(document.getElementById('roundEditTimes').hidden?[]:[...document.querySelectorAll('#roundEditTimes input:not(:disabled)')]),document.getElementById('roundEditCancel'),document.getElementById('roundEditSave')];
+      const controls=[...(input.hidden?[]:[input]),...(document.getElementById('roundEditPhases').hidden?[]:[document.getElementById('roundEditPhaseOne'),document.getElementById('roundEditPhaseTwo')]),...(document.getElementById('roundEditTimes').hidden?[]:[...document.querySelectorAll('#roundEditTimes input:not(:disabled)')]),document.getElementById('roundEditCancel'),document.getElementById('roundEditSave')];
       const index=controls.indexOf(document.activeElement);
       if(index>=0){event.preventDefault();controls[(index+(event.shiftKey?controls.length-1:1))%controls.length].focus();}
     }
@@ -453,7 +461,7 @@ function openStageSettings(index) {
   for(const [key,value] of [['Rounds',cfg.rounds],
     ['WorkStep',cfg.workStepSec||0],['RestStep',cfg.restStepSec||0],['PhaseTwoStep',cfg.phaseTwoStepSec||0],
     ['Blocks',cfg.blockCount||2],['BlockRest',cfg.blockRestSec||60]])id(key).value=value;
-  id('Mode').value=['ladder','two_phase'].includes(cfg.intervalMode)?cfg.intervalMode:'standard';
+  id('Mode').value=['ladder','two_phase','count_up'].includes(cfg.intervalMode)?cfg.intervalMode:'standard';
   id('LadderEnabled').checked=!!cfg.ladderEnabled;
   id('BlockEnabled').checked=!!cfg.blockEnabled;
   stageTwoPhaseLoad(cfg);
@@ -463,6 +471,8 @@ function openStageSettings(index) {
 function syncStageSettingsMode(){
   const mode=document.getElementById('stageSettingsMode').value;
   const ladder=hasLadder({intervalMode:mode,ladderEnabled:document.getElementById('stageSettingsLadderEnabled').checked});
+  document.getElementById('stageSettingsTimeGrid').hidden=mode==='count_up';
+  document.getElementById('stageCountUpExplainer').hidden=mode!=='count_up';
   const work=document.getElementById('stageSettingsWorkMin').closest('label');
   const workGrid=document.querySelector('#stageSettingsModal .stage-settings-grid');
   const workSlot=document.getElementById('stageSettingsPhaseOneTimeSlot');
@@ -513,7 +523,7 @@ function bindStageSettings(){
     Object.assign(cfg,{workSec:values.Work,restSec:values.Rest,rounds:values.Rounds,
       workStepSec:values.WorkStep,restStepSec:values.RestStep,phaseTwoStepSec:values.PhaseTwoStep,
       ladderEnabled:id('Mode').value==='two_phase'&&id('LadderEnabled').checked,
-      intervalMode:['ladder','two_phase'].includes(id('Mode').value)?id('Mode').value:'standard',
+      intervalMode:['ladder','two_phase','count_up'].includes(id('Mode').value)?id('Mode').value:'standard',
       blockEnabled:(id('Mode').value==='ladder'||(id('Mode').value==='two_phase'&&id('LadderEnabled').checked))&&id('BlockEnabled').checked,
       blockCount:values.Blocks,blockRestSec:values.BlockRest});
     if(cfg.intervalMode==='two_phase' && !stageTwoPhaseSave(cfg))return;
@@ -571,6 +581,7 @@ function stageTimingText(entry) {
   const cfg=entry.settings||profiles[entry.presetId];
   const {rounds,total}=stageTiming(entry);
   const blocks=hasLadder(cfg) && cfg.blockEnabled ? Math.max(1,Number(cfg.blockCount)||1) : 1;
+  if(cfg.intervalMode==='count_up')return {detail:'Прямой отсчёт · без ограничения времени',total:0};
   return { detail: (blocks>1?russianRoundCount(cfg.rounds)+' × '+russianBlockCount(blocks):russianRoundCount(rounds.length))
     +' · работа '+formatProgramTime(cfg.workSec)+' · отдых '+formatProgramTime(cfg.restSec)
     +(blocks>1?' · между блоками '+formatProgramTime(cfg.blockRestSec):''), total };
@@ -616,7 +627,7 @@ function renderProgram() {
         }
       }
       card.append(stage,detail);
-      if (!programRunning) {
+      if (!programRunning && cfg.intervalMode!=='count_up') {
         const rounds=compileProgram([entry],profiles,{cycles:1}).length;
         const editor=document.createElement('div');editor.className='program-round-editor';
         for(let j=0;j<rounds;j++) {
@@ -787,6 +798,7 @@ function bindProgram() {
     tab.addEventListener('contextmenu',e=>e.preventDefault());
     tab.addEventListener('click',e=>{if(consumed){e.stopImmediatePropagation();e.preventDefault();consumed=false;}},true);
   }
+  document.getElementById('finishStageBtn').addEventListener('click',()=>{void timer.finishStage();});
   document.getElementById('programClear').addEventListener('click',()=>{if(!programRunning){programEntries=[];openedProgramName='';openedProgramId=null;persistProgram();}});
   document.getElementById('programStart').addEventListener('click',async()=>{await audio.unlock();startProgram();});
   document.getElementById('programExit').addEventListener('click',()=>{if(programRunning)exitProgram();});

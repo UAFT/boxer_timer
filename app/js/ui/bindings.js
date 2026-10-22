@@ -103,6 +103,7 @@ export function bindControls(els, handlers) {
       document.getElementById('ladderStepsFields').hidden=!ladder;
       document.getElementById('phaseTwoStepFields').hidden=mode!=='two_phase'||!ladder;
       document.getElementById('intervalModeExplainer').hidden=!ladder;
+      document.getElementById('countUpExplainer').hidden=mode!=='count_up';
       handlers.onPreviewChange?.();
     }
   });

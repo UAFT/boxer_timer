@@ -8,6 +8,7 @@ const rangeClock=(values,fallback=0)=>{
  return clock(low)+(low===high?'':'–'+clock(high));
 };
 export function stageTimingRows(config,{total,rounds},english=false){
+ if(config.intervalMode==='count_up')return [['program-stage-count',english?'Count up · no time limit':'Прямой отсчёт · без ограничения времени']];
  if(config.intervalMode==='two_phase'){
   const extra=(config.ladderEnabled?(english?' · ladder':' · лестница'):'')+(rounds.some(r=>r.timingOverridden)?(english?' · custom':' · индивидуально'):'');
   return [

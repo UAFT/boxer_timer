@@ -28,7 +28,7 @@ function checkSettings(settings, presetId) {
     if (configBounds[k] && !integer(v,...configBounds[k])) invalid();
   }
   for (const k of ['rounds','workSec','restSec']) if (!integer(settings[k],...configBounds[k])) invalid();
-  if (settings.intervalMode != null && !['standard','ladder','two_phase'].includes(settings.intervalMode)) invalid();
+  if (settings.intervalMode != null && !['standard','ladder','two_phase','count_up'].includes(settings.intervalMode)) invalid();
   if (settings.intervalMode==='two_phase' && !integer(settings.phaseTwoSec,5,3600)) invalid();
   if (settings.ladderEnabled != null && typeof settings.ladderEnabled !== 'boolean') invalid();
   if (settings.blockEnabled != null && typeof settings.blockEnabled !== 'boolean') invalid();
@@ -67,7 +67,7 @@ export function parseWorkoutFile(contents) {
   try { value = JSON.parse(contents); } catch { throw new WorkoutFileError('invalid'); }
   if (!plain(value) || value.format !== WORKOUT_FILE_FORMAT) throw new WorkoutFileError('invalid');
   if (![1,WORKOUT_FILE_VERSION].includes(value.version)) throw new WorkoutFileError('version');
-  if(value.version===1 && value.entries?.some(e=>e?.settings?.intervalMode==='two_phase' || e?.phaseOneOverrides?.length || e?.phaseTwoOverrides?.length || e?.roundTimingOverrides?.some(Boolean)))invalid();
+  if(value.version===1 && value.entries?.some(e=>['two_phase','count_up'].includes(e?.settings?.intervalMode) || e?.phaseOneOverrides?.length || e?.phaseTwoOverrides?.length || e?.roundTimingOverrides?.some(Boolean)))invalid();
   if (!string(value.name,80,true) || !plain(value.options) || !integer(value.options.cycles,1,20)
       || !integer(value.options.cycleRestSec,0,3600)) invalid();
   checkEntries(value.entries,value.options);
@@ -78,7 +78,7 @@ export function parseWorkoutFile(contents) {
 export function serializeWorkoutFile(program) {
   if (!program || typeof program !== 'object') invalid();
   const entries=normalizeProgram(program.entries);
-  const usesTwo=entries.some(e=>e.settings?.intervalMode==='two_phase'||e.phaseOneOverrides?.length||e.phaseTwoOverrides?.length||e.roundTimingOverrides?.some(Boolean));
+  const usesTwo=entries.some(e=>['two_phase','count_up'].includes(e.settings?.intervalMode)||e.phaseOneOverrides?.length||e.phaseTwoOverrides?.length||e.roundTimingOverrides?.some(Boolean));
   const value={format:WORKOUT_FILE_FORMAT,version:usesTwo?WORKOUT_FILE_VERSION:1,
     name:program.name,entries,options:normalizeOptions(program.options)};
   const json=JSON.stringify(value,null,2);

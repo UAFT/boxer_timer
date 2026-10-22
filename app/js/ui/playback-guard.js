@@ -1,6 +1,6 @@
 // An active workout belongs to the timer engine, not to the page currently
 // being inspected. Previewing other presets must not reconfigure live playback.
-const ACTIVE_PHASES = new Set(['countdown', 'work', 'work_two', 'rest', 'block_rest']);
+const ACTIVE_PHASES = new Set(['countdown', 'work', 'work_two', 'rest', 'block_rest', 'count_up']);
 export function isPlaybackProtected(timer, programRunning = false) {
   return Boolean(programRunning || ACTIVE_PHASES.has(timer?.state?.phase));
 }

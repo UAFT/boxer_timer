@@ -9,7 +9,8 @@ export function programDurationSec(entries,profiles,options){
 }
 export function programHeading(name,entries,profiles,options,lang='ru'){
   if(!entries.length)return {name:'',duration:'',visible:false};
-  return {name:name|| (lang==='en'?'New program':'Новая программа'),duration:timeWords(programDurationSec(entries,profiles,options),lang),visible:true};
+  const hasOpenStage=entries.some(entry=>(entry.settings||profiles[entry.presetId])?.intervalMode==='count_up');
+  return {name:name|| (lang==='en'?'New program':'Новая программа'),duration:hasOpenStage?(lang==='en'?'open time':'время не ограничено'):timeWords(programDurationSec(entries,profiles,options),lang),visible:true};
 }
 export function formatStageDetail(ordinal,work,rest,lang='ru') {
   return lang==='en' ? ordinal+' · work '+work+' · rest '+rest : ordinal+' · работа '+work+' · отдых '+rest;

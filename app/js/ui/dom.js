@@ -28,6 +28,7 @@ export function getDomRefs() {
 
     startBtn: document.getElementById('startBtn'),
     resetBtn: document.getElementById('resetBtn'),
+    finishStageBtn: document.getElementById('finishStageBtn'),
     settingsBtn: document.getElementById('settingsBtn'),
     closeSettingsBtn: document.getElementById('closeSettingsBtn'),
     saveSettingsBtn: document.getElementById('saveSettingsBtn'),

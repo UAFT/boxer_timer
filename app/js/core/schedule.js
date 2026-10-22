@@ -6,6 +6,7 @@ export function blockCount(config) {
 }
 export function totalRoundsForConfig(config) {
   if (config?.programRounds?.length) return config.programRounds.length;
+  if (config?.intervalMode === 'count_up') return 1;
   return Math.max(1, Number(config?.rounds) || 1) * blockCount(config);
 }
 export function localRoundFor(config, roundIndex) {
@@ -17,6 +18,7 @@ export function blockForRound(config, roundIndex) {
 }
 export function workSecForRound(config, roundIndex) {
   if (config?.programRounds?.length) return config.programRounds[Math.max(0,Math.min(config.programRounds.length-1,roundIndex-1))].workSec;
+  if (config?.intervalMode === 'count_up') return 0;
   const base = clampInt(config?.workSec, 1, 3600, 180);
   if (!hasLadder(config)) return base;
   const step = clampInt(config?.workStepSec, -3600, 3600, 0);

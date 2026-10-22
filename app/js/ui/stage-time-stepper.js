@@ -1,3 +1,4 @@
+import {attachVerticalTimeSwipe} from './time-swipe.js';
 // Stage timing buttons share the main timer's five-second granularity.
 // A minute adjustment is 60 seconds; round-count adjustments remain ±1.
 // Carry/borrow across minute boundaries rather than clamping seconds at 59.
@@ -60,5 +61,11 @@ export function installStageTimeSteppers({lookup,scope=document}){
     }
     input.replaceWith(control);
     control.append(minus,input,plus);
+    if(key!=='Rounds') {
+      // Gestures always adjust five seconds, including gestures on minute chips.
+      // +/- buttons retain their original 1-minute / 5-second increments.
+      const secondsField=key.endsWith('Min')?key.slice(0,-3)+'Sec':key;
+      attachVerticalTimeSwipe(input,sign=>adjustStageField(lookup,secondsField,sign));
+    }
   }
 }

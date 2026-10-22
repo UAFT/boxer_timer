@@ -41,13 +41,13 @@ export function compileProgram(entries, profiles, options = {}) {
   const {cycles,cycleRestSec} = normalizeOptions(options);
   for (let cycleIndex=0;cycleIndex<cycles;cycleIndex++) stages.forEach((stage, stageIndex) => {
     const config = structuredClone(stage.settings || profiles[stage.presetId]);
-    const total = totalRoundsForConfig(config);
+    const total = config.intervalMode === 'count_up' ? 1 : totalRoundsForConfig(config);
     for (let i=1;i<=total;i++) {
       const override=normalizeRoundTimingOverrides(stage.roundTimingOverrides)[i-1]||{};
       const phaseTwo=phaseTwoSecForRound(config,i);
       programRounds.push({
-        workSec: override.workSec ?? workSecForRound(config,i),
-        phaseTwoSec: phaseTwo>0?(override.phaseTwoSec ?? phaseTwo):0,
+        workSec: config.intervalMode==='count_up' ? 0 : (override.workSec ?? workSecForRound(config,i)),
+        phaseTwoSec: config.intervalMode==='count_up'?0:(phaseTwo>0?(override.phaseTwoSec ?? phaseTwo):0),
         phaseOneName: stage.phaseOneOverrides?.[i-1] || config.phaseOneName || '',
         phaseTwoName: stage.phaseTwoOverrides?.[i-1] || config.phaseTwoName || '',
         restSec: i<total ? (override.restSec ?? restSecAfterRound(config,i)) : (stageIndex<stages.length-1 ? stage.restAfterSec : cycleIndex<cycles-1 ? cycleRestSec : 0),

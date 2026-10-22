@@ -92,7 +92,7 @@ export function buildSteps(workout) {
     const work=workout.mode==='emom'?60:workout.mode==='tabata'?20:workout.work;
     const rest=workout.mode==='emom'?0:workout.mode==='tabata'?10:workout.rest;
     steps.push({kind:'work',title:task,seconds:work,description:workout.mode==='emom'?'Выполни повторения; остаток минуты — отдых':workout.name});
-    if(rest>0 && (i<count-1 || workout.mode==='tabata'))steps.push({kind:'rest',title:'Отдых',seconds:rest,description:'Следующее: '+workout.tasks[Math.floor((i+1)/(workout.mode==='tabata'?workout.rounds:1))%workout.tasks.length]});
+    if(rest>0 && i<count-1)steps.push({kind:'rest',title:'Отдых',seconds:rest,description:'Следующее: '+workout.tasks[Math.floor((i+1)/(workout.mode==='tabata'?workout.rounds:1))%workout.tasks.length]});
   }
   return steps;
 }

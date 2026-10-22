@@ -11,7 +11,10 @@ const boxing={presetId:'classic2',title:'Бокс — Комплекс 1',settin
 const program={id:'p1',name:'Программа 1',entries:[cardio,boxing],options:{cycles:1,cycleRestSec:60}};
 
 function mockDoc(){
- const create=(tag)=>({tag,className:'',textContent:'',title:'',attributes:{},children:[],classList:{add(name){this.owner.className=[this.owner.className,name].filter(Boolean).join(' ');}},setAttribute(name,value){this.attributes[name]=value;},addEventListener(event,handler){this['on'+event]=handler;},append(...children){this.children.push(...children);}});
+ const create=(tag)=>({tag,className:'',textContent:'',title:'',attributes:{},children:[],classList:{
+  add(name){this.owner.className=[this.owner.className,name].filter(Boolean).join(' ');},
+  toggle(name,flag){const classes=this.owner.className.split(' ').filter(Boolean).filter(x=>x!==name);if(flag)classes.push(name);this.owner.className=classes.join(' ');}
+ },setAttribute(name,value){this.attributes[name]=value;},addEventListener(event,handler){this['on'+event]=handler;},append(...children){this.children.push(...children);}});
  const element=tag=>{const el=create(tag);el.classList.owner=el;return el;};
  return {createElement:element,createElementNS:(_namespace,tag)=>element(tag)};
 }
@@ -40,6 +43,13 @@ test('stage hierarchy and top-right icons render in one saved-program card',()=>
  const title=findAll(card,'ft-program-title')[0];
  assert.equal(title.textContent,'Программа 1');
  assert.equal(findAll(card,'ft-program-total')[0].textContent,'45 минут');
+ const details=findAll(card,'ft-program-stages')[0];
+ assert.equal(details.hidden,true,'saved cards start collapsed');
+ assert.equal(card.children[0].attributes['aria-expanded'],'false');
+ assert.equal(findAll(card,'ft-stage-label').length,0,'details are lazy and not rendered upfront');
+ card.children[0].onclick();
+ assert.equal(details.hidden,false);
+ assert.equal(card.children[0].attributes['aria-expanded'],'true');
  assert.deepEqual(findAll(card,'ft-stage-label').map(x=>x.textContent),['Этап 1','Этап 2']);
  assert.equal(findAll(card,'ft-stage-title')[0].textContent,'Кардио — Скакалка 3 × 3');
  assert.equal(findAll(card,'ft-stage-details')[0].textContent,'3 раунда · работа 03:00 · отдых 01:00');
@@ -50,8 +60,27 @@ test('stage hierarchy and top-right icons render in one saved-program card',()=>
  assert.equal(actions.children.length,2);
  assert.equal(findAll(card,'ft-trash-button').length,1);
  assert.equal(findAll(card,'ft-action-icon').length,1);
- card.children[0].onclick();actions.children[1].onclick();
+ card.children[0].onclick();
+ assert.equal(details.hidden,true,'second tap collapses the card');
+ assert.equal(card.children[0].attributes['aria-expanded'],'false');
+ assert.equal(opened,0,'a tap must never replace current program');
+ assert.equal(findAll(card,'ft-stage-label').length,2,'details are retained across toggles');
+ card.children[0].onclick();
+ findAll(card,'ft-saved-program-load')[0].onclick();
+ actions.children[1].onclick();
  assert.equal(opened,1);assert.equal(deleted,1);
+});
+
+test('saved AFAP program presents unbounded time rather than misleading zero',()=>{
+ const afap={...program,id:'afap',name:'AFAP',entries:[{presetId:'classic1',title:'На время',settings:{...profiles.classic1,intervalMode:'count_up'},restAfterSec:0}]};
+ const data=programCardTimings(afap,profiles);
+ assert.equal(data.unbounded,true);
+ const doc=mockDoc();
+ const card=renderSavedProgramCard(doc,afap,profiles,{onShareButton:()=>doc.createElement('button')});
+ assert.equal(findAll(card,'ft-program-total')[0].textContent,'Без ограничения времени');
+ card.children[0].onclick();
+ assert.match(findAll(card,'ft-stage-details')[0].textContent,/Прямой отсчёт/);
+ assert.equal(findAll(card,'ft-stage-total')[0].textContent,'Время не ограничено');
 });
 
 test('cycle pause and final rest handling agree with compiled timer',()=>{

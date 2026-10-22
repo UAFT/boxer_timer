@@ -1,3 +1,4 @@
+import {attachVerticalTimeSwipe,adjustClockSeconds} from './time-swipe.js';
 import { totalRoundsForConfig,workSecForRound,phaseTwoSecForRound,restSecAfterRound } from '../core/schedule.js';
 import { normalizeRoundTimingOverrides } from '../core/program.js';
 import { formatTime } from '../core/time.js';
@@ -31,6 +32,7 @@ export function loadRoundTimingEditor(stage,index,config,{hidden=false}={}){
  root.hidden=hidden;
  if(hidden)return;
  const baseline=automaticRoundTime(config,index);
+ document.getElementById('roundEditWorkCaption').textContent=baseline.phaseTwoSec>0?'Работа / Фаза 1':'Работа';
  const manual=normalizeRoundTimingOverrides(stage.roundTimingOverrides)[index]||{};
  const last=index===totalRoundsForConfig(config)-1;
  for(const [key,id] of [['workSec','roundEditWorkTime'],['phaseTwoSec','roundEditPhaseTwoTime'],['restSec','roundEditRestTime']]){
@@ -62,4 +64,20 @@ export function readRoundTimingEditor(config,index){
   result[key]=value;
  }
  return result;
+}
+
+
+// Attach only to the existing MM:SS time fields. Text labels and the modal
+// itself retain native vertical scrolling. The input is still keyboard-editable.
+export function installRoundTimeSwipes(root=document) {
+ for(const [id,min] of [['roundEditWorkTime',1],['roundEditPhaseTwoTime',1],['roundEditRestTime',0]]){
+  const field=root.getElementById(id);
+  attachVerticalTimeSwipe(field,sign=>{
+    const current=parseTimeValue(field.value,{allowZero:true});
+    if(current===null)return;
+    field.value=formatTime(adjustClockSeconds(current,sign,{min,max:3600}));
+    field.classList.add('is-manual');
+    root.getElementById('roundEditResetTiming').hidden=false;
+  });
+ }
 }

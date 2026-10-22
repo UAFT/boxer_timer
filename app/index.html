@@ -77,6 +77,7 @@
           <button class="reset-btn" type="button" id="resetBtn" aria-label="Сброс">↻</button>
           <button class="primary-btn" type="button" id="startBtn">Старт</button>
         </div>
+        <button type="button" id="finishStageBtn" hidden>Завершить этап</button>
       </section>
 
       <section class="param-grid compact-controls-grid">
@@ -176,7 +177,7 @@
         <fieldset id="roundEditTimes" class="ft-round-times" hidden>
           <legend>Время этого раунда</legend>
           <div class="ft-round-time-grid">
-            <label>Работа / Фаза 1<input id="roundEditWorkTime" type="text" inputmode="numeric" maxlength="5" aria-label="Время работы ММ:СС"></label>
+            <label><span id="roundEditWorkCaption">Работа</span><input id="roundEditWorkTime" type="text" inputmode="numeric" maxlength="5" aria-label="Время работы ММ:СС"></label>
             <label>Фаза 2<input id="roundEditPhaseTwoTime" type="text" inputmode="numeric" maxlength="5" aria-label="Время фазы 2 ММ:СС"></label>
             <label>Отдых<input id="roundEditRestTime" type="text" inputmode="numeric" maxlength="5" aria-label="Отдых ММ:СС"></label>
           </div>
@@ -233,7 +234,7 @@
         <div class="settings-head"><h2>Редактирование этапа</h2></div>
         <label class="stage-settings-field">Название этапа<input id="stageSettingsName" maxlength="80" type="text"></label>
         <label class="stage-settings-field">Режим
-          <div class="stage-mode-choices"><button type="button" data-stage-mode="standard">Обычный</button><button type="button" data-stage-mode="two_phase">Две фазы</button><button type="button" data-stage-mode="ladder">Лестница</button></div><input type="hidden" id="stageSettingsMode" value="standard"><input type="checkbox" id="stageSettingsLadderEnabled" hidden>
+          <div class="stage-mode-choices"><button type="button" data-stage-mode="standard">Обычный</button><button type="button" data-stage-mode="two_phase">Две фазы</button><button type="button" data-stage-mode="ladder">Лестница</button><button type="button" data-stage-mode="count_up">Таймер</button></div><input type="hidden" id="stageSettingsMode" value="standard"><input type="checkbox" id="stageSettingsLadderEnabled" hidden>
         </label>
         <div id="stageSettingsTwoPhase" class="ft-stage-two-phase" hidden>
           <div class="ft-stage-phase-pair">
@@ -251,7 +252,8 @@
             </div>
           </div>
         </div>
-        <div class="stage-settings-grid">
+        <p id="stageCountUpExplainer" hidden>Прямой отсчёт от 00:00 без ограничения времени</p>
+        <div class="stage-settings-grid" id="stageSettingsTimeGrid">
           <label><span id="stageSettingsWorkCaption">Работа</span><div class="stage-mmss"><input id="stageSettingsWorkMin" inputmode="numeric" type="number" min="0" max="60" aria-label="Минуты работы"><span>мин</span><input id="stageSettingsWorkSec" inputmode="numeric" type="number" min="0" max="59" aria-label="Секунды работы" step="5"><span>сек</span></div></label>
           <label>Отдых<div class="stage-mmss"><input id="stageSettingsRestMin" inputmode="numeric" type="number" min="0" max="60" aria-label="Минуты отдыха"><span>мин</span><input id="stageSettingsRestSec" inputmode="numeric" type="number" min="0" max="59" aria-label="Секунды отдыха" step="5"><span>сек</span></div></label>
           <label>Раунды<input id="stageSettingsRounds" inputmode="numeric" type="number" min="1" max="99" step="1" required></label>
@@ -316,7 +318,9 @@
                 <button type="button" class="choice-chip" data-interval-mode="standard">Обычный</button>
                 <button type="button" class="choice-chip" data-interval-mode="two_phase">Две фазы</button>
                 <button type="button" class="choice-chip" data-interval-mode="ladder">Лестница</button>
+                <button type="button" class="choice-chip" data-interval-mode="count_up">Таймер</button>
               </div>
+              <p id="countUpExplainer" hidden>Прямой отсчёт от 00:00 без ограничения времени</p>
               <input type="hidden" id="intervalModeInput" value="standard" /><input type="checkbox" id="ladderEnabledInput" hidden />
             </div>
 

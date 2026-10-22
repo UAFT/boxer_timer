@@ -76,6 +76,8 @@ export class TimerEngine {
     this.onEvent = onEvent ?? (() => {});
     this.intervalId = null;
     this.tickEndsAt = 0;
+    this.tickStartedAt = 0;
+    this.lastElapsedSec = 0;
     this.isPaused = false;
     this.transitioning = false;
     this.applyConfig(DEFAULT_CONFIG);
@@ -94,7 +96,7 @@ export class TimerEngine {
       blockEnabled: Boolean(nextConfig?.blockEnabled),
       blockCount: clampInt(nextConfig?.blockCount, 1, 99, 1),
       blockRestSec: Math.round(clampInt(nextConfig?.blockRestSec, 0, 3600, 90) / 5) * 5,
-      intervalMode: ['standard','ladder','two_phase'].includes(nextConfig?.intervalMode) ? nextConfig.intervalMode : 'standard',
+      intervalMode: ['standard','ladder','two_phase','count_up'].includes(nextConfig?.intervalMode) ? nextConfig.intervalMode : 'standard',
       ladderEnabled: Boolean(nextConfig?.ladderEnabled) && nextConfig?.intervalMode === 'two_phase',
       phaseTwoStepSec: Math.round(clampInt(nextConfig?.phaseTwoStepSec,-600,600,0)/5)*5,
       workStepSec: Math.round(clampInt(nextConfig?.workStepSec, -600, 600, DEFAULT_CONFIG.workStepSec) / 5) * 5,
@@ -112,6 +114,7 @@ export class TimerEngine {
   reset() {
     this.stopInterval();
     this.isPaused = false;
+    this.lastElapsedSec = 0;
     this.state = createIdleState(this.config);
     this.emitState();
     this.emitTick();
@@ -119,7 +122,8 @@ export class TimerEngine {
 
   start() {
     if (this.state.phase === PHASES.IDLE) {
-      void this.beginPrestart(1);
+      if (this.isCountUpRound(1)) this.beginCountUpPhase(1);
+      else void this.beginPrestart(1);
       return;
     }
 
@@ -140,9 +144,40 @@ export class TimerEngine {
     if (!this.isPaused) return;
     this.isPaused = false;
     const remainingSec = this.state.remainingSec;
-    this.tickEndsAt = Date.now() + remainingSec * 1000;
+    if (this.state.phase === PHASES.COUNT_UP) this.tickStartedAt = Date.now() - remainingSec * 1000;
+    else this.tickEndsAt = Date.now() + remainingSec * 1000;
     this.startInterval();
     this.emitState();
+  }
+
+  isCountUpRound(roundIndex) {
+    return this.config.programRounds?.length
+      ? this.config.programRounds[roundIndex-1]?.intervalMode === 'count_up'
+      : this.config.intervalMode === 'count_up';
+  }
+
+  beginCountUpPhase(roundIndex) {
+    this.stopInterval();
+    this.isPaused=false;
+    this.tickStartedAt=Date.now();
+    this.state={phase:PHASES.COUNT_UP,roundIndex,totalRounds:totalRoundsForConfig(this.config),
+      remainingSec:0,phaseDurationSec:1,nextLabel:'Прямой отсчёт',countdownText:'',progress:0};
+    this.emitState();this.emitTick();this.startInterval();
+  }
+
+  // Manual completion is the sole way to advance an unbounded stage.
+  async finishStage() {
+    if (this.state.phase !== PHASES.COUNT_UP || this.transitioning) return false;
+    this.transitioning=true;
+    this.stopInterval();
+    this.isPaused=false;
+    this.lastElapsedSec=this.state.remainingSec;
+    const index=this.state.roundIndex;
+    if(this.config.programRounds?.[index-1]?.intervalMode==='count_up')this.config.programRounds[index-1].actualElapsedSec=this.lastElapsedSec;
+    this.state.phase=PHASES.WORK;
+    try { await this.finishCurrentPhase(); }
+    finally { this.transitioning=false; }
+    return {roundIndex:index,elapsedSec:this.lastElapsedSec};
   }
 
   async beginPrestart(roundIndex) {
@@ -170,6 +205,7 @@ export class TimerEngine {
   }
 
   beginWorkPhase(roundIndex) {
+    if (this.isCountUpRound(roundIndex)) { this.beginCountUpPhase(roundIndex); return; }
     this.state = {
       phase: PHASES.WORK,
       roundIndex,
@@ -288,7 +324,7 @@ export class TimerEngine {
       phase: PHASES.FINISHED,
       roundIndex,
       totalRounds: totalRoundsForConfig(this.config),
-      remainingSec: 0,
+      remainingSec: this.isCountUpRound(roundIndex) ? this.lastElapsedSec : 0,
       phaseDurationSec: 1,
       nextLabel: 'Серия завершена',
       countdownText: '',
@@ -329,6 +365,12 @@ export class TimerEngine {
 
   handleIntervalTick() {
     const now = Date.now();
+    if (this.state.phase === PHASES.COUNT_UP) {
+      if (this.isPaused) return;
+      const elapsed=Math.max(0,Math.floor((now-this.tickStartedAt)/1000));
+      if (elapsed!==this.state.remainingSec) {this.state.remainingSec=elapsed;this.emitTick();}
+      return;
+    }
     const remainingMs = Math.max(0, this.tickEndsAt - now);
     const nextRemainingSec = Math.ceil(remainingMs / 1000);
     const prevRemainingSec = this.state.remainingSec;

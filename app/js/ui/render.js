@@ -6,7 +6,7 @@ import {buildLadderPlanRows,syncLadderPlanRows,ladderPlanPhaseCaption,ladderPlan
 import { displayDurationsForState, remainingTotalSecForState, totalDurationSecForConfig, workSecForRound, phaseTwoSecForRound, restSecAfterRound, blockRestSecAfterRound, totalRoundsForConfig, blockCount, localRoundFor, blockForRound } from '../core/schedule.js';
 
 function intervalModeTitle(config) {
-  return config?.programRounds?.length ? 'Программа' : (config?.presetId === 'tabata2020x24' ? 'Скоростной' : (config?.intervalMode === 'ladder' ? 'Лестница' : config?.intervalMode==='two_phase'?'Две фазы':'Обычный'));
+  return config?.intervalMode==='count_up' ? 'Таймер' : config?.programRounds?.length ? 'Программа' : (config?.presetId === 'tabata2020x24' ? 'Скоростной' : (config?.intervalMode === 'ladder' ? 'Лестница' : config?.intervalMode==='two_phase'?'Две фазы':'Обычный'));
 }
 
 function phaseLabelText(state) {
@@ -15,6 +15,8 @@ function phaseLabelText(state) {
   switch (state.phase) {
     case PHASES.COUNTDOWN:
       return `Отсчёт · ${modeTitle}`;
+    case PHASES.COUNT_UP:
+      return 'Прямой отсчёт';
     case PHASES.WORK:
       return `Работа · ${modeTitle}`;
     case PHASES.REST:
@@ -68,36 +70,44 @@ export function renderTimer(els, state, uiState = {}) {
   const metronomeLocked = Number(state.config.warningSeconds ?? 0) === 10;
   const metronomePanelOpen = !metronomeLocked && Boolean(uiState.metronomePanelOpen);
 
+  const row=state.config.programRounds?.[Math.max(0,state.roundIndex-1)];
+  const countUpActive=state.phase===PHASES.COUNT_UP;
+  const countUpStandalone=state.config.intervalMode==='count_up'&&!state.config.programRounds?.length;
+  const hasUnboundedTime=countUpStandalone||state.config.programRounds?.some(r=>r.intervalMode==='count_up');
+  document.body.classList.toggle('ft-count-up-standalone',Boolean(countUpStandalone));
+  document.body.classList.toggle('ft-unbounded-program',Boolean(hasUnboundedTime));
+  els.finishStageBtn.hidden=!countUpActive;
   els.mainTime.textContent = formatTime(state.remainingSec);
   els.phaseLabel.textContent = state.config.programRounds?.length && state.phase === PHASES.WORK && !state.config.programRounds?.[state.roundIndex-1]?.phaseTwoSec ? '' : phaseLabelText(state);
   els.roundLabel.textContent = roundLabelText(state);
-  const roundActive = [PHASES.WORK, PHASES.WORK_TWO, PHASES.REST, PHASES.BLOCK_REST, PHASES.COUNTDOWN].includes(state.phase);
+  const roundActive = [PHASES.WORK, PHASES.WORK_TWO, PHASES.REST, PHASES.BLOCK_REST, PHASES.COUNTDOWN, PHASES.COUNT_UP].includes(state.phase);
   els.roundLabel.classList.toggle('round-active', roundActive);
   if (roundActive && state.config.programRounds?.length) {
     const r=state.config.programRounds[Math.max(0,state.roundIndex-1)];
     const stages=new Set(state.config.programRounds.map(x=>x.stageIndex)).size;
     els.roundLabel.textContent='Этап '+(r.stageIndex+1)+'/'+stages+(r.blockCount>1?' · Блок '+r.block+'/'+r.blockCount:'')+' · Раунд '+(r.blockCount>1?r.localRound:r.stageRound)+'/'+(r.blockCount>1?r.localRounds:r.stageRounds)+(r.roundName?' · '+r.roundName:'');
-  } else if (roundActive) {
+    if(countUpActive)els.roundLabel.textContent='Этап '+(r.stageIndex+1)+' из '+stages+' · Таймер';
+  } else if (roundActive && !countUpActive) {
     const blocks = blockCount(state.config);
     els.roundLabel.innerHTML = blocks > 1
       ? `Блок <span class="block-number">${blockForRound(state.config, state.roundIndex)}</span>/${blocks} · Раунд <span class="round-number">${localRoundFor(state.config, state.roundIndex)}</span>/${state.config.rounds}`
       : `Раунд <span class="round-number">${state.roundIndex}</span> из ${state.totalRounds}`;
   }
+  if(countUpStandalone)els.roundLabel.textContent='';
   renderLiveLadder(els, state, uiState);
   els.phaseCaption.textContent = intervalCaption(state.config);
   els.countdownCaption.textContent = '';
   els.progressFill.style.width = `${state.progress || 0}%`;
 
   const displayDurations = displayDurationsForState(state);
-  const row=state.config.programRounds?.[Math.max(0,state.roundIndex-1)];
   const hasPhaseTwo=row?row.phaseTwoSec>0:state.config.intervalMode==='two_phase';
   const selected=state.phase===PHASES.WORK_TWO?2:state.phase===PHASES.WORK?1:(uiState.editablePhase||1);
-  els.metricWork.textContent = formatTime(hasPhaseTwo&&selected===2?(row?.phaseTwoSec||state.config.phaseTwoSec||40):displayDurations.workSec);
-  els.metricRest.textContent = formatTime(displayDurations.restSec);
-  els.metricRounds.textContent = String(state.config.rounds);
+  els.metricWork.textContent = countUpStandalone?'—':formatTime(hasPhaseTwo&&selected===2?(row?.phaseTwoSec||state.config.phaseTwoSec||40):displayDurations.workSec);
+  els.metricRest.textContent = countUpStandalone?'—':formatTime(displayDurations.restSec);
+  els.metricRounds.textContent = countUpStandalone?'—':String(state.config.rounds);
   els.metricMetronome.textContent = String(state.config.metronomeBpm ?? 0);
-  els.metricTotal.textContent = formatTime(totalDurationSecForConfig(state.config));
-  els.metricRemaining.textContent = formatTime(remainingTotalSecForState(state));
+  els.metricTotal.textContent = hasUnboundedTime?'—':formatTime(totalDurationSecForConfig(state.config));
+  els.metricRemaining.textContent = hasUnboundedTime?'—':formatTime(remainingTotalSecForState(state));
   els.metronomeStatus.textContent = metronomeLocked
     ? 'Недоступно · warning 10 сек'
     : (state.config.metronomeEnabled
@@ -151,8 +161,9 @@ export function renderLiveLadder(els, state, ui = {}) {
   els.ladderFullControls.hidden = !expanded;
   const total = totalDurationSecForConfig(config);
   const remaining = preview ? total : remainingTotalSecForState(state);
-  document.getElementById('ladderProgramTotal').textContent = formatTime(total);
-  document.getElementById('ladderProgramRemaining').textContent = formatTime(remaining);
+  const unbounded=config.intervalMode==='count_up'||config.programRounds?.some(r=>r.intervalMode==='count_up');
+  document.getElementById('ladderProgramTotal').textContent = unbounded?'—':formatTime(total);
+  document.getElementById('ladderProgramRemaining').textContent = unbounded?'—':formatTime(remaining);
   document.getElementById('ladderCurrentLabel').textContent = ladderPlanPhaseCaption(state,{preview});
   els.ladderFullTime.textContent = preview ? formatTime(total) : formatTime(state.remainingSec);
   const control=ladderPlanControl(state,{preview});
@@ -174,6 +185,8 @@ export function renderLadderPreview(els, settings) {
   const panel = document.getElementById('ladderPreview');
   if (!panel) return;
   const config = { ...settings, ...readSettingsForm(els) };
+  panel.hidden=config.intervalMode==='count_up';
+  if(panel.hidden)return;
   const rounds = totalRoundsForConfig(config);
   const count = Math.min(rounds, 12);
   const rows = [];
@@ -201,6 +214,7 @@ export function setSettingsForm(els, settings) {
   document.getElementById('ladderStepsFields').hidden=!ladder;
   document.getElementById('phaseTwoStepFields').hidden=!ladder||settings.intervalMode!=='two_phase';
   document.getElementById('intervalModeExplainer').hidden=!ladder;
+  document.getElementById('countUpExplainer').hidden=settings.intervalMode!=='count_up';
   els.blockSettings.hidden = !ladder;
   els.blockEnabledInput.checked = Boolean(settings.blockEnabled);
   els.blockCountInput.value = String(settings.blockCount ?? 1);

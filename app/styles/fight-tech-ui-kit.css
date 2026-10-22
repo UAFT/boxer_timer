@@ -306,6 +306,9 @@ input::placeholder,textarea::placeholder{color:#75838d;opacity:1}
 .round-edit-modal .ft-round-times legend{color:var(--ft-ink);font-weight:650;padding:0 4px}
 .round-edit-modal .ft-round-time-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .round-edit-modal .ft-round-time-grid label{display:grid;gap:5px;font-size:12px;min-width:0}
+/* [hidden] must win over the grid rule: only two-phase rounds show Phase 2. */
+.round-edit-modal .ft-round-time-grid label[hidden]{display:none!important}
+.round-edit-modal .ft-round-time-grid:has(label[hidden]){grid-template-columns:repeat(2,minmax(0,1fr))}
 .round-edit-modal .ft-round-time-grid input{width:100%;min-width:0;box-sizing:border-box;padding:10px 5px!important;text-align:center;font-size:17px}
 .round-edit-modal .ft-round-time-grid input.is-manual{border-color:var(--ft-steel)!important}
 .round-edit-modal #roundEditLastRestNote{font-size:12px;color:var(--ft-secondary);margin:6px 0}
@@ -510,3 +513,57 @@ input::placeholder,textarea::placeholder{color:#75838d;opacity:1}
 .program-panel .program-stage-card>.program-stage>button:nth-child(5){
   grid-row:1;
 }
+
+/* Count-up retains the steel-gray kit and full-size touch targets. */
+.settings-modal .choice-row[aria-label="Режим интервалов"]{grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
+.settings-modal .choice-row[aria-label="Режим интервалов"] .choice-chip{font-size:clamp(11px,2.8vw,14px);padding:8px 2px;line-height:1.2;min-height:48px}
+.stage-settings-modal .stage-mode-choices{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:5px}
+.stage-settings-modal .stage-mode-choices button{font-size:clamp(11px,2.8vw,14px)!important;padding:10px 2px!important;min-height:48px}
+#countUpExplainer,#stageCountUpExplainer{font-size:14px;line-height:1.4;color:var(--ft-secondary);margin:10px 0}
+#countUpExplainer[hidden],#stageCountUpExplainer[hidden],#stageSettingsTimeGrid[hidden],#finishStageBtn[hidden],#ladderPreview[hidden]{display:none!important}
+#finishStageBtn{display:block;width:100%;min-height:52px;margin-top:10px;background:var(--ft-steel-gradient);color:white;border:1px solid #577c7a;border-radius:12px;box-shadow:var(--ft-shadow-button);font:inherit;font-weight:700}
+body.ft-count-up-standalone .param-grid,body.ft-count-up-standalone .timer-card .summary-grid,body.ft-count-up-standalone .timer-card .progress-track{display:none!important}
+body.ft-unbounded-program:not(.ft-count-up-standalone) .timer-card .summary-grid{display:none!important}
+
+/* 2026-10-22: compact saved-program chips; expand only on request.
+   Keep Share/Delete anchored top right, independent of expand/load actions. */
+.program-library-modal .ft-saved-program-entry{padding:10px 12px!important}
+.program-library-modal .ft-saved-program-entry .ft-saved-program-open{
+  box-sizing:border-box;display:block;width:100%;min-height:62px!important;
+  padding:5px 100px 5px 4px!important;cursor:pointer;border:0!important;
+  background:transparent!important;text-align:left!important
+}
+.program-library-modal .ft-saved-program-entry .ft-saved-program-heading{
+  display:flex;flex-direction:column;align-items:flex-start;justify-content:center;
+  gap:4px;min-height:52px;min-width:0
+}
+.program-library-modal .ft-saved-program-entry .ft-program-title{
+  font-size:clamp(15px,3.9vw,19px);line-height:1.2;overflow-wrap:anywhere
+}
+.program-library-modal .ft-saved-program-entry .ft-program-total{font-size:clamp(13px,3.5vw,17px);font-weight:650}
+.program-library-modal .ft-saved-program-entry .ft-program-stages[hidden]{display:none!important}
+.program-library-modal .ft-saved-program-entry .ft-program-stages{margin-top:5px;padding-top:10px}
+.program-library-modal .ft-saved-program-entry .ft-saved-program-load{
+  background:var(--ft-steel-gradient)!important;color:#fff!important;
+  border:1px solid #577c7a!important;border-radius:11px;
+  padding:12px 16px!important;min-height:45px;margin-top:8px;
+  font:inherit;font-weight:700
+}
+.program-library-modal .ft-saved-program-entry .ft-saved-program-open:focus-visible,
+.program-library-modal .ft-saved-program-entry .ft-saved-program-load:focus-visible{
+  outline:3px solid var(--ft-steel);outline-offset:2px
+}
+
+/* Two-phase round is named by Phase 1 + Phase 2 only; input values kept in storage. */
+.round-edit-modal #roundEditLabel[hidden],
+.round-edit-modal #roundEditInput[hidden]{display:none!important}
+/* Stage numbers: emphasize values without altering the controls, borders or geometry. */
+.stage-settings-modal .stage-mmss input,
+.stage-settings-modal .stage-number-control input,
+.stage-settings-modal #stageSettingsRounds,
+.round-edit-modal .ft-round-time-grid input{
+  font-weight:700!important;font-variant-numeric:tabular-nums!important
+}
+/* Swipe the numeric chip only; surrounding dialog remains vertically scrollable. */
+.stage-settings-modal input.ft-swipe-time,
+.round-edit-modal input.ft-swipe-time{touch-action:none;cursor:ns-resize}

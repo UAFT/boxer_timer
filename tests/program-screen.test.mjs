@@ -81,7 +81,9 @@ test('polished program screens keep titles once, total duration on its own line 
  assert.ok(css.includes('.program-stage-card .program-stage-workout{grid-column:1/-1'));
  assert.ok(savedStyle.includes('.ft-saved-program-heading{display:flex;flex-direction:column'));
  assert.ok(savedStyle.includes('.ft-library-header{display:grid;grid-template-columns:44px minmax(0,1fr) 44px'));
- assert.ok(savedView.includes("'ft-program-total',timeWords(timing.total,lang)"));
+ assert.ok(savedView.includes("add(doc,heading,'span','ft-program-total',timing.unbounded?"),
+   'saved cards show a duration or explicit no-limit state beneath the name');
+ assert.ok(savedView.includes('timeWords(timing.total,lang)'), 'finite program duration is still displayed');
  const cssTimer=readFileSync(new URL('../app/styles/timer-disclosure.css',import.meta.url),'utf8');
  assert.ok(cssTimer.includes('width:36px;height:36px'));
 });

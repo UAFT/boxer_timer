@@ -4,7 +4,7 @@ export function resolveLanguage(preference, device) {
   return preference === 'ru' || preference === 'en' ? preference : /^ru\b|^ru-/i.test(device) ? 'ru' : 'en';
 }
 const pairs = [
-['ДВЕ ФАЗЫ','TWO PHASES'],['Две фазы','Two phases'],['Фаза 1','Phase 1'],['Фаза 2','Phase 2'],['Время фазы 2','Phase 2 duration'],['Редактирование раунда','Edit round'],['Название упражнения','Exercise name'],['Отдых между блоками','Rest between blocks'],
+['Прямой отсчёт от 00:00 без ограничения времени','Count up from 00:00 with no time limit'],['Завершить этап','Finish stage'],['Таймер','Count Up'],['ДВЕ ФАЗЫ','TWO PHASES'],['Две фазы','Two phases'],['Фаза 1','Phase 1'],['Фаза 2','Phase 2'],['Время фазы 2','Phase 2 duration'],['Редактирование раунда','Edit round'],['Название упражнения','Exercise name'],['Отдых между блоками','Rest between blocks'],
 ['ПЛАН ТРЕНИРОВКИ','WORKOUT PLAN'],['План тренировки','Workout Plan'],['Мои программы','My Programs'],['Готовые','Templates'],['Открыть','Open'],['Сохранить программу','Save program'],['Сохранить изменения','Save changes'],['Сохранить как новую','Save as new'],['Название программы','Program name'],['Название этапа','Stage name'],['Удалить программу','Delete program'],['Циклы программы','Program cycles'],['Отдых между циклами','Rest between cycles'],['Цикл','Cycle'],['Таймер спортсмена','Training Timer'],['Настройки','Settings'],['Пресеты таймера','Timer presets'],
 ['Готово','Finished'],['Готов','Ready'],['Работа','Work'],['Отдых','Rest'],['Отсчёт','Countdown'],['Пауза','Pause'],
 ['Вся программа','Full program'],['Текущий раунд','Current round'],['Программа готова','Program ready'],['Всего','Total'],['Осталось','Remaining'],['Старт','Start'],['Продолжить','Resume'],['Сброс','Reset'],

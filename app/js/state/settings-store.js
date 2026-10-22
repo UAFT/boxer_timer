@@ -13,7 +13,7 @@ function normalizeVariant(rawValue, fallbackValue = 'v2') {
 }
 
 function normalizeIntervalMode(rawMode, fallbackMode = 'standard') {
-  return ['standard','ladder','two_phase'].includes(rawMode) ? rawMode : (['standard','ladder','two_phase'].includes(fallbackMode)?fallbackMode:'standard');
+  return ['standard','ladder','two_phase','count_up'].includes(rawMode) ? rawMode : (['standard','ladder','two_phase','count_up'].includes(fallbackMode)?fallbackMode:'standard');
 }
 
 function normalizeStepSeconds(rawValue, fallbackValue = 0) {
