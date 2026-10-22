@@ -249,8 +249,9 @@ function handleSelectPreset(presetId) {
   closeSettings(els);
 }
 
-function handleSaveSettings() {
-  applySettings({ ...activeSettings, ...readSettingsForm(els) });
+function handleSaveSettings({patch={},close=false}={}) {
+  // No save confirmation: every choice/step writes the active preset immediately.
+  applySettings({ ...activeSettings, ...readSettingsForm(els), ...patch });
   // A program stage may carry a saved preset snapshot. Keep its ladder/block
   // controls in sync with the preset the user just edited in Settings.
   if (programEntries.length && !programRunning) {
@@ -263,7 +264,7 @@ function handleSaveSettings() {
     }
     if (changed) persistProgram();
   }
-  closeSettings(els);
+  if(close) closeSettings(els);
 }
 
 function handleAdjustValue({ target, direction }, event) {
@@ -299,7 +300,7 @@ function handleAdjustLadderStep({ target, direction }, event) {
   const sign = direction === 'down' ? -1 : 1;
   const form=readSettingsForm(els);
   const next = Math.min(rule.max, Math.max(rule.min, (Number(form[target]) || 0) + sign * rule.step));
-  applySettings({ ...activeSettings, ...form, [target]: next });
+  handleSaveSettings({patch:{[target]:next}});
 }
 
 function handleToggleMetronome(event) {
@@ -829,9 +830,10 @@ function bootstrap() {
     onToggleRun: handleToggleRun,
     onReset: handleReset,
     onOpenSettings: () => openSettings(els),
-    onCloseSettings: () => closeSettings(els),
-    onSaveSettings: handleSaveSettings,
-    onPreviewChange: () => renderLadderPreview(els, activeSettings),
+    onCloseSettings: () => handleSaveSettings({close:true}),
+    onSaveSettings: () => handleSaveSettings({close:true}),
+    onSettingsChange: () => handleSaveSettings(),
+    onPreviewChange: () => handleSaveSettings(),
     onAdjustValue: handleAdjustValue,
     onAdjustLadderStep: handleAdjustLadderStep,
     onToggleMetronome: handleToggleMetronome,

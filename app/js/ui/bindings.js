@@ -66,7 +66,8 @@ export function bindControls(els, handlers) {
   els.resetBtn.addEventListener('click', handlers.onReset);
   els.settingsBtn.addEventListener('click', handlers.onOpenSettings);
   els.closeSettingsBtn.addEventListener('click', handlers.onCloseSettings);
-  els.saveSettingsBtn.addEventListener('click', handlers.onSaveSettings);
+  // Old builds had an explicit Save button; settings now persist on every edit.
+  els.saveSettingsBtn?.addEventListener('click', handlers.onSaveSettings);
   els.metronomeToggleBtn.addEventListener('click', handlers.onToggleMetronome);
   els.metronomeCardToggleBtn.addEventListener('click', handlers.onOpenMetronomeCard);
 
@@ -89,6 +90,7 @@ export function bindControls(els, handlers) {
       const value = button.dataset.warningSeconds ?? '0';
       els.warningSecondsInput.value = value;
       activateChoice(els.warningChoiceButtons, (candidate) => candidate.dataset.warningSeconds === value);
+      handlers.onSettingsChange?.();
     });
   });
 
@@ -108,7 +110,8 @@ export function bindControls(els, handlers) {
     }
   });
 
-  els.blockEnabledInput.addEventListener('change', () => handlers.onPreviewChange?.());
+  els.audioEnabledInput.addEventListener('change', () => handlers.onSettingsChange?.());
+  els.blockEnabledInput.addEventListener('change', () => handlers.onSettingsChange?.());
   els.blockStepButtons.forEach((button) => {
     bindRepeatButton(button, () => {
       const target = button.dataset.blockTarget;
@@ -119,7 +122,7 @@ export function bindControls(els, handlers) {
       input.value = String(Math.max(target === 'blockCount' ? 1 : 0, Math.min(max, Number(input.value) + delta)));
       els.blockCountDisplay.textContent = els.blockCountInput.value;
       els.blockRestSecDisplay.textContent = String(Math.floor(Number(els.blockRestSecInput.value) / 60)).padStart(2,'0') + ':' + String(Number(els.blockRestSecInput.value) % 60).padStart(2,'0');
-      handlers.onPreviewChange?.();
+      handlers.onSettingsChange?.();
     });
   });
 
@@ -141,6 +144,7 @@ export function bindControls(els, handlers) {
         els.cueVariantButtons.filter((candidate) => candidate.dataset.cueTarget === target),
         (candidate) => candidate.dataset.cueValue === value
       );
+      handlers.onSettingsChange?.();
     });
   });
 

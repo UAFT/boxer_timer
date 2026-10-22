@@ -244,7 +244,8 @@ export function readSettingsForm(els) {
     intervalMode: els.intervalModeInput.value || 'standard',
     ladderEnabled: els.intervalModeInput.value === 'two_phase' && els.ladderEnabledInput.checked,
     phaseTwoStepSec:Number(els.phaseTwoStepSecInput.value||'0'),
-    blockEnabled: (els.intervalModeInput.value === 'ladder' || (els.intervalModeInput.value === 'two_phase' && els.ladderEnabledInput.checked)) && els.blockEnabledInput.checked,
+    // Keep the owner's block toggle even if another mode temporarily hides it.
+    blockEnabled: els.blockEnabledInput.checked,
     blockCount: Number(els.blockCountInput.value),
     blockRestSec: Number(els.blockRestSecInput.value),
     workStepSec: Number(els.workStepSecInput.value || '0'),

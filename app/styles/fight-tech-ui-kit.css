@@ -624,3 +624,43 @@ body.ft-unbounded-program:not(.ft-count-up-standalone) .timer-card .summary-grid
   outline:3px solid #6b9993!important;outline-offset:2px!important;
   border-color:var(--ft-steel)!important;
 }
+
+/* Owner review: stage's four ladder numeric inputs must match the bolder
+   centered work/rest/round values, without changing labels or geometry. */
+.stage-settings-modal #stageSettingsLadder input[type="number"]{
+  font-size:clamp(19px,5vw,22px)!important;
+  font-weight:750!important;
+  font-variant-numeric:tabular-nums;
+  text-align:center!important;
+  line-height:1.3!important;
+  padding:11px 6px!important;
+  min-height:47px!important;
+  color:var(--ft-ink)!important;
+  background:var(--ft-input-bg)!important;
+  border:1px solid var(--ft-border-soft)!important;
+  border-radius:var(--ft-radius-control)!important;
+  appearance:textfield;
+  -moz-appearance:textfield;
+}
+.stage-settings-modal #stageSettingsLadder input[type="number"]::-webkit-inner-spin-button,
+.stage-settings-modal #stageSettingsLadder input[type="number"]::-webkit-outer-spin-button{
+  -webkit-appearance:none;margin:0;
+}
+/* Compact shell-standard modal exit; settings are already saved on change. */
+.settings-modal .settings-head #closeSettingsBtn.ft-settings-close{
+  box-sizing:border-box;flex:0 0 44px;
+  width:44px!important;min-width:44px!important;
+  height:44px!important;min-height:44px!important;
+  display:grid!important;place-items:center;
+  padding:0!important;margin:0!important;
+  background:var(--ft-raised)!important;
+  border:1px solid var(--ft-line)!important;
+  border-radius:var(--ft-radius-control)!important;
+  color:var(--ft-ink)!important;
+  box-shadow:var(--ft-shadow)!important;
+  font:inherit;font-size:28px!important;font-weight:500!important;
+  line-height:1!important;
+}
+.settings-modal .settings-head #closeSettingsBtn.ft-settings-close:focus-visible{
+  outline:3px solid var(--ft-steel);outline-offset:2px;
+}
