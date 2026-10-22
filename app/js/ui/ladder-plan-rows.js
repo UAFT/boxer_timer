@@ -1,9 +1,9 @@
+import {stageModeLabel} from './stage-mode-label.js';
 // One presentation source for independent round rest and inter-block rest.
 import {totalRoundsForConfig,workSecForRound,phaseTwoSecForRound,restSecAfterRound,blockRestSecAfterRound,blockCount,blockForRound,localRoundFor} from '../core/schedule.js';
 import {formatTime} from '../core/time.js';
 import {PHASES} from '../core/constants.js';
 const escapeHtml=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const modeName=round=>round.presetId==='tabata2020x24'?'Скоростной':round.phaseTwoSec>0?(round.ladderEnabled?'Две фазы · Лестница':'Две фазы'):round.intervalMode==='ladder'?'Лестница':'';
 // Stage count comes from the compiled program, not total rounds or block count.
 // Repeated cycles reuse stageIndex and must not inflate the total stage count.
 const programStageCount=config=>new Set((config?.programRounds||[]).map(row=>row.stageIndex).filter(Number.isInteger)).size;
@@ -47,9 +47,9 @@ export function buildLadderPlanRows(config){
    const stageRounds=config.programRounds.filter(r=>r.stageIndex===pr.stageIndex&&r.cycleIndex===pr.cycleIndex);
    const seconds=stageRounds.reduce((sum,r,index)=>sum+r.workSec+(r.phaseTwoSec||0)+(index<stageRounds.length-1?r.restSec+(r.blockRestSec||0):0),0);
    const title=pr.stageTitle?escapeHtml(pr.stageTitle):'';
-   const mode=modeName(pr),label=title||mode;
-   const suffix=mode&&label!==mode?' · '+mode:'';
-   rows.push('<div class="ladder-block-label" data-stage="'+pr.stageIndex+'">'+stagePosition(pr.stageIndex,stageTotal)+(label?' · '+label:'')+suffix+' · всего '+formatTime(seconds)+'</div>');
+   const mode=stageModeLabel(pr);
+   rows.push('<div class="ladder-block-label" data-stage="'+pr.stageIndex+'">'+stagePosition(pr.stageIndex,stageTotal)+' · '+mode+' · всего '+formatTime(seconds)+'</div>');
+   if(title)rows.push('<div class="ladder-stage-title">'+title+'</div>');
   }
   const block=pr?.block??blockForRound(config,i);
   const blocks=pr?.blockCount??blockCount(config);

@@ -1,3 +1,4 @@
+import {stageModeLabel} from './stage-mode-label.js';
 import { CATEGORIES, LIBRARY } from '../library/catalog.js';
 
 // View-only parsing of known library labels. Stored titles are left untouched.
@@ -15,12 +16,12 @@ export function stageTitleParts(title) {
   return savedTitleLookup.get(source) || { category: null, workout: source };
 }
 
-export function renderStageTitle(doc, index, title, {mode} = {}) {
+export function renderStageTitle(doc, index, title, {mode, config} = {}) {
   const group = doc.createElement('div');
   group.className = 'program-stage-title-stack';
   const number = doc.createElement('span');
   number.className = 'program-stage-number';
-  number.textContent = 'Этап ' + index + (mode ? ' — ' + mode : '');
+  number.textContent = 'Этап ' + index + ' — ' + (mode || stageModeLabel(config));
   group.append(number);
   const parts = stageTitleParts(title);
   if (parts.category) {
@@ -29,7 +30,7 @@ export function renderStageTitle(doc, index, title, {mode} = {}) {
     category.textContent = parts.category;
     group.append(category);
   }
-  if (parts.workout && parts.workout !== mode) {
+  if (parts.workout) {
     const name = doc.createElement('strong');
     name.className = 'program-stage-workout';
     name.textContent = parts.workout;

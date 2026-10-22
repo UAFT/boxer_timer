@@ -33,8 +33,10 @@ test('four-stage workout caption identifies position AND total, with the exact b
 
 test('program stage headings include stage count; standalone mode remains unchanged',()=>{
  const html=buildLadderPlanRows({programRounds:compiled});
+ const modes=['Обычный','Лестница','Две фазы','Обычный'];
  for(const [i,name] of program.map((entry,i)=>[i+1,entry.title])){
-  assert.ok(html.includes('Этап '+i+' из 4 · '+name),'stage '+i);
+  assert.ok(html.includes('Этап '+i+' из 4 · '+modes[i-1]+' · всего'),'mode at stage '+i);
+  assert.ok(html.includes('<div class="ladder-stage-title">'+name+'</div>'),'title on its own row at stage '+i);
  }
  assert.match(html,/Блок 2 из 2/);
  const standalone=buildLadderPlanRows({...clonePreset('classic1'),rounds:2});
@@ -72,7 +74,9 @@ test('settings show phase 1, phase 2, then rest; default remains work/rest',()=>
 
 test('pending two-phase round 1 and round 2 use same neutral background while active stays highlighted',()=>{
  const css=readFileSync(new URL('../app/styles/fight-tech-ui-kit.css',import.meta.url),'utf8');
- assert.match(css,/\.ladder-live-list \.ladder-live-row\.ft-two-phase-plan:not\(\.is-active\)[\s\S]*?background:#f0f3f5!important/);
+ assert.match(css,/\.ladder-live-list \.ladder-live-row\.ft-two-phase-plan:not\(\.is-active\)[\s\S]*?background:#f8f9fa!important/);
+ for(const kind of ['phase-one','phase-two','ft-round-rest'])
+   assert.ok(css.includes('.ft-work-phase.'+kind+' {'),'pending '+kind+' has its own chip');
  assert.match(css,/\.ladder-live-list \.ladder-live-row\.ft-two-phase-plan:nth-child\(even\):not\(\.is-active\)/);
  const active=readFileSync(new URL('../app/styles/program-screen.css',import.meta.url),'utf8');
  assert.match(active,/\.ladder-live-row\.ft-two-phase-plan\.is-active\{background:/);

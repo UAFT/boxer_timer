@@ -422,15 +422,62 @@ input::placeholder,textarea::placeholder{color:#75838d;opacity:1}
 }
 
 
-/* Studio Slate v1.3: pending two-phase rounds all use the same quiet
-   graphite-silver fill, regardless of nth-child parity or block position.
-   Active rounds keep their existing explicit workout-state highlight. */
+/* Studio Slate v1.4: pending TWO_PHASE rounds are quiet white cards with
+   three independent silver rows, never a single solid-grey slab.  No nth-child
+   parity: round 1, round 2, ... have identical nested treatment.  Keep the
+   active-round highlight exactly as it was (separate selector). */
 .ladder-live-list .ladder-live-row.ft-two-phase-plan:not(.is-active),
 .ladder-live-list .ladder-live-row.ft-two-phase-plan:nth-child(even):not(.is-active) {
-  background:#f0f3f5!important;
+  background:#f8f9fa!important;
   color:var(--ft-secondary)!important;
 }
-.ladder-live-list .ladder-live-row.ft-two-phase-plan:not(.is-active) .ft-work-phase {
-  background:var(--ft-card)!important;
+.ladder-live-list .ladder-live-row.ft-two-phase-plan:not(.is-active) .ft-work-phase.phase-one {
+  background:#ebf0f2!important;
   color:var(--ft-ink)!important;
+}
+.ladder-live-list .ladder-live-row.ft-two-phase-plan:not(.is-active) .ft-work-phase.phase-two {
+  background:#f1f3f5!important;
+  color:var(--ft-ink)!important;
+}
+.ladder-live-list .ladder-live-row.ft-two-phase-plan:not(.is-active) .ft-work-phase.ft-round-rest {
+  background:#e9eef1!important;
+  color:var(--ft-ink)!important;
+}
+/* One-stage heading line contains ONLY index, preset mode and duration;
+   user-defined title has its own row before block/round content. */
+.ladder-live-list .ladder-stage-title {
+  color:var(--ft-ink);
+  font-size:clamp(13px,3.5vw,16px);
+  font-weight:700;
+  line-height:1.3;
+  padding:1px 8px 9px;
+  overflow-wrap:anywhere;
+}
+
+/* Editor: keep the entire "Этап N — Режим" line unbroken on a phone.
+   Keep existing four action buttons aligned top-right, place the semantic
+   heading immediately below them with a full-width row; name below heading. */
+.program-panel .program-stage-card>.program-stage .program-stage-number {
+  grid-column:1/-1;
+  grid-row:2;
+  white-space:nowrap!important;
+  font-size:clamp(11px,3vw,14px);
+  line-height:1.3;
+  margin-top:1px;
+}
+.program-panel .program-stage-card>.program-stage .program-stage-category {
+  grid-column:1/-1;
+  grid-row:3;
+  white-space:normal;
+  margin-top:0;
+}
+.program-panel .program-stage-card>.program-stage .program-stage-workout {
+  grid-column:1/-1;
+  grid-row:4;
+}
+.program-panel .program-stage-card>.program-stage>button:nth-child(2),
+.program-panel .program-stage-card>.program-stage>button:nth-child(3),
+.program-panel .program-stage-card>.program-stage>button:nth-child(4),
+.program-panel .program-stage-card>.program-stage>button:nth-child(5){
+  grid-row:1;
 }

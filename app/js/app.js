@@ -623,15 +623,13 @@ function renderProgram() {
       const stage=document.createElement('div');stage.className='program-stage';
       const main=document.createElement('div');main.className='program-stage-main';
       const cfg=entry.settings || profiles[entry.presetId];
-      const heading=renderStageTitle(document,i+1,entry.title,{mode:cfg.intervalMode==='two_phase'?'Две фазы':cfg.intervalMode==='ladder'?'Лестница':''});
+      const heading=renderStageTitle(document,i+1,entry.title,{config:{...cfg,presetId:entry.presetId}});
       const detail=document.createElement('small');
-      const kind=document.createElement('small');kind.className='program-stage-kind';
-      kind.textContent=['ladder','two_phase'].includes(cfg.intervalMode) ? '' : (entry.presetId==='tabata2020x24' ? 'Скоростной' : '');
       detail.className='program-stage-timing';
       const timing=stageTiming(entry), english=document.documentElement.lang==='en';
       timing.manual=entry.roundTimingOverrides?.some(Boolean);
       for(const [klass,text] of stageTimingRows(cfg,timing,english)){const item=document.createElement('span');item.className=klass;item.textContent=text;detail.append(item);}
-      main.append(heading);if(kind.textContent)main.append(kind);stage.append(main);
+      main.append(heading);stage.append(main);
       if (!programRunning) {
         const edit=document.createElement('button');edit.type='button';edit.textContent='✎';edit.className='program-stage-edit';edit.setAttribute('aria-label','Настройки этапа '+(i+1));edit.addEventListener('click',()=>openStageSettings(i));stage.append(edit);
         for (const [label,fn] of [['↑',()=>moveProgramStage(i,-1)],['↓',()=>moveProgramStage(i,1)],['×',()=>removeProgramStage(i)]]) {

@@ -20,7 +20,7 @@ test('library stage is displayed as stage, category, workout without rewriting s
     const before=raw;
     assert.deepEqual(stageTitleParts(raw),{category,workout});
     const root=renderStageTitle(fakeDoc(),2,raw);
-    assert.deepEqual(root.children.map(x=>x.textContent),['Этап 2',category,workout]);
+    assert.deepEqual(root.children.map(x=>x.textContent),['Этап 2 — Обычный',category,workout]);
     assert.deepEqual(root.children.map(x=>x.className),['program-stage-number','program-stage-category','program-stage-workout']);
     assert.equal(raw,before,'stored label remains unchanged');
   }
@@ -28,29 +28,25 @@ test('library stage is displayed as stage, category, workout without rewriting s
 
 test('user stages remain unsplit, even when containing an em dash',()=>{
   const root=renderStageTitle(fakeDoc(),3,'Мой тренер — сложная работа');
-  assert.deepEqual(root.children.map(x=>x.textContent),['Этап 3','Мой тренер — сложная работа']);
+  assert.deepEqual(root.children.map(x=>x.textContent),['Этап 3 — Обычный','Мой тренер — сложная работа']);
   assert.deepEqual(stageTitleParts(''),stageTitleParts(''), 'deterministic lookup');
-  assert.deepEqual(renderStageTitle(fakeDoc(),4,'').children.map(x=>x.textContent),['Этап 4']);
+  assert.deepEqual(renderStageTitle(fakeDoc(),4,'').children.map(x=>x.textContent),['Этап 4 — Обычный']);
 });
 
-test('stage rendering hides ordinary only, special mode text remains unchanged',()=>{
+test('editor always shows canonical mode before title, no stray mode label beneath',()=>{
   const app=readFileSync(new URL('../app/js/app.js',import.meta.url),'utf8');
-  const html=readFileSync(new URL('../app/index.html',import.meta.url),'utf8');
-  const style=readFileSync(new URL('../app/styles/stage-title.css',import.meta.url),'utf8');
-  assert.ok(app.includes("['ladder','two_phase'].includes(cfg.intervalMode)"));
-  assert.ok(!app.includes("'Скоростной' : 'Обычный'"));
-  assert.ok(app.includes('renderStageTitle(document,i+1,entry.title,{mode:cfg.intervalMode'));
-  assert.ok(html.includes('./styles/stage-title.css'));
-  assert.ok(style.includes('.program-stage-number'));
-  assert.ok(style.includes('.program-stage-category'));
-  assert.ok(style.includes('.program-stage-workout'));
+  const style=readFileSync(new URL('../app/styles/fight-tech-ui-kit.css',import.meta.url),'utf8');
+  assert.match(app,/renderStageTitle\(document,i\+1,entry.title,\{config:/);
+  assert.doesNotMatch(app,/kind\.textContent=/);
+  assert.match(style,/\.program-stage-card>\.program-stage \.program-stage-number \{/);
+  assert.match(style,/white-space:nowrap!important/);
 });
 
 
 test('ladder stage shows mode beside stage index without duplicating a bare ladder title',()=>{
  const doc=fakeDoc();
  const simple=renderStageTitle(doc,1,'Лестница',{mode:'Лестница'});
- assert.deepEqual(simple.children.map(x=>x.textContent),['Этап 1 — Лестница']);
+ assert.deepEqual(simple.children.map(x=>x.textContent),['Этап 1 — Лестница','Лестница']);
  const named=renderStageTitle(doc,2,'Мой силовой комплекс',{mode:'Лестница'});
  assert.deepEqual(named.children.map(x=>x.textContent),['Этап 2 — Лестница','Мой силовой комплекс']);
 });
