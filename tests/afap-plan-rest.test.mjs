@@ -17,7 +17,10 @@ test('the plan shows the rest after an AFAP stage, and none after the last one',
  const html=buildLadderPlanRows({programRounds:rounds});
  const afapRows=html.match(/<div class="ladder-live-row ft-afap-row".*?<\/span>/g);
  assert.equal(afapRows.length,2);
- assert.ok(afapRows[0].includes('Таймер · прямой отсчёт · отдых 01:00'));
+ assert.ok(afapRows[0].includes('Таймер · прямой отсчёт'));
+ assert.equal(afapRows[0].includes('· отдых'),false);
+ assert.ok(html.includes('class="ladder-stage-rest-chip" data-after-round="1"'));
+ assert.ok(html.includes('Отдых между этапами 1–2 / 01:00'));
  assert.equal(afapRows[1].includes('отдых'),false);
 });
 

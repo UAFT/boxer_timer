@@ -71,7 +71,9 @@ function zeroCue(a, b) {
 const mmss = s => { const [m, x] = s.split(':').map(Number); return m * 60 + x; };
 export function planPhases(cfg) {
   const html = buildLadderPlanRows(cfg), out = [];
-  for (const token of html.split(/(?=<div class="ladder-live-row|<div class="ladder-rest-row)/)) {
+  for (const token of html.split(/(?=<div class="ladder-live-row|<div class="ladder-rest-row|<div class="ladder-stage-rest-chip)/)) {
+    const stageRest = /^<div class="ladder-stage-rest-chip" data-after-round="(\d+)"><span[^>]*>[^<]* \/ (\d+:\d\d)<\/span>/.exec(token);
+    if (stageRest) { out.push({phase: 'rest', round: +stageRest[1], d: mmss(stageRest[2])}); continue; }
     const rest = /^<div class="ladder-rest-row" data-after-round="(\d+)"><span>[^<]*<\/span><strong class="ladder-rest-duration">(\d+:\d\d)<\/strong>/.exec(token);
     if (rest) { out.push({phase: 'block_rest', round: +rest[1], d: mmss(rest[2])}); continue; }
     const m = /^<div class="ladder-live-row( ft-afap-row| ft-two-phase-plan)?" data-round="(\d+)">/.exec(token);
@@ -89,9 +91,9 @@ export function planPhases(cfg) {
       if (t[2] && t[2] !== '—' && mmss(t[2]) > 0) out.push({phase: 'rest', round, d: mmss(t[2])});
       continue;
     }
-    const w = /работа (\d+:\d\d) · отдых (\d+:\d\d|—)/.exec(token);
+    const w = /работа (\d+:\d\d)(?: · отдых (\d+:\d\d|—))?/.exec(token);
     out.push({phase: 'work', round, d: mmss(w[1])});
-    if (w[2] !== '—' && mmss(w[2]) > 0) out.push({phase: 'rest', round, d: mmss(w[2])});
+    if (w[2] && w[2] !== '—' && mmss(w[2]) > 0) out.push({phase: 'rest', round, d: mmss(w[2])});
   }
   return out;
 }

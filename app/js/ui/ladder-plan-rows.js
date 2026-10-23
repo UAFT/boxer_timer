@@ -63,18 +63,23 @@ export function buildLadderPlanRows(config){
   const phaseTwo=phaseTwoSecForRound(config,i);
   if(pr?.intervalMode==='count_up'||(!pr&&config.intervalMode==='count_up')){
    const tasks=pr?.roundDescription?'<div class="ft-afap-tasks">'+escapeHtml(pr.roundDescription).replace(/\s*[·•]\s*/g,'<br>')+'</div>':'';
-   // The rest after a manually finished stage runs like any other; the plan shows it too.
-   const restAfter=i<totalRoundsForConfig(config)&&restSecAfterRound(config,i)>0?' · отдых '+rest:'';
-   rows.push('<div class="ladder-live-row ft-afap-row" data-round="'+i+'"><span class="ladder-plan">Таймер · прямой отсчёт'+(Number.isInteger(pr?.actualElapsedSec)?' · '+formatTime(pr.actualElapsedSec):'')+restAfter+tasks+'</span><strong class="ladder-count"></strong></div>');
+   rows.push('<div class="ladder-live-row ft-afap-row" data-round="'+i+'"><span class="ladder-plan">Таймер · прямой отсчёт'+(Number.isInteger(pr?.actualElapsedSec)?' · '+formatTime(pr.actualElapsedSec):'')+tasks+'</span><strong class="ladder-count"></strong></div>');
   }else if(phaseTwo>0){
    const one=escapeHtml(pr?.phaseOneName||config.phaseOneName||'');
    const two=escapeHtml(pr?.phaseTwoName||config.phaseTwoName||'');
    rows.push('<div class="ladder-live-row ft-two-phase-plan" data-round="'+i+'"><div class="ladder-plan">Раунд '+round+title+'</div>'+
       '<div class="ft-work-phase phase-one" data-phase="one"><span>Фаза 1'+(one?' · '+one:'')+'</span><strong>'+formatTime(workSecForRound(config,i))+'</strong><b class="ladder-count"></b></div>'+
       '<div class="ft-work-phase phase-two" data-phase="two"><span>Фаза 2'+(two?' · '+two:'')+'</span><strong>'+formatTime(phaseTwo)+'</strong><b class="ladder-count"></b></div>'+
-      (i<totalRoundsForConfig(config)?'<div class="ft-work-phase ft-round-rest" data-phase="rest"><span>Отдых</span><strong>'+rest+'</strong><b class="ladder-count"></b></div>':'')+'</div>');
+      (i<totalRoundsForConfig(config)&&!(pr&&config.programRounds?.[i]&&(config.programRounds[i].stageIndex!==pr.stageIndex||config.programRounds[i].cycleIndex!==pr.cycleIndex))?'<div class="ft-work-phase ft-round-rest" data-phase="rest"><span>Отдых</span><strong>'+rest+'</strong><b class="ladder-count"></b></div>':'')+'</div>');
   } else {
-   rows.push('<div class="ladder-live-row" data-round="'+i+'"><span class="ladder-plan"><span class="ladder-plan-name">Раунд '+round+title+'</span><span class="ladder-plan-timing">работа '+formatTime(workSecForRound(config,i))+' · отдых '+rest+'</span></span><strong class="ladder-count"></strong></div>');
+   rows.push('<div class="ladder-live-row" data-round="'+i+'"><span class="ladder-plan"><span class="ladder-plan-name">Раунд '+round+title+'</span><span class="ladder-plan-timing">работа '+formatTime(workSecForRound(config,i))+(pr&&config.programRounds?.[i]&&(config.programRounds[i].stageIndex!==pr.stageIndex||config.programRounds[i].cycleIndex!==pr.cycleIndex)?'':' · отдых '+rest)+'</span></span><strong class="ladder-count"></strong></div>');
+  }
+  // Inter-stage rest is its own plan chip, never part of the preceding round card.
+  const next=config.programRounds?.[i];
+  if(pr&&next&&(pr.stageIndex!==next.stageIndex||pr.cycleIndex!==next.cycleIndex)&&pr.restSec>0){
+   closeStage();
+   const label='Отдых между этапами '+(pr.stageIndex+1)+'–'+(next.stageIndex+1)+' / '+formatTime(pr.restSec);
+   rows.push('<div class="ladder-stage-rest-chip" data-after-round="'+i+'"><span class="ladder-stage-rest-label">'+label+'</span><strong class="ladder-count"></strong></div>');
   }
   const between=blockRestSecAfterRound(config,i);
   if(between>0){
@@ -87,6 +92,9 @@ export function buildLadderPlanRows(config){
 export function syncLadderPlanRows(list,state,{preview=false}={}){
  const active=preview||![PHASES.WORK,PHASES.WORK_TWO,PHASES.REST,PHASES.BLOCK_REST,PHASES.COUNTDOWN,PHASES.COUNT_UP].includes(state.phase)?0:state.roundIndex;
  const pauseActive=state.phase===PHASES.BLOCK_REST&&active>0;
+ const currentRow=state.config.programRounds?.[active-1];
+ const nextRow=state.config.programRounds?.[active];
+ const stageRestActive=state.phase===PHASES.REST&&active>0&&currentRow&&nextRow&&(currentRow.stageIndex!==nextRow.stageIndex||currentRow.cycleIndex!==nextRow.cycleIndex);
  const current=state.config.programRounds?.[active-1];
  const block=active>0?(current?.block??blockForRound(state.config,active)):0;
  for(const heading of list.querySelectorAll('.ladder-block-label')){
@@ -95,7 +103,7 @@ export function syncLadderPlanRows(list,state,{preview=false}={}){
    Number(heading.dataset.block)===block);
  }
  for(const row of list.querySelectorAll('.ladder-live-row')){
-  const isCurrent=Number(row.dataset.round)===active&&!pauseActive;
+  const isCurrent=Number(row.dataset.round)===active&&!pauseActive&&!stageRestActive;
   row.classList.toggle('is-active',isCurrent);
   if(row.classList.contains('ft-two-phase-plan')){
    for(const part of row.querySelectorAll('[data-phase]')){
@@ -106,17 +114,22 @@ export function syncLadderPlanRows(list,state,{preview=false}={}){
    }
   }else row.querySelector('.ladder-count').textContent=isCurrent?(state.phase===PHASES.REST?'Отдых ':'→ ')+formatTime(state.remainingSec):'';
  }
+ for(const row of list.querySelectorAll('.ladder-stage-rest-chip')){
+  const isCurrent=Number(row.dataset.afterRound)===active&&stageRestActive;
+  row.classList.toggle('is-active',isCurrent);
+  row.querySelector('.ladder-count').textContent=isCurrent?'→ '+formatTime(state.remainingSec):'';
+ }
  for(const row of list.querySelectorAll('.ladder-rest-row')){
   const isCurrent=Number(row.dataset.afterRound)===active&&pauseActive;
   row.classList.toggle('is-active',isCurrent);
   row.querySelector('.ladder-count').textContent=isCurrent?formatTime(state.remainingSec):'';
  }
- const newActive=active+':'+pauseActive;
+ const newActive=active+':'+pauseActive+':'+stageRestActive;
  if(list.dataset.activeRound!==newActive){
   list.dataset.activeRound=newActive;
   if(!active)list.scrollTop=0;
   else{
-   const selector=pauseActive?'.ladder-rest-row[data-after-round="'+active+'"]':'.ladder-live-row[data-round="'+active+'"]';
+   const selector=stageRestActive?'.ladder-stage-rest-chip[data-after-round="'+active+'"]':pauseActive?'.ladder-rest-row[data-after-round="'+active+'"]':'.ladder-live-row[data-round="'+active+'"]';
    const row=list.querySelector(selector);
    if(row&&row.offsetTop+row.offsetHeight>list.scrollTop+list.clientHeight)list.scrollTo({top:row.offsetTop+row.offsetHeight-list.clientHeight,behavior:'smooth'});
   }
