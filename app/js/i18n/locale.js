@@ -38,13 +38,18 @@ const pairs = [
 ['Лестница раундов','Round ladder'],['Показаны первые','Showing first'],['все раунды','all rounds'],
 ['Скоростной · 20/20 · 24 раунда','Speed · 20/20 · 24 rounds']
 ].sort((a,b)=>b[0].length-a[0].length);
+// Every timer tick re-visits every text node: compile once and remember each string's result.
+const patterns = pairs.map(([ru,en]) => [new RegExp('(?<![А-Яа-яЁё])'+ru.replace(/[.*+?^$()|[\]{}\\]/g,'\\$&')+'(?![А-Яа-яЁё])','g'),en]);
+const translated = new Map();
 export function translateText(text, lang) {
   if (lang !== 'en') return text;
-  let result = text;
-  for (const [ru,en] of pairs) {
-    const pattern = new RegExp('(?<![А-Яа-яЁё])'+ru.replace(/[.*+?^$()|[\]{}\\]/g,'\\$&')+'(?![А-Яа-яЁё])','g');
-    result = result.replace(pattern,en);
-  }
+  let result = translated.get(text);
+  if (result !== undefined) return result;
+  result = text;
+  for (const [pattern,en] of patterns) result = result.replace(pattern,en);
+  // ponytail: a full reset bounds memory; a workout yields a few thousand distinct strings.
+  if (translated.size >= 5000) translated.clear();
+  translated.set(text,result);
   return result;
 }
 export function installLocalization(buttons) {
