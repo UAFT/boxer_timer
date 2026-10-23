@@ -231,6 +231,8 @@ async function handleToggleRun() {
   }
 
   await audioReady;
+  // Start after «Готово» runs the same workout (or program) again from the beginning.
+  if (timer.state.phase === 'finished') handleReset();
   if (programEntries.length && !programRunning) { startProgram(); return; }
   timer.start();
 }
@@ -239,7 +241,9 @@ function handleReset() {
   stopVoice();
   if (programRunning) { exitProgram(); }
   audio.stopAll();
-  timer.reset();
+  // Settings edited during a workout apply from the next one on, as they already did for programs.
+  timer.applyConfig({ ...activeSettings, presetId: activePresetId });
+  audio.setEnabled(activeSettings.audioEnabled);
   metronome.stop();
 }
 
