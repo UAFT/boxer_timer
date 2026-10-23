@@ -79,7 +79,10 @@ export class TimerEngine {
     this.tickStartedAt = 0;
     this.lastElapsedSec = 0;
     this.isPaused = false;
+    this.pausedMs = null;
     this.transitioning = false;
+    // Bumped by reset(): a transition still awaiting its cue then belongs to an abandoned run.
+    this.generation = 0;
     this.applyConfig(DEFAULT_CONFIG);
   }
 
@@ -113,7 +116,10 @@ export class TimerEngine {
 
   reset() {
     this.stopInterval();
+    this.generation += 1;
+    this.transitioning = false;
     this.isPaused = false;
+    this.pausedMs = null;
     this.lastElapsedSec = 0;
     this.state = createIdleState(this.config);
     this.emitState();
@@ -137,15 +143,18 @@ export class TimerEngine {
     if (this.isPaused) return;
     this.isPaused = true;
     this.stopInterval();
+    // Keep the exact remainder (elapsed for count-up), not the displayed whole second.
+    if (!this.transitioning) this.pausedMs = this.state.phase === PHASES.COUNT_UP ? Date.now() - this.tickStartedAt : Math.max(0, this.tickEndsAt - Date.now());
     this.emitState();
   }
 
   resume() {
     if (!this.isPaused) return;
     this.isPaused = false;
-    const remainingSec = this.state.remainingSec;
-    if (this.state.phase === PHASES.COUNT_UP) this.tickStartedAt = Date.now() - remainingSec * 1000;
-    else this.tickEndsAt = Date.now() + remainingSec * 1000;
+    const ms = this.pausedMs ?? this.state.remainingSec * 1000;
+    this.pausedMs = null;
+    if (this.state.phase === PHASES.COUNT_UP) this.tickStartedAt = Date.now() - ms;
+    else this.tickEndsAt = Date.now() + ms;
     this.startInterval();
     this.emitState();
   }
@@ -158,7 +167,7 @@ export class TimerEngine {
 
   beginCountUpPhase(roundIndex) {
     this.stopInterval();
-    this.isPaused=false;
+    this.pausedMs=null;
     this.tickStartedAt=Date.now();
     this.state={phase:PHASES.COUNT_UP,roundIndex,totalRounds:totalRoundsForConfig(this.config),
       remainingSec:0,phaseDurationSec:1,nextLabel:'Прямой отсчёт',countdownText:'',progress:0};
@@ -171,18 +180,20 @@ export class TimerEngine {
     this.transitioning=true;
     this.stopInterval();
     this.isPaused=false;
+    this.pausedMs=null;
+    const generation=this.generation;
     this.lastElapsedSec=this.state.remainingSec;
     const index=this.state.roundIndex;
     if(this.config.programRounds?.[index-1]?.intervalMode==='count_up')this.config.programRounds[index-1].actualElapsedSec=this.lastElapsedSec;
     this.state.phase=PHASES.WORK;
     try { await this.finishCurrentPhase(); }
-    finally { this.transitioning=false; }
+    finally { if (generation===this.generation) this.transitioning=false; }
     return {roundIndex:index,elapsedSec:this.lastElapsedSec};
   }
 
   async beginPrestart(roundIndex) {
     if (!this.config.countdownEnabled) {
-      await this.emitEvent({ type: 'round-start-zero', roundIndex });
+      if (!await this.cue({ type: 'round-start-zero', roundIndex })) return;
       this.beginWorkPhase(roundIndex);
       return;
     }
@@ -268,13 +279,13 @@ export class TimerEngine {
     const { phase, roundIndex, totalRounds } = this.state;
 
     if (phase === PHASES.COUNTDOWN) {
-      await this.emitEvent({ type: 'round-start-zero', roundIndex });
+      if (!await this.cue({ type: 'round-start-zero', roundIndex })) return;
       this.beginWorkPhase(roundIndex);
       return;
     }
 
     if (phase === PHASES.WORK && phaseTwoSecForRound(this.config,roundIndex)>0) {
-      await this.emitEvent({type:'phase-two-start-zero',roundIndex});
+      if (!await this.cue({type:'phase-two-start-zero',roundIndex})) return;
       this.beginWorkTwoPhase(roundIndex);
       return;
     }
@@ -288,32 +299,32 @@ export class TimerEngine {
       const hasRoundRest=restSecAfterRound(this.config,roundIndex)>0;
       const hasBlockRest=blockRestSecAfterRound(this.config,roundIndex)>0;
       if (hasRoundRest) {
-        await this.emitEvent({type:'round-end-zero',roundIndex});
+        if (!await this.cue({type:'round-end-zero',roundIndex})) return;
         this.beginRestPhase(roundIndex);
         return;
       }
       if (hasBlockRest) {
-        await this.emitEvent({type:'block-rest-start-zero',roundIndex});
+        if (!await this.cue({type:'block-rest-start-zero',roundIndex})) return;
         this.beginBlockRestPhase(roundIndex);
         return;
       }
-      await this.emitEvent({type:'round-start-zero',roundIndex:roundIndex+1});
+      if (!await this.cue({type:'round-start-zero',roundIndex:roundIndex+1})) return;
       this.beginWorkPhase(roundIndex + 1);
       return;
     }
 
     if (phase === PHASES.REST) {
       if (blockRestSecAfterRound(this.config,roundIndex)>0) {
-        await this.emitEvent({type:'block-rest-start-zero',roundIndex});
+        if (!await this.cue({type:'block-rest-start-zero',roundIndex})) return;
         this.beginBlockRestPhase(roundIndex);
       } else {
-        await this.emitEvent({type:'rest-end-zero',roundIndex});
+        if (!await this.cue({type:'rest-end-zero',roundIndex})) return;
         this.beginWorkPhase(roundIndex+1);
       }
       return;
     }
     if (phase === PHASES.BLOCK_REST) {
-      await this.emitEvent({type:'block-rest-end-zero',roundIndex});
+      if (!await this.cue({type:'block-rest-end-zero',roundIndex})) return;
       this.beginWorkPhase(roundIndex+1);
     }
   }
@@ -335,6 +346,13 @@ export class TimerEngine {
     await this.emitEvent({ type: 'workout-end-zero', roundIndex });
   }
 
+  // Plays a transition cue; false when Reset/new config abandoned the run meanwhile.
+  async cue(event) {
+    const generation = this.generation;
+    await this.emitEvent(event);
+    return generation === this.generation;
+  }
+
   emitEvent(event) {
     try {
       return Promise.resolve(this.onEvent(event));
@@ -345,6 +363,8 @@ export class TimerEngine {
 
   startInterval() {
     this.stopInterval();
+    // Pause pressed while a cue was pending: the next phase is entered paused.
+    if (this.isPaused) return;
     this.intervalId = window.setInterval(() => this.handleIntervalTick(), 100);
   }
 
@@ -364,9 +384,9 @@ export class TimerEngine {
   }
 
   handleIntervalTick() {
+    if (this.isPaused) return;
     const now = Date.now();
     if (this.state.phase === PHASES.COUNT_UP) {
-      if (this.isPaused) return;
       const elapsed=Math.max(0,Math.floor((now-this.tickStartedAt)/1000));
       if (elapsed!==this.state.remainingSec) {this.state.remainingSec=elapsed;this.emitTick();}
       return;
@@ -427,8 +447,9 @@ export class TimerEngine {
 
     this.transitioning = true;
     this.stopInterval();
+    const generation = this.generation;
     void this.finishCurrentPhase().finally(() => {
-      this.transitioning = false;
+      if (generation === this.generation) this.transitioning = false;
     });
   }
 
