@@ -50,4 +50,6 @@ test('the editor refuses to start or save a program above the limit and edits on
  assert.ok(app.includes('isPlaybackProtected(timer,programRunning) || refuseTooLong(programEntries,programOptions)) return;'));
  assert.equal(app.match(/refuseTooLong\(programEntries,programOptions\)/g).length,3);
  assert.ok(app.includes('for(let j=0;j<Math.min(rounds,200);j++)'));
+ // No plan preview either: drawing a too-long plan would only freeze the screen.
+ assert.ok(app.includes('return rounds.length > MAX_PROGRAM_ROUNDS ? null : rounds;'));
 });

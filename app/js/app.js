@@ -141,7 +141,12 @@ function setMetronomePanel(panel, { render = true } = {}) {
   if (render) renderCurrentState();
 }
 
-function previewProgram() { return programEntries.length ? compileProgram(programEntries, profiles, programOptions) : null; }
+function previewProgram() {
+  if (!programEntries.length) return null;
+  const rounds = compileProgram(programEntries, profiles, programOptions);
+  // Too long to start (see refuseTooLong): drawing its plan would only freeze the screen.
+  return rounds.length > MAX_PROGRAM_ROUNDS ? null : rounds;
+}
 const timerDisclosure=installTimerDisclosure();
 function syncTimerVisibility(){timerDisclosure.sync(programEntries.length>0,programRunning);}
 function liveTimerSettings() {
