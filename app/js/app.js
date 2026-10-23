@@ -1,6 +1,6 @@
 import { CATEGORIES, LIBRARY, stageForWorkout } from './library/native-adapter.js';
 import { starterPrograms } from './core/starter-programs.js';
-import { announceRound, stopVoice } from './audio/voice-coach.js';
+import { announceRound, announcedRound, stopVoice } from './audio/voice-coach.js';
 import { installDeleteConfirmation } from './ui/delete-confirmation.js';
 import { installTimerDisclosure } from './ui/timer-disclosure.js';
 import { renderStageTitle } from './ui/stage-title.js';
@@ -186,7 +186,7 @@ timer = new TimerEngine({
     }
     await audio.play(spec.key, { tag: spec.tag, volume: spec.volume });
     if (programRunning && timer.config.audioEnabled && ['round-start-zero','rest-end-zero','round-end-zero','block-rest-end-zero'].includes(event.type)) {
-      const round=programSnapshot?.[Math.max(0,(event.roundIndex || timer.state.roundIndex)-1)];
+      const round=announcedRound({...event,roundIndex:event.roundIndex || timer.state.roundIndex},programSnapshot);
       announceRound(event.type,round,document.documentElement.lang?.startsWith('en')?'en':'ru');
     }
   }
