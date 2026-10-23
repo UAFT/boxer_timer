@@ -21,8 +21,9 @@ export function stageTimingRows(config,{total,rounds},english=false){
  const blocks=Number(config.blockCount);
  return [
   ['program-stage-count',english?count+' rounds':countRu(count,'раунд','раунда','раундов')],
-  ['program-stage-work',(english?'work ':'работа ')+clock(config.workSec)],
-  ['program-stage-rest',(english?'rest ':'отдых ')+clock(config.restSec)],
+  // Ranges come from the compiled rounds: ladder steps and per-round edits included.
+  ['program-stage-work',(english?'work ':'работа ')+rangeClock(rounds.map(r=>r.workSec),config.workSec)],
+  ['program-stage-rest',(english?'rest ':'отдых ')+rangeClock(rounds.slice(0,-1).map(r=>r.restSec),config.restSec)],
   ...(hasBlocks?[['program-stage-block-rest',(english?blocks+' blocks · between blocks ':countRu(blocks,'блок','блока','блоков')+' · отдых между блоками ')+clock(config.blockRestSec||0)]]:[]),
   ['program-stage-sum',(english?'Total: ':'Всего: ')+clock(total)]
  ];
