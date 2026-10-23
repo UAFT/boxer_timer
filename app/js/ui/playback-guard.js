@@ -4,6 +4,11 @@ const ACTIVE_PHASES = new Set(['countdown', 'work', 'work_two', 'rest', 'block_r
 export function isPlaybackProtected(timer, programRunning = false) {
   return Boolean(programRunning || ACTIVE_PHASES.has(timer?.state?.phase));
 }
+// 'running' | 'paused' | 'off' for a timer state; drives the screen wake lock.
+export function playbackState(state) {
+  if (!ACTIVE_PHASES.has(state?.phase)) return 'off';
+  return state.isPaused ? 'paused' : 'running';
+}
 export function applyPresetWithoutInterrupting(timer, settings, {programRunning = false} = {}) {
   if (isPlaybackProtected(timer, programRunning)) return false;
   timer.applyConfig(settings);

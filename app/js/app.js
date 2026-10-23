@@ -8,7 +8,8 @@ import {installStageTimeSteppers} from './ui/stage-time-stepper.js';
 import {stageTimingRows} from './ui/stage-timing-rows.js';
 import {installTwoPhaseToggle} from './ui/two-phase-toggle.js';
 import {installIntervalModeCombo} from './ui/interval-mode-combo.js';
-import {isPlaybackProtected, applyPresetWithoutInterrupting, applyLiveMetronome} from './ui/playback-guard.js';
+import {isPlaybackProtected, applyPresetWithoutInterrupting, applyLiveMetronome, playbackState} from './ui/playback-guard.js';
+import { installScreenWake } from './platform/screen-wake.js';
 import {loadRoundTimingEditor,readRoundTimingEditor,saveRoundTiming,installRoundTimeSwipes} from './ui/round-time-editor.js';
 import {hasLadder} from './core/ladder-blocks.js';
 import {stageTwoPhaseLoad,stageTwoPhaseSave,roundTwoPhaseLoad,roundTwoPhaseSave} from './ui/two-phase-editor.js';
@@ -56,6 +57,7 @@ const ROUND_START_SYNC_EVENTS = new Set(['round-start-zero', 'rest-end-zero', 'b
 const ZERO_TRANSITION_EVENTS = new Set(['round-start-zero', 'round-end-zero', 'rest-end-zero', 'block-rest-start-zero', 'block-rest-end-zero', 'phase-two-start-zero', 'workout-end-zero']);
 
 const els = getDomRefs();
+const screenWake = installScreenWake();
 const audio = new AudioEngine();
 const metronome = new MetronomeEngine(audio);
 
@@ -165,6 +167,7 @@ timer = new TimerEngine({
     renderProgram();
     syncTimerVisibility();
     metronome.syncPhase(state);
+    screenWake.sync(playbackState(state));
   },
   onEvent: async (event) => {
     const spec = resolveEventAudioSpec(event, timer.config);
