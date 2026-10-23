@@ -10,7 +10,8 @@ const copies = {
     error:'Не удалось отправить файл. Попробуй ещё раз.', invalid:'Файл не является программой Fight Tech или повреждён.',
     version:'Версия файла не поддерживается.',too_large:'Файл слишком большой (максимум 128 КБ).',
     too_long:'Программа слишком длинная (максимум 1000 раундов).',
-    limit:'Лимит: 100 сохранённых программ.',read:'Не удалось прочитать файл.'
+    limit:'Лимит: 100 сохранённых программ.',read:'Не удалось прочитать файл.',
+    storage:'Не удалось сохранить: память приложения заполнена.'
   },
   en: {
     share:'Share',import:'Import',choose:'Choose a .ftworkout file from Downloads',
@@ -19,7 +20,8 @@ const copies = {
     error:'Could not share the file. Please try again.',invalid:'Invalid or corrupted Fight Tech program file.',
     version:'Unsupported file version.',too_large:'File too large (maximum 128 KB).',
     too_long:'Program too long (maximum 1000 rounds).',
-    limit:'Limit: 100 saved programs.',read:'Unable to read the file.'
+    limit:'Limit: 100 saved programs.',read:'Unable to read the file.',
+    storage:'Could not save: app storage is full.'
   }
 };
 const copy = doc => copies[doc.documentElement.lang === 'en' ? 'en' : 'ru'];
@@ -74,7 +76,7 @@ export function installWorkoutExchange({doc = document, getSavedPrograms, onImpo
     if(!pending || isRunning())return;
     if(getSavedPrograms().length>=100){message(copy(doc).limit);close();return;}
     try {onImported(pending);close();message(copy(doc).imported);}
-    catch(error) {message(copy(doc).error);close();}
+    catch(error) {message(copy(doc)[error?.code]||copy(doc).storage);close();}
   });
   async function shareSaved(program,button) {
     if(isRunning() || button.disabled)return;

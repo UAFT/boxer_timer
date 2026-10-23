@@ -25,6 +25,7 @@ import { AUDIO_KEYS } from './core/constants.js';
 import { clonePreset } from './state/presets.js';
 import { compileProgram, normalizeProgram, normalizeOptions, normalizeLibrary, syncStagesWithPreset, MAX_PROGRAM_ROUNDS, tooLongMessage, LIBRARY_KEY, PROGRAM_OPTIONS_KEY, PRESET_NAMES, PROGRAM_KEY } from './core/program.js';
 import { loadProfileState, saveProfileState, normalizeSettings } from './state/settings-store.js';
+import { writeJson, STORAGE_FULL_MESSAGE } from './state/storage.js';
 import { AudioEngine } from './audio/audio-engine.js';
 import { MetronomeEngine } from './audio/metronome-engine.js';
 import { TimerEngine } from './timer/timer-engine.js';
@@ -347,12 +348,17 @@ function handleOpenMetronomeCard(event) {
 }
 
 
+function store(key, value) {
+  if (writeJson(key, value)) return true;
+  window.alert(STORAGE_FULL_MESSAGE[document.documentElement.lang === 'en' ? 'en' : 'ru']);
+  return false;
+}
 function persistOptions() {
-  localStorage.setItem(PROGRAM_OPTIONS_KEY, JSON.stringify(programOptions));
+  store(PROGRAM_OPTIONS_KEY, programOptions);
   renderCurrentState();
 }
 function persistProgram() {
-  localStorage.setItem(PROGRAM_KEY, JSON.stringify(programEntries));
+  store(PROGRAM_KEY, programEntries);
   if(!programEntries.length)timerDisclosure.reset();
   renderCurrentState();
 }
@@ -683,7 +689,8 @@ function bindProgramLibrary() {
   const save=byId('programSaveModal');
   const confirmDeletion=installDeleteConfirmation();
   const close=()=>{library.hidden=true;save.hidden=true;};
-  function persistLibrary() {localStorage.setItem(LIBRARY_KEY,JSON.stringify(savedPrograms));}
+  // The library changes only once it is on disk; a full storage leaves it as it was.
+  function persistLibrary(next) {if(!store(LIBRARY_KEY,next))return false;savedPrograms=next;return true;}
   const exchange=installWorkoutExchange({
     getSavedPrograms:()=>savedPrograms,
     isRunning:()=>programRunning,
@@ -704,8 +711,7 @@ function bindProgramLibrary() {
     programOptions=normalizeOptions(entry.options);
     openedProgramId=builtIn?null:entry.id;
     openedProgramName=entry.name;
-    localStorage.setItem(PROGRAM_KEY,JSON.stringify(programEntries));
-    localStorage.setItem(PROGRAM_OPTIONS_KEY,JSON.stringify(programOptions));
+    store(PROGRAM_KEY,programEntries) && store(PROGRAM_OPTIONS_KEY,programOptions);
     timer.applyConfig({...activeSettings,presetId:activePresetId});
     close();renderCurrentState();
   }
@@ -762,9 +768,9 @@ function bindProgramLibrary() {
         onOpen:()=>openEntry(entry,false),
         onShareButton:()=>exchange.shareButton(entry),
         onDelete:del=>confirmDeletion({name:entry.name,trigger:del,onConfirm:()=>{
-          savedPrograms=savedPrograms.filter(x=>x.id!==entry.id);
+          if(!persistLibrary(savedPrograms.filter(x=>x.id!==entry.id)))return;
           if(openedProgramId===entry.id)openedProgramId=null;
-          persistLibrary();renderLibrary();renderCurrentState();
+          renderLibrary();renderCurrentState();
         }})
       }));
     }
@@ -786,8 +792,8 @@ function bindProgramLibrary() {
   overwrite.addEventListener('click',()=>{
     const existing=editorProgramIdentity(openedProgramId,savedPrograms);
     if(!existing || refuseTooLong(programEntries,programOptions))return;
-    savedPrograms=savedPrograms.map(x=>x.id===existing.id?snapshot(existing.name,existing.id):x);
-    openedProgramName=existing.name;persistLibrary();close();renderCurrentState();
+    if(!persistLibrary(savedPrograms.map(x=>x.id===existing.id?snapshot(existing.name,existing.id):x)))return;
+    openedProgramName=existing.name;close();renderCurrentState();
   });
   byId('programSaveCopy').addEventListener('click',()=>{
     fields.hidden=false;byId('programNameInput').focus();
@@ -795,8 +801,8 @@ function bindProgramLibrary() {
   byId('programSaveCreate').addEventListener('click',()=>{
     const name=byId('programNameInput').value.trim();if(!name||savedPrograms.length>=100||refuseTooLong(programEntries,programOptions))return;
     const id='p'+Date.now()+'-'+Math.random().toString(36).slice(2,8);
-    savedPrograms.push(snapshot(name,id));openedProgramId=id;openedProgramName=name;
-    persistLibrary();close();renderCurrentState();
+    if(!persistLibrary([...savedPrograms,snapshot(name,id)]))return;
+    openedProgramId=id;openedProgramName=name;close();renderCurrentState();
   });
   for (const [id,key,delta] of [['programCycleMinus','cycles',-1],['programCyclePlus','cycles',1],['programCycleRestMinus','cycleRestSec',-5],['programCycleRestPlus','cycleRestSec',5]]) {
     byId(id).addEventListener('click',()=>{if(programRunning)return;const limit=key==='cycles'?20:3600;const min=key==='cycles'?1:0;programOptions=normalizeOptions({...programOptions,[key]:Math.max(min,Math.min(limit,programOptions[key]+delta))});persistOptions();});
