@@ -417,8 +417,9 @@ export class TimerEngine {
 
       {
         const effectiveWarningSeconds = effectiveWarningSecondsForPhase(this.config, this.state.phase);
+        // Phase 2 ends its round like a single work phase does, so it gets the same warning.
         if (
-          (this.state.phase === PHASES.WORK || this.state.phase === PHASES.REST || this.state.phase === PHASES.BLOCK_REST) &&
+          (this.state.phase === PHASES.WORK || this.state.phase === PHASES.WORK_TWO || this.state.phase === PHASES.REST || this.state.phase === PHASES.BLOCK_REST) &&
           effectiveWarningSeconds > 0 &&
           nextRemainingSec >= 1 &&
           nextRemainingSec <= effectiveWarningSeconds
