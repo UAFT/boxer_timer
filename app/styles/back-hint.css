@@ -1,0 +1,5 @@
+/* Android Back during a workout: a short toast above everything, never a dialog. */
+.ft-back-hint{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 24px);transform:translateX(-50%);z-index:300;
+ width:max-content;max-width:calc(100vw - 32px);box-sizing:border-box;padding:11px 16px;border-radius:12px;
+ background:#1b2229;color:#fff;font-size:15px;line-height:1.35;text-align:center;box-shadow:0 8px 22px rgba(0,0,0,.28);pointer-events:none}
+.ft-back-hint[hidden]{display:none}

@@ -10,6 +10,7 @@ import {installTwoPhaseToggle} from './ui/two-phase-toggle.js';
 import {installIntervalModeCombo} from './ui/interval-mode-combo.js';
 import {isPlaybackProtected, applyPresetWithoutInterrupting, applyLiveMetronome, playbackState} from './ui/playback-guard.js';
 import { installScreenWake } from './platform/screen-wake.js';
+import { installBackButton } from './platform/back-button.js';
 import {loadRoundTimingEditor,readRoundTimingEditor,saveRoundTiming,installRoundTimeSwipes} from './ui/round-time-editor.js';
 import {hasLadder} from './core/ladder-blocks.js';
 import {stageTwoPhaseLoad,stageTwoPhaseSave,roundTwoPhaseLoad,roundTwoPhaseSave} from './ui/two-phase-editor.js';
@@ -848,6 +849,7 @@ function bootstrap() {
   });
   els.ladderFullPause.addEventListener('click', handleToggleRun);
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') audio.wake(); });
+  installBackButton({ isWorkoutActive: () => playbackState(timer.state) !== 'off' });
   renderCurrentState();
   installLocalization(document.querySelectorAll('[data-language]'));
 }
