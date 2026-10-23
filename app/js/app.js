@@ -214,7 +214,8 @@ function applySettings(nextSettings, { liveMetronome = false } = {}) {
 }
 
 async function handleToggleRun() {
-  await audio.unlock();
+  // Pause and Continue act at once; only a new start waits (bounded) for the sounds to load.
+  const audioReady = audio.unlock();
   syncMetronome();
 
   if (timer.isPaused) {
@@ -229,6 +230,7 @@ async function handleToggleRun() {
     return;
   }
 
+  await audioReady;
   if (programEntries.length && !programRunning) { startProgram(); return; }
   timer.start();
 }
@@ -838,6 +840,7 @@ function bootstrap() {
     renderCurrentState();
   });
   els.ladderFullPause.addEventListener('click', handleToggleRun);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') audio.wake(); });
   renderCurrentState();
   installLocalization(document.querySelectorAll('[data-language]'));
 }

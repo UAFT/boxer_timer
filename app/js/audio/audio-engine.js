@@ -1,5 +1,18 @@
 import { AUDIO_FILE_MAP } from './catalog.js';
 
+// Sound is best effort: the clock and the buttons never wait on a stuck AudioContext.
+const RESUME_WAIT_MS = 800;
+const PRELOAD_WAIT_MS = 1500;
+// A cue that could not start this soon is dropped: a late bell misleads more than a missing one.
+const STALE_CUE_MS = 1000;
+
+// The promise's value, or null once ms have passed; never rejects.
+function within(promise, ms) {
+  let timer;
+  const timeout = new Promise((resolve) => { timer = setTimeout(() => resolve(null), ms); });
+  return Promise.race([Promise.resolve(promise).catch(() => null), timeout]).finally(() => clearTimeout(timer));
+}
+
 function createSilentBuffer(context) {
   const buffer = context.createBuffer(1, 1, context.sampleRate);
   const source = context.createBufferSource();
@@ -29,6 +42,7 @@ export class AudioEngine {
   }
 
   ensureContext() {
+    if (this.context?.state === 'closed') this.context = null;
     if (this.context) return this.context;
     const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
     if (!AudioContextCtor) return null;
@@ -42,14 +56,13 @@ export class AudioEngine {
   async resumeContext() {
     const context = this.ensureContext();
     if (!context) return null;
-    if (context.state === 'suspended') {
-      try {
-        await context.resume();
-      } catch {
-        return null;
-      }
-    }
+    if (context.state !== 'running') await within(context.resume(), RESUME_WAIT_MS);
     return context;
+  }
+
+  // Back on screen: get the output running before the next cue needs it.
+  wake() {
+    if (this.context && this.context.state !== 'running') void this.resumeContext();
   }
 
   async preloadAll() {
@@ -100,7 +113,7 @@ export class AudioEngine {
     }
 
     this.unlocked = true;
-    await this.preloadAll();
+    await within(this.preloadAll(), PRELOAD_WAIT_MS);
     return true;
   }
 
@@ -140,11 +153,13 @@ export class AudioEngine {
 
   async play(key, { tag = 'cue', volume = 1 } = {}) {
     if (!this.enabled) return false;
+    const requestedAt = Date.now();
     const context = await this.resumeContext();
     if (!context) return false;
 
-    const buffer = await this.preload(key);
+    const buffer = await within(this.preload(key), STALE_CUE_MS);
     if (!buffer || !this.masterGain) return false;
+    if (context.state !== 'running' || Date.now() - requestedAt > STALE_CUE_MS) return false;
 
     try {
       const source = context.createBufferSource();

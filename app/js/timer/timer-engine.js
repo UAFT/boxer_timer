@@ -2,6 +2,7 @@ import { PHASES } from '../core/constants.js';
 import { clampInt } from '../core/time.js';
 import { restSecAfterRound, phaseTwoSecForRound, blockRestSecAfterRound, workSecForRound, totalRoundsForConfig } from '../core/schedule.js';
 
+const CUE_WAIT_MS = 300;
 const DEFAULT_CONFIG = {
   rounds: 12,
   workSec: 180,
@@ -347,15 +348,19 @@ export class TimerEngine {
   }
 
   // Plays a transition cue; false when Reset/new config abandoned the run meanwhile.
+  // The clock waits for the sound at most CUE_WAIT_MS: a stuck AudioContext must not stop it.
   async cue(event) {
     const generation = this.generation;
-    await this.emitEvent(event);
+    const timers = globalThis.window?.setTimeout ? globalThis.window : globalThis;
+    let timeout;
+    await Promise.race([this.emitEvent(event), new Promise(resolve => { timeout = timers.setTimeout(resolve, CUE_WAIT_MS); })]);
+    timers.clearTimeout(timeout);
     return generation === this.generation;
   }
 
   emitEvent(event) {
     try {
-      return Promise.resolve(this.onEvent(event));
+      return Promise.resolve(this.onEvent(event)).catch(() => {});
     } catch {
       return Promise.resolve();
     }
