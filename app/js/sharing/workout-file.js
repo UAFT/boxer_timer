@@ -1,4 +1,4 @@
-import { PRESET_NAMES, normalizeOptions, normalizeProgram } from '../core/program.js';
+import { PRESET_NAMES, MAX_PROGRAM_ROUNDS, normalizeOptions, normalizeProgram } from '../core/program.js';
 import { clonePreset } from '../state/presets.js';
 
 export const WORKOUT_FILE_FORMAT = 'fighttech.workout';
@@ -59,7 +59,7 @@ function checkEntries(entries, options) {
     const cfg = checkSettings(entry.settings,entry.presetId);
     total += cfg.rounds * (cfg.blockEnabled && (cfg.intervalMode === 'ladder'||(cfg.intervalMode==='two_phase'&&cfg.ladderEnabled)) ? cfg.blockCount : 1);
   }
-  if (total * options.cycles > 10000) invalid();
+  if (total * options.cycles > MAX_PROGRAM_ROUNDS) throw new WorkoutFileError('too_long');
 }
 export function parseWorkoutFile(contents) {
   if (typeof contents !== 'string' || new TextEncoder().encode(contents).length > WORKOUT_FILE_MAX_BYTES) throw new WorkoutFileError('too_large');

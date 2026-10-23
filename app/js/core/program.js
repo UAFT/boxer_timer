@@ -1,8 +1,25 @@
 import { totalRoundsForConfig, workSecForRound, phaseTwoSecForRound, restSecAfterRound, blockRestSecAfterRound } from './schedule.js';
+import { normalizeSettings } from '../state/settings-store.js';
+import { PRESETS } from '../state/presets.js';
 export const PRESET_NAMES = { classic3: '3′', classic2: '2′', classic1: '1′', tabata2020x24: '⚡' };
 export const PROGRAM_KEY = 'andar.fight.timer.program.v1';
 export const LIBRARY_KEY = 'fighttech.program.library.v1';
 export const PROGRAM_OPTIONS_KEY = 'fighttech.program.options.v1';
+// Caps the work of compiling and drawing one program; the longest library workout has 32 rounds.
+export const MAX_PROGRAM_ROUNDS = 1000;
+export const tooLongMessage = lang => lang === 'en'
+  ? 'This program is too long: more than 1000 rounds. Reduce rounds, blocks or cycles.'
+  : 'Программа слишком длинная: больше 1000 раундов. Уменьшите число раундов, блоков или циклов.';
+// Stays above any single stage (99 rounds x 99 blocks), so stage cards are exact; a whole
+// program past it is refused anyway. Without it 24 such stages x 20 cycles meant millions of rows.
+const COMPILE_CEILING = 10000;
+// Stage settings keep only setting keys: an imported "programRounds" string once turned a
+// stage into 100 rounds of undefined length. Known values are kept exactly as stored.
+const STAGE_SETTING_KEYS = [...Object.keys(normalizeSettings({}, PRESETS.classic3)), 'id', 'label'];
+function stageSettings(raw) {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  return Object.fromEntries(STAGE_SETTING_KEYS.filter(key => Object.hasOwn(raw, key)).map(key => [key, structuredClone(raw[key])]));
+}
 const bounded = (value, min, max, fallback) => Number.isFinite(Number(value)) ? Math.max(min,Math.min(max,Math.round(Number(value)))) : fallback;
 // Sparse manual overrides: a missing key follows the automatic ladder. Zero rest is valid.
 export function normalizeRoundTimingOverrides(raw) {
@@ -31,7 +48,7 @@ export function normalizeProgram(raw) {
     phaseTwoOverrides: Array.isArray(x.phaseTwoOverrides) ? x.phaseTwoOverrides.slice(0,200).map(n=>String(n||'').slice(0,100)) : [],
     roundDescriptions: Array.isArray(x.roundDescriptions) ? x.roundDescriptions.slice(0,200).map(n=>String(n||'').slice(0,600)) : [],
     roundTimingOverrides: normalizeRoundTimingOverrides(x.roundTimingOverrides),
-    settings: x.settings && typeof x.settings==='object' && !Array.isArray(x.settings) ? structuredClone(x.settings) : null,
+    settings: stageSettings(x.settings),
     restAfterSec: Math.max(0, Math.min(3600, Math.round((Number(x.restAfterSec) || 0) / 5) * 5))
   }));
 }
@@ -52,11 +69,12 @@ export function compileProgram(entries, profiles, options = {}) {
   const stages = normalizeProgram(entries);
   const programRounds = [];
   const {cycles,cycleRestSec} = normalizeOptions(options);
-  for (let cycleIndex=0;cycleIndex<cycles;cycleIndex++) stages.forEach((stage, stageIndex) => {
-    const config = structuredClone(stage.settings || profiles[stage.presetId]);
+  for (let cycleIndex=0;cycleIndex<cycles;cycleIndex++) for (const [stageIndex, stage] of stages.entries()) {
+    const config = structuredClone(stage.settings || stageSettings(profiles[stage.presetId]));
     const total = config.intervalMode === 'count_up' ? 1 : totalRoundsForConfig(config);
     for (let i=1;i<=total;i++) {
-      const override=normalizeRoundTimingOverrides(stage.roundTimingOverrides)[i-1]||{};
+      if (programRounds.length > COMPILE_CEILING) return programRounds;
+      const override=stage.roundTimingOverrides[i-1]||{};
       const phaseTwo=phaseTwoSecForRound(config,i);
       programRounds.push({
         workSec: config.intervalMode==='count_up' ? 0 : (override.workSec ?? workSecForRound(config,i)),
@@ -76,6 +94,6 @@ export function compileProgram(entries, profiles, options = {}) {
         localRounds: config.rounds
       });
     }
-  });
+  }
   return programRounds;
 }

@@ -9,6 +9,7 @@ const copies = {
     imported:'Программа сохранена в «Мои программы».',downloaded:'Файл создан. Его можно отправить через Telegram.',
     error:'Не удалось отправить файл. Попробуй ещё раз.', invalid:'Файл не является программой Fight Tech или повреждён.',
     version:'Версия файла не поддерживается.',too_large:'Файл слишком большой (максимум 128 КБ).',
+    too_long:'Программа слишком длинная (максимум 1000 раундов).',
     limit:'Лимит: 100 сохранённых программ.',read:'Не удалось прочитать файл.'
   },
   en: {
@@ -17,6 +18,7 @@ const copies = {
     imported:'Program saved to My Programs.',downloaded:'File created. You can send it using Telegram.',
     error:'Could not share the file. Please try again.',invalid:'Invalid or corrupted Fight Tech program file.',
     version:'Unsupported file version.',too_large:'File too large (maximum 128 KB).',
+    too_long:'Program too long (maximum 1000 rounds).',
     limit:'Limit: 100 saved programs.',read:'Unable to read the file.'
   }
 };

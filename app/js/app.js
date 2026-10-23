@@ -23,7 +23,7 @@ import { editableRestField } from './core/ladder-blocks.js';
 import { installLocalization } from './i18n/locale.js';
 import { AUDIO_KEYS } from './core/constants.js';
 import { clonePreset } from './state/presets.js';
-import { compileProgram, normalizeProgram, normalizeOptions, normalizeLibrary, syncStagesWithPreset, LIBRARY_KEY, PROGRAM_OPTIONS_KEY, PRESET_NAMES, PROGRAM_KEY } from './core/program.js';
+import { compileProgram, normalizeProgram, normalizeOptions, normalizeLibrary, syncStagesWithPreset, MAX_PROGRAM_ROUNDS, tooLongMessage, LIBRARY_KEY, PROGRAM_OPTIONS_KEY, PRESET_NAMES, PROGRAM_KEY } from './core/program.js';
 import { loadProfileState, saveProfileState, normalizeSettings } from './state/settings-store.js';
 import { AudioEngine } from './audio/audio-engine.js';
 import { MetronomeEngine } from './audio/metronome-engine.js';
@@ -547,8 +547,14 @@ function bindStageSettings(){
   });
 }
 
+// A program above MAX_PROGRAM_ROUNDS is neither started nor saved; the user is told why.
+function refuseTooLong(entries, options) {
+  if (compileProgram(entries,profiles,options).length <= MAX_PROGRAM_ROUNDS) return false;
+  window.alert(tooLongMessage(document.documentElement.lang));
+  return true;
+}
 function startProgram() {
-  if (!programEntries.length || isPlaybackProtected(timer,programRunning)) return;
+  if (!programEntries.length || isPlaybackProtected(timer,programRunning) || refuseTooLong(programEntries,programOptions)) return;
   audio.stopAll();
   metronome.stop();
   programSnapshot = compileProgram(programEntries,profiles,programOptions);
@@ -643,7 +649,8 @@ function renderProgram() {
       if (!programRunning && cfg.intervalMode!=='count_up') {
         const rounds=compileProgram([entry],profiles,{cycles:1}).length;
         const editor=document.createElement('div');editor.className='program-round-editor';
-        for(let j=0;j<rounds;j++) {
+        // Round names, descriptions and times are stored for the first 200 rounds only.
+        for(let j=0;j<Math.min(rounds,200);j++) {
           const line=document.createElement('div');line.className='program-round-edit-row';
           const label=document.createElement('span');
           const local=hasLadder(cfg)&&cfg.blockEnabled ? (j%Math.max(1,cfg.rounds))+1 : j+1;
@@ -653,6 +660,7 @@ function renderProgram() {
           const desc=document.createElement('button');desc.type='button';desc.textContent='≡';desc.setAttribute('aria-label','Описание раунда '+(j+1));desc.addEventListener('click',()=>renameProgramRound(i,j,true,desc));
           line.append(label,edit,desc);editor.append(line);
         }
+        if(rounds>200){const note=document.createElement('small');note.textContent='Названия, описания и время задаются для первых 200 раундов';editor.append(note);}
         card.append(editor);
       }
       if (i<programEntries.length-1) {
@@ -777,7 +785,7 @@ function bindProgramLibrary() {
   byId('programSaveClose').addEventListener('click',close);
   overwrite.addEventListener('click',()=>{
     const existing=editorProgramIdentity(openedProgramId,savedPrograms);
-    if(!existing)return;
+    if(!existing || refuseTooLong(programEntries,programOptions))return;
     savedPrograms=savedPrograms.map(x=>x.id===existing.id?snapshot(existing.name,existing.id):x);
     openedProgramName=existing.name;persistLibrary();close();renderCurrentState();
   });
@@ -785,7 +793,7 @@ function bindProgramLibrary() {
     fields.hidden=false;byId('programNameInput').focus();
   });
   byId('programSaveCreate').addEventListener('click',()=>{
-    const name=byId('programNameInput').value.trim();if(!name||savedPrograms.length>=100)return;
+    const name=byId('programNameInput').value.trim();if(!name||savedPrograms.length>=100||refuseTooLong(programEntries,programOptions))return;
     const id='p'+Date.now()+'-'+Math.random().toString(36).slice(2,8);
     savedPrograms.push(snapshot(name,id));openedProgramId=id;openedProgramName=name;
     persistLibrary();close();renderCurrentState();
