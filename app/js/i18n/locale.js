@@ -26,7 +26,7 @@ const pairs = [
 ['Отрицательный шаг сокращает отдых, положительный — удлиняет. Нулевой шаг сохраняет одинаковый отдых.','Negative steps shorten rest; positive steps lengthen it. Zero keeps rest unchanged.'],
 ['Лестница + Блок','Ladder + Block'],['Количество блоков','Number of blocks'],
 ['Отдых между блоками','Rest between blocks'],['Предупреждение до конца этапа','End-of-phase warning'],
-['Нет','None'],['4 сек','4 sec'],['10 сек','10 sec'],['10 сек — метроном недоступен','10 sec — metronome unavailable'],
+['Нет','None'],['5 сек','5 sec'],['10 сек','10 sec'],['10 сек — метроном недоступен','10 sec — metronome unavailable'],
 ['Сохранить','Save'],['Предварительный просмотр','Preview'],
 ['Оба шага равны нулю: все раунды будут одинаковыми.','Both steps are zero: all rounds will be equal.'],
 ['без шага','no step'],['мин','min'],['сек','sec'],['из','of'],['блоков','blocks'],['блока','blocks'],['блок','block'],['раундов','rounds'],['раунда','rounds'],['раунд','round'],

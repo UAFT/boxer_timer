@@ -30,7 +30,7 @@ test('standalone stopwatch counts upward, pauses, resumes and finishes only manu
  const clock=clockFixture();
  try{
   const engine=new TimerEngine();
-  engine.applyConfig(stopwatch());
+  engine.applyConfig({...stopwatch(),countdownEnabled:false});
   assert.equal(engine.state.remainingSec,0);
   assert.equal(totalRoundsForConfig(engine.config),1);
   assert.equal(totalDurationSecForConfig(engine.config),0);
@@ -62,7 +62,7 @@ test('a count-up stage advances to interstage rest and then the next timed stage
   assert.equal(compiled[0].phaseTwoSec,0);
   assert.equal(compiled[0].restSec,15);
   const engine=new TimerEngine();
-  engine.applyConfig({...base,programRounds:compiled,intervalMode:'standard'});
+  engine.applyConfig({...base,programRounds:compiled,intervalMode:'standard',countdownEnabled:false});
   engine.start();
   assert.equal(engine.state.phase,PHASES.COUNT_UP);
   clock.advance(18);engine.handleIntervalTick();

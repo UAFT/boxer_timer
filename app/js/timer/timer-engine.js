@@ -122,7 +122,7 @@ export class TimerEngine {
 
   start() {
     if (this.state.phase === PHASES.IDLE) {
-      if (this.isCountUpRound(1)) this.beginCountUpPhase(1);
+      if (this.isCountUpRound(1) && !this.config.countdownEnabled) this.beginCountUpPhase(1);
       else void this.beginPrestart(1);
       return;
     }
