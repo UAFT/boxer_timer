@@ -170,6 +170,7 @@ export function renderLiveLadder(els, state, ui = {}) {
   els.ladderFullPause.disabled=control.disabled;
   els.ladderFullPause.innerHTML=control.play?'<span aria-hidden="true">▶</span>':'<span aria-hidden="true">Ⅱ</span>';
   els.ladderFullPause.setAttribute('aria-label',control.label);
+  document.getElementById('ladderFinishStage').hidden=preview||state.phase!==PHASES.COUNT_UP;
 
   const list = els.ladderLiveList;
   const key = config.programRounds?.length ? JSON.stringify(config.programRounds) : [config.rounds, config.workSec, config.restSec, config.workStepSec, config.restStepSec, config.phaseTwoStepSec, config.ladderEnabled, config.blockEnabled, config.blockCount, config.blockRestSec,config.intervalMode,config.phaseTwoSec,config.phaseOneName,config.phaseTwoName].join(':');

@@ -810,6 +810,7 @@ function bindProgram() {
     tab.addEventListener('click',e=>{if(consumed){e.stopImmediatePropagation();e.preventDefault();consumed=false;}},true);
   }
   document.getElementById('finishStageBtn').addEventListener('click',()=>{void timer.finishStage();});
+  document.getElementById('ladderFinishStage').addEventListener('click',()=>{void timer.finishStage();});
   document.getElementById('programClear').addEventListener('click',()=>{if(!programRunning){programEntries=[];openedProgramName='';openedProgramId=null;persistProgram();}});
   document.getElementById('programStart').addEventListener('click',async()=>{await audio.unlock();startProgram();});
   document.getElementById('programExit').addEventListener('click',()=>{if(programRunning)exitProgram();});

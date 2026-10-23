@@ -144,3 +144,7 @@
 .stage-settings-modal:has(#stageSettingsTwoPhase:not([hidden]))>.stage-settings-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 
 #intervalModeExplainer[hidden]{display:none!important}
+
+/* AFAP plan: same manual finish action as the main timer. */
+.ladder-live.is-expanded #ladderFinishStage:not([hidden]){display:block;width:100%;min-height:52px;background:#356b66;color:white;font-size:18px;font-weight:700;border-radius:12px}
+.ft-afap-tasks{margin-top:8px;line-height:1.55;font-weight:600;color:inherit;white-space:normal}

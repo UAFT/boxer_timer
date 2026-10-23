@@ -62,7 +62,8 @@ export function buildLadderPlanRows(config){
   const round=pr?pr.localRound:localRoundFor(config,i);
   const phaseTwo=phaseTwoSecForRound(config,i);
   if(pr?.intervalMode==='count_up'||(!pr&&config.intervalMode==='count_up')){
-   rows.push('<div class="ladder-live-row" data-round="'+i+'"><span class="ladder-plan">Таймер · прямой отсчёт'+(Number.isInteger(pr?.actualElapsedSec)?' · '+formatTime(pr.actualElapsedSec):'')+'</span><strong class="ladder-count"></strong></div>');
+   const tasks=pr?.roundDescription?'<div class="ft-afap-tasks">'+escapeHtml(pr.roundDescription).replace(/\s*[·•]\s*/g,'<br>')+'</div>':'';
+   rows.push('<div class="ladder-live-row ft-afap-row" data-round="'+i+'"><span class="ladder-plan">Таймер · прямой отсчёт'+(Number.isInteger(pr?.actualElapsedSec)?' · '+formatTime(pr.actualElapsedSec):'')+tasks+'</span><strong class="ladder-count"></strong></div>');
   }else if(phaseTwo>0){
    const one=escapeHtml(pr?.phaseOneName||config.phaseOneName||'');
    const two=escapeHtml(pr?.phaseTwoName||config.phaseTwoName||'');
