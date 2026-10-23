@@ -1,3 +1,4 @@
+import { BOXING_LIBRARY } from './boxing-149.js';
 /* Editable launch library. Boxing entries are drafts: owner programs remain untouched. */
 const make = (id, category, name, mode, tasks, opts={}) => ({
   id, category, name, mode, tasks, rounds: opts.rounds || 1,
@@ -105,3 +106,6 @@ export function buildSequence(ids, pauseSec=60) {
   });
   return steps;
 }
+
+// Keep existing workout IDs and legacy categories; add the approved boxing catalog.
+LIBRARY.push(...BOXING_LIBRARY.map(x=>({id:x.id,category:'boxing',folder:x.folder,subfolder:x.subfolder||'',name:x.name,mode:'boxing_sequence',rounds:x.rounds,tasks:x.rounds.map(r=>r.name)})));

@@ -43,7 +43,7 @@ export function normalizeProgram(raw) {
   return entries.slice(0, 24).filter(x => PRESET_NAMES[x?.presetId]).map(x => ({
     presetId: x.presetId,
     title: typeof x.title==='string' ? x.title.slice(0,80) : '',
-    roundNames: Array.isArray(x.roundNames) ? x.roundNames.slice(0,200).map(n=>String(n||'').slice(0,100)) : [],
+    roundNames: Array.isArray(x.roundNames) ? x.roundNames.slice(0,200).map(n=>String(n||'').slice(0,240)) : [],
     phaseOneOverrides: Array.isArray(x.phaseOneOverrides) ? x.phaseOneOverrides.slice(0,200).map(n=>String(n||'').slice(0,100)) : [],
     phaseTwoOverrides: Array.isArray(x.phaseTwoOverrides) ? x.phaseTwoOverrides.slice(0,200).map(n=>String(n||'').slice(0,100)) : [],
     roundDescriptions: Array.isArray(x.roundDescriptions) ? x.roundDescriptions.slice(0,200).map(n=>String(n||'').slice(0,600)) : [],
