@@ -35,6 +35,19 @@ export function normalizeProgram(raw) {
     restAfterSec: Math.max(0, Math.min(3600, Math.round((Number(x.restAfterSec) || 0) / 5) * 5))
   }));
 }
+// A stage with its own settings follows its preset tab only in the fields just changed in Settings.
+const PRESET_SYNC_FIELDS=['intervalMode','phaseTwoSec','phaseOneName','phaseTwoName','ladderEnabled','phaseTwoStepSec','blockEnabled','blockCount','blockRestSec','workStepSec','restStepSec'];
+export function syncStagesWithPreset(entries, presetId, before, after) {
+  const changed=PRESET_SYNC_FIELDS.filter(field=>before?.[field]!==after?.[field]);
+  if (!changed.length || after?.intervalMode==='count_up') return false;
+  let touched=false;
+  for (const entry of entries) {
+    if (!entry.settings || entry.presetId!==presetId || entry.settings.intervalMode==='count_up') continue;
+    for (const field of changed) entry.settings[field]=after[field];
+    touched=true;
+  }
+  return touched;
+}
 export function compileProgram(entries, profiles, options = {}) {
   const stages = normalizeProgram(entries);
   const programRounds = [];

@@ -21,7 +21,7 @@ import { editableRestField } from './core/ladder-blocks.js';
 import { installLocalization } from './i18n/locale.js';
 import { AUDIO_KEYS } from './core/constants.js';
 import { clonePreset } from './state/presets.js';
-import { compileProgram, normalizeProgram, normalizeOptions, normalizeLibrary, LIBRARY_KEY, PROGRAM_OPTIONS_KEY, PRESET_NAMES, PROGRAM_KEY } from './core/program.js';
+import { compileProgram, normalizeProgram, normalizeOptions, normalizeLibrary, syncStagesWithPreset, LIBRARY_KEY, PROGRAM_OPTIONS_KEY, PRESET_NAMES, PROGRAM_KEY } from './core/program.js';
 import { loadProfileState, saveProfileState, normalizeSettings } from './state/settings-store.js';
 import { AudioEngine } from './audio/audio-engine.js';
 import { MetronomeEngine } from './audio/metronome-engine.js';
@@ -251,19 +251,11 @@ function handleSelectPreset(presetId) {
 
 function handleSaveSettings({patch={},close=false}={}) {
   // No save confirmation: every choice/step writes the active preset immediately.
+  const before = activeSettings;
   applySettings({ ...activeSettings, ...readSettingsForm(els), ...patch });
   // A program stage may carry a saved preset snapshot. Keep its ladder/block
   // controls in sync with the preset the user just edited in Settings.
-  if (programEntries.length && !programRunning) {
-    const fields=['intervalMode','phaseTwoSec','phaseOneName','phaseTwoName','ladderEnabled','phaseTwoStepSec','blockEnabled','blockCount','blockRestSec','workStepSec','restStepSec'];
-    let changed=false;
-    for (const entry of programEntries) {
-      if (!entry.settings || entry.presetId!==activePresetId || entry.settings.intervalMode==='count_up' || activeSettings.intervalMode==='count_up') continue;
-      for (const field of fields) entry.settings[field]=activeSettings[field];
-      changed=true;
-    }
-    if (changed) persistProgram();
-  }
+  if (programEntries.length && !programRunning && syncStagesWithPreset(programEntries, activePresetId, before, activeSettings)) persistProgram();
   if(close) closeSettings(els);
 }
 

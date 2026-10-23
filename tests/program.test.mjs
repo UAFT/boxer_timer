@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {compileProgram,normalizeProgram} from '../app/js/core/program.js';
+import {compileProgram,normalizeProgram,syncStagesWithPreset} from '../app/js/core/program.js';
 import {totalRoundsForConfig,restSecAfterRound,workSecForRound,totalDurationSecForConfig} from '../app/js/core/schedule.js';
 import {TimerEngine} from '../app/js/timer/timer-engine.js';
 const profiles={
@@ -70,4 +70,23 @@ test('ladder block boundary uses configured block rest in compiled program',()=>
  assert.equal(rows[3].blockRestSec,40);
  assert.equal(rows[7].restSec,0);
  assert.equal(rows[7].blockRestSec,0);
+});
+test('closing Settings without edits leaves stages with their own settings untouched',()=>{
+ const preset={rounds:5,workSec:60,restSec:60,intervalMode:'standard',phaseTwoSec:40,phaseOneName:'',phaseTwoName:'',ladderEnabled:false,blockEnabled:false,blockCount:1,blockRestSec:90,workStepSec:0,restStepSec:0,phaseTwoStepSec:0,warningSeconds:4};
+ const twoPhase={presetId:'classic1',settings:{...preset,intervalMode:'two_phase',phaseTwoSec:60,phaseOneName:'Джеб',phaseTwoName:'Бой с тенью'}};
+ const ladder={presetId:'classic1',settings:{...preset,intervalMode:'ladder',workStepSec:30,blockEnabled:true,blockCount:2}};
+ const entries=[twoPhase,ladder].map(e=>structuredClone(e));
+ assert.equal(syncStagesWithPreset(entries,'classic1',preset,{...preset}),false);
+ assert.equal(syncStagesWithPreset(entries,'classic1',preset,{...preset,warningSeconds:10}),false);
+ assert.deepEqual(entries,[twoPhase,ladder]);
+});
+test('a Settings edit reaches same-preset stages only in the changed field',()=>{
+ const preset={intervalMode:'standard',workStepSec:0,blockCount:1,phaseTwoSec:40,phaseOneName:''};
+ const entries=[{presetId:'classic1',settings:{...preset,intervalMode:'two_phase',phaseTwoSec:60,phaseOneName:'Джеб'}},
+  {presetId:'classic3',settings:{...preset}},{presetId:'classic1'},{presetId:'classic1',settings:{...preset,intervalMode:'count_up'}}];
+ assert.equal(syncStagesWithPreset(entries,'classic1',preset,{...preset,workStepSec:15}),true);
+ assert.deepEqual(entries[0].settings,{...preset,intervalMode:'two_phase',phaseTwoSec:60,phaseOneName:'Джеб',workStepSec:15});
+ assert.equal(entries[1].settings.workStepSec,0);
+ assert.equal(entries[2].settings,undefined);
+ assert.equal(entries[3].settings.workStepSec,0);
 });
