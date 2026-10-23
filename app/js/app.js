@@ -530,7 +530,7 @@ function bindStageSettings(){
       }
       values[key]=n;
     }
-    for(const key of ['Work','Rest']){const min=Number(id(key+'Min').value),sec=Number(id(key+'Sec').value);if(!Number.isInteger(min)||!Number.isInteger(sec)||min<0||min>60||sec<0||sec>59||(key==='Work'&&min*60+sec<5)){id(key+'Min').focus();return;}values[key]=min*60+sec;}
+    for(const key of ['Work','Rest']){const min=Number(id(key+'Min').value),sec=Number(id(key+'Sec').value);if(!Number.isInteger(min)||!Number.isInteger(sec)||min<0||min>60||sec<0||sec>59||min*60+sec>3600||(key==='Work'&&min*60+sec<5)){id(key+'Min').focus();return;}values[key]=min*60+sec;}
     const entry=programEntries[index];
     const cfg=structuredClone(entry.settings || profiles[entry.presetId]);
     Object.assign(cfg,{workSec:values.Work,restSec:values.Rest,rounds:values.Rounds,

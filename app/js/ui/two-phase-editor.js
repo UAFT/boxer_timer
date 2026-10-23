@@ -8,7 +8,7 @@ export function stageTwoPhaseLoad(cfg){
 export function stageTwoPhaseSave(cfg){
  const $=id=>document.getElementById(id);
  const min=Number($('stageSettingsPhaseTwoMin').value),sec=Number($('stageSettingsPhaseTwoSec').value);
- if(!Number.isInteger(min)||min<0||min>60||!Number.isInteger(sec)||sec<0||sec>59||min*60+sec<5){$('stageSettingsPhaseTwoMin').focus();return false;}
+ if(!Number.isInteger(min)||min<0||min>60||!Number.isInteger(sec)||sec<0||sec>59||min*60+sec<5||min*60+sec>3600){$('stageSettingsPhaseTwoMin').focus();return false;}
  cfg.phaseTwoSec=min*60+sec;
  cfg.phaseOneName=$('stageSettingsPhaseOne').value.trim().slice(0,100);
  cfg.phaseTwoName=$('stageSettingsPhaseTwo').value.trim().slice(0,100);
