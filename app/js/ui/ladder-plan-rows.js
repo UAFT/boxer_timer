@@ -63,7 +63,9 @@ export function buildLadderPlanRows(config){
   const phaseTwo=phaseTwoSecForRound(config,i);
   if(pr?.intervalMode==='count_up'||(!pr&&config.intervalMode==='count_up')){
    const tasks=pr?.roundDescription?'<div class="ft-afap-tasks">'+escapeHtml(pr.roundDescription).replace(/\s*[·•]\s*/g,'<br>')+'</div>':'';
-   rows.push('<div class="ladder-live-row ft-afap-row" data-round="'+i+'"><span class="ladder-plan">Таймер · прямой отсчёт'+(Number.isInteger(pr?.actualElapsedSec)?' · '+formatTime(pr.actualElapsedSec):'')+tasks+'</span><strong class="ladder-count"></strong></div>');
+   // The rest after a manually finished stage runs like any other; the plan shows it too.
+   const restAfter=i<totalRoundsForConfig(config)&&restSecAfterRound(config,i)>0?' · отдых '+rest:'';
+   rows.push('<div class="ladder-live-row ft-afap-row" data-round="'+i+'"><span class="ladder-plan">Таймер · прямой отсчёт'+(Number.isInteger(pr?.actualElapsedSec)?' · '+formatTime(pr.actualElapsedSec):'')+restAfter+tasks+'</span><strong class="ladder-count"></strong></div>');
   }else if(phaseTwo>0){
    const one=escapeHtml(pr?.phaseOneName||config.phaseOneName||'');
    const two=escapeHtml(pr?.phaseTwoName||config.phaseTwoName||'');
