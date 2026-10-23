@@ -30,6 +30,13 @@ function phaseLabelText(state) {
   }
 }
 
+// In a program the round label already names the stage, so plain work needs no
+// phase label; a pause must always be visible.
+export function phaseLabelFor(state) {
+  const plainProgramWork = state.config.programRounds?.length && state.phase === PHASES.WORK && !state.config.programRounds?.[state.roundIndex-1]?.phaseTwoSec;
+  return plainProgramWork && !state.isPaused ? '' : phaseLabelText(state);
+}
+
 function roundLabelText(state) {
   if (state.phase === PHASES.IDLE) return `Раунд 0 из ${state.totalRounds}`;
   return `Раунд ${state.roundIndex} из ${state.totalRounds}`;
@@ -78,7 +85,7 @@ export function renderTimer(els, state, uiState = {}) {
   document.body.classList.toggle('ft-unbounded-program',Boolean(hasUnboundedTime));
   els.finishStageBtn.hidden=!countUpActive;
   els.mainTime.textContent = formatTime(state.remainingSec);
-  els.phaseLabel.textContent = state.config.programRounds?.length && state.phase === PHASES.WORK && !state.config.programRounds?.[state.roundIndex-1]?.phaseTwoSec ? '' : phaseLabelText(state);
+  els.phaseLabel.textContent = phaseLabelFor(state);
   els.roundLabel.textContent = roundLabelText(state);
   const roundActive = [PHASES.WORK, PHASES.WORK_TWO, PHASES.REST, PHASES.BLOCK_REST, PHASES.COUNTDOWN, PHASES.COUNT_UP].includes(state.phase);
   els.roundLabel.classList.toggle('round-active', roundActive);
