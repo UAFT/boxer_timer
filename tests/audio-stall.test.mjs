@@ -51,6 +51,20 @@ test('Reset during a stuck cue still wins, and a failing cue does not stop the c
  }finally{clock.teardown();}
 });
 
+test('a stuck end-of-workout bell does not leave the engine mid-transition',async()=>{
+ const clock=clockFixture();
+ try{
+  const engine=new TimerEngine({onEvent:event=>event.type==='workout-end-zero'?new Promise(()=>{}):undefined});
+  engine.applyConfig(config({rounds:1,workSec:2,restSec:0}));
+  engine.start();clock.advance(4000);engine.handleIntervalTick();await flush();
+  clock.advance(2000);engine.handleIntervalTick();await flush();
+  assert.equal(engine.state.phase,PHASES.FINISHED);
+  assert.equal(engine.transitioning,true);
+  clock.advance(300);await flush();
+  assert.equal(engine.transitioning,false);
+ }finally{clock.teardown();}
+});
+
 class FakeContext{
  constructor(){this.state=FakeContext.initialState;this.destination={};this.sampleRate=44100;this.started=0;FakeContext.created+=1;}
  resume(){return FakeContext.resume(this);}

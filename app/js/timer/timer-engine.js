@@ -344,7 +344,7 @@ export class TimerEngine {
     };
     this.emitState();
     this.emitTick();
-    await this.emitEvent({ type: 'workout-end-zero', roundIndex });
+    await this.cue({ type: 'workout-end-zero', roundIndex });
   }
 
   // Plays a transition cue; false when Reset/new config abandoned the run meanwhile.
