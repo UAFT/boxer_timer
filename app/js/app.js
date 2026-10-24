@@ -17,7 +17,8 @@ import {hasLadder} from './core/ladder-blocks.js';
 import {stageTwoPhaseLoad,stageTwoPhaseSave,roundTwoPhaseLoad,roundTwoPhaseSave} from './ui/two-phase-editor.js';
 import { installWorkoutExchange } from './sharing/workout-exchange-ui.js';
 import { storeImportedWorkout, resolveSenderSettings } from './sharing/workout-file.js';
-import { renderSavedProgramCard, timeWords } from './ui/library-card-view.js';
+import { renderSavedProgramCard, createActionIcon } from './ui/library-card-view.js';
+import { renderLibraryWorkoutCard } from './ui/workout-plan-view.js';
 import { syncEditorProgramHeader, editorProgramIdentity } from './ui/program-presentation.js';
 import { renderPresetOrders } from './ui/preset-order.js';
 import { editableRestField } from './core/ladder-blocks.js';
@@ -584,42 +585,11 @@ function exitProgram() {
   timer.applyConfig({ ...activeSettings, presetId: activePresetId });
   renderCurrentState();
 }
-function russianRoundCount(count) {
-  const n = Math.abs(Number(count));
-  const lastTwo = n % 100;
-  const suffix = lastTwo >= 11 && lastTwo <= 14 ? 'раундов'
-    : n % 10 === 1 ? 'раунд'
-    : n % 10 >= 2 && n % 10 <= 4 ? 'раунда' : 'раундов';
-  return String(count) + ' ' + suffix;
-}
-
-function russianBlockCount(count) {
-  const n = Math.abs(Number(count));
-  const lastTwo = n % 100;
-  const suffix = lastTwo >= 11 && lastTwo <= 14 ? 'блоков'
-    : n % 10 === 1 ? 'блок'
-    : n % 10 >= 2 && n % 10 <= 4 ? 'блока' : 'блоков';
-  return String(count) + ' ' + suffix;
-}
-
 function formatProgramTime(sec) {return String(Math.floor(sec/60)).padStart(2,'0')+':'+String(sec%60).padStart(2,'0');}
 function stageTiming(entry) {
   const rounds=compileProgram([entry],profiles,{cycles:1});
   const total=rounds.reduce((sum,round)=>sum+round.workSec+(round.phaseTwoSec||0)+round.restSec+(round.blockRestSec||0),0);
   return {rounds,total};
-}
-function stageTimingText(entry) {
-  const cfg=entry.settings||profiles[entry.presetId];
-  const {rounds,total}=stageTiming(entry);
-  const blocks=hasLadder(cfg) && cfg.blockEnabled ? Math.max(1,Number(cfg.blockCount)||1) : 1;
-  if(cfg.intervalMode==='count_up')return {detail:'Прямой отсчёт · без ограничения времени',total:0};
-  // Per-round overrides (boxing library, ladders) show their real range, not the first round.
-  const span=values=>{const low=Math.min(...values),high=Math.max(...values);return formatProgramTime(low)+(low===high?'':'–'+formatProgramTime(high));};
-  const rests=rounds.slice(0,-1).filter(r=>!r.blockRestSec).map(r=>r.restSec);
-  return { detail: (blocks>1?russianRoundCount(cfg.rounds)+' × '+russianBlockCount(blocks):russianRoundCount(rounds.length))
-    +' · работа '+span(rounds.map(r=>r.workSec))+(cfg.intervalMode==='two_phase'?' + '+span(rounds.map(r=>r.phaseTwoSec)):'')
-    +' · отдых '+(rests.length?span(rests):formatProgramTime(0))
-    +(blocks>1?' · между блоками '+formatProgramTime(cfg.blockRestSec):''), total };
 }
 function renderProgram() {
   const panel=document.getElementById('programPanel');
@@ -738,39 +708,25 @@ function bindProgramLibrary() {
       for(const item of level.items) {
         if(item.kind!=='workout') {
           const button=document.createElement('button');button.type='button';
-          button.className='program-library-entry-open';button.textContent=item.label+' ('+item.count+')';
+          button.className='program-library-entry-open ft-library-folder';
+          const label=document.createElement('span');label.className='ft-library-folder-label';label.textContent=item.label;
+          const count=document.createElement('strong');count.className='ft-library-count';count.textContent=String(item.count);
+          button.append(label,count);button.setAttribute('aria-label',item.label+', '+item.count);
           button.addEventListener('click',()=>{libraryPath=libraryOpen(libraryPath,item);renderLibrary();});
           const row=document.createElement('div');row.className='program-library-entry';row.append(button);list.append(row);
           continue;
         }
-        const workout=item.workout;
-        const row=document.createElement('div');row.className='program-library-entry';
-        const info=document.createElement('div');info.className='native-library-info';
-        const title=document.createElement('strong');title.textContent=workout.name;
-        const description=document.createElement('small');description.textContent=workout.tasks.join(' · ');
-        const preview=stageForWorkout(workout);
-        if(preview){
-          const cfg=preview.settings;
-          const timing=document.createElement('small');timing.className='native-library-timing';
-          const meta=stageTimingText(preview);
-          timing.textContent=cfg.intervalMode==='count_up'?'Прямой отсчёт · завершение вручную':meta.detail;
-          const total=document.createElement('small');total.className='native-library-total';
-          total.textContent=cfg.intervalMode==='count_up'?'Без ограничения времени':'Всего: '+timeWords(meta.total,document.documentElement.lang);
-          info.append(title,timing,total,description);
-        }else info.append(title,description);
-        if(workout.mode==='boxing_sequence' && workout.note) {
-          const note=document.createElement('small');note.className='native-library-note';note.textContent=workout.note;info.append(note);
-        }
-        const plus=document.createElement('button');plus.type='button';plus.className='native-library-add';plus.textContent='+';
-        const supported=!!stageForWorkout(workout);plus.disabled=!supported || programRunning || programEntries.length>=24;
-        plus.setAttribute('aria-label','Добавить '+workout.name);
-        if(!supported) description.textContent+=' · требует отдельного режима таймера';
-        plus.addEventListener('click',()=>{
-          const stage=stageForWorkout(workout);if(!stage||programRunning||programEntries.length>=24)return;
-          programEntries.push(stage);persistProgram();
-          plus.textContent='✓';setTimeout(()=>{plus.textContent='+';},800);
-        });
-        row.append(info,plus);list.append(row);
+        const workout=item.workout,preview=stageForWorkout(workout);
+        list.append(renderLibraryWorkoutCard(document,workout,{
+          rounds:preview?compileProgram([preview],profiles,{cycles:1}):[],
+          lang:document.documentElement.lang,
+          addDisabled:!preview || programRunning || programEntries.length>=24,
+          plusIcon:()=>createActionIcon(document,'plus'),
+          onAdd:()=>{
+            const stage=stageForWorkout(workout);if(!stage||programRunning||programEntries.length>=24)return false;
+            programEntries.push(stage);persistProgram();return true;
+          }
+        }));
       }
       return;
     }

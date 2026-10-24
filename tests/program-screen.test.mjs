@@ -74,16 +74,15 @@ test('polished program screens keep titles once, total duration on its own line 
  assert.ok(render.includes('ladderPlanControl(state,{preview})'));
  assert.ok(render.includes('phaseLabelText(state)'));
  assert.equal((app.match(/programName:openedProgramName/g)||[]).length,3,'preview, tick and state changes preserve the name');
- assert.ok(app.includes('const meta=stageTimingText(preview);'));
- assert.ok(app.includes("cfg.intervalMode==='count_up'?'Без ограничения времени':'Всего: '+timeWords(meta.total"));
+ assert.ok(app.includes('rounds:preview?compileProgram([preview],profiles,{cycles:1}):[]'),'library cards read the compiled plan');
  assert.ok(css.includes('.program-stage-timing .program-stage-rest{flex-basis:auto!important}'));
  assert.ok(css.includes('.program-stage-timing .program-stage-sum{display:block;flex:0 0 100%'));
  assert.ok(css.includes('.program-stage-card .program-stage-workout{grid-column:1/-1'));
  assert.ok(savedStyle.includes('.ft-saved-program-heading{display:flex;flex-direction:column'));
  assert.ok(savedStyle.includes('.ft-library-header{display:grid;grid-template-columns:44px minmax(0,1fr) 44px'));
- assert.ok(savedView.includes("add(doc,heading,'span','ft-program-total',timing.unbounded?"),
+ assert.ok(readFileSync(new URL('../app/js/ui/workout-plan-view.js',import.meta.url),'utf8').includes("add(doc, heading, 'span', 'ft-program-total', facts.total)"),
    'saved cards show a duration or explicit no-limit state beneath the name');
- assert.ok(savedView.includes('timeWords(timing.total,lang)'), 'finite program duration is still displayed');
+ assert.ok(savedView.includes('renderCompactCard(doc,{title:program.name,rounds'), 'saved cards use the compact card');
  const cssTimer=readFileSync(new URL('../app/styles/timer-disclosure.css',import.meta.url),'utf8');
  assert.ok(cssTimer.includes('width:36px;height:36px'));
 });

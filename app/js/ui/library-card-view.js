@@ -1,4 +1,5 @@
 import { compileProgram, normalizeProgram, normalizeOptions, PRESET_NAMES } from '../core/program.js';
+import { renderCompactCard, renderPlanList } from './workout-plan-view.js';
 
 const ROUND_RU = ['раунд', 'раунда', 'раундов'];
 export function russianCount(count, forms = ROUND_RU) {
@@ -66,21 +67,13 @@ export function createActionIcon(doc, kind) {
   }
   return svg;
 }
+// «Мои»: the compact card shared with the library. Body = round plan, ☰ = stage overview
+// (saved programs keep no goal or notes), then + (open), share and delete.
 export function renderSavedProgramCard(doc, program, profiles, {lang='ru',onOpen,onShareButton,onDelete}={}) {
   const ru=lang!=='en',timing=programCardTimings(program,profiles);
-  const row=doc.createElement('div');row.className='program-library-entry ft-saved-program-entry';
-  const open=doc.createElement('button');open.type='button';open.className='program-library-entry-open ft-saved-program-open';
-  const heading=doc.createElement('div');heading.className='ft-saved-program-heading';
-  add(doc,heading,'strong','ft-program-title',program.name);
-  add(doc,heading,'span','ft-program-total',timing.unbounded?(ru?'Без ограничения времени':'No time limit'):timeWords(timing.total,lang));
-  open.append(heading);
-  open.setAttribute('aria-expanded','false');
-  open.setAttribute('aria-label',(ru?'Показать состав программы ':'Show workout details ')+program.name);
-  const summary=doc.createElement('div');summary.className='program-library-summary ft-program-stages';
-  let detailsReady=false;
-  const renderDetails=()=>{
-   if(detailsReady)return;
-   detailsReady=true;
+  const rounds=compileProgram(normalizeProgram(program.entries),profiles,normalizeOptions(program.options));
+  const describe=el=>{
+   const summary=doc.createElement('div');summary.className='program-library-summary ft-program-stages';
    for(const stage of timing.stages) {
     const block=doc.createElement('div');block.className='ft-program-stage';
     add(doc,block,'span','ft-stage-label',(ru?'Этап ':'Stage ')+stage.index);
@@ -101,38 +94,27 @@ export function renderSavedProgramCard(doc, program, profiles, {lang='ru',onOpen
     if(stage.restAfter>0) add(doc,block,'small','ft-stage-rest-after',
       (ru?'Между этапами: ':'Between stages: ')+timeClock(stage.restAfter));
     summary.append(block);
-  }
+   }
    if(timing.cycles>1)add(doc,summary,'small','ft-program-cycles',ru?
     'Циклы: '+timing.cycles+' · пауза между циклами: '+timeClock(timing.cycleRestSec):
     'Cycles: '+timing.cycles+' · between cycles: '+timeClock(timing.cycleRestSec));
+   el.append(summary);
+   add(doc,el,'p','ft-card-empty',ru?'Цель и заметки для этой программы не добавлены.':'No goal or notes for this workout yet.');
+  };
+  const plan=el=>{
+   el.append(renderPlanList(doc,rounds,lang));
    const load=doc.createElement('button');load.type='button';load.className='ft-saved-program-load';
    load.textContent=ru?'Открыть программу':'Open workout';
    load.addEventListener('click',()=>onOpen?.());
-   summary.append(load);
+   el.append(load);
   };
-  summary.id='ft-program-details-'+String(program.id||program.name).replace(/[^a-z0-9_-]/gi,'_');
-  summary.hidden=true;
-  open.setAttribute('aria-controls',summary.id);
-  const expand=()=>{
-    if(summary.hidden)renderDetails();
-    summary.hidden=!summary.hidden;
-    const expanded=!summary.hidden;
-    open.setAttribute('aria-expanded',String(expanded));
-    open.setAttribute('aria-label',(ru?(expanded?'Свернуть программу ':'Показать состав программы '):(expanded?'Collapse workout ':'Show workout details '))+program.name);
-    row.classList.toggle('is-expanded',expanded);
-  };
-  open.addEventListener('click',expand);
-  row.append(open,summary);
-  const controls=doc.createElement('div');controls.className='ft-program-actions';
   const quickAdd=doc.createElement('button');quickAdd.type='button';quickAdd.className='ft-saved-program-add';
   quickAdd.setAttribute('aria-label',(ru?'Открыть программу ':'Open workout ')+program.name);
   quickAdd.title=ru?'Открыть программу':'Open workout';quickAdd.append(createActionIcon(doc,'plus'));
   quickAdd.addEventListener('click',()=>onOpen?.());
-  controls.append(quickAdd,onShareButton());
   const remove=doc.createElement('button');remove.type='button';remove.className='program-library-entry-delete ft-trash-button';
   remove.setAttribute('aria-label',(ru?'Удалить программу ':'Delete program ')+program.name);
   remove.title=ru?'Удалить':'Delete';remove.append(createActionIcon(doc,'trash'));
-  remove.addEventListener('click',()=>onDelete(remove));controls.append(remove);
-  row.append(controls);
-  return row;
+  remove.addEventListener('click',()=>onDelete(remove));
+  return renderCompactCard(doc,{title:program.name,rounds,lang,plan,description:describe,actions:[quickAdd,onShareButton(),remove]});
 }

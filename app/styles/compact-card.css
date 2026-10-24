@@ -1,0 +1,22 @@
+/* Compact workout cards (library and «Мои»): the body toggles the round plan; the actions
+   sit in their own row, so four buttons fit a 360 px phone without overlapping the text. */
+.program-library-modal .ft-compact-card .ft-saved-program-open{padding:4px!important;min-height:0!important}
+.program-library-modal .ft-compact-card .ft-saved-program-heading{min-height:0!important;padding-right:0!important;gap:3px!important}
+.program-library-modal .ft-compact-card .ft-program-actions{position:static;display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px;margin-top:6px}
+.ft-program-summary{display:block;font-size:13px;line-height:1.35;color:var(--ft-secondary);font-variant-numeric:tabular-nums}
+.ft-program-badge{display:block;font-size:12px;font-weight:700;color:#923a39}
+.ft-card-panel{margin-top:8px;padding-top:8px;border-top:1px solid var(--ft-line)}
+.ft-card-panel[hidden]{display:none!important}
+.ft-plan-rounds{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.ft-plan-round{display:flex;flex-direction:column;gap:2px;min-width:0;overflow-wrap:anywhere}
+.ft-plan-round-name{font-size:14px;color:var(--ft-ink)}
+.ft-plan-round-time{font-size:13px;font-weight:650;color:var(--ft-steel);font-variant-numeric:tabular-nums}
+.ft-plan-round-note{font-size:12px;line-height:1.35;color:var(--ft-secondary)}
+.ft-plan-stage{margin-top:4px;font-size:12px;font-weight:750;letter-spacing:.04em;text-transform:uppercase;color:var(--ft-secondary)}
+.ft-card-section{margin:0 0 8px;display:flex;flex-direction:column;gap:2px;font-size:13px;line-height:1.4;overflow-wrap:anywhere}
+.ft-card-section-label{font-size:12px;color:var(--ft-secondary)}
+.ft-card-empty{margin:6px 0 0;font-size:13px;font-style:italic;color:var(--ft-secondary)}
+/* Folder rows: name on the left, its bold count at the far right. */
+.program-library-modal .program-library-list .ft-library-folder{flex-direction:row!important;justify-content:space-between!important;align-items:center!important;gap:10px}
+.ft-library-folder-label{flex:1;min-width:0;text-align:left;overflow-wrap:anywhere}
+.ft-library-count{margin-left:auto;font-weight:800;font-variant-numeric:tabular-nums}

@@ -33,44 +33,44 @@ test('saved library program shows accurate 45-minute total including 3-minute be
  assert.equal(data.stages[1].restAfter,0);
 });
 
-test('stage hierarchy and top-right icons render in one saved-program card',()=>{
- let opened=0,deleted=0;
+test('saved-program card: compact summary, lazy plan and description, four independent actions',()=>{
+ let opened=0,deleted=0,shared=0;
  const doc=mockDoc();
  const card=renderSavedProgramCard(doc,program,profiles,{
-  lang:'ru',onOpen:()=>opened++,onDelete:()=>deleted++,onShareButton:()=>{const btn=doc.createElement('button');btn.className='ft-share-button';return btn;}
+  lang:'ru',onOpen:()=>opened++,onDelete:()=>deleted++,onShareButton:()=>{const btn=doc.createElement('button');btn.className='ft-share-button';btn.addEventListener('click',()=>shared++);return btn;}
  });
- assert.equal(card.className,'program-library-entry ft-saved-program-entry');
- const title=findAll(card,'ft-program-title')[0];
- assert.equal(title.textContent,'Программа 1');
+ assert.equal(card.className,'program-library-entry ft-saved-program-entry ft-compact-card');
+ assert.equal(findAll(card,'ft-program-title')[0].textContent,'Программа 1');
+ assert.equal(findAll(card,'ft-program-summary')[0].textContent,'4 раунда · работа 03:00–31:00 · отдых 01:00–03:00');
  assert.equal(findAll(card,'ft-program-total')[0].textContent,'45 минут');
- const details=findAll(card,'ft-program-stages')[0];
- assert.equal(details.hidden,true,'saved cards start collapsed');
- assert.equal(card.children[0].attributes['aria-expanded'],'false');
- assert.equal(findAll(card,'ft-stage-label').length,0,'details are lazy and not rendered upfront');
- card.children[0].onclick();
- assert.equal(details.hidden,false);
- assert.equal(card.children[0].attributes['aria-expanded'],'true');
+ const [body,actions,info,plan]=card.children;
+ assert.equal(actions.className,'ft-program-actions');
+ assert.deepEqual(actions.children.map(b=>b.className),['ft-description-button','ft-saved-program-add','ft-share-button','program-library-entry-delete ft-trash-button']);
+ assert.equal(plan.hidden,true,'saved cards start collapsed');assert.equal(info.hidden,true);
+ assert.equal(body.attributes['aria-expanded'],'false');assert.equal(body.attributes['aria-controls'],plan.id);
+ assert.equal(findAll(card,'ft-plan-round').length,0,'plan is lazy');
+ body.onclick();
+ assert.equal(plan.hidden,false);assert.equal(info.hidden,true,'body opens only the plan');
+ assert.equal(body.attributes['aria-expanded'],'true');
+ assert.deepEqual(findAll(card,'ft-plan-round-time').map(x=>x.textContent),
+  ['работа 03:00 · отдых 01:00','работа 03:00 · отдых 01:00','работа 03:00 · пауза между этапами 03:00','работа 31:00']);
+ assert.deepEqual(findAll(card,'ft-plan-stage').map(x=>x.textContent),['Этап 1 · Кардио — Скакалка 3 × 3','Этап 2 · Бокс — Комплекс 1']);
+ actions.children[0].onclick();
+ assert.equal(info.hidden,false);assert.equal(actions.children[0].attributes['aria-expanded'],'true');
  assert.deepEqual(findAll(card,'ft-stage-label').map(x=>x.textContent),['Этап 1','Этап 2']);
- assert.equal(findAll(card,'ft-stage-title')[0].textContent,'Кардио — Скакалка 3 × 3');
  assert.equal(findAll(card,'ft-stage-details')[0].textContent,'3 раунда · работа 03:00 · отдых 01:00');
- assert.equal(findAll(card,'ft-stage-total')[0].textContent,'Всего: 11 минут');
  assert.equal(findAll(card,'ft-stage-rest-after')[0].textContent,'Между этапами: 03:00');
- const actions=findAll(card,'ft-program-actions')[0];
- assert.ok(actions);
- assert.equal(actions.children.length,3);
- assert.equal(findAll(card,'ft-saved-program-add').length,1);
- assert.equal(findAll(card,'ft-trash-button').length,1);
- assert.equal(findAll(card,'ft-action-icon').length,2);
- card.children[0].onclick();
- assert.equal(details.hidden,true,'second tap collapses the card');
- assert.equal(card.children[0].attributes['aria-expanded'],'false');
- assert.equal(opened,0,'a tap must never replace current program');
- assert.equal(findAll(card,'ft-stage-label').length,2,'details are retained across toggles');
- card.children[0].onclick();
+ assert.equal(findAll(card,'ft-card-empty')[0].textContent,'Цель и заметки для этой программы не добавлены.');
+ body.onclick();
+ assert.equal(plan.hidden,true,'second tap collapses the plan');assert.equal(info.hidden,false,'description stays independent');
+ assert.equal(opened+deleted+shared,0,'expanding never opens, shares or deletes');
+ body.onclick();
+ assert.equal(findAll(card,'ft-plan-round').length,4,'plan is built once');
  findAll(card,'ft-saved-program-load')[0].onclick();
- actions.children[0].onclick(); // Quick + loads without expanding first.
+ actions.children[1].onclick(); // Quick + loads without expanding first.
  actions.children[2].onclick();
- assert.equal(opened,2);assert.equal(deleted,1);
+ actions.children[3].onclick();
+ assert.deepEqual([opened,shared,deleted],[2,1,1]);
 });
 
 test('saved AFAP program presents unbounded time rather than misleading zero',()=>{
@@ -80,7 +80,10 @@ test('saved AFAP program presents unbounded time rather than misleading zero',()
  const doc=mockDoc();
  const card=renderSavedProgramCard(doc,afap,profiles,{onShareButton:()=>doc.createElement('button')});
  assert.equal(findAll(card,'ft-program-total')[0].textContent,'Без ограничения времени');
+ assert.equal(findAll(card,'ft-program-summary')[0].textContent,'Прямой отсчёт · без ограничения времени');
  card.children[0].onclick();
+ assert.equal(findAll(card,'ft-plan-round-time')[0].textContent,'прямой отсчёт');
+ card.children[1].children[0].onclick();
  assert.match(findAll(card,'ft-stage-details')[0].textContent,/Прямой отсчёт/);
  assert.equal(findAll(card,'ft-stage-total')[0].textContent,'Время не ограничено');
 });
@@ -109,6 +112,6 @@ test('compact import nav and separate actions use icon buttons without replacing
  assert.ok(exchange.includes("createActionIcon(doc,'share')"));
  assert.ok(app.includes('renderSavedProgramCard(document,entry,profiles'));
  assert.ok(app.includes('confirmDeletion({name:entry.name,trigger:del,onConfirm:()=>{'));
- assert.ok(css.includes('.ft-program-actions{position:absolute;right:12px;top:11px'));
+ assert.ok(readFileSync(new URL('../app/styles/compact-card.css',import.meta.url),'utf8').includes('.ft-compact-card .ft-program-actions{position:static;display:flex;flex-wrap:wrap'));
  assert.ok(css.includes('.ft-library-nav{display:grid;grid-template-columns:'));
 });
