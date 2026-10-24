@@ -77,12 +77,9 @@ test('description: source notes and draft warning when present, honest empty sta
  assert.equal(actions.children[0].attributes['aria-controls'],info.id);
  actions.children[0].onclick();
  assert.equal(info.hidden,false);assert.equal(body.attributes['aria-expanded'],'false','description does not open the plan');
- assert.equal(findAll(empty,'ft-card-empty')[0].textContent,'Описание пока не добавлено.');
- const draft=LIBRARY.find(w=>/НЕ ГОТОВ/.test(w.note));
- const d=card(draft);
- assert.equal(findAll(d,'ft-program-badge')[0].textContent,'Черновик — см. описание');
- d.children[1].children[0].onclick();
- assert.deepEqual(findAll(d,'ft-card-section-text').map(x=>x.textContent),[draft.note]);
+ assert.deepEqual(findAll(empty,'ft-card-section-label').map(x=>x.textContent),['Техника:','Тактика:','Особенности выполнения:','Типичные ошибки:']);
+ assert.ok(findAll(empty,'ft-card-section-text')[0].textContent.length>0);
+ assert.equal(findAll(empty,'ft-program-badge').length,0);
  const legacy=card(byId('I03'));legacy.children[1].children[0].onclick();
  assert.deepEqual(findAll(legacy,'ft-card-section-label').map(x=>x.textContent),['Оборудование','Упражнения','Источник']);
 });

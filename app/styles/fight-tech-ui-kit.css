@@ -664,3 +664,13 @@ body.ft-unbounded-program:not(.ft-count-up-standalone) .timer-card .summary-grid
 .settings-modal .settings-head #closeSettingsBtn.ft-settings-close:focus-visible{
   outline:3px solid var(--ft-steel);outline-offset:2px;
 }
+
+/* Larger description editor only; exercise-name editor remains compact. */
+.round-edit-modal:has(#roundEditInput[rows="12"]){
+  width:min(94vw,620px)!important;max-height:82dvh!important;overflow-y:auto;
+}
+.round-edit-modal #roundEditInput[rows="12"]{
+  height:clamp(280px,54dvh,590px)!important;min-height:280px!important;
+  max-height:60dvh!important;resize:vertical!important;overflow-y:auto;
+}
+.ft-card-section-text{white-space:pre-line}

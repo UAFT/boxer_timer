@@ -110,8 +110,8 @@ export function renderCompactCard(doc, { className = '', title, rounds, lang = '
 }
 
 // Description panel: only what the data holds; otherwise an honest empty state.
-export function renderDescription(doc, el, sections, lang = 'ru') {
-  const shown = sections.filter(([, text]) => text);
+export function renderDescription(doc, el, sections, lang = 'ru', showEmpty = false) {
+  const shown = showEmpty ? sections : sections.filter(([, text]) => text);
   if (!shown.length) { add(doc, el, 'p', 'ft-card-empty', lang !== 'en' ? 'Описание пока не добавлено.' : 'No description yet.'); return; }
   for (const [label, text] of shown) {
     const block = doc.createElement('p'); block.className = 'ft-card-section';
@@ -131,7 +131,13 @@ export function renderLibraryWorkoutCard(doc, workout, { rounds = [], lang = 'ru
   const icon = () => plus.replaceChildren(plusIcon ? plusIcon() : '+');
   icon();
   plus.addEventListener('click', () => { if (onAdd?.()) { plus.replaceChildren('✓'); setTimeout(icon, 800); } });
-  const description = el => renderDescription(doc, el, [
+  const method = workout.mode === 'boxing_sequence' ? workout.methodology : null;
+  const description = el => method ? renderDescription(doc, el, [
+    ['Техника:', method.technique || ''],
+    ['Тактика:', method.tactics || ''],
+    ['Особенности выполнения:', method.execution || ''],
+    ['Типичные ошибки:', method.typicalMistakes || '']
+  ], lang, true) : renderDescription(doc, el, [
     [ru ? 'Оборудование' : 'Equipment', workout.equipment],
     [ru ? 'Упражнения' : 'Exercises', workout.mode === 'boxing_sequence' ? '' : (workout.tasks || []).join(' · ')],
     [ru ? 'Примечание' : 'Note', workout.note],

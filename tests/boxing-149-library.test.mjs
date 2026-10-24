@@ -153,9 +153,10 @@ test('library navigation: sections, boxing folders and subfolders with counts, B
  }
 });
 
-test('workout notes, including draft and safety warnings, reach the library card',()=>{
- assert.match(byId('MEDBALL_9').note,/^ПРОЕКТ, НЕ ГОТОВ К ЗАПУСКУ/);
- assert.match(byId('BAR_6KG').note,/требует допуска тренера/);
+test('boxing author descriptions replace legacy notes without changing rounds',()=>{
+ assert.equal(byId('MEDBALL_9').note,'');
+ assert.equal(byId('BAR_6KG').note,'');
+ assert.ok(byId('BOX-001').methodology.technique);
  assert.deepEqual(byId('BOX-001').tasks.length,6);
 });
 

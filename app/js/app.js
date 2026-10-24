@@ -410,7 +410,7 @@ function renameProgramRound(stageIndex, roundIndex, description=false, trigger=n
   document.getElementById('roundEditCancel').textContent=en?'Cancel':'Отмена';
   document.getElementById('roundEditSave').textContent=en?'Save':'Сохранить';
   input.maxLength=description?600:240;
-  input.rows=description?5:2;
+  input.rows=description?12:2;
   input.value=stage[field]?.[roundIndex]||'';
   const roundConfig=stage.settings || profiles[stage.presetId];
   const usePhases=!description && roundConfig.intervalMode==='two_phase';

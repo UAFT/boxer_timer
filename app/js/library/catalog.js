@@ -111,6 +111,6 @@ export function buildSequence(ids, pauseSec=60) {
 const SHADOW_FOLDER = 'Работа перед зеркалом / Бой с тенью';
 LIBRARY.push(...BOXING_LIBRARY.map(x=>({id:x.id,category:'boxing',folder:x.folder,subfolder:x.subfolder||'',
   alsoIn:SHARED_SHADOW_BAG_IDS.includes(x.id)?[{folder:SHADOW_FOLDER,subfolder:'Общие с работой на мешке'}]:[],
-  name:x.name,mode:'boxing_sequence',sourceMode:x.mode,rounds:x.rounds,note:x.notes||'',
+  name:x.name,mode:'boxing_sequence',sourceMode:x.mode,rounds:x.rounds,note:'',methodology:x.methodology,
   // Bag rounds repeat in the weak stance: list each task once.
   tasks:[...new Set(x.rounds.map(r=>r.name))]})));
