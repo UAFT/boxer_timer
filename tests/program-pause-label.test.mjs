@@ -19,3 +19,11 @@ test('the standalone timer labels are unchanged',()=>{
  assert.equal(phaseLabelFor({phase:'work',roundIndex:1,isPaused:true,config:standalone}),'Пауза · Обычный');
  assert.equal(phaseLabelFor({phase:'finished',roundIndex:3,config:standalone}),'Готово');
 });
+
+// Phase 2 of any two-phase workout used to read «Готов» («Ready») while the athlete worked.
+test('phase 2 of a two-phase round is labelled as work',()=>{
+ const twoPhase={rounds:3,workSec:30,phaseTwoSec:60,restSec:30,intervalMode:'two_phase',presetId:'classic1'};
+ assert.equal(phaseLabelFor({phase:'work_two',roundIndex:1,config:twoPhase}),'Работа · Две фазы');
+ assert.equal(phaseLabelFor({phase:'work_two',roundIndex:2,config:program}),'Работа · Программа');
+ assert.equal(phaseLabelFor({phase:'work_two',roundIndex:2,isPaused:true,config:program}),'Пауза · Программа');
+});

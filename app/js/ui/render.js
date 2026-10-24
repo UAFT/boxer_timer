@@ -9,6 +9,12 @@ function intervalModeTitle(config) {
   return config?.intervalMode==='count_up' ? 'Таймер' : config?.programRounds?.length ? 'Программа' : (config?.presetId === 'tabata2020x24' ? 'Скоростной' : (config?.intervalMode === 'ladder' ? 'Лестница' : config?.intervalMode==='two_phase'?'Две фазы':'Обычный'));
 }
 
+// A two-phase program round names the exercise of the phase being worked.
+function phaseName(phase, round) {
+  const name = phase === PHASES.WORK ? round.phaseOneName : phase === PHASES.WORK_TWO ? round.phaseTwoName : '';
+  return name ? ' · ' + name : '';
+}
+
 function phaseLabelText(state) {
   const modeTitle = intervalModeTitle(state?.config);
   if (state.isPaused) return `Пауза · ${modeTitle}`;
@@ -18,6 +24,7 @@ function phaseLabelText(state) {
     case PHASES.COUNT_UP:
       return 'Прямой отсчёт';
     case PHASES.WORK:
+    case PHASES.WORK_TWO:
       return `Работа · ${modeTitle}`;
     case PHASES.REST:
       return `Отдых · ${modeTitle}`;
@@ -92,7 +99,7 @@ export function renderTimer(els, state, uiState = {}) {
   if (roundActive && state.config.programRounds?.length) {
     const r=state.config.programRounds[Math.max(0,state.roundIndex-1)];
     const stages=new Set(state.config.programRounds.map(x=>x.stageIndex)).size;
-    els.roundLabel.textContent='Этап '+(r.stageIndex+1)+'/'+stages+(r.blockCount>1?' · Блок '+r.block+'/'+r.blockCount:'')+' · Раунд '+(r.blockCount>1?r.localRound:r.stageRound)+'/'+(r.blockCount>1?r.localRounds:r.stageRounds)+(r.roundName?' · '+r.roundName:'');
+    els.roundLabel.textContent='Этап '+(r.stageIndex+1)+'/'+stages+(r.blockCount>1?' · Блок '+r.block+'/'+r.blockCount:'')+' · Раунд '+(r.blockCount>1?r.localRound:r.stageRound)+'/'+(r.blockCount>1?r.localRounds:r.stageRounds)+(r.roundName?' · '+r.roundName:'')+(!r.roundName&&r.phaseTwoSec?phaseName(state.phase,r):'');
     if(countUpActive)els.roundLabel.textContent='Этап '+(r.stageIndex+1)+' из '+stages+' · Таймер';
   } else if (roundActive && !countUpActive) {
     const blocks = blockCount(state.config);
