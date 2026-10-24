@@ -1,18 +1,12 @@
 import { CATEGORIES, LIBRARY, buildSteps } from './catalog.js';
 import { clonePreset } from '../state/presets.js';
+import { boxingStage } from './boxing-stage.js';
 
 // Adapter: catalog entries become ordinary legacy program stages. No second timer.
 export { CATEGORIES, LIBRARY };
 export function stageForWorkout(workout) {
   if (!workout) return null;
-  if (workout.mode === 'boxing_sequence') {
-    const rounds=workout.rounds;
-    if(!Array.isArray(rounds)||rounds.length<1||rounds.length>200||rounds.some(r=>!Number.isInteger(r.workSec)||r.workSec<1||r.workSec>3600||!Number.isInteger(r.restSec)||r.restSec<0||r.restSec>3600))return null;
-    return {presetId:'classic2',title:'Бокс — '+workout.name,
-      settings:{...clonePreset('classic2'),intervalMode:'standard',ladderEnabled:false,blockEnabled:false,rounds:rounds.length,workSec:rounds[0].workSec,restSec:rounds[0].restSec,workStepSec:0,restStepSec:0},
-      roundNames:rounds.map(r=>r.name),roundDescriptions:rounds.map(r=>[r.stance,r.description].filter(Boolean).join(' · ')),
-      roundTimingOverrides:rounds.map((r,i)=>({workSec:r.workSec,restSec:i===rounds.length-1?0:r.restSec})),restAfterSec:0};
-  }
+  if (workout.mode === 'boxing_sequence') return boxingStage(workout);
   if (workout.mode === 'afap') {
     // Use the existing count-up engine. Finishing is manual; the next stage
     // (if present) starts after restAfterSec, not after a fabricated timeout.

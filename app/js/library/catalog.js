@@ -1,4 +1,4 @@
-import { BOXING_LIBRARY } from './boxing-149.js';
+import { BOXING_LIBRARY, SHARED_SHADOW_BAG_IDS } from './boxing-149.js';
 /* Editable launch library. Boxing entries are drafts: owner programs remain untouched. */
 const make = (id, category, name, mode, tasks, opts={}) => ({
   id, category, name, mode, tasks, rounds: opts.rounds || 1,
@@ -108,4 +108,9 @@ export function buildSequence(ids, pauseSec=60) {
 }
 
 // Keep existing workout IDs and legacy categories; add the approved boxing catalog.
-LIBRARY.push(...BOXING_LIBRARY.map(x=>({id:x.id,category:'boxing',folder:x.folder,subfolder:x.subfolder||'',name:x.name,mode:'boxing_sequence',rounds:x.rounds,tasks:x.rounds.map(r=>r.name)})));
+const SHADOW_FOLDER = 'Работа перед зеркалом / Бой с тенью';
+LIBRARY.push(...BOXING_LIBRARY.map(x=>({id:x.id,category:'boxing',folder:x.folder,subfolder:x.subfolder||'',
+  alsoIn:SHARED_SHADOW_BAG_IDS.includes(x.id)?[{folder:SHADOW_FOLDER,subfolder:'Общие с работой на мешке'}]:[],
+  name:x.name,mode:'boxing_sequence',sourceMode:x.mode,rounds:x.rounds,note:x.notes||'',
+  // Bag rounds repeat in the weak stance: list each task once.
+  tasks:[...new Set(x.rounds.map(r=>r.name))]})));

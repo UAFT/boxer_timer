@@ -57,3 +57,4 @@
 .program-library-modal #programLibraryClose{grid-row:1;grid-column:3;justify-self:end;width:44px;min-width:44px;height:44px;padding:0;border-radius:11px}
 .native-library-info .native-library-timing{display:block;color:#c9d6e9;font-size:clamp(10px,2.6vw,12px);letter-spacing:-.22px;line-height:1.35;margin:0;white-space:normal}
 .native-library-info .native-library-total{display:block;color:#e9bc60;font-size:13px;font-weight:750;opacity:1;margin:0}
+.native-library-info .native-library-note{display:block;font-size:12px;font-style:italic;line-height:1.35;margin:0;white-space:normal}

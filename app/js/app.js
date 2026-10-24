@@ -1,4 +1,5 @@
 import { CATEGORIES, LIBRARY, stageForWorkout } from './library/native-adapter.js';
+import { libraryLevel, libraryUp, libraryOpen } from './library/library-browser.js';
 import { starterPrograms } from './core/starter-programs.js';
 import { announceRound, announcedRound, stopVoice } from './audio/voice-coach.js';
 import { installDeleteConfirmation } from './ui/delete-confirmation.js';
@@ -118,7 +119,7 @@ try { savedPrograms=normalizeLibrary(JSON.parse(localStorage.getItem(LIBRARY_KEY
 let openedProgramId = null;
 let openedProgramName = '';
 let libraryTab = 'mine';
-let libraryCategory = null;
+let libraryPath = {};
 const builtInPrograms = [
   ...starterPrograms,
   {id:'built-box',name:'Классический бокс',entries:[{presetId:'classic3',title:'Раунды',restAfterSec:0,settings:{...clonePreset('classic3'),rounds:12,workSec:180,restSec:60}}],options:{cycles:1,cycleRestSec:60}},
@@ -407,7 +408,7 @@ function renameProgramRound(stageIndex, roundIndex, description=false, trigger=n
   document.getElementById('roundEditLabel').textContent=label;
   document.getElementById('roundEditCancel').textContent=en?'Cancel':'Отмена';
   document.getElementById('roundEditSave').textContent=en?'Save':'Сохранить';
-  input.maxLength=description?600:100;
+  input.maxLength=description?600:240;
   input.rows=description?5:2;
   input.value=stage[field]?.[roundIndex]||'';
   const roundConfig=stage.settings || profiles[stage.presetId];
@@ -612,8 +613,12 @@ function stageTimingText(entry) {
   const {rounds,total}=stageTiming(entry);
   const blocks=hasLadder(cfg) && cfg.blockEnabled ? Math.max(1,Number(cfg.blockCount)||1) : 1;
   if(cfg.intervalMode==='count_up')return {detail:'Прямой отсчёт · без ограничения времени',total:0};
+  // Per-round overrides (boxing library, ladders) show their real range, not the first round.
+  const span=values=>{const low=Math.min(...values),high=Math.max(...values);return formatProgramTime(low)+(low===high?'':'–'+formatProgramTime(high));};
+  const rests=rounds.slice(0,-1).filter(r=>!r.blockRestSec).map(r=>r.restSec);
   return { detail: (blocks>1?russianRoundCount(cfg.rounds)+' × '+russianBlockCount(blocks):russianRoundCount(rounds.length))
-    +' · работа '+formatProgramTime(cfg.workSec)+' · отдых '+formatProgramTime(cfg.restSec)
+    +' · работа '+span(rounds.map(r=>r.workSec))+(cfg.intervalMode==='two_phase'?' + '+span(rounds.map(r=>r.phaseTwoSec)):'')
+    +' · отдых '+(rests.length?span(rests):formatProgramTime(0))
     +(blocks>1?' · между блоками '+formatProgramTime(cfg.blockRestSec):''), total };
 }
 function renderProgram() {
@@ -703,7 +708,7 @@ function bindProgramLibrary() {
     onImported:program=>{
       const id='pimport-'+Date.now()+'-'+Math.random().toString(36).slice(2,10);
       savedPrograms=storeImportedWorkout(savedPrograms,program,localStorage,LIBRARY_KEY,id);
-      libraryTab='mine';libraryCategory=null;
+      libraryTab='mine';libraryPath={};
       renderLibrary();
     }
   });
@@ -720,50 +725,25 @@ function bindProgramLibrary() {
     timer.applyConfig({...activeSettings,presetId:activePresetId});
     close();renderCurrentState();
   }
-  let librarySubfolder=null;
-  let librarySubcategory=null;
   function renderLibrary() {
     const list=byId('programLibraryList');list.replaceChildren();
     byId('ftWorkoutExchangeToolbar').hidden=libraryTab!=='mine';
     exchange.refresh();
     byId('programLibraryMine').classList.toggle('is-active',libraryTab==='mine');
     byId('programLibraryTemplates').classList.toggle('is-active',libraryTab==='templates');
-    const back=byId('programLibraryBack');
-    back.hidden=libraryTab!=='templates' || !libraryCategory;
-    byId('programLibraryTitle').textContent=libraryTab==='mine'?'Мои программы':librarySubcategory||librarySubfolder|| (libraryCategory?(CATEGORIES.find(x=>x[0]===libraryCategory)?.[1]||'Библиотека'):'Разделы');
-    if(libraryTab==='templates' && !libraryCategory) {
-      for(const [id,label] of CATEGORIES) {
-        const button=document.createElement('button');button.type='button';
-        button.className='program-library-entry-open';button.textContent=label;
-        button.addEventListener('click',()=>{libraryCategory=id;librarySubfolder=null;librarySubcategory=null;renderLibrary();});
-        const row=document.createElement('div');row.className='program-library-entry';row.append(button);list.append(row);
-      }
-      return;
-    }
+    const level=libraryLevel(LIBRARY,CATEGORIES,libraryPath);
+    byId('programLibraryBack').hidden=libraryTab!=='templates' || !level.back;
+    byId('programLibraryTitle').textContent=libraryTab==='mine'?'Мои программы':level.title;
     if(libraryTab==='templates') {
-      const categoryWorkouts=LIBRARY.filter(x=>x.category===libraryCategory);
-      const folders=[...new Set(categoryWorkouts.map(x=>x.folder || 'Ранее добавленные'))];
-      if(folders.length && !librarySubfolder){
-        for(const folder of folders){
-          const button=document.createElement('button');button.type='button';button.className='program-library-entry-open';
-          button.textContent=folder+' ('+categoryWorkouts.filter(x=>(x.folder||'Ранее добавленные')===folder).length+')';
-          button.addEventListener('click',()=>{librarySubfolder=folder;renderLibrary();});
+      for(const item of level.items) {
+        if(item.kind!=='workout') {
+          const button=document.createElement('button');button.type='button';
+          button.className='program-library-entry-open';button.textContent=item.label+' ('+item.count+')';
+          button.addEventListener('click',()=>{libraryPath=libraryOpen(libraryPath,item);renderLibrary();});
           const row=document.createElement('div');row.className='program-library-entry';row.append(button);list.append(row);
+          continue;
         }
-        return;
-      }
-      const folderWorkouts=categoryWorkouts.filter(x=>!librarySubfolder||(x.folder||'Ранее добавленные')===librarySubfolder);
-      const subfolders=[...new Set(folderWorkouts.map(x=>x.subfolder).filter(Boolean))];
-      if(librarySubfolder && subfolders.length && !librarySubcategory){
-        for(const subfolder of subfolders){
-          const button=document.createElement('button');button.type='button';button.className='program-library-entry-open';
-          button.textContent=subfolder+' ('+folderWorkouts.filter(x=>x.subfolder===subfolder).length+')';
-          button.addEventListener('click',()=>{librarySubcategory=subfolder;renderLibrary();});
-          const row=document.createElement('div');row.className='program-library-entry';row.append(button);list.append(row);
-        }
-        return;
-      }
-      for(const workout of folderWorkouts.filter(x=>!librarySubcategory||x.subfolder===librarySubcategory)) {
+        const workout=item.workout;
         const row=document.createElement('div');row.className='program-library-entry';
         const info=document.createElement('div');info.className='native-library-info';
         const title=document.createElement('strong');title.textContent=workout.name;
@@ -778,6 +758,9 @@ function bindProgramLibrary() {
           total.textContent=cfg.intervalMode==='count_up'?'Без ограничения времени':'Всего: '+timeWords(meta.total,document.documentElement.lang);
           info.append(title,timing,total,description);
         }else info.append(title,description);
+        if(workout.mode==='boxing_sequence' && workout.note) {
+          const note=document.createElement('small');note.className='native-library-note';note.textContent=workout.note;info.append(note);
+        }
         const plus=document.createElement('button');plus.type='button';plus.className='native-library-add';plus.textContent='+';
         const supported=!!stageForWorkout(workout);plus.disabled=!supported || programRunning || programEntries.length>=24;
         plus.setAttribute('aria-label','Добавить '+workout.name);
@@ -804,11 +787,11 @@ function bindProgramLibrary() {
       }));
     }
   }
-  byId('programLibraryOpen').addEventListener('click',()=>{libraryTab='mine';libraryCategory=null;renderLibrary();library.hidden=false;});
+  byId('programLibraryOpen').addEventListener('click',()=>{libraryTab='mine';libraryPath={};renderLibrary();library.hidden=false;});
   byId('programLibraryClose').addEventListener('click',close);
-  byId('programLibraryBack').addEventListener('click',()=>{if(librarySubcategory)librarySubcategory=null;else if(librarySubfolder)librarySubfolder=null;else libraryCategory=null;renderLibrary();});
-  byId('programLibraryMine').addEventListener('click',()=>{libraryTab='mine';libraryCategory=null;librarySubfolder=null;librarySubcategory=null;renderLibrary();});
-  byId('programLibraryTemplates').addEventListener('click',()=>{libraryTab='templates';libraryCategory=null;renderLibrary();});
+  byId('programLibraryBack').addEventListener('click',()=>{libraryPath=libraryUp(libraryPath);renderLibrary();});
+  byId('programLibraryMine').addEventListener('click',()=>{libraryTab='mine';libraryPath={};renderLibrary();});
+  byId('programLibraryTemplates').addEventListener('click',()=>{libraryTab='templates';libraryPath={};renderLibrary();});
   const current=byId('programSaveCurrent'),fields=byId('programSaveNewFields');
   const overwrite=byId('programSaveOverwrite');
   byId('programSaveOpen').addEventListener('click',()=>{

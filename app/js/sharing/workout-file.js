@@ -42,7 +42,7 @@ function checkEntries(entries, options) {
   for (const entry of entries) {
     if (!plain(entry) || !Object.hasOwn(PRESET_NAMES,entry.presetId)) invalid();
     if (!string(entry.title,80) || !integer(entry.restAfterSec,0,3600)) invalid();
-    for (const [key,length] of [['roundNames',100],['phaseOneOverrides',100],['phaseTwoOverrides',100],['roundDescriptions',600]]) {
+    for (const [key,length] of [['roundNames',240],['phaseOneOverrides',100],['phaseTwoOverrides',100],['roundDescriptions',600]]) {
       if (entry[key] != null && (!Array.isArray(entry[key]) || entry[key].length > 200 || entry[key].some(x=>!string(x,length)))) invalid();
     }
     if (entry.roundTimingOverrides != null) {
