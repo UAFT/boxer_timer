@@ -1598,3 +1598,9 @@ input,textarea,[contenteditable="true"]{user-select:text;-webkit-user-select:tex
 .ft-edit-utilities{display:flex;flex-wrap:wrap;gap:8px;margin-top:15px}
 .ft-edit-utilities button{font-size:12px;padding:8px;border:1px solid #bfd0ca;border-radius:8px;background:#f4f7f6;color:#2b4d46}
 @media(max-width:380px){.ft-route-lesson-list{padding-left:18px!important}.ft-route-lesson{padding:9px 7px!important}.ft-route-lesson-action{width:30px!important;height:30px!important;min-height:30px!important;flex-basis:30px!important}}
+/* 2026-10-25 owner UI refinement: borderless compact actions, bottom aligned */
+.ft-route-lesson{grid-template-rows:auto auto!important;row-gap:8px!important}
+.ft-route-lesson-meta{align-self:end!important}
+.ft-route-lesson-controls{align-self:end!important;gap:5px!important;margin-bottom:-2px!important}
+.ft-route-lesson-controls .ft-route-lesson-action{background:transparent!important;border:0!important;box-shadow:none!important;border-radius:0!important;width:27px!important;height:27px!important;min-height:27px!important;flex:0 0 27px!important;font-size:20px!important;color:#253537!important;padding:0!important}
+.ft-route-lesson-controls .ft-route-lesson-action:focus-visible{outline:2px solid #47766e!important;outline-offset:2px!important;border-radius:5px!important}
