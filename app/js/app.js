@@ -757,17 +757,23 @@ function bindProgramLibrary() {
     byId('programLibraryTitle').textContent='Путь обучения';
     byId('programLibraryBack').hidden=true;
     const root=document.createElement('div');root.className='ft-route';
-    const selector=document.createElement('select');selector.className='ft-route-filter';selector.setAttribute('aria-label','Показать ступени');
-    for(const [value,label] of [['all','Все ступени'],['done','Пройдено'],['current','Текущее']]){
-      const o=document.createElement('option');o.value=value;o.textContent=label;selector.append(o);
+    const filters=[['all','Все ступени'],['done','Пройдено'],['current','Текущее']];
+    const dropdown=document.createElement('details');dropdown.className='ft-route-filter-menu';
+    const trigger=document.createElement('summary');trigger.className='ft-route-filter-trigger';
+    const selected=filters.find(([value])=>value===ftTreeFilter);
+    trigger.append(document.createTextNode(selected?.[1]||'Все ступени'));
+    const arrow=document.createElement('span');arrow.className='ft-route-filter-arrow';arrow.textContent='⌄';trigger.append(arrow);dropdown.append(trigger);
+    const options=document.createElement('div');options.className='ft-route-filter-options';
+    for(const [value,label] of filters){
+      const option=document.createElement('button');option.type='button';option.className='ft-route-filter-option';
+      if(value===ftTreeFilter)option.classList.add('is-active');
+      option.textContent=label;option.addEventListener('click',()=>{ftTreeFilter=value;renderTreePreview(list);});options.append(option);
     }
-    selector.value=ftTreeFilter;
-    selector.addEventListener('change',()=>{ftTreeFilter=selector.value;renderTreePreview(list);});
-    root.append(selector);
-    const completed=ftTreeDone;
-    const firstOpen=TREE_PREVIEW_STAGES.find(x=>!completed.has(x.id));
+    dropdown.append(options);root.append(dropdown);
     const makeButton=(text,cls,handler,label)=>{const el=document.createElement('button');el.type='button';el.className=cls;el.textContent=text;if(label)el.setAttribute('aria-label',label);el.addEventListener('click',handler);return el;};
     const makeText=(tag,cls,value)=>{const el=document.createElement(tag);el.className=cls;el.textContent=value;return el;};
+    const completed=ftTreeDone;
+    const firstOpen=TREE_PREVIEW_STAGES.find(x=>!completed.has(x.id));
     for(let si=0;si<ftTreeSections.length;si++){
       const section=ftTreeSections[si];const nodes=TREE_PREVIEW_STAGES.filter(x=>x.section===section);
       if(ftTreeFilter==='done'&&!nodes.some(x=>completed.has(x.id)))continue;
