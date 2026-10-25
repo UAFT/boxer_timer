@@ -776,7 +776,7 @@ function bindProgramLibrary() {
       const targetNode=TREE_PREVIEW_STAGES.find(n=>n.id===target);
       const targetIds=ftIds(targetNode);next[target]=[...new Set([...targetIds,workoutId])];
       if(action.value==='move'&&sourceId!==target){const sourceNode=TREE_PREVIEW_STAGES.find(n=>n.id===sourceId);next[sourceId]=ftIds(sourceNode).filter(id=>id!==workoutId);}
-      try{localStorage.setItem(ftMapKey,JSON.stringify(next));}catch{alert('Не удалось сохранить изменения');return;}
+      if(!store(ftMapKey,next))return;
       ftLinkOverrides=next;overlay.remove();renderTreePreview(list);
     });
     actions.append(cancel,apply);
