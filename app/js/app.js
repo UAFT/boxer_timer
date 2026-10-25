@@ -747,6 +747,42 @@ function bindProgramLibrary() {
     }
   }
   // A single vertical route: section → stage → lessons → rounds. No second timer engine.
+  // Editorial overlay only: canonical 161-stage tree and 149 workouts remain immutable.
+  const ftMapKey='ft-tree-editor-links-v1';
+  let ftEditEnabled=false;
+  let ftLinkOverrides={};
+  try{const raw=JSON.parse(localStorage.getItem(ftMapKey)||'{}');if(raw&&typeof raw==='object'&&!Array.isArray(raw))ftLinkOverrides=raw;}catch{}
+  const ftBaseIds=node=>[...new Set([...node.existing_program_ids,...node.editorial_programs.map(x=>x.id)])];
+  const ftIds=node=>Array.isArray(ftLinkOverrides[node.id])?ftLinkOverrides[node.id]:ftBaseIds(node);
+  const ftCount=section=>TREE_PREVIEW_STAGES.filter(n=>n.section===section).reduce((sum,n)=>sum+ftIds(n).length,0);
+  function ftEditLinks(sourceId,workoutId,list){
+    const overlay=document.createElement('div');overlay.className='ft-edit-overlay';
+    const panel=document.createElement('div');panel.className='ft-edit-panel';
+    const heading=document.createElement('h3');heading.textContent='Расположение тренировки';panel.append(heading);
+    const name=document.createElement('p');name.textContent=LIBRARY.find(w=>w.id===workoutId)?.name||workoutId;panel.append(name);
+    const sectionSelect=document.createElement('select');sectionSelect.setAttribute('aria-label','Раздел');
+    for(const section of ftTreeSections){const option=document.createElement('option');option.value=section;option.textContent=ftTreeSectionTitle(section);sectionSelect.append(option);}
+    sectionSelect.value=TREE_PREVIEW_STAGES.find(n=>n.id===sourceId)?.section||ftTreeSections[0];
+    const stageSelect=document.createElement('select');stageSelect.setAttribute('aria-label','Ступень');
+    function updateStages(){stageSelect.replaceChildren();for(const node of TREE_PREVIEW_STAGES.filter(n=>n.section===sectionSelect.value)){const option=document.createElement('option');option.value=node.id;option.textContent=node.order+' · '+node.title;stageSelect.append(option);}}
+    sectionSelect.addEventListener('change',updateStages);updateStages();
+    const action=document.createElement('select');action.setAttribute('aria-label','Действие');
+    for(const [value,label] of [['add','Добавить также в ступень'],['move','Переместить из этой ступени']]){const option=document.createElement('option');option.value=value;option.textContent=label;action.append(option);}
+    const actions=document.createElement('div');actions.className='ft-edit-actions';
+    const cancel=document.createElement('button');cancel.type='button';cancel.textContent='Отмена';cancel.addEventListener('click',()=>overlay.remove());
+    const apply=document.createElement('button');apply.type='button';apply.textContent='Сохранить';apply.addEventListener('click',()=>{
+      const target=stageSelect.value;if(!target)return;
+      const next={...ftLinkOverrides};
+      const targetNode=TREE_PREVIEW_STAGES.find(n=>n.id===target);
+      const targetIds=ftIds(targetNode);next[target]=[...new Set([...targetIds,workoutId])];
+      if(action.value==='move'&&sourceId!==target){const sourceNode=TREE_PREVIEW_STAGES.find(n=>n.id===sourceId);next[sourceId]=ftIds(sourceNode).filter(id=>id!==workoutId);}
+      try{localStorage.setItem(ftMapKey,JSON.stringify(next));}catch{alert('Не удалось сохранить изменения');return;}
+      ftLinkOverrides=next;overlay.remove();renderTreePreview(list);
+    });
+    actions.append(cancel,apply);
+    for(const [label,control] of [['Раздел',sectionSelect],['Ступень',stageSelect],['Действие',action]]){const text=document.createElement('label');text.textContent=label;text.append(control);panel.append(text);}
+    panel.append(actions);overlay.append(panel);overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.remove();});document.body.append(overlay);
+  }
   const ftTreeProgressKey='ft-tree-completed-stages-v1';
   const ftTreeDone=new Set(JSON.parse(localStorage.getItem(ftTreeProgressKey)||'[]'));
   let ftTreeFilter='all';
@@ -770,6 +806,14 @@ function bindProgramLibrary() {
       option.textContent=label;option.addEventListener('click',()=>{ftTreeFilter=value;renderTreePreview(list);});options.append(option);
     }
     dropdown.append(options);root.append(dropdown);
+    const editorControls=document.createElement('div');editorControls.className='ft-edit-toolbar';
+    const editToggle=document.createElement('button');editToggle.type='button';editToggle.textContent=ftEditEnabled?'✓ Редактор включён':'Редактор привязок';
+    editToggle.addEventListener('click',()=>{ftEditEnabled=!ftEditEnabled;renderTreePreview(list);});editorControls.append(editToggle);
+    if(ftEditEnabled){
+      const exportBtn=document.createElement('button');exportBtn.type='button';exportBtn.textContent='Экспорт изменений';
+      exportBtn.addEventListener('click',()=>{const payload={format:'ft-tree-editor-links-v1',stages:161,overrides:ftLinkOverrides};const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='fight-tech-tree-edits.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});editorControls.append(exportBtn);
+    }
+    root.append(editorControls);
     const makeButton=(text,cls,handler,label)=>{const el=document.createElement('button');el.type='button';el.className=cls;el.textContent=text;if(label)el.setAttribute('aria-label',label);el.addEventListener('click',handler);return el;};
     const makeText=(tag,cls,value)=>{const el=document.createElement(tag);el.className=cls;el.textContent=value;return el;};
     const completed=ftTreeDone;
@@ -783,7 +827,7 @@ function bindProgramLibrary() {
       const head=document.createElement('summary');head.className='ft-route-section-head';
       const station=makeText('span','ft-route-station',String(si+1).padStart(2,'0'));
       if(nodes.every(x=>completed.has(x.id)))station.classList.add('ft-route-done');
-      head.append(station,makeText('strong','ft-route-section-name',ftTreeSectionTitle(section)),makeText('span','ft-route-chevron','⌄'));group.append(head);
+      head.append(station,makeText('strong','ft-route-section-name',ftTreeSectionTitle(section)+' · '+ftCount(section)),makeText('span','ft-route-chevron','⌄'));group.append(head);
       const children=document.createElement('div');children.className='ft-route-steps';
       for(const node of nodes){
         if(ftTreeFilter==='done'&&!completed.has(node.id))continue;
@@ -791,10 +835,10 @@ function bindProgramLibrary() {
         const step=document.createElement('details');step.className='ft-route-step';
         if(completed.has(node.id))step.classList.add('ft-route-is-done');
         const summary=document.createElement('summary');summary.className='ft-route-step-head';
-        summary.append(makeText('span','ft-route-step-dot',completed.has(node.id)?'✓':node.order),makeText('span','ft-route-step-title',node.title),makeText('span','ft-route-chevron','⌄'));
+        summary.append(makeText('span','ft-route-step-dot',completed.has(node.id)?'✓':node.order),makeText('span','ft-route-step-title',node.title+' · '+ftIds(node).length),makeText('span','ft-route-chevron','⌄'));
         step.append(summary);
         const content=document.createElement('div');content.className='ft-route-lesson-list';
-        const ids=[...new Set([...node.existing_program_ids,...node.editorial_programs.map(x=>x.id)])];
+        const ids=ftIds(node);
         const workouts=ids.map(id=>LIBRARY.find(w=>w.id===id)).filter(Boolean);
         if(!workouts.length)content.append(makeText('p','ft-route-muted','Уроки пока не назначены'));
         for(const workout of workouts){
@@ -828,7 +872,9 @@ function bindProgramLibrary() {
           },'Добавить в таймер: '+workout.name);
           const meta=document.createElement('div');meta.className='ft-route-lesson-meta';
           meta.append(makeText('div','ft-route-lesson-facts',facts.line),makeText('div','ft-route-lesson-total',facts.total));
-          lesson.append(main,info,plus,meta);content.append(lesson);
+          lesson.append(main,info,plus,meta);
+          if(ftEditEnabled){const move=makeButton('⇄','ft-route-lesson-action',()=>ftEditLinks(node.id,workout.id,list),'Переместить или добавить в другую ступень');lesson.append(move);}
+          content.append(lesson);
         }
         const footer=document.createElement('div');footer.className='ft-route-step-footer';
         const mark=makeButton(completed.has(node.id)?'✓ Пройдено':'○ Отметить пройденным','ft-route-complete',()=>{
