@@ -781,7 +781,12 @@ function bindProgramLibrary() {
     });
     actions.append(cancel,apply);
     for(const [label,control] of [['Раздел',sectionSelect],['Ступень',stageSelect],['Действие',action]]){const text=document.createElement('label');text.textContent=label;text.append(control);panel.append(text);}
-    panel.append(actions);overlay.append(panel);overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.remove();});document.body.append(overlay);
+    const exportBtn=document.createElement('button');exportBtn.type='button';exportBtn.textContent='Экспорт изменений';
+    exportBtn.addEventListener('click',()=>{const blob=new Blob([JSON.stringify({format:'ft-tree-editor-links-v1',stages:161,overrides:ftLinkOverrides},null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='fight-tech-tree-edits.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});
+    const resetBtn=document.createElement('button');resetBtn.type='button';resetBtn.textContent='Восстановить официальные привязки';
+    resetBtn.addEventListener('click',()=>{if(!confirm('Удалить все личные изменения расположения тренировок?'))return;if(!store(ftMapKey,{}))return;ftLinkOverrides={};overlay.remove();renderTreePreview(list);});
+    const utility=document.createElement('div');utility.className='ft-edit-utilities';utility.append(exportBtn,resetBtn);
+    panel.append(actions,utility);overlay.append(panel);overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.remove();});document.body.append(overlay);
   }
   const ftTreeProgressKey='ft-tree-completed-stages-v1';
   const ftTreeDone=new Set(JSON.parse(localStorage.getItem(ftTreeProgressKey)||'[]'));
@@ -806,14 +811,7 @@ function bindProgramLibrary() {
       option.textContent=label;option.addEventListener('click',()=>{ftTreeFilter=value;renderTreePreview(list);});options.append(option);
     }
     dropdown.append(options);root.append(dropdown);
-    const editorControls=document.createElement('div');editorControls.className='ft-edit-toolbar';
-    const editToggle=document.createElement('button');editToggle.type='button';editToggle.textContent=ftEditEnabled?'✓ Редактор включён':'Редактор привязок';
-    editToggle.addEventListener('click',()=>{ftEditEnabled=!ftEditEnabled;renderTreePreview(list);});editorControls.append(editToggle);
-    if(ftEditEnabled){
-      const exportBtn=document.createElement('button');exportBtn.type='button';exportBtn.textContent='Экспорт изменений';
-      exportBtn.addEventListener('click',()=>{const payload={format:'ft-tree-editor-links-v1',stages:161,overrides:ftLinkOverrides};const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='fight-tech-tree-edits.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});editorControls.append(exportBtn);
-    }
-    root.append(editorControls);
+    // Personal links are always editable; canonical stages and programs remain untouched.
     const makeButton=(text,cls,handler,label)=>{const el=document.createElement('button');el.type='button';el.className=cls;el.textContent=text;if(label)el.setAttribute('aria-label',label);el.addEventListener('click',handler);return el;};
     const makeText=(tag,cls,value)=>{const el=document.createElement(tag);el.className=cls;el.textContent=value;return el;};
     const completed=ftTreeDone;
@@ -827,7 +825,7 @@ function bindProgramLibrary() {
       const head=document.createElement('summary');head.className='ft-route-section-head';
       const station=makeText('span','ft-route-station',String(si+1).padStart(2,'0'));
       if(nodes.every(x=>completed.has(x.id)))station.classList.add('ft-route-done');
-      head.append(station,makeText('strong','ft-route-section-name',ftTreeSectionTitle(section)+' · '+ftCount(section)),makeText('span','ft-route-chevron','⌄'));group.append(head);
+      head.append(station,makeText('strong','ft-route-section-name',ftTreeSectionTitle(section)),makeText('span','ft-route-chevron','⌄'));group.append(head);
       const children=document.createElement('div');children.className='ft-route-steps';
       for(const node of nodes){
         if(ftTreeFilter==='done'&&!completed.has(node.id))continue;
@@ -835,7 +833,7 @@ function bindProgramLibrary() {
         const step=document.createElement('details');step.className='ft-route-step';
         if(completed.has(node.id))step.classList.add('ft-route-is-done');
         const summary=document.createElement('summary');summary.className='ft-route-step-head';
-        summary.append(makeText('span','ft-route-step-dot',completed.has(node.id)?'✓':node.order),makeText('span','ft-route-step-title',node.title+' · '+ftIds(node).length),makeText('span','ft-route-chevron','⌄'));
+        summary.append(makeText('span','ft-route-step-dot',completed.has(node.id)?'✓':node.order),makeText('span','ft-route-step-title',node.title),makeText('span','ft-route-chevron','⌄'));
         step.append(summary);
         const content=document.createElement('div');content.className='ft-route-lesson-list';
         const ids=ftIds(node);
@@ -872,8 +870,10 @@ function bindProgramLibrary() {
           },'Добавить в таймер: '+workout.name);
           const meta=document.createElement('div');meta.className='ft-route-lesson-meta';
           meta.append(makeText('div','ft-route-lesson-facts',facts.line),makeText('div','ft-route-lesson-total',facts.total));
-          lesson.append(main,info,plus,meta);
-          if(ftEditEnabled){const move=makeButton('⇄','ft-route-lesson-action',()=>ftEditLinks(node.id,workout.id,list),'Переместить или добавить в другую ступень');lesson.append(move);}
+          const controls=document.createElement('div');controls.className='ft-route-lesson-controls';
+          const move=makeButton('⇄','ft-route-lesson-action',()=>ftEditLinks(node.id,workout.id,list),'Переместить или добавить в другую ступень');
+          controls.append(info,plus,move);
+          lesson.append(main,meta,controls);
           content.append(lesson);
         }
         const footer=document.createElement('div');footer.className='ft-route-step-footer';
