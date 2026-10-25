@@ -1,3 +1,4 @@
+import { TREE_PREVIEW_STAGES } from './library/tree-preview-data.js';
 import { CATEGORIES, LIBRARY, stageForWorkout } from './library/native-adapter.js';
 import { libraryLevel, libraryUp, libraryOpen } from './library/library-browser.js';
 import { starterPrograms } from './core/starter-programs.js';
@@ -701,6 +702,8 @@ function bindProgramLibrary() {
     exchange.refresh();
     byId('programLibraryMine').classList.toggle('is-active',libraryTab==='mine');
     byId('programLibraryTemplates').classList.toggle('is-active',libraryTab==='templates');
+    byId('ftTreePreviewTab').classList.toggle('is-active',libraryTab==='tree');
+    if(libraryTab==='tree') { renderTreePreview(list); return; }
     const level=libraryLevel(LIBRARY,CATEGORIES,libraryPath);
     byId('programLibraryBack').hidden=libraryTab!=='templates' || !level.back;
     byId('programLibraryTitle').textContent=libraryTab==='mine'?'Мои программы':level.title;
@@ -743,6 +746,28 @@ function bindProgramLibrary() {
       }));
     }
   }
+  function renderTreePreview(list) {
+    byId('programLibraryTitle').textContent='Дерево обучения · 161 ступень';
+    byId('programLibraryBack').hidden=true;
+    const filter=document.createElement('input');filter.type='search';filter.placeholder='Номер, тема, навык…';filter.className='ft-tree-search';
+    const section=document.createElement('select');section.className='ft-tree-search';
+    for(const value of ['Все разделы',...new Set(TREE_PREVIEW_STAGES.map(x=>x.section))]) {const opt=document.createElement('option');opt.textContent=value;opt.value=value;section.append(opt);}
+    const result=document.createElement('div');
+    const draw=()=>{
+      result.replaceChildren();const q=filter.value.trim().toLowerCase();
+      for(const stage of TREE_PREVIEW_STAGES.filter(x=>(section.value==='Все разделы'||x.section===section.value)&&(!q||[x.id,x.title,x.objective,x.section].join(' ').toLowerCase().includes(q)))) {
+        const card=document.createElement('details');card.className='ft-tree-stage';
+        const head=document.createElement('summary');head.textContent=String(stage.order).padStart(3,'0')+' · '+stage.title;card.append(head);
+        const body=document.createElement('div');body.className='ft-tree-stage-body';
+        const field=(title,value)=>{if(!value)return;const h=document.createElement('strong');h.textContent=title;const v=document.createElement('p');v.textContent=value;body.append(h,v);};
+        field('Цель',stage.objective);field('Предварительные требования',stage.prerequisites);field('Техника',stage.technique);field('Тактика',stage.tactics);field('Защиты и ответы',stage.defenses);field('Типичные ошибки',stage.mistakes);
+        if(stage.existing_program_ids.length)field('Оригинальные программы (канонические ID)',stage.existing_program_ids.join(', '));
+        if(stage.editorial_programs.length)field('Подходящие упражнения (предварительно)',stage.editorial_programs.map(x=>x.name+' ['+x.id+']').join('; '));
+        card.append(body);result.append(card);
+      }
+    };filter.addEventListener('input',draw);section.addEventListener('change',draw);list.append(filter,section,result);draw();
+  }
+  byId('ftTreePreviewTab').addEventListener('click',()=>{libraryTab='tree';libraryPath={};renderLibrary();});
   byId('programLibraryOpen').addEventListener('click',()=>{libraryTab='mine';libraryPath={};renderLibrary();library.hidden=false;});
   byId('programLibraryClose').addEventListener('click',close);
   byId('programLibraryBack').addEventListener('click',()=>{libraryPath=libraryUp(libraryPath);renderLibrary();});

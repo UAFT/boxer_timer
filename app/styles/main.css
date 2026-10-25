@@ -1567,3 +1567,6 @@ html,body{width:100%;max-width:100%;overflow-x:clip}
 /* Long press on interactive UI should not select labels; editing fields retain selection. */
 button,button *,[role="button"],[role="button"] *, .preset-tab,.preset-tab *, .program-stage-card .program-actions *{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 input,textarea,[contenteditable="true"]{user-select:text;-webkit-user-select:text;-webkit-touch-callout:default}
+
+/* Fight Tech 161-stage preview, isolated from timer */
+.ft-tree-search{box-sizing:border-box;width:100%;padding:12px;margin:6px 0 10px;border-radius:10px;background:var(--surface,#1b1b1b);color:inherit;border:1px solid #777} .ft-tree-stage{margin:8px 0;border:1px solid #7776;border-radius:12px;padding:12px} .ft-tree-stage summary{cursor:pointer;font-weight:600;line-height:1.4} .ft-tree-stage-body{padding-top:10px;line-height:1.45} .ft-tree-stage-body strong{display:block;margin-top:12px} .ft-tree-stage-body p{margin:4px 0 10px;white-space:pre-wrap}
