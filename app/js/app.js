@@ -19,7 +19,7 @@ import {stageTwoPhaseLoad,stageTwoPhaseSave,roundTwoPhaseLoad,roundTwoPhaseSave}
 import { installWorkoutExchange } from './sharing/workout-exchange-ui.js';
 import { storeImportedWorkout, resolveSenderSettings } from './sharing/workout-file.js';
 import { renderSavedProgramCard, createActionIcon } from './ui/library-card-view.js';
-import { renderLibraryWorkoutCard } from './ui/workout-plan-view.js';
+import { renderLibraryWorkoutCard, renderPlanList } from './ui/workout-plan-view.js';
 import { syncEditorProgramHeader, editorProgramIdentity } from './ui/program-presentation.js';
 import { renderPresetOrders } from './ui/preset-order.js';
 import { editableRestField } from './core/ladder-blocks.js';
@@ -746,26 +746,90 @@ function bindProgramLibrary() {
       }));
     }
   }
+  // A single vertical route: section → stage → lessons → rounds. No second timer engine.
+  const ftTreeProgressKey='ft-tree-completed-stages-v1';
+  const ftTreeDone=new Set(JSON.parse(localStorage.getItem(ftTreeProgressKey)||'[]'));
+  let ftTreeFilter='all';
+  const ftTreeSections=[...new Set(TREE_PREVIEW_STAGES.map(x=>x.section))];
+  const ftTreeNumber=(n)=>String(n).padStart(3,'0');
   function renderTreePreview(list) {
-    byId('programLibraryTitle').textContent='Дерево обучения · 161 ступень';
+    byId('programLibraryTitle').textContent='Путь обучения';
     byId('programLibraryBack').hidden=true;
-    const filter=document.createElement('input');filter.type='search';filter.placeholder='Номер, тема, навык…';filter.className='ft-tree-search';
-    const section=document.createElement('select');section.className='ft-tree-search';
-    for(const value of ['Все разделы',...new Set(TREE_PREVIEW_STAGES.map(x=>x.section))]) {const opt=document.createElement('option');opt.textContent=value;opt.value=value;section.append(opt);}
-    const result=document.createElement('div');
-    const draw=()=>{
-      result.replaceChildren();const q=filter.value.trim().toLowerCase();
-      for(const stage of TREE_PREVIEW_STAGES.filter(x=>(section.value==='Все разделы'||x.section===section.value)&&(!q||[x.id,x.title,x.objective,x.section].join(' ').toLowerCase().includes(q)))) {
-        const card=document.createElement('details');card.className='ft-tree-stage';
-        const head=document.createElement('summary');head.textContent=String(stage.order).padStart(3,'0')+' · '+stage.title;card.append(head);
-        const body=document.createElement('div');body.className='ft-tree-stage-body';
-        const field=(title,value)=>{if(!value)return;const h=document.createElement('strong');h.textContent=title;const v=document.createElement('p');v.textContent=value;body.append(h,v);};
-        field('Цель',stage.objective);field('Предварительные требования',stage.prerequisites);field('Техника',stage.technique);field('Тактика',stage.tactics);field('Защиты и ответы',stage.defenses);field('Типичные ошибки',stage.mistakes);
-        if(stage.existing_program_ids.length)field('Оригинальные программы (канонические ID)',stage.existing_program_ids.join(', '));
-        if(stage.editorial_programs.length)field('Подходящие упражнения (предварительно)',stage.editorial_programs.map(x=>x.name+' ['+x.id+']').join('; '));
-        card.append(body);result.append(card);
+    const root=document.createElement('div');root.className='ft-route';
+    const selector=document.createElement('select');selector.className='ft-route-filter';selector.setAttribute('aria-label','Показать ступени');
+    for(const [value,label] of [['all','Все ступени'],['done','Пройдено'],['current','Текущее']]){
+      const o=document.createElement('option');o.value=value;o.textContent=label;selector.append(o);
+    }
+    selector.value=ftTreeFilter;
+    selector.addEventListener('change',()=>{ftTreeFilter=selector.value;renderTreePreview(list);});
+    root.append(selector);
+    const completed=ftTreeDone;
+    const firstOpen=TREE_PREVIEW_STAGES.find(x=>!completed.has(x.id));
+    const makeButton=(text,cls,handler,label)=>{const el=document.createElement('button');el.type='button';el.className=cls;el.textContent=text;if(label)el.setAttribute('aria-label',label);el.addEventListener('click',handler);return el;};
+    const makeText=(tag,cls,value)=>{const el=document.createElement(tag);el.className=cls;el.textContent=value;return el;};
+    for(let si=0;si<ftTreeSections.length;si++){
+      const section=ftTreeSections[si];const nodes=TREE_PREVIEW_STAGES.filter(x=>x.section===section);
+      if(ftTreeFilter==='done'&&!nodes.some(x=>completed.has(x.id)))continue;
+      if(ftTreeFilter==='current'&&!nodes.some(x=>x.id===firstOpen?.id))continue;
+      const group=document.createElement('details');group.className='ft-route-section';
+      if(ftTreeFilter!=='all'||si===0)group.open=true;
+      const head=document.createElement('summary');head.className='ft-route-section-head';
+      const station=makeText('span','ft-route-station',String(si+1).padStart(2,'0'));
+      if(nodes.every(x=>completed.has(x.id)))station.classList.add('ft-route-done');
+      head.append(station,makeText('strong','ft-route-section-name',section),makeText('span','ft-route-chevron','⌄'));group.append(head);
+      const children=document.createElement('div');children.className='ft-route-steps';
+      for(const node of nodes){
+        if(ftTreeFilter==='done'&&!completed.has(node.id))continue;
+        if(ftTreeFilter==='current'&&node.id!==firstOpen?.id)continue;
+        const step=document.createElement('details');step.className='ft-route-step';
+        if(completed.has(node.id))step.classList.add('ft-route-is-done');
+        const summary=document.createElement('summary');summary.className='ft-route-step-head';
+        summary.append(makeText('span','ft-route-step-dot',completed.has(node.id)?'✓':node.order),makeText('span','ft-route-step-title',node.title),makeText('span','ft-route-chevron','⌄'));
+        step.append(summary);
+        const content=document.createElement('div');content.className='ft-route-lesson-list';
+        const ids=[...new Set([...node.existing_program_ids,...node.editorial_programs.map(x=>x.id)])];
+        const workouts=ids.map(id=>LIBRARY.find(w=>w.id===id)).filter(Boolean);
+        if(!workouts.length)content.append(makeText('p','ft-route-muted','Уроки пока не назначены'));
+        for(const workout of workouts){
+          const stage=stageForWorkout(workout);if(!stage)continue;
+          const rounds=compileProgram([stage],profiles,{cycles:1});
+          const lesson=document.createElement('div');lesson.className='ft-route-lesson';
+          const main=makeButton(workout.name,'ft-route-lesson-name',()=>{
+            const old=lesson.querySelector('.ft-route-lesson-plan');if(old){old.remove();return;}
+            const plan=document.createElement('div');plan.className='ft-route-lesson-plan';
+            plan.append(makeText('div','ft-route-lesson-heading','Этап 1 · '+workout.name),renderPlanList(document,rounds,document.documentElement.lang));
+            lesson.append(plan);
+          },'Открыть раунды: '+workout.name);
+          const info=makeButton('☰','ft-route-lesson-action',()=>{
+            const old=lesson.querySelector('.ft-route-lesson-info');if(old){old.remove();return;}
+            const details=document.createElement('div');details.className='ft-route-lesson-info';
+            const method=workout.methodology;
+            if(method){
+              for(const [label,value] of [['Техника',method.technique],['Тактика',method.tactics],['Особенности выполнения',method.execution],['Типичные ошибки',method.typicalMistakes]]){
+                const heading=document.createElement('strong');heading.textContent=label;
+                const para=document.createElement('p');para.textContent=value||'Не заполнено';details.append(heading,para);
+              }
+            }else{
+              details.textContent=[workout.note,workout.equipment&&'Инвентарь: '+workout.equipment,workout.tasks?.length&&'Задания: '+workout.tasks.join(' · ')].filter(Boolean).join('\n')||'Содержание раундов — нажмите название урока.';
+            }
+            lesson.append(details);
+          },'Описание урока: '+workout.name);
+          const plus=makeButton('+','ft-route-lesson-action',()=>{
+            if(programRunning||programEntries.length>=24)return;
+            programEntries.push(stage);persistProgram();plus.textContent='✓';
+          },'Добавить в таймер: '+workout.name);
+          lesson.append(main,info,plus);content.append(lesson);
+        }
+        const footer=document.createElement('div');footer.className='ft-route-step-footer';
+        const mark=makeButton(completed.has(node.id)?'✓ Пройдено':'○ Отметить пройденным','ft-route-complete',()=>{
+          if(completed.has(node.id))completed.delete(node.id);else completed.add(node.id);
+          if(!store(ftTreeProgressKey,[...completed]))return;renderTreePreview(list);
+        });footer.append(mark);content.append(footer);
+        step.append(content);children.append(step);
       }
-    };filter.addEventListener('input',draw);section.addEventListener('change',draw);list.append(filter,section,result);draw();
+      group.append(children);root.append(group);
+    }
+    list.replaceChildren(root);
   }
   byId('ftTreePreviewTab').addEventListener('click',()=>{libraryTab='tree';libraryPath={};renderLibrary();});
   byId('programLibraryOpen').addEventListener('click',()=>{libraryTab='mine';libraryPath={};renderLibrary();library.hidden=false;});
