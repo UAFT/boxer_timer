@@ -19,7 +19,7 @@ import {stageTwoPhaseLoad,stageTwoPhaseSave,roundTwoPhaseLoad,roundTwoPhaseSave}
 import { installWorkoutExchange } from './sharing/workout-exchange-ui.js';
 import { storeImportedWorkout, resolveSenderSettings } from './sharing/workout-file.js';
 import { renderSavedProgramCard, createActionIcon } from './ui/library-card-view.js';
-import { renderLibraryWorkoutCard, renderPlanList } from './ui/workout-plan-view.js';
+import { renderLibraryWorkoutCard, renderPlanList, planSummary } from './ui/workout-plan-view.js';
 import { syncEditorProgramHeader, editorProgramIdentity } from './ui/program-presentation.js';
 import { renderPresetOrders } from './ui/preset-order.js';
 import { editableRestField } from './core/ladder-blocks.js';
@@ -751,6 +751,7 @@ function bindProgramLibrary() {
   const ftTreeDone=new Set(JSON.parse(localStorage.getItem(ftTreeProgressKey)||'[]'));
   let ftTreeFilter='all';
   const ftTreeSections=[...new Set(TREE_PREVIEW_STAGES.map(x=>x.section))];
+  const ftTreeSectionTitle=(section)=>({'Дальняя':'Дальняя дистанция','Средняя':'Средняя дистанция','Ближняя':'Ближняя дистанция'}[section]||section);
   const ftTreeNumber=(n)=>String(n).padStart(3,'0');
   function renderTreePreview(list) {
     byId('programLibraryTitle').textContent='Путь обучения';
@@ -776,7 +777,7 @@ function bindProgramLibrary() {
       const head=document.createElement('summary');head.className='ft-route-section-head';
       const station=makeText('span','ft-route-station',String(si+1).padStart(2,'0'));
       if(nodes.every(x=>completed.has(x.id)))station.classList.add('ft-route-done');
-      head.append(station,makeText('strong','ft-route-section-name',section),makeText('span','ft-route-chevron','⌄'));group.append(head);
+      head.append(station,makeText('strong','ft-route-section-name',ftTreeSectionTitle(section)),makeText('span','ft-route-chevron','⌄'));group.append(head);
       const children=document.createElement('div');children.className='ft-route-steps';
       for(const node of nodes){
         if(ftTreeFilter==='done'&&!completed.has(node.id))continue;
@@ -794,6 +795,7 @@ function bindProgramLibrary() {
           const stage=stageForWorkout(workout);if(!stage)continue;
           const rounds=compileProgram([stage],profiles,{cycles:1});
           const lesson=document.createElement('div');lesson.className='ft-route-lesson';
+          const facts=planSummary(rounds,document.documentElement.lang);
           const main=makeButton(workout.name,'ft-route-lesson-name',()=>{
             const old=lesson.querySelector('.ft-route-lesson-plan');if(old){old.remove();return;}
             const plan=document.createElement('div');plan.className='ft-route-lesson-plan';
@@ -818,7 +820,9 @@ function bindProgramLibrary() {
             if(programRunning||programEntries.length>=24)return;
             programEntries.push(stage);persistProgram();plus.textContent='✓';
           },'Добавить в таймер: '+workout.name);
-          lesson.append(main,info,plus);content.append(lesson);
+          const meta=document.createElement('div');meta.className='ft-route-lesson-meta';
+          meta.append(makeText('div','ft-route-lesson-facts',facts.line),makeText('div','ft-route-lesson-total',facts.total));
+          lesson.append(main,info,plus,meta);content.append(lesson);
         }
         const footer=document.createElement('div');footer.className='ft-route-step-footer';
         const mark=makeButton(completed.has(node.id)?'✓ Пройдено':'○ Отметить пройденным','ft-route-complete',()=>{
