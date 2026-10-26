@@ -1,5 +1,5 @@
 // Preview of the approved V4.2 methodology tree: section → stage → program → exercises.
-// A program with owner-approved rounds (V42_WORKOUTS) is shown only as the Tree's own lesson card, passed in by
+// A program with rounds (V42_WORKOUTS: the owner-approved one and provisional proposals) is shown only as the Tree's own lesson card, passed in by
 // the app as lessonCard(workout, stageId): no wrapper, no source exercise list (it stays in the data). Every other
 // program stays a read-only card. Format/equipment chips are not shown on program cards: any program can be done
 // with a partner, on a bag, at a mirror or as shadowboxing. Old library and tree are untouched.
