@@ -88,3 +88,56 @@ test('library nav keeps the old tabs and adds the read-only methodology tab',()=
  const app=readFileSync(new URL('../app/js/app.js',import.meta.url),'utf8');
  assert.ok(app.includes("import('./library/methodology-v42-data.js')"),'data loads on demand, not at startup');
 });
+
+import {V42_WORKOUTS} from '../app/js/library/methodology-v42-rounds.js';
+import {workoutTotalSec} from '../app/js/library/methodology-v42-view.js';
+import {boxingStage} from '../app/js/library/boxing-stage.js';
+import {compileProgram} from '../app/js/core/program.js';
+import {PRESETS} from '../app/js/state/presets.js';
+
+test('owner program «Прямой и подставка; шаг назад»: 15 rounds 2:00/1:00, no trailing rest, 44:00 through the real compiler',()=>{
+ const w=V42_WORKOUTS['PRG-FAR-STRAIGHT-1'];
+ assert.deepEqual(Object.keys(V42_WORKOUTS),['PRG-FAR-STRAIGHT-1'],'only the first program has rounds');
+ assert.ok(programs.some(p=>p.id===w.id&&p.title===w.name));
+ assert.equal(w.rounds.length,15);
+ assert.deepEqual(w.blocks.map(b=>b[1]),[1,3,4,3,4]);
+ assert.ok(w.rounds.every(r=>r.workSec===120&&r.restSec===60));
+ assert.equal(workoutTotalSec(w),44*60);
+ const rounds=compileProgram([boxingStage(w)],PRESETS,{cycles:1});
+ assert.equal(rounds.length,15);
+ assert.equal(rounds.at(-1).restSec,0);
+ assert.equal(rounds.reduce((s,r)=>s+r.workSec+r.restSec,0),2640);
+ assert.equal(rounds[0].roundName,'Прямой левой в голову с места');
+});
+
+test('owner rounds: block order by stance then hand, strike with the step, подставка (never парирование), opposite palm',()=>{
+ const w=V42_WORKOUTS['PRG-FAR-STRAIGHT-1'];
+ const key=w.rounds.map(r=>(r.stance.startsWith('лево')?'L':'R')+(r.hand==='левой'?'l':'r')).join('');
+ assert.equal(key,'Ll'.repeat(4)+'Lr'.repeat(4)+'Rl'.repeat(3)+'Rr'.repeat(4));
+ for(const [i,r] of w.rounds.entries()){
+  assert.ok(r.name.startsWith('Прямой '+r.hand),i);
+  assert.ok(!/париров|отбив/i.test(r.name+r.description),i);
+  assert.ok(r.description.includes('подставка открытой ладони '+(r.hand==='левой'?'правой':'левой')+' руки'),i);
+  assert.ok(r.description.length<=560,i);
+  if(i)assert.ok(r.description.includes('одновременно с постановкой ноги'),i);
+ }
+ assert.ok(w.rounds[0].description.includes('без шага'));
+ for(const i of [3,7,10,14])assert.ok(w.rounds[i].description.includes('Без возврата'),i);
+ for(const i of [1,2,4,5,6,8,9,11,12,13])assert.ok(w.rounds[i].description.includes('Возврат'),i);
+});
+
+test('methodology tab: only the owner program shows rounds and one add button; others keep the notice',()=>{
+ const doc=mockDoc();const added=[];
+ const root=renderMethodologyV42(doc,M,{workouts:V42_WORKOUTS,onAdd:w=>{added.push(w.id);return true;}});
+ const s2=find(root,'ft-route-section')[1];s2.toggle();
+ const step=find(s2,'ft-route-step').find(x=>x.dataset.stage==='FAR-STRAIGHT-ATTDEF');step.toggle();
+ const cards=find(step,'ft-v42-program');
+ cards.forEach(c=>c.toggle());
+ const own=cards.find(c=>c.dataset.program==='PRG-FAR-STRAIGHT-1');
+ assert.equal(find(own,'ft-v42-round').length,15);
+ assert.equal(find(own,'ft-v42-notice').length,0);
+ assert.equal(find(own,'ft-v42-exercise').length,programs.find(p=>p.id==='PRG-FAR-STRAIGHT-1').exercises.length,'source exercises kept');
+ const add=find(own,'ft-v42-add');assert.equal(add.length,1);
+ add[0].listeners.click[0]();assert.deepEqual(added,['PRG-FAR-STRAIGHT-1']);
+ for(const c of cards.filter(c=>c!==own)){assert.equal(find(c,'ft-v42-add').length,0);assert.equal(find(c,'ft-v42-notice').length,1);}
+});

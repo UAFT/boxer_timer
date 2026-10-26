@@ -1,5 +1,7 @@
 import { TREE_PREVIEW_STAGES } from './library/tree-preview-data.js';
 import { renderMethodologyV42 } from './library/methodology-v42-view.js';
+import { V42_WORKOUTS } from './library/methodology-v42-rounds.js';
+import { boxingStage } from './library/boxing-stage.js';
 import { CATEGORIES, LIBRARY, stageForWorkout } from './library/native-adapter.js';
 import { libraryLevel, libraryUp, libraryOpen } from './library/library-browser.js';
 import { starterPrograms } from './core/starter-programs.js';
@@ -891,12 +893,17 @@ function bindProgramLibrary() {
     list.replaceChildren(root);
   }
   byId('ftTreePreviewTab').addEventListener('click',()=>{libraryTab='tree';libraryPath={};renderLibrary();});
-  // V4.2 methodology preview: read-only, loaded on first open; no rounds yet, so it never touches the timer.
+  // V4.2 methodology preview, loaded on first open. Programs with owner-approved rounds add one ordinary
+  // boxing stage to the timer (same path as the tree's «+»); all other programs stay read-only.
   let methodV42=null;
+  const addV42Workout=workout=>{
+    const stage=boxingStage(workout);if(!stage||programRunning||programEntries.length>=24)return false;
+    programEntries.push(stage);persistProgram();return true;
+  };
   function renderMethodV42(list) {
     byId('programLibraryTitle').textContent='Методика';
     byId('programLibraryBack').hidden=true;
-    if(methodV42){list.replaceChildren(renderMethodologyV42(document,methodV42));return;}
+    if(methodV42){list.replaceChildren(renderMethodologyV42(document,methodV42,{workouts:V42_WORKOUTS,onAdd:addV42Workout}));return;}
     const wait=document.createElement('p');wait.className='ft-route-muted';wait.textContent='Загрузка…';list.replaceChildren(wait);
     import('./library/methodology-v42-data.js').then(m=>{methodV42=m.METHODOLOGY_V42;if(libraryTab==='method')renderMethodV42(list);})
       .catch(()=>{wait.textContent='Не удалось открыть методику.';});
