@@ -1,6 +1,7 @@
 // Preview of the approved V4.2 methodology tree: section → stage → program → exercises.
-// Only programs with owner-approved rounds (V42_WORKOUTS) get a round plan and one «add to timer» button;
-// every other program stays read-only. Old library and tree are untouched.
+// Programs with owner-approved rounds (V42_WORKOUTS) show the Tree's own lesson card, passed in by the app
+// as lessonCard(workout, stageId); every other program stays read-only. Old library and tree are untouched.
+export const V42_COACH_ROUNDS_NOTICE = 'Раунды тренировки — тренерская раскладка упражнений этой программы; упражнения ниже — исходные.';
 export const V42_NO_ROUNDS_NOTICE = 'Раунды будут добавлены после проверки методологии';
 
 const el = (doc, tag, cls, text) => {
@@ -38,38 +39,10 @@ function chipRow(doc, values, cls = 'ft-v42-chip') {
 const clock = sec => Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0');
 export const workoutTotalSec = w => w.rounds.reduce((sum, r, i) => sum + r.workSec + (i < w.rounds.length - 1 ? r.restSec : 0), 0);
 
-// Owner-approved rounds: blocks in their fixed order, each round with stance, sequence and pair/bag/mirror notes.
-function renderRounds(doc, workout, onAdd) {
-  const box = el(doc, 'div', 'ft-v42-workout');
-  box.append(el(doc, 'strong', 'ft-v42-list-label', 'Тренировка · ' + workout.rounds.length + ' раундов · ' + clock(workoutTotalSec(workout))));
-  for (const note of workout.notes) box.append(el(doc, 'p', 'ft-v42-workout-note', note));
-  const list = el(doc, 'ol', 'ft-v42-rounds');
-  let index = 0;
-  for (const [title, count] of workout.blocks) {
-    list.append(el(doc, 'li', 'ft-v42-round-block', title));
-    for (const round of workout.rounds.slice(index, index + count)) {
-      index += 1;
-      const li = el(doc, 'li', 'ft-v42-round');
-      const last = index === workout.rounds.length;
-      li.append(el(doc, 'p', 'ft-v42-round-title', 'Раунд ' + index + ' · ' + round.name),
-        el(doc, 'p', 'ft-v42-exercise-facts', round.stance + ' · работа ' + clock(round.workSec) + (last ? ' · без отдыха' : ' · отдых ' + clock(round.restSec))),
-        el(doc, 'p', 'ft-v42-exercise-text', round.description));
-      list.append(li);
-    }
-  }
-  box.append(list);
-  if (onAdd) {
-    const add = el(doc, 'button', 'ft-v42-add', 'Добавить в таймер');
-    add.type = 'button';
-    add.addEventListener('click', () => { if (onAdd(workout)) add.textContent = '✓ Добавлено в таймер'; });
-    box.append(add);
-  }
-  return box;
-}
-
-export function renderProgramBody(doc, program, workout, onAdd) {
+export function renderProgramBody(doc, program, card) {
   const body = el(doc, 'div', 'ft-v42-program-body');
-  body.append(workout ? renderRounds(doc, workout, onAdd) : el(doc, 'p', 'ft-v42-notice', V42_NO_ROUNDS_NOTICE));
+  body.append(el(doc, 'p', 'ft-v42-notice', card ? V42_COACH_ROUNDS_NOTICE : V42_NO_ROUNDS_NOTICE));
+  if (card) body.append(card);
   for (const [label, text] of program.criteria) {
     const block = el(doc, 'div', 'ft-v42-criterion');
     block.append(el(doc, 'strong', 'ft-v42-criterion-label', label));
@@ -92,7 +65,7 @@ export function renderProgramBody(doc, program, workout, onAdd) {
   return body;
 }
 
-export function renderMethodologyV42(doc, data, { workouts = {}, onAdd } = {}) {
+export function renderMethodologyV42(doc, data, { workouts = {}, lessonCard } = {}) {
   const root = el(doc, 'div', 'ft-route ft-v42');
   root.append(el(doc, 'p', 'ft-v42-intro', 'Рекомендуемый порядок обучения. Все ступени открыты; к пройденному можно возвращаться. Раунды есть у программ, где указана длительность; у остальных они будут добавлены после проверки методологии.'));
   data.sections.forEach((section, si) => {
@@ -126,7 +99,7 @@ export function renderMethodologyV42(doc, data, { workouts = {}, onAdd } = {}) {
             top.append(el(doc, 'span', 'ft-v42-program-meta', 'Упражнений: ' + program.exercises.length +
               (workout ? ' · раундов: ' + workout.rounds.length + ' · ' + clock(workoutTotalSec(workout)) : '')));
             card.append(top);
-            lazy(card, () => renderProgramBody(doc, program, workout, onAdd));
+            lazy(card, () => renderProgramBody(doc, program, workout && lessonCard ? lessonCard(workout, stage.id) : null));
             content.append(card);
           }
           return content;

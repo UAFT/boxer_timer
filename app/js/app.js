@@ -1,7 +1,6 @@
 import { TREE_PREVIEW_STAGES } from './library/tree-preview-data.js';
 import { renderMethodologyV42 } from './library/methodology-v42-view.js';
 import { V42_WORKOUTS } from './library/methodology-v42-rounds.js';
-import { boxingStage } from './library/boxing-stage.js';
 import { CATEGORIES, LIBRARY, stageForWorkout } from './library/native-adapter.js';
 import { libraryLevel, libraryUp, libraryOpen } from './library/library-browser.js';
 import { starterPrograms } from './core/starter-programs.js';
@@ -759,12 +758,14 @@ function bindProgramLibrary() {
   try{const raw=JSON.parse(localStorage.getItem(ftMapKey)||'{}');if(raw&&typeof raw==='object'&&!Array.isArray(raw))ftLinkOverrides=raw;}catch{}
   const ftBaseIds=node=>[...new Set([...node.existing_program_ids,...node.editorial_programs.map(x=>x.id)])];
   const ftIds=node=>Array.isArray(ftLinkOverrides[node.id])?ftLinkOverrides[node.id]:ftBaseIds(node);
+  // Tree workouts come from the 149 library plus V4.2 programs that already have owner-approved rounds.
+  const ftWorkout=id=>LIBRARY.find(w=>w.id===id)||V42_WORKOUTS[id];
   const ftCount=section=>TREE_PREVIEW_STAGES.filter(n=>n.section===section).reduce((sum,n)=>sum+ftIds(n).length,0);
   function ftEditLinks(sourceId,workoutId,list){
     const overlay=document.createElement('div');overlay.className='ft-edit-overlay';
     const panel=document.createElement('div');panel.className='ft-edit-panel';
     const heading=document.createElement('h3');heading.textContent='Расположение тренировки';panel.append(heading);
-    const name=document.createElement('p');name.textContent=LIBRARY.find(w=>w.id===workoutId)?.name||workoutId;panel.append(name);
+    const name=document.createElement('p');name.textContent=ftWorkout(workoutId)?.name||workoutId;panel.append(name);
     const sectionSelect=document.createElement('select');sectionSelect.setAttribute('aria-label','Раздел');
     for(const section of ftTreeSections){const option=document.createElement('option');option.value=section;option.textContent=ftTreeSectionTitle(section);sectionSelect.append(option);}
     sectionSelect.value=TREE_PREVIEW_STAGES.find(n=>n.id===sourceId)?.section||ftTreeSections[0];
@@ -780,9 +781,10 @@ function bindProgramLibrary() {
       const next={...ftLinkOverrides};
       const targetNode=TREE_PREVIEW_STAGES.find(n=>n.id===target);
       const targetIds=ftIds(targetNode);next[target]=[...new Set([...targetIds,workoutId])];
-      if(action.value==='move'&&sourceId!==target){const sourceNode=TREE_PREVIEW_STAGES.find(n=>n.id===sourceId);next[sourceId]=ftIds(sourceNode).filter(id=>id!==workoutId);}
+      const sourceNode=TREE_PREVIEW_STAGES.find(n=>n.id===sourceId);
+      if(action.value==='move'&&sourceId!==target&&sourceNode)next[sourceId]=ftIds(sourceNode).filter(id=>id!==workoutId);
       if(!store(ftMapKey,next))return;
-      ftLinkOverrides=next;overlay.remove();renderTreePreview(list);
+      ftLinkOverrides=next;overlay.remove();renderLibrary();
     });
     actions.append(cancel,apply);
     for(const [label,control] of [['Раздел',sectionSelect],['Ступень',stageSelect],['Действие',action]]){const text=document.createElement('label');text.textContent=label;text.append(control);panel.append(text);}
@@ -799,6 +801,50 @@ function bindProgramLibrary() {
   const ftTreeSections=[...new Set(TREE_PREVIEW_STAGES.map(x=>x.section))];
   const ftTreeSectionTitle=(section)=>({'Дальняя':'Дальняя дистанция','Средняя':'Средняя дистанция','Ближняя':'Ближняя дистанция'}[section]||section);
   const ftTreeNumber=(n)=>String(n).padStart(3,'0');
+  // The one Tree lesson card (name → round plan, ☰ description, + to timer, ⇄ relocation). The V4.2 «Методика»
+  // reuses it for programs with owner-approved rounds. A workout may give short per-round cues for the plan;
+  // the stage added to the timer keeps the full round descriptions.
+  const ftMakeButton=(text,cls,handler,label)=>{const el=document.createElement('button');el.type='button';el.className=cls;el.textContent=text;if(label)el.setAttribute('aria-label',label);el.addEventListener('click',handler);return el;};
+  const ftMakeText=(tag,cls,value)=>{const el=document.createElement(tag);el.className=cls;el.textContent=value;return el;};
+  function ftLessonCard(workout,sourceId,list){
+    const makeButton=ftMakeButton,makeText=ftMakeText;
+    const stage=stageForWorkout(workout);if(!stage)return null;
+    const cues=Array.isArray(workout.rounds)&&workout.rounds.every(r=>typeof r.cue==='string')?workout.rounds.map(r=>r.cue):null;
+    const rounds=compileProgram([cues?{...stage,roundDescriptions:cues}:stage],profiles,{cycles:1});
+    const lesson=document.createElement('div');lesson.className='ft-route-lesson';
+    const facts=planSummary(rounds,document.documentElement.lang);
+    const main=makeButton(workout.name,'ft-route-lesson-name',()=>{
+      const old=lesson.querySelector('.ft-route-lesson-plan');if(old){old.remove();return;}
+      const plan=document.createElement('div');plan.className='ft-route-lesson-plan';
+      plan.append(makeText('div','ft-route-lesson-heading','Этап 1 · '+workout.name),renderPlanList(document,rounds,document.documentElement.lang));
+      lesson.append(plan);
+    },'Открыть раунды: '+workout.name);
+    const info=makeButton('☰','ft-route-lesson-action',()=>{
+      const old=lesson.querySelector('.ft-route-lesson-info');if(old){old.remove();return;}
+      const details=document.createElement('div');details.className='ft-route-lesson-info';
+      const method=workout.methodology;
+      if(method){
+        for(const [label,value] of [['Техника',method.technique],['Тактика',method.tactics],['Особенности выполнения',method.execution],['Типичные ошибки',method.typicalMistakes]]){
+          const heading=document.createElement('strong');heading.textContent=label;
+          const para=document.createElement('p');para.textContent=value||'Не заполнено';details.append(heading,para);
+        }
+      }else{
+        details.textContent=[workout.note,workout.equipment&&'Инвентарь: '+workout.equipment,workout.tasks?.length&&'Задания: '+workout.tasks.join(' · ')].filter(Boolean).join('\n')||'Содержание раундов — нажмите название урока.';
+      }
+      lesson.append(details);
+    },'Описание урока: '+workout.name);
+    const plus=makeButton('+','ft-route-lesson-action',()=>{
+      if(programRunning||programEntries.length>=24)return;
+      programEntries.push(stage);persistProgram();plus.textContent='✓';
+    },'Добавить в таймер: '+workout.name);
+    const meta=document.createElement('div');meta.className='ft-route-lesson-meta';
+    meta.append(makeText('div','ft-route-lesson-facts',facts.line),makeText('div','ft-route-lesson-total',facts.total));
+    const controls=document.createElement('div');controls.className='ft-route-lesson-controls';
+    const move=makeButton('⇄','ft-route-lesson-action',()=>ftEditLinks(sourceId,workout.id,list),'Переместить или добавить в другую ступень');
+    controls.append(info,plus,move);
+    lesson.append(main,meta,controls);
+    return lesson;
+  }
   function renderTreePreview(list) {
     byId('programLibraryTitle').textContent='Путь обучения';
     byId('programLibraryBack').hidden=true;
@@ -842,44 +888,10 @@ function bindProgramLibrary() {
         step.append(summary);
         const content=document.createElement('div');content.className='ft-route-lesson-list';
         const ids=ftIds(node);
-        const workouts=ids.map(id=>LIBRARY.find(w=>w.id===id)).filter(Boolean);
+        const workouts=ids.map(ftWorkout).filter(Boolean);
         if(!workouts.length)content.append(makeText('p','ft-route-muted','Уроки пока не назначены'));
         for(const workout of workouts){
-          const stage=stageForWorkout(workout);if(!stage)continue;
-          const rounds=compileProgram([stage],profiles,{cycles:1});
-          const lesson=document.createElement('div');lesson.className='ft-route-lesson';
-          const facts=planSummary(rounds,document.documentElement.lang);
-          const main=makeButton(workout.name,'ft-route-lesson-name',()=>{
-            const old=lesson.querySelector('.ft-route-lesson-plan');if(old){old.remove();return;}
-            const plan=document.createElement('div');plan.className='ft-route-lesson-plan';
-            plan.append(makeText('div','ft-route-lesson-heading','Этап 1 · '+workout.name),renderPlanList(document,rounds,document.documentElement.lang));
-            lesson.append(plan);
-          },'Открыть раунды: '+workout.name);
-          const info=makeButton('☰','ft-route-lesson-action',()=>{
-            const old=lesson.querySelector('.ft-route-lesson-info');if(old){old.remove();return;}
-            const details=document.createElement('div');details.className='ft-route-lesson-info';
-            const method=workout.methodology;
-            if(method){
-              for(const [label,value] of [['Техника',method.technique],['Тактика',method.tactics],['Особенности выполнения',method.execution],['Типичные ошибки',method.typicalMistakes]]){
-                const heading=document.createElement('strong');heading.textContent=label;
-                const para=document.createElement('p');para.textContent=value||'Не заполнено';details.append(heading,para);
-              }
-            }else{
-              details.textContent=[workout.note,workout.equipment&&'Инвентарь: '+workout.equipment,workout.tasks?.length&&'Задания: '+workout.tasks.join(' · ')].filter(Boolean).join('\n')||'Содержание раундов — нажмите название урока.';
-            }
-            lesson.append(details);
-          },'Описание урока: '+workout.name);
-          const plus=makeButton('+','ft-route-lesson-action',()=>{
-            if(programRunning||programEntries.length>=24)return;
-            programEntries.push(stage);persistProgram();plus.textContent='✓';
-          },'Добавить в таймер: '+workout.name);
-          const meta=document.createElement('div');meta.className='ft-route-lesson-meta';
-          meta.append(makeText('div','ft-route-lesson-facts',facts.line),makeText('div','ft-route-lesson-total',facts.total));
-          const controls=document.createElement('div');controls.className='ft-route-lesson-controls';
-          const move=makeButton('⇄','ft-route-lesson-action',()=>ftEditLinks(node.id,workout.id,list),'Переместить или добавить в другую ступень');
-          controls.append(info,plus,move);
-          lesson.append(main,meta,controls);
-          content.append(lesson);
+          const lesson=ftLessonCard(workout,node.id,list);if(lesson)content.append(lesson);
         }
         const footer=document.createElement('div');footer.className='ft-route-step-footer';
         const mark=makeButton(completed.has(node.id)?'✓ Пройдено':'○ Отметить пройденным','ft-route-complete',()=>{
@@ -893,17 +905,13 @@ function bindProgramLibrary() {
     list.replaceChildren(root);
   }
   byId('ftTreePreviewTab').addEventListener('click',()=>{libraryTab='tree';libraryPath={};renderLibrary();});
-  // V4.2 methodology preview, loaded on first open. Programs with owner-approved rounds add one ordinary
-  // boxing stage to the timer (same path as the tree's «+»); all other programs stay read-only.
+  // V4.2 methodology preview, loaded on first open. Programs with owner-approved rounds show the Tree lesson
+  // card itself; all other programs stay read-only.
   let methodV42=null;
-  const addV42Workout=workout=>{
-    const stage=boxingStage(workout);if(!stage||programRunning||programEntries.length>=24)return false;
-    programEntries.push(stage);persistProgram();return true;
-  };
   function renderMethodV42(list) {
     byId('programLibraryTitle').textContent='Методика';
     byId('programLibraryBack').hidden=true;
-    if(methodV42){list.replaceChildren(renderMethodologyV42(document,methodV42,{workouts:V42_WORKOUTS,onAdd:addV42Workout}));return;}
+    if(methodV42){list.replaceChildren(renderMethodologyV42(document,methodV42,{workouts:V42_WORKOUTS,lessonCard:(workout,stageId)=>ftLessonCard(workout,stageId,list)}));return;}
     const wait=document.createElement('p');wait.className='ft-route-muted';wait.textContent='Загрузка…';list.replaceChildren(wait);
     import('./library/methodology-v42-data.js').then(m=>{methodV42=m.METHODOLOGY_V42;if(libraryTab==='method')renderMethodV42(list);})
       .catch(()=>{wait.textContent='Не удалось открыть методику.';});

@@ -90,54 +90,76 @@ test('library nav keeps the old tabs and adds the read-only methodology tab',()=
 });
 
 import {V42_WORKOUTS} from '../app/js/library/methodology-v42-rounds.js';
-import {workoutTotalSec} from '../app/js/library/methodology-v42-view.js';
-import {boxingStage} from '../app/js/library/boxing-stage.js';
+import {workoutTotalSec,V42_COACH_ROUNDS_NOTICE} from '../app/js/library/methodology-v42-view.js';
+import {stageForWorkout} from '../app/js/library/native-adapter.js';
 import {compileProgram} from '../app/js/core/program.js';
 import {PRESETS} from '../app/js/state/presets.js';
+const W=V42_WORKOUTS['PRG-FAR-STRAIGHT-1'];
+const P1=programs.find(p=>p.id==='PRG-FAR-STRAIGHT-1');
 
-test('owner program «Прямой и подставка; шаг назад»: 15 rounds 2:00/1:00, no trailing rest, 44:00 through the real compiler',()=>{
- const w=V42_WORKOUTS['PRG-FAR-STRAIGHT-1'];
+test('owner program «Прямой и подставка: шаг назад»: 15 rounds 2:00/1:00, no trailing rest, 44:00 through the Tree adapter and real compiler',()=>{
  assert.deepEqual(Object.keys(V42_WORKOUTS),['PRG-FAR-STRAIGHT-1'],'only the first program has rounds');
- assert.ok(programs.some(p=>p.id===w.id&&p.title===w.name));
- assert.equal(w.rounds.length,15);
- assert.deepEqual(w.blocks.map(b=>b[1]),[1,3,4,3,4]);
- assert.ok(w.rounds.every(r=>r.workSec===120&&r.restSec===60));
- assert.equal(workoutTotalSec(w),44*60);
- const rounds=compileProgram([boxingStage(w)],PRESETS,{cycles:1});
+ assert.equal(W.name,'Прямой и подставка: шаг назад');
+ assert.equal(P1.title,'Прямой и подставка; шаг назад','methodology title untouched');
+ assert.equal(W.rounds.length,15);
+ assert.deepEqual(W.blocks.map(b=>b[1]),[1,3,4,3,4]);
+ assert.ok(W.rounds.every(r=>r.workSec===120&&r.restSec===60));
+ assert.equal(workoutTotalSec(W),44*60);
+ const stage=stageForWorkout(W);
+ assert.equal(stage.title,'Бокс — Прямой и подставка: шаг назад');
+ const rounds=compileProgram([stage],PRESETS,{cycles:1});
  assert.equal(rounds.length,15);
  assert.equal(rounds.at(-1).restSec,0);
  assert.equal(rounds.reduce((s,r)=>s+r.workSec+r.restSec,0),2640);
- assert.equal(rounds[0].roundName,'Прямой левой в голову с места');
+ assert.deepEqual(rounds.map(r=>r.roundName),W.rounds.map(r=>r.name));
+ assert.deepEqual(rounds.map(r=>r.roundDescription),W.rounds.map(r=>r.stance+' · '+r.description),'timer keeps the full descriptions');
 });
 
-test('owner rounds: block order by stance then hand, strike with the step, подставка (never парирование), opposite palm',()=>{
- const w=V42_WORKOUTS['PRG-FAR-STRAIGHT-1'];
- const key=w.rounds.map(r=>(r.stance.startsWith('лево')?'L':'R')+(r.hand==='левой'?'l':'r')).join('');
+test('owner rounds: block order by stance then hand, strike with the step, source right-palm подставка, never парирование',()=>{
+ const key=W.rounds.map(r=>(r.stance.startsWith('лево')?'L':'R')+(r.hand==='левой'?'l':'r')).join('');
  assert.equal(key,'Ll'.repeat(4)+'Lr'.repeat(4)+'Rl'.repeat(3)+'Rr'.repeat(4));
- for(const [i,r] of w.rounds.entries()){
+ for(const [i,r] of W.rounds.entries()){
   assert.ok(r.name.startsWith('Прямой '+r.hand),i);
   assert.ok(!/париров|отбив/i.test(r.name+r.description),i);
-  assert.ok(r.description.includes('подставка открытой ладони '+(r.hand==='левой'?'правой':'левой')+' руки'),i);
-  assert.ok(r.description.length<=560,i);
+  assert.ok(r.description.includes('подставка открытой ладони правой руки (как в исходном упражнении)'),i);
+  assert.ok(!r.description.includes('ладони левой'),i);
+  assert.equal(r.cue,r.stance,'plan cue is short');
+  assert.ok((r.stance+' · '+r.description).length<=600,i);
   if(i)assert.ok(r.description.includes('одновременно с постановкой ноги'),i);
  }
- assert.ok(w.rounds[0].description.includes('без шага'));
- for(const i of [3,7,10,14])assert.ok(w.rounds[i].description.includes('Без возврата'),i);
- for(const i of [1,2,4,5,6,8,9,11,12,13])assert.ok(w.rounds[i].description.includes('Возврат'),i);
+ assert.ok(W.rounds[0].description.includes('без шага'));
+ for(const i of [3,7,10,14])assert.ok(W.rounds[i].description.includes('Без возврата'),i);
+ for(const i of [1,2,4,5,6,8,9,11,12,13])assert.ok(W.rounds[i].description.includes('Возврат'),i);
 });
 
-test('methodology tab: only the owner program shows rounds and one add button; others keep the notice',()=>{
- const doc=mockDoc();const added=[];
- const root=renderMethodologyV42(doc,M,{workouts:V42_WORKOUTS,onAdd:w=>{added.push(w.id);return true;}});
+test('four methodical fields are the approved V4.2 text verbatim; the six source exercises stay separate and unedited',()=>{
+ const crit=Object.fromEntries(P1.criteria);
+ assert.deepEqual(W.methodology,{technique:crit['Техника'],tactics:crit['Тактика'],execution:crit['Особенности выполнения'],typicalMistakes:crit['Типичные ошибки']});
+ assert.deepEqual(P1.exercises.map(e=>e.id),['ROM-P1-S01','ROM-P1-S02','ROM-P1-S03','ROM-P1-S04','ROM-L1-01','ROM-MECH-PADS']);
+ assert.equal(P1.exercises[1].text,'А — прямой правой в голову с места и с шагом; Б — подставка открытой ладони правой руки.');
+ assert.ok(!W.rounds.some(r=>P1.exercises.some(e=>e.text===r.description)));
+});
+
+test('methodology tab: the owner program shows the Tree lesson card it is given; others keep the notice and get none',()=>{
+ const doc=mockDoc();const asked=[];
+ const root=renderMethodologyV42(doc,M,{workouts:V42_WORKOUTS,lessonCard:(w,stageId)=>{asked.push([w.id,stageId]);const c=doc.createElement('div');c.className='ft-route-lesson';return c;}});
  const s2=find(root,'ft-route-section')[1];s2.toggle();
  const step=find(s2,'ft-route-step').find(x=>x.dataset.stage==='FAR-STRAIGHT-ATTDEF');step.toggle();
  const cards=find(step,'ft-v42-program');
  cards.forEach(c=>c.toggle());
  const own=cards.find(c=>c.dataset.program==='PRG-FAR-STRAIGHT-1');
- assert.equal(find(own,'ft-v42-round').length,15);
- assert.equal(find(own,'ft-v42-notice').length,0);
- assert.equal(find(own,'ft-v42-exercise').length,programs.find(p=>p.id==='PRG-FAR-STRAIGHT-1').exercises.length,'source exercises kept');
- const add=find(own,'ft-v42-add');assert.equal(add.length,1);
- add[0].listeners.click[0]();assert.deepEqual(added,['PRG-FAR-STRAIGHT-1']);
- for(const c of cards.filter(c=>c!==own)){assert.equal(find(c,'ft-v42-add').length,0);assert.equal(find(c,'ft-v42-notice').length,1);}
+ assert.deepEqual(asked,[['PRG-FAR-STRAIGHT-1','FAR-STRAIGHT-ATTDEF']]);
+ assert.equal(find(own,'ft-route-lesson').length,1);
+ assert.equal(find(own,'ft-v42-notice')[0].textContent,V42_COACH_ROUNDS_NOTICE);
+ assert.equal(find(own,'ft-v42-criterion').length,4);
+ assert.equal(find(own,'ft-v42-exercise').length,6,'source exercises kept');
+ for(const c of cards.filter(c=>c!==own)){assert.equal(find(c,'ft-route-lesson').length,0);assert.equal(find(c,'ft-v42-notice')[0].textContent,V42_NO_ROUNDS_NOTICE);}
+});
+
+test('one Tree lesson card implementation serves both the Tree and the methodology tab',()=>{
+ const app=readFileSync(new URL('../app/js/app.js',import.meta.url),'utf8');
+ assert.equal(app.split("lesson.className='ft-route-lesson'").length-1,1);
+ assert.ok(app.includes('const lesson=ftLessonCard(workout,node.id,list)'));
+ assert.ok(app.includes('lessonCard:(workout,stageId)=>ftLessonCard(workout,stageId,list)'));
+ assert.ok(!/ft-v42-(add|round|workout)/.test(app+readFileSync(new URL('../app/styles/methodology-v42.css',import.meta.url),'utf8')),'no bespoke round block left');
 });
