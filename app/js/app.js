@@ -1,4 +1,5 @@
 import { TREE_PREVIEW_STAGES } from './library/tree-preview-data.js';
+import { renderMethodologyV42 } from './library/methodology-v42-view.js';
 import { CATEGORIES, LIBRARY, stageForWorkout } from './library/native-adapter.js';
 import { libraryLevel, libraryUp, libraryOpen } from './library/library-browser.js';
 import { starterPrograms } from './core/starter-programs.js';
@@ -703,7 +704,9 @@ function bindProgramLibrary() {
     byId('programLibraryMine').classList.toggle('is-active',libraryTab==='mine');
     byId('programLibraryTemplates').classList.toggle('is-active',libraryTab==='templates');
     byId('ftTreePreviewTab').classList.toggle('is-active',libraryTab==='tree');
+    byId('ftMethodV42Tab').classList.toggle('is-active',libraryTab==='method');
     if(libraryTab==='tree') { renderTreePreview(list); return; }
+    if(libraryTab==='method') { renderMethodV42(list); return; }
     const level=libraryLevel(LIBRARY,CATEGORIES,libraryPath);
     byId('programLibraryBack').hidden=libraryTab!=='templates' || !level.back;
     byId('programLibraryTitle').textContent=libraryTab==='mine'?'Мои программы':level.title;
@@ -888,6 +891,17 @@ function bindProgramLibrary() {
     list.replaceChildren(root);
   }
   byId('ftTreePreviewTab').addEventListener('click',()=>{libraryTab='tree';libraryPath={};renderLibrary();});
+  // V4.2 methodology preview: read-only, loaded on first open; no rounds yet, so it never touches the timer.
+  let methodV42=null;
+  function renderMethodV42(list) {
+    byId('programLibraryTitle').textContent='Методика';
+    byId('programLibraryBack').hidden=true;
+    if(methodV42){list.replaceChildren(renderMethodologyV42(document,methodV42));return;}
+    const wait=document.createElement('p');wait.className='ft-route-muted';wait.textContent='Загрузка…';list.replaceChildren(wait);
+    import('./library/methodology-v42-data.js').then(m=>{methodV42=m.METHODOLOGY_V42;if(libraryTab==='method')renderMethodV42(list);})
+      .catch(()=>{wait.textContent='Не удалось открыть методику.';});
+  }
+  byId('ftMethodV42Tab').addEventListener('click',()=>{libraryTab='method';libraryPath={};renderLibrary();});
   byId('programLibraryOpen').addEventListener('click',()=>{libraryTab='mine';libraryPath={};renderLibrary();library.hidden=false;});
   byId('programLibraryClose').addEventListener('click',close);
   byId('programLibraryBack').addEventListener('click',()=>{libraryPath=libraryUp(libraryPath);renderLibrary();});
