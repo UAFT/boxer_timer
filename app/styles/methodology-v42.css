@@ -1,7 +1,6 @@
 /* V4.2 methodology preview tab: read-only cards, reuses the route cascade from main.css. */
 .program-library-modal .ft-library-nav{grid-template-columns:repeat(4,minmax(min-content,1fr)) 44px!important;gap:4px!important}
 .program-library-modal .ft-library-nav>button{font-size:clamp(11px,3.2vw,14px)!important;padding:8px 2px!important}
-.ft-v42-intro{margin:2px 4px 12px;color:#4d5b5e;font-size:13px;line-height:1.45}
 .ft-v42-count{color:#47766e;font-size:13px;font-weight:700;font-variant-numeric:tabular-nums}
 .ft-v42-stage-task{margin:0 0 10px;color:#4d5b5e;font-size:13px;line-height:1.45}
 .ft-v42-program{background:#fbfcfc;border:1px solid #dce2e3;border-radius:12px;margin:0 0 8px;padding:0}

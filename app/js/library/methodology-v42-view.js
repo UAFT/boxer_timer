@@ -1,7 +1,8 @@
 // Preview of the approved V4.2 methodology tree: section → stage → program → exercises.
-// Programs with owner-approved rounds (V42_WORKOUTS) show the Tree's own lesson card, passed in by the app
-// as lessonCard(workout, stageId); every other program stays read-only. Old library and tree are untouched.
-export const V42_COACH_ROUNDS_NOTICE = 'Раунды тренировки — тренерская раскладка упражнений этой программы; упражнения ниже — исходные.';
+// A program with owner-approved rounds (V42_WORKOUTS) is shown only as the Tree's own lesson card, passed in by
+// the app as lessonCard(workout, stageId): no wrapper, no source exercise list (it stays in the data). Every other
+// program stays a read-only card. Format/equipment chips are not shown on program cards: any program can be done
+// with a partner, on a bag, at a mirror or as shadowboxing. Old library and tree are untouched.
 export const V42_NO_ROUNDS_NOTICE = 'Раунды будут добавлены после проверки методологии';
 
 const el = (doc, tag, cls, text) => {
@@ -21,28 +22,17 @@ function lazy(details, build) {
   });
 }
 
-export function programChips(program) {
-  const chips = [...program.formats];
-  for (const item of program.exercises) {
-    if (item.review) continue;
-    for (const label of item.labels) if (label === 'Имитация без партнёра' && !chips.includes(label)) chips.push(label);
-  }
-  return chips;
-}
-
 function chipRow(doc, values, cls = 'ft-v42-chip') {
   const row = el(doc, 'div', 'ft-v42-chips');
   for (const value of values) row.append(el(doc, 'span', cls, value));
   return row;
 }
 
-const clock = sec => Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0');
 export const workoutTotalSec = w => w.rounds.reduce((sum, r, i) => sum + r.workSec + (i < w.rounds.length - 1 ? r.restSec : 0), 0);
 
-export function renderProgramBody(doc, program, card) {
+export function renderProgramBody(doc, program) {
   const body = el(doc, 'div', 'ft-v42-program-body');
-  body.append(el(doc, 'p', 'ft-v42-notice', card ? V42_COACH_ROUNDS_NOTICE : V42_NO_ROUNDS_NOTICE));
-  if (card) body.append(card);
+  body.append(el(doc, 'p', 'ft-v42-notice', V42_NO_ROUNDS_NOTICE));
   for (const [label, text] of program.criteria) {
     const block = el(doc, 'div', 'ft-v42-criterion');
     block.append(el(doc, 'strong', 'ft-v42-criterion-label', label));
@@ -54,9 +44,7 @@ export function renderProgramBody(doc, program, card) {
   for (const item of program.exercises) {
     const li = el(doc, 'li', 'ft-v42-exercise' + (item.review ? ' is-review' : ''));
     li.append(el(doc, 'p', 'ft-v42-exercise-text', item.text));
-    const tags = [...item.formats, ...item.labels];
-    if (item.review) tags.unshift('Повторение');
-    if (tags.length) li.append(chipRow(doc, tags));
+    if (item.review) li.append(chipRow(doc, ['Повторение']));
     const facts = [item.needs, item.equipment && 'Инвентарь: ' + item.equipment].filter(Boolean);
     if (facts.length) li.append(el(doc, 'p', 'ft-v42-exercise-facts', facts.join(' · ')));
     list.append(li);
@@ -67,7 +55,6 @@ export function renderProgramBody(doc, program, card) {
 
 export function renderMethodologyV42(doc, data, { workouts = {}, lessonCard } = {}) {
   const root = el(doc, 'div', 'ft-route ft-v42');
-  root.append(el(doc, 'p', 'ft-v42-intro', 'Рекомендуемый порядок обучения. Все ступени открыты; к пройденному можно возвращаться. Раунды есть у программ, где указана длительность; у остальных они будут добавлены после проверки методологии.'));
   data.sections.forEach((section, si) => {
     const group = el(doc, 'details', 'ft-route-section');
     group.dataset.section = section.id;
@@ -87,19 +74,24 @@ export function renderMethodologyV42(doc, data, { workouts = {}, lessonCard } = 
         step.append(summary);
         lazy(step, () => {
           const content = el(doc, 'div', 'ft-route-lesson-list ft-v42-programs');
-          if (stage.task) content.append(el(doc, 'p', 'ft-v42-stage-task', stage.task));
+          // A stage that already has a training shows its cards straight away, without the stage summary.
+          const trained = lessonCard && stage.programs.some(p => workouts[p.id]);
+          if (stage.task && !trained) content.append(el(doc, 'p', 'ft-v42-stage-task', stage.task));
           for (const program of stage.programs) {
+            const workout = workouts[program.id];
+            const lesson = workout && lessonCard ? lessonCard(workout, stage.id) : null;
+            if (lesson) {
+              lesson.dataset.program = program.id;
+              content.append(lesson);
+              continue;
+            }
             const card = el(doc, 'details', 'ft-v42-program');
             card.dataset.program = program.id;
             const top = el(doc, 'summary', 'ft-v42-program-head');
             top.append(el(doc, 'span', 'ft-v42-program-title', program.title + (program.review ? ' · повторение' : '')));
-            const chips = programChips(program);
-            if (chips.length) top.append(chipRow(doc, chips));
-            const workout = workouts[program.id];
-            top.append(el(doc, 'span', 'ft-v42-program-meta', 'Упражнений: ' + program.exercises.length +
-              (workout ? ' · раундов: ' + workout.rounds.length + ' · ' + clock(workoutTotalSec(workout)) : '')));
+            top.append(el(doc, 'span', 'ft-v42-program-meta', 'Упражнений: ' + program.exercises.length));
             card.append(top);
-            lazy(card, () => renderProgramBody(doc, program, workout && lessonCard ? lessonCard(workout, stage.id) : null));
+            lazy(card, () => renderProgramBody(doc, program));
             content.append(card);
           }
           return content;
