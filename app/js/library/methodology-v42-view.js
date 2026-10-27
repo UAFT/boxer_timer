@@ -1,7 +1,7 @@
 // Preview of the approved V4.2 methodology tree: section → stage → program → exercises.
-// A program with rounds (V42_WORKOUTS: the owner-approved one and provisional proposals) is shown only as the Tree's own lesson card, passed in by
-// the app as lessonCard(workout, stageId): no wrapper, no source exercise list (it stays in the data). Every other
-// program stays a read-only card. Format/equipment chips are not shown on program cards: any program can be done
+// A stage with owner trainings (V42_WORKOUTS entries whose stageId is the stage) shows exactly those, in order, as the Tree's
+// own lesson card passed in by the app as lessonCard(workout, stageId): no wrapper, no source programs (they stay in the data).
+// Every other stage lists its programs as read-only cards. Format/equipment chips are not shown on program cards: any program can be done
 // with a partner, on a bag, at a mirror or as shadowboxing. Old library and tree are untouched.
 export const V42_NO_ROUNDS_NOTICE = 'Раунды будут добавлены после проверки методологии';
 
@@ -75,16 +75,18 @@ export function renderMethodologyV42(doc, data, { workouts = {}, lessonCard } = 
         lazy(step, () => {
           const content = el(doc, 'div', 'ft-route-lesson-list ft-v42-programs');
           // A stage that already has a training shows its cards straight away, without the stage summary.
-          const trained = lessonCard && stage.programs.some(p => workouts[p.id]);
-          if (stage.task && !trained) content.append(el(doc, 'p', 'ft-v42-stage-task', stage.task));
-          for (const program of stage.programs) {
-            const workout = workouts[program.id];
-            const lesson = workout && lessonCard ? lessonCard(workout, stage.id) : null;
-            if (lesson) {
-              lesson.dataset.program = program.id;
+          const own = lessonCard ? Object.values(workouts).filter(w => w.stageId === stage.id) : [];
+          if (own.length) {
+            for (const workout of own) {
+              const lesson = lessonCard(workout, stage.id);
+              if (!lesson) continue;
+              lesson.dataset.program = workout.id;
               content.append(lesson);
-              continue;
             }
+            return content;
+          }
+          if (stage.task) content.append(el(doc, 'p', 'ft-v42-stage-task', stage.task));
+          for (const program of stage.programs) {
             const card = el(doc, 'details', 'ft-v42-program');
             card.dataset.program = program.id;
             const top = el(doc, 'summary', 'ft-v42-program-head');
