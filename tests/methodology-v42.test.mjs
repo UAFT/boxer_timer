@@ -372,18 +372,26 @@ test('one Tree lesson card implementation serves both the Tree and the methodolo
  assert.ok(!/ft-v42-(add|round|workout|intro)/.test(app+readFileSync(new URL('../app/styles/methodology-v42.css',import.meta.url),'utf8')),'no bespoke blocks left');
 });
 
-test('V52: each section counter equals the cards the section actually shows when every stage is opened (owner trainings + read-only programs)',()=>{
- for(const opts of [{workouts:V42_WORKOUTS,lessonCard:(w,stageId)=>{const doc=mockDoc(),c=doc.createElement('div');c.className='ft-route-lesson';return c;}},{}]){
-  const doc=mockDoc();const root=renderMethodologyV42(doc,M,opts);const got=[];
+test('V53: section header counts stages; each stage row has a chip with the cards that stage shows (trainings with rounds vs read-only programs)',()=>{
+ for(const opts of [{workouts:V42_WORKOUTS,lessonCard:()=>{const c=mockDoc().createElement('div');c.className='ft-route-lesson';return c;}},{}]){
+  const root=renderMethodologyV42(mockDoc(),M,opts);const heads=[];
   for(const s of find(root,'ft-route-section')){
    const counter=find(s,'ft-v42-count')[0].textContent;
-   s.toggle();for(const st of find(s,'ft-route-step'))st.toggle();
-   const cards=find(s,'ft-route-lesson').length+find(s,'ft-v42-program').length;
-   assert.equal(counter,String(cards),s.dataset.section);got.push(cards);
+   s.toggle();const steps=find(s,'ft-route-step');
+   assert.equal(counter,String(steps.length),s.dataset.section);heads.push(Number(counter));
+   for(const st of steps){
+    const head=st.children[0],chip=find(head,'ft-v42-stage-count')[0];
+    assert.deepEqual(head.children.map(c=>c.className.split(' ')[0]),['ft-route-step-dot','ft-route-step-title','ft-v42-stage-count','ft-route-chevron'],'chip sits right, before the chevron');
+    st.toggle();
+    const lessons=find(st,'ft-route-lesson').length,programs=find(st,'ft-v42-program').length;
+    assert.ok(!(lessons&&programs),'a stage shows trainings or programs, never both');
+    if(lessons){assert.equal(chip.textContent,lessons+' трен.');assert.ok(chip.className.includes('ft-v42-stage-count-run'));}
+    else assert.equal(chip.textContent,programs+' прогр.',st.dataset.stage);
+   }
   }
-  if(opts.lessonCard){
-   assert.deepEqual(got,[20,94,14,19,11,20,11],'S2: 23 stage-9 trainings + 71 programs of the other 18 stages');
-   const s2=find(root,'ft-route-section')[1];assert.equal(find(s2,'ft-route-lesson').length,23);assert.equal(find(s2,'ft-v42-program').length,71);
-  }else assert.deepEqual(got,M.sections.map(s=>s.stages.reduce((n,t)=>n+t.programs.length,0)));
+  assert.deepEqual(heads,[8,19,5,8,3,7,4],'original stage counts');
+  if(opts.lessonCard){const s2=find(root,'ft-route-section')[1];const st9=find(s2,'ft-route-step').find(x=>x.dataset.stage==='FAR-STRAIGHT-ATTDEF');
+   assert.equal(find(st9.children[0],'ft-v42-stage-count')[0].textContent,'23 трен.');
+   assert.equal(find(s2,'ft-v42-stage-count').filter(c=>!c.className.includes('-run')).reduce((n,c)=>n+parseInt(c.textContent),0),71);}
  }
 });

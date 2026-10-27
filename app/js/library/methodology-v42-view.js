@@ -55,16 +55,23 @@ export function renderProgramBody(doc, program) {
 
 export function renderMethodologyV42(doc, data, { workouts = {}, lessonCard } = {}) {
   const root = el(doc, 'div', 'ft-route ft-v42');
-  // The cards a stage shows: its owner trainings when it has any, otherwise its read-only programs. The section counter uses the same list.
+  // The cards a stage shows: its owner trainings when it has any, otherwise its read-only programs. The stage chip counts the same list.
   const ownOf = stage => lessonCard ? Object.values(workouts).filter(w => w.stageId === stage.id) : [];
-  const cardsOf = stage => { const own = ownOf(stage); return own.length ? own.length : stage.programs.length; };
+  const stageChip = stage => {
+    const own = ownOf(stage).length, chip = own
+      ? el(doc, 'span', 'ft-v42-stage-count ft-v42-stage-count-run', own + ' трен.')
+      : el(doc, 'span', 'ft-v42-stage-count', stage.programs.length + ' прогр.');
+    chip.title = own ? 'Тренировок с раундами: ' + own : 'Программ методики (только чтение): ' + stage.programs.length;
+    chip.setAttribute?.('aria-label', chip.title);
+    return chip;
+  };
   data.sections.forEach((section, si) => {
     const group = el(doc, 'details', 'ft-route-section');
     group.dataset.section = section.id;
     const head = el(doc, 'summary', 'ft-route-section-head');
     head.append(el(doc, 'span', 'ft-route-station', String(si + 1).padStart(2, '0')),
       el(doc, 'strong', 'ft-route-section-name', section.title),
-      el(doc, 'span', 'ft-v42-count', String(section.stages.reduce((n, stage) => n + cardsOf(stage), 0))),
+      el(doc, 'span', 'ft-v42-count', String(section.stages.length)),
       el(doc, 'span', 'ft-route-chevron', '⌄'));
     group.append(head);
     lazy(group, () => {
@@ -73,7 +80,7 @@ export function renderMethodologyV42(doc, data, { workouts = {}, lessonCard } = 
         const step = el(doc, 'details', 'ft-route-step');
         step.dataset.stage = stage.id;
         const summary = el(doc, 'summary', 'ft-route-step-head');
-        summary.append(el(doc, 'span', 'ft-route-step-dot', String(stage.no)), el(doc, 'span', 'ft-route-step-title', stage.title), el(doc, 'span', 'ft-route-chevron', '⌄'));
+        summary.append(el(doc, 'span', 'ft-route-step-dot', String(stage.no)), el(doc, 'span', 'ft-route-step-title', stage.title), stageChip(stage), el(doc, 'span', 'ft-route-chevron', '⌄'));
         step.append(summary);
         lazy(step, () => {
           const content = el(doc, 'div', 'ft-route-lesson-list ft-v42-programs');

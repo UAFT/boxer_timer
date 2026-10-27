@@ -21,3 +21,6 @@
 .ft-v42-exercise.is-review{color:#5a6669}
 .ft-v42-exercise-text{margin:0 0 4px;overflow-wrap:anywhere}
 .ft-v42-exercise-facts{margin:4px 0 0;font-size:12px;color:#6c787b}
+.ft-route-step-title{min-width:0;overflow-wrap:anywhere}
+.ft-v42-stage-count{flex:0 0 auto;margin-left:auto;padding:2px 7px;border:1px solid #cbd2d3;border-radius:999px;background:#f1f3f4;color:#576166;font-size:11px;font-weight:600;white-space:nowrap;font-variant-numeric:tabular-nums}
+.ft-v42-stage-count-run{border-color:#9cc4b8;background:#e6f2ee;color:#1f6b59}
