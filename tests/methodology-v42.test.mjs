@@ -371,3 +371,19 @@ test('one Tree lesson card implementation serves both the Tree and the methodolo
  assert.ok(app.includes('lessonCard:(workout,stageId)=>ftLessonCard(workout,stageId,list)'));
  assert.ok(!/ft-v42-(add|round|workout|intro)/.test(app+readFileSync(new URL('../app/styles/methodology-v42.css',import.meta.url),'utf8')),'no bespoke blocks left');
 });
+
+test('V52: each section counter equals the cards the section actually shows when every stage is opened (owner trainings + read-only programs)',()=>{
+ for(const opts of [{workouts:V42_WORKOUTS,lessonCard:(w,stageId)=>{const doc=mockDoc(),c=doc.createElement('div');c.className='ft-route-lesson';return c;}},{}]){
+  const doc=mockDoc();const root=renderMethodologyV42(doc,M,opts);const got=[];
+  for(const s of find(root,'ft-route-section')){
+   const counter=find(s,'ft-v42-count')[0].textContent;
+   s.toggle();for(const st of find(s,'ft-route-step'))st.toggle();
+   const cards=find(s,'ft-route-lesson').length+find(s,'ft-v42-program').length;
+   assert.equal(counter,String(cards),s.dataset.section);got.push(cards);
+  }
+  if(opts.lessonCard){
+   assert.deepEqual(got,[20,94,14,19,11,20,11],'S2: 23 stage-9 trainings + 71 programs of the other 18 stages');
+   const s2=find(root,'ft-route-section')[1];assert.equal(find(s2,'ft-route-lesson').length,23);assert.equal(find(s2,'ft-v42-program').length,71);
+  }else assert.deepEqual(got,M.sections.map(s=>s.stages.reduce((n,t)=>n+t.programs.length,0)));
+ }
+});

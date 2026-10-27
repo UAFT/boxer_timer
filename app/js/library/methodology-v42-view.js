@@ -55,13 +55,16 @@ export function renderProgramBody(doc, program) {
 
 export function renderMethodologyV42(doc, data, { workouts = {}, lessonCard } = {}) {
   const root = el(doc, 'div', 'ft-route ft-v42');
+  // The cards a stage shows: its owner trainings when it has any, otherwise its read-only programs. The section counter uses the same list.
+  const ownOf = stage => lessonCard ? Object.values(workouts).filter(w => w.stageId === stage.id) : [];
+  const cardsOf = stage => { const own = ownOf(stage); return own.length ? own.length : stage.programs.length; };
   data.sections.forEach((section, si) => {
     const group = el(doc, 'details', 'ft-route-section');
     group.dataset.section = section.id;
     const head = el(doc, 'summary', 'ft-route-section-head');
     head.append(el(doc, 'span', 'ft-route-station', String(si + 1).padStart(2, '0')),
       el(doc, 'strong', 'ft-route-section-name', section.title),
-      el(doc, 'span', 'ft-v42-count', String(section.stages.length)),
+      el(doc, 'span', 'ft-v42-count', String(section.stages.reduce((n, stage) => n + cardsOf(stage), 0))),
       el(doc, 'span', 'ft-route-chevron', '⌄'));
     group.append(head);
     lazy(group, () => {
@@ -75,7 +78,7 @@ export function renderMethodologyV42(doc, data, { workouts = {}, lessonCard } = 
         lazy(step, () => {
           const content = el(doc, 'div', 'ft-route-lesson-list ft-v42-programs');
           // A stage that already has a training shows its cards straight away, without the stage summary.
-          const own = lessonCard ? Object.values(workouts).filter(w => w.stageId === stage.id) : [];
+          const own = ownOf(stage);
           if (own.length) {
             for (const workout of own) {
               const lesson = lessonCard(workout, stage.id);
