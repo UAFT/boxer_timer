@@ -387,9 +387,9 @@ test('V53: section header counts stages; each stage row has a chip with the card
    for(const st of steps){
     const head=st.children[0],chip=find(head,'ft-v42-stage-count')[0];
     assert.deepEqual(head.children.map(c=>c.className.split(' ')[0]),['ft-route-step-dot','ft-route-step-title','ft-v42-stage-count','ft-route-chevron'],'chip sits right, before the chevron');
-    st.toggle();
+    st.toggle();find(st,'ft-v42-program').forEach(c=>c.toggle());   // V58: trainings may sit inside a substage card
     const lessons=find(st,'ft-route-lesson').length,programs=find(st,'ft-v42-program').length;
-    assert.ok(!(lessons&&programs),'a stage shows trainings or programs, never both');
+    assert.ok(!(lessons&&programs)||find(st,'ft-v42-substage').length,'a stage shows trainings or programs; both only through substages');
     if(lessons){assert.equal(chip.textContent,lessons+' трен.');assert.ok(chip.className.includes('ft-v42-stage-count-run'));}
     else assert.equal(chip.textContent,programs+' прогр.',st.dataset.stage);
    }
@@ -398,8 +398,8 @@ test('V53: section header counts stages; each stage row has a chip with the card
   if(opts.lessonCard){const s2=find(root,'ft-route-section')[1];const st9=find(s2,'ft-route-step').find(x=>x.dataset.stage==='FAR-STRAIGHT-ATTDEF');
    assert.equal(find(st9.children[0],'ft-v42-stage-count')[0].textContent,'24 трен.');
    const st10=find(s2,'ft-route-step').find(x=>x.dataset.stage==='FAR-STRAIGHT-COUNTER');
-   assert.equal(find(st10.children[0],'ft-v42-stage-count')[0].textContent,'11 трен.','V54–V57: stage 10 response programs are trainings, not book cards');
-   assert.equal(find(s2,'ft-v42-stage-count').filter(c=>!c.className.includes('-run')).reduce((n,c)=>n+parseInt(c.textContent),0),71-6,'stage 10 book cards give way to its trainings');}
+   assert.equal(find(st10.children[0],'ft-v42-stage-count')[0].textContent,'11 трен.','V54–V58: stage 10 chip counts its runnable trainings (inside the first substage)');
+   assert.equal(find(s2,'ft-v42-stage-count').filter(c=>!c.className.includes('-run')).reduce((n,c)=>n+parseInt(c.textContent),0),71-6,'non-run chips: the other 18 stages, stage 10 counts trainings');}
  }
 });
 
@@ -467,4 +467,31 @@ test('V57 stage 9: inside parry program — own straight, the partner answers wi
  const mix=w.rounds[8].description;assert.equal(w.rounds[8].name,'Смешанный раунд: отбивы A–E по кругу');
  const at=['A — ','B — ','C — ','D — ','E — '].map(x=>mix.indexOf(x));assert.ok(at.every((x,i)=>x>0&&(i===0||x>at[i-1])),'A–E in order, one round');
  assert.ok(mix.startsWith('Без партнёра'));
+});
+
+test('V58 hierarchy: section → stage 10 → six unnumbered substages; all response trainings inside the first one, which shows only them',()=>{
+ const doc=mockDoc();const asked=[];
+ const root=renderMethodologyV42(doc,M,{workouts:V42_WORKOUTS,lessonCard:(w,stageId)=>{asked.push([w.id,stageId]);const c=doc.createElement('div');c.className='ft-route-lesson';return c;}});
+ const s2=find(root,'ft-route-section')[1];s2.toggle();
+ const st=find(s2,'ft-route-step').find(x=>x.dataset.stage==='FAR-STRAIGHT-COUNTER');st.toggle();
+ const book=M.sections[1].stages.find(t=>t.id==='FAR-STRAIGHT-COUNTER');
+ const cards=find(st,'ft-v42-program');
+ assert.deepEqual(cards.map(c=>c.dataset.program),book.programs.map(p=>p.id),'six substage cards, book order, nothing flattened into the stage');
+ assert.equal(find(st,'ft-route-step').length,0,'substages are not numbered stages');
+ assert.equal(asked.length,0,'trainings are built only when their substage opens');
+ const [first,...rest]=cards;assert.equal(first.dataset.program,'PRG-FAR-STRAIGHT-2');
+ assert.equal(find(first,'ft-v42-program-title')[0].textContent,'Ответный прямой после защиты');
+ assert.equal(find(first,'ft-v42-program-meta')[0].textContent,'Тренировок: 11');
+ assert.equal(find(first.children[0],'ft-v42-stage-count')[0].textContent,'11 трен.');
+ first.toggle();
+ assert.deepEqual(find(first,'ft-route-lesson').map(l=>l.dataset.program),ORDER10,'all 11 response programs, in order, inside the first substage');
+ assert.deepEqual(asked,ORDER10.map(id=>[id,'FAR-STRAIGHT-COUNTER']));
+ assert.equal(find(first,'ft-v42-exercise').length+find(first,'ft-v42-notice').length+find(first,'ft-v42-criterion').length,0,'converted substage: no placeholder book cards');
+ assert.ok(ORDER10.every(id=>V42_WORKOUTS[id].programId==='PRG-FAR-STRAIGHT-2'));
+ for(const c of rest){assert.ok(!c.className.includes('ft-v42-substage'));assert.equal(find(c.children[0],'ft-v42-stage-count').length,0);c.toggle();
+  const p=book.programs.find(x=>x.id===c.dataset.program);
+  assert.equal(find(c,'ft-v42-notice')[0].textContent,V42_NO_ROUNDS_NOTICE);assert.equal(find(c,'ft-v42-exercise').length,p.exercises.length,'unconverted substages keep their book cards');
+  assert.equal(find(c,'ft-route-lesson').length,0);}
+ // the book source of the converted substage stays in the data (UI replacement is not deletion)
+ assert.deepEqual(book.programs[0].exercises.map(e=>e.id),['ROM-P1-S05','ROM-L2-01','ROM-L2-02','ROM-L2-03']);
 });

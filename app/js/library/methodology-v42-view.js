@@ -1,6 +1,8 @@
 // Preview of the approved V4.2 methodology tree: section → stage → program → exercises.
 // A stage with owner trainings (V42_WORKOUTS entries whose stageId is the stage) shows exactly those, in order, as the Tree's
 // own lesson card passed in by the app as lessonCard(workout, stageId): no wrapper, no source programs (they stay in the data).
+// V58: a training with programId belongs to that unnumbered substage (a book program card): the stage keeps its substage cards. A substage
+// with trainings is fully converted (owner-verified), so it shows only them — its book exercises stay in the data, not in the UI.
 // Every other stage lists its programs as read-only cards. Format/equipment chips are not shown on program cards: any program can be done
 // with a partner, on a bag, at a mirror or as shadowboxing. Old library and tree are untouched.
 export const V42_NO_ROUNDS_NOTICE = 'Раунды будут добавлены после проверки методологии';
@@ -55,16 +57,20 @@ export function renderProgramBody(doc, program) {
 
 export function renderMethodologyV42(doc, data, { workouts = {}, lessonCard } = {}) {
   const root = el(doc, 'div', 'ft-route ft-v42');
-  // The cards a stage shows: its owner trainings when it has any, otherwise its read-only programs. The stage chip counts the same list.
-  const ownOf = stage => lessonCard ? Object.values(workouts).filter(w => w.stageId === stage.id) : [];
-  const stageChip = stage => {
-    const own = ownOf(stage).length, chip = own
-      ? el(doc, 'span', 'ft-v42-stage-count ft-v42-stage-count-run', own + ' трен.')
-      : el(doc, 'span', 'ft-v42-stage-count', stage.programs.length + ' прогр.');
-    chip.title = own ? 'Тренировок с раундами: ' + own : 'Программ методики (только чтение): ' + stage.programs.length;
+  // Trainings straight in a stage (no programId) replace its program cards; trainings of a substage sit inside that program card.
+  const all = lessonCard ? Object.values(workouts) : [];
+  const ownOf = stage => all.filter(w => w.stageId === stage.id && !w.programId);
+  const subOf = (stage, program) => all.filter(w => w.stageId === stage.id && w.programId === program.id);
+  // Stage and substage chips count executable trainings; a stage without any counts its read-only program cards.
+  const countChip = (runs, programs) => {
+    const chip = runs
+      ? el(doc, 'span', 'ft-v42-stage-count ft-v42-stage-count-run', runs + ' трен.')
+      : el(doc, 'span', 'ft-v42-stage-count', programs + ' прогр.');
+    chip.title = runs ? 'Тренировок с раундами: ' + runs : 'Программ методики (только чтение): ' + programs;
     chip.setAttribute?.('aria-label', chip.title);
     return chip;
   };
+  const stageChip = stage => countChip(all.filter(w => w.stageId === stage.id).length, stage.programs.length);
   data.sections.forEach((section, si) => {
     const group = el(doc, 'details', 'ft-route-section');
     group.dataset.section = section.id;
@@ -100,10 +106,22 @@ export function renderMethodologyV42(doc, data, { workouts = {}, lessonCard } = 
             const card = el(doc, 'details', 'ft-v42-program');
             card.dataset.program = program.id;
             const top = el(doc, 'summary', 'ft-v42-program-head');
+            const sub = subOf(stage, program);
             top.append(el(doc, 'span', 'ft-v42-program-title', program.title + (program.review ? ' · повторение' : '')));
-            top.append(el(doc, 'span', 'ft-v42-program-meta', 'Упражнений: ' + program.exercises.length));
+            top.append(el(doc, 'span', 'ft-v42-program-meta', sub.length ? 'Тренировок: ' + sub.length : 'Упражнений: ' + program.exercises.length));
+            if (sub.length) { card.className += ' ft-v42-substage'; top.append(countChip(sub.length, 0)); }
             card.append(top);
-            lazy(card, () => renderProgramBody(doc, program));
+            lazy(card, () => {
+              if (!sub.length) return renderProgramBody(doc, program);
+              const box = el(doc, 'div', 'ft-route-lesson-list ft-v42-sub-lessons');
+              for (const workout of sub) {
+                const lesson = lessonCard(workout, stage.id);
+                if (!lesson) continue;
+                lesson.dataset.program = workout.id;
+                box.append(lesson);
+              }
+              return box;
+            });
             content.append(card);
           }
           return content;
