@@ -99,13 +99,18 @@ const ORDER23=['FT-S9-STEPBACK-HEAD','FT-S9-STEPBACK-BODY','FT-S9-STEPBACK-MIXED
  'FT-S9-BENT-HEAD','FT-S9-BODY-BENT-ARM','FT-S9-BENT-MIXED','FT-S9-PULLBACK','FT-S9-PULLBACK-BODY','FT-S9-PULLBACK-MIXED','FT-S9-ELBOW-HEAD','FT-S9-ELBOW-BODY','FT-S9-DOUBLE-ELBOW',
  'FT-S9-VAR-LEFT-HEAD','FT-S9-VAR-LEFT-BODY','FT-S9-VAR-RIGHT-HEAD','FT-S9-VAR-RIGHT-BODY',
  'FT-S9-VAR2-LEFT-HEAD-BODY','FT-S9-VAR2-LEFT-BODY-HEAD','FT-S9-VAR2-RIGHT-HEAD-BODY','FT-S9-VAR2-RIGHT-BODY-HEAD'];
+const ORDER10=['FT-S10-ANS-STEPBACK','FT-S10-ANS-PALM','FT-S10-ANS-BENT','FT-S10-ANS-PULL','FT-S10-ANS-PULLSTEP','FT-S10-ANS-ELBOW','FT-S10-ANS-PARRY','FT-S10-ANS-PARRY-BACK','FT-S10-ANS-PARRY-BREAK','FT-S10-ANS-PARRY-SIDE','FT-S10-ANS-MIXED'];
+const ORDER9=[...ORDER23,'FT-S9-PARRY'];
+const own=stage=>Object.keys(V42_WORKOUTS).filter(id=>V42_WORKOUTS[id].stageId===stage);
 const W=V42_WORKOUTS['PRG-FAR-STRAIGHT-1'];
 const P1=programs.find(p=>p.id==='PRG-FAR-STRAIGHT-1');
 
 test('owner program «Прямой и подставка: шаг назад»: 15 rounds 2:00/1:00, no trailing rest, 44:00 through the Tree adapter and real compiler',()=>{
- assert.deepEqual(Object.keys(V42_WORKOUTS),ORDER23,'V51: 15 matrix programs (defence × head/body/mixed), then V50 and V51 microprograms');
+ assert.deepEqual(Object.keys(V42_WORKOUTS),[...ORDER9,...ORDER10],'V51: 15 matrix programs (defence × head/body/mixed), then V50 and V51 microprograms; V57: + parry; V54–V57: stage 10');
+ assert.deepEqual(own('FAR-STRAIGHT-ATTDEF'),ORDER9);assert.deepEqual(own('FAR-STRAIGHT-COUNTER'),ORDER10);
  assert.ok(!V42_WORKOUTS['FT-S9-STEP-BACK'],'the V47 combined step-back program is superseded (V48)');
- assert.equal(Object.values(V42_WORKOUTS).reduce((s,w)=>s+w.rounds.length,0),220);
+ assert.equal(ORDER23.reduce((s,id)=>s+V42_WORKOUTS[id].rounds.length,0),220);
+ assert.equal(Object.values(V42_WORKOUTS).reduce((s,w)=>s+w.rounds.length,0),229+100,'V57: stage 9 — 24 programs / 229 rounds, stage 10 — 11 programs / 100 rounds');
  assert.equal(W.name,'Прямые в голову — подставка открытой ладонью');
  assert.equal(P1.title,'Прямой и подставка; шаг назад','methodology title untouched');
  assert.equal(W.rounds.length,15);
@@ -179,8 +184,8 @@ test('partner is optional; B uses the open palm opposite to the strike, no defen
 
 const SRC9=M.sections[1].stages.find(t=>t.id==='FAR-STRAIGHT-ATTDEF');
 const LS='левосторонняя стойка',RS='правосторонняя стойка';
-const timed=(w,n,min)=>{
- assert.equal(w.stageId,'FAR-STRAIGHT-ATTDEF');
+const timed=(w,n,min,stage='FAR-STRAIGHT-ATTDEF',parry=false)=>{   // parry: V56 owner canon allows «отбив» in the parry program only
+ assert.equal(w.stageId,stage);
  assert.equal(w.rounds.length,n);assert.equal(w.blocks.reduce((s,b)=>s+b[1],0),n);
  assert.ok(w.rounds.every(r=>r.workSec===120&&r.restSec===60&&r.cue===r.stance));
  assert.equal(workoutTotalSec(w),min*60);
@@ -191,7 +196,7 @@ const timed=(w,n,min)=>{
  assert.equal(new Set(w.rounds.map(r=>r.stance+r.name)).size,n);
  for(const r of w.rounds){
   assert.ok((r.stance+' · '+r.description).length<=600&&r.name.length<=100,r.name);
-  assert.ok(!/париров|отбив|двойн\S* шаг|уклон|смена ролей|весь раунд, Б|сначала шаг|исходном упражнен|источник|контрудар/i.test(r.name+r.description),r.name);
+  assert.ok(!(parry?/париров|двойн\S* шаг|уклон|смена ролей|весь раунд, Б|сначала шаг|исходном упражнен|источник|контрудар/i:/париров|отбив|двойн\S* шаг|уклон|смена ролей|весь раунд, Б|сначала шаг|исходном упражнен|источник|контрудар/i).test(r.name+r.description),r.name);
  }
 };
 const crit1=Object.fromEntries(P1.criteria),M1={technique:crit1['Техника'],tactics:crit1['Тактика'],execution:crit1['Особенности выполнения'],typicalMistakes:crit1['Типичные ошибки']};
@@ -348,15 +353,15 @@ test('methodology tab: stage 9 shows exactly the owner-approved Tree lesson card
  const s2=find(root,'ft-route-section')[1];s2.toggle();
  assert.equal(asked.length,0,'cards are built only when the stage opens');
  const step=find(s2,'ft-route-step').find(x=>x.dataset.stage==='FAR-STRAIGHT-ATTDEF');step.toggle();
- const WITH=Object.keys(V42_WORKOUTS);
- assert.equal(WITH.length,23);
+ const WITH=own('FAR-STRAIGHT-ATTDEF');
+ assert.equal(WITH.length,24);
  assert.deepEqual(asked,WITH.map(id=>[id,'FAR-STRAIGHT-ATTDEF']),'once each, in order');
  assert.equal(find(step,'ft-v42-stage-task').length,0);
  const content=find(step,'ft-v42-programs')[0];
  assert.deepEqual(content.children.map(c=>c.dataset.program),WITH,'only the four cards, directly in the stage list');
  assert.equal(find(step,'ft-v42-program').length,0,'no source program cards, no parent card');
  // other stages keep their summary and read-only program cards
- const other=find(s2,'ft-route-step').find(x=>x.dataset.stage!=='FAR-STRAIGHT-ATTDEF'&&M.sections[1].stages.find(t=>t.id===x.dataset.stage).task);other.toggle();
+ const other=find(s2,'ft-route-step').find(x=>!own(x.dataset.stage).length&&M.sections[1].stages.find(t=>t.id===x.dataset.stage).task);other.toggle();
  assert.equal(find(other,'ft-v42-stage-task').length,1);
  const cards=find(other,'ft-v42-program');
  assert.equal(cards.length,M.sections[1].stages.find(t=>t.id===other.dataset.stage).programs.length);
@@ -391,7 +396,75 @@ test('V53: section header counts stages; each stage row has a chip with the card
   }
   assert.deepEqual(heads,[8,19,5,8,3,7,4],'original stage counts');
   if(opts.lessonCard){const s2=find(root,'ft-route-section')[1];const st9=find(s2,'ft-route-step').find(x=>x.dataset.stage==='FAR-STRAIGHT-ATTDEF');
-   assert.equal(find(st9.children[0],'ft-v42-stage-count')[0].textContent,'23 трен.');
-   assert.equal(find(s2,'ft-v42-stage-count').filter(c=>!c.className.includes('-run')).reduce((n,c)=>n+parseInt(c.textContent),0),71);}
+   assert.equal(find(st9.children[0],'ft-v42-stage-count')[0].textContent,'24 трен.');
+   const st10=find(s2,'ft-route-step').find(x=>x.dataset.stage==='FAR-STRAIGHT-COUNTER');
+   assert.equal(find(st10.children[0],'ft-v42-stage-count')[0].textContent,'11 трен.','V54–V57: stage 10 response programs are trainings, not book cards');
+   assert.equal(find(s2,'ft-v42-stage-count').filter(c=>!c.className.includes('-run')).reduce((n,c)=>n+parseInt(c.textContent),0),71-6,'stage 10 book cards give way to its trainings');}
  }
+});
+
+test('V54–V57 stage 10: step-back module 12 rounds (V55 forward diagonals), five 8-round response modules, V56 8-round inside parry, V57 three 8-round parry footwork modules + one 16-round integration program; defence first, then one answering straight',()=>{
+ const LS='левосторонняя стойка',ORD=[['левой','в голову',0],['правой','в голову',0],['левой','в корпус',0],['правой','в корпус',0],['левой','в голову',1],['правой','в голову',1],['левой','в корпус',1],['правой','в корпус',1]];
+ const T=['Шаг назад с выставлением передней руки','Подставка открытой ладони','Подставка согнутой руки','Оттяжка туловищем без шага','Оттяжка с шагом назад','Двойная локтевая защита'];
+ const ok=(d,id,parry=false)=>{assert.ok(d.indexOf('Защита')>=0&&d.indexOf('Защита')<d.indexOf('ответный прямой'),'defence before the answer: '+id);
+  assert.ok(d.includes('Ответ — после защиты, не вместе с ударом.')&&(/бой с тенью, зеркало или мешок|Без партнёра — тень, зеркало, мешок/.test(d)||/ по диагонали вперёд-/.test(d))&&d.endsWith('В правосторонней стойке — зеркально.'),id);
+  assert.ok(!(parry?/встречн|уклон|париров|кнаружи/i:/встречн|уклон|париров|отбив/i).test(d),'no counter/slip (parry only in parry rounds): '+id);};
+ ORDER10.slice(0,6).forEach((id,k)=>{const w=V42_WORKOUTS[id];
+  if(k===0){timed(w,12,35,'FAR-STRAIGHT-COUNTER');assert.deepEqual(w.blocks,[['С места',4],['С шагом вперёд',4],['По диагонали вперёд',4]]);}
+  else{timed(w,8,23,'FAR-STRAIGHT-COUNTER');assert.deepEqual(w.blocks,[['С места',4],['С шагом вперёд',4]]);}
+  w.rounds.slice(0,8).forEach((r,i)=>{const [h,t,f]=ORD[i],d=r.description;ok(d,id+i);assert.equal(r.stance,LS);assert.equal(r.hand,h);
+   assert.equal(r.name,T[k]+' — ответ '+h+' '+t+(f?' с шагом вперёд':' с места'));
+   assert.ok(d.includes('ответный прямой '+h+' '+t+(f?' с шагом вперёд: кулак у цели при постановке передней ноги, задняя подтягивается':' с места')),id+i);
+   assert.equal(d.includes('В корпус: ниже сгибанием ног, поворот таза'),t==='в корпус');
+   assert.equal(d.includes('с места — координация с новой позиции, удар может не доставать'),!f&&(k===0||k===4),'stationary after a retreat is a coordination drill: '+id+i);
+   if(k===1||k===2)assert.ok(/После его (лев|прав)ого отвечает защищавшая рука, после (лев|прав)ого — другая\./.test(d),'same and opposite hand: '+id+i);
+   assert.ok(d.startsWith(k===5?'Партнёр по кругу: левой в голову, правой в голову, левой в корпус, правой в корпус.':'Партнёр поочерёдно: прямой левой и прямой правой '+(k===2?'в корпус.':'в голову.')),'incoming alternates, target matches the guard: '+id+i);});});
+ // V56: basic inside parry on the spot, exactly the owner's 8 rounds
+ const P=V42_WORKOUTS['FT-S10-ANS-PARRY'];timed(P,8,23,'FAR-STRAIGHT-COUNTER',true);assert.deepEqual(P.blocks,[['От прямого левой',4],['От прямого правой',4]]);
+ const PO=[['левой','правой','в голову'],['левой','левой','в голову'],['левой','правой','в корпус'],['левой','левой','в корпус'],['правой','левой','в голову'],['правой','правой','в голову'],['правой','левой','в корпус'],['правой','правой','в корпус']];
+ P.rounds.forEach((r,i)=>{const [inc,ans,t]=PO[i],par=inc==='левой'?'правой':'левой',same=ans===par,d=r.description;assert.equal(r.hand,ans);
+  assert.equal(r.name,'Отбив внутрь '+par+' от прямого '+inc+' — ответ '+ans+' '+t+(same?' (та же рука)':' (другая рука)'));
+  assert.ok(d.startsWith('Партнёр: прямой '+inc+' в голову. Защита — отбив внутрь: в последний момент '+par.slice(0,-2)+'ая открытая перчатка по предплечью уводит его '+inc.slice(0,-2)+'ую внутрь, к его свободной '+par+' руке'),'owner canon: inside parry by the opposite hand: '+i);
+  assert.ok(d.indexOf('отбив внутрь')<d.indexOf('ответный прямой '+ans+' '+t+' с места')&&d.includes('Ответ — после отбива, не вместе с ударом.')&&d.includes('Не подставка'),i);
+  assert.ok(!/кнаружи|наружу|шаг назад|шагом|встречн|уклон/.test(d),'stationary inside parry only: '+i);assert.equal(d.includes('В корпус: ниже сгибанием ног'),t==='в корпус');});
+ // V55: rounds 9-12 — protective retreat, then the diagonal step FORWARD with the answer, then the other foot follows with the hand
+ V42_WORKOUTS['FT-S10-ANS-STEPBACK'].rounds.slice(8).forEach((r,i)=>{const h=i<2?'левой':'правой',t=i%2?'в корпус':'в голову',d=r.description;ok(d,'DIAG'+i);
+  const [foot,dir,follow]=i<2?['правая','вправо','Левая']:['левая','влево','Правая'];assert.equal(r.hand,h);
+  assert.equal(r.name,'Шаг назад с выставлением передней руки — ответ '+h+' '+t+' с шагом по диагонали вперёд-'+dir);
+  const a=d.indexOf('Партнёр: прямой '+h+' в голову.'),b=d.indexOf('Защита: шаг правой назад'),c=d.indexOf('партнёр промахивается'),e=d.indexOf('Затем '+foot+' нога по диагонали вперёд-'+dir+', одновременно ответный прямой '+h+' '+t),f=d.indexOf(follow+' нога подтягивается вместе с возвратом '+h+' руки к подбородку');
+  assert.ok(a===0&&a<b&&b<c&&c<e&&e<f,'retreat, then the diagonal forward with the answer, then the follow-up: '+i);
+  assert.ok(d.includes('Второго шага назад нет.')&&!/назад-(вправо|влево)/.test(d),'no backward diagonal: '+i);
+  assert.equal(d.includes('В корпус: ниже сгибанием ног'),t==='в корпус');});
+ const m=V42_WORKOUTS['FT-S10-ANS-MIXED'];timed(m,16,47,'FAR-STRAIGHT-COUNTER',true);assert.deepEqual(m.blocks,[['Ответы в голову',8],['Ответы в корпус',8]]);
+ const Z=['Шаг назад с выставлением передней руки','Подставка открытой ладони','Подставка согнутой руки','Оттяжка туловищем без шага','Оттяжка с шагом назад','Двойная локтевая защита головы','Двойная локтевая защита корпуса','Отбив внутрь на месте'];
+ m.rounds.forEach((r,i)=>{const t=i<8?'в голову':'в корпус',d=r.description;ok(d,'MIX'+i,i%8===7);assert.equal(r.name,Z[i%8]+' — ответ левой и правой '+t);
+  assert.ok(d.includes('ответный прямой по очереди левой и правой '+t+' с места'),'deterministic L/R answers: '+i);
+  assert.ok(d.startsWith('Партнёр поочерёдно: прямой левой и прямой правой '+([2,6].includes(i%8)?'в корпус.':'в голову.')),'incoming target matches the guard: '+i);});
+ for(const id of ORDER10){const t=V42_WORKOUTS[id].methodology;assert.deepEqual(Object.keys(t),['technique','tactics','execution','typicalMistakes']);
+  assert.ok(/одновременно с ударом партнёра \(так нельзя: ответ — только после (защиты|отбива)\)/.test(t.typicalMistakes),'listed as an error, never as the sequence');
+  assert.ok(!/одновременно с ударом/.test(t.technique+t.tactics+t.execution));}
+ const all=compileProgram(ORDER10.map(id=>stageForWorkout(V42_WORKOUTS[id])),PRESETS,{cycles:1});
+ assert.equal(all.length,100,'eleven independent blocks, joined only by the coach');
+ // V57: inside parry with footwork — same 8 pairings as V56; every protective step back starts with the rear right foot
+ const FOOT={BACK:()=>'одновременно шаг задней правой назад; затем правая нога возвращается на место',BREAK:()=>'одновременно шаг задней правой назад, левая подтягивается полностью — дистанция разорвана',
+  SIDE:inc=>inc==='левой'?'одновременно шаг правой вправо, левая подтягивается; поворот туловища на правой ноге влево':'одновременно шаг левой влево, правая подтягивается; поворот туловища на левой ноге вправо'};
+ const HOW={BACK:'с места',BREAK:'с шагом вперёд: кулак у цели с постановкой передней ноги',SIDE:'с новой позиции, смещение закончено'};
+ for(const v of ['BACK','BREAK','SIDE']){const w=V42_WORKOUTS['FT-S10-ANS-PARRY-'+v];timed(w,8,23,'FAR-STRAIGHT-COUNTER',true);
+  w.rounds.forEach((r,i)=>{const [inc,ans,t]=PO[i],par=inc==='левой'?'правой':'левой',same=ans===par,d=r.description;ok(d.replace('после отбива','после защиты'),v+i,true);assert.equal(r.hand,ans);
+   assert.ok(d.startsWith('Партнёр: прямой '+inc+' в голову. Защита — отбив внутрь: '+par.slice(0,-2)+'ая открытая перчатка по предплечью уводит его '+inc.slice(0,-2)+'ую к его свободной '+par+' руке; '+FOOT[v](inc)),v+i);
+   assert.ok(d.includes('Затем ответный прямой '+ans+' ('+(same?'той же рукой':'другой рукой')+') '+t+' '+HOW[v]),'answer after the defence: '+v+i);
+   assert.ok(!/назад-(вправо|влево)|вперёд-(вправо|влево)/.test(d),'no diagonals in parry footwork: '+v+i);assert.equal(d.includes('В корпус: ниже сгибанием ног'),t==='в корпус');});}
+});
+
+test('V57 stage 9: inside parry program — own straight, the partner answers with the same hand, parry A spot, B back+return, C back+break, D right, E left; one solo A–E round',()=>{
+ const w=V42_WORKOUTS['FT-S9-PARRY'];timed(w,9,26,'FAR-STRAIGHT-ATTDEF',true);
+ assert.deepEqual(w.blocks,[['На месте',2],['Шаг назад и возврат',2],['Шаг назад, разрыв дистанции',2],['Смещение вправо и влево',2],['Смешанный раунд',1]]);
+ const S=[['левой','на месте'],['правой','на месте'],['левой','с шагом назад и возвратом'],['правой','с шагом назад и возвратом'],['левой','с шагом назад, разрыв дистанции'],['правой','с шагом назад, разрыв дистанции'],['левой','со смещением вправо'],['правой','со смещением влево']];
+ S.forEach(([h,v],i)=>{const r=w.rounds[i],d=r.description,par=h==='левой'?'правой':'левой';assert.equal(r.name,'Прямой '+h+' в голову — отбив внутрь '+par+' '+v);
+  const own=d.indexOf('Свой прямой '+h+' в голову с места, рука возвращается к подбородку.'),inc=d.indexOf('Затем партнёр отвечает прямым '+h+' в голову.'),def=d.indexOf('Защита — отбив внутрь: '+par.slice(0,-2)+'ая открытая перчатка');
+  assert.ok(own===0&&own<inc&&inc<def,'own attack, then the partner, then the parry: '+i);assert.ok(d.includes('бой с тенью, зеркало или мешок'));
+  if(/назад/.test(v))assert.ok(d.includes('шаг задней правой назад'),'rear right foot first: '+i);});
+ const mix=w.rounds[8].description;assert.equal(w.rounds[8].name,'Смешанный раунд: отбивы A–E по кругу');
+ const at=['A — ','B — ','C — ','D — ','E — '].map(x=>mix.indexOf(x));assert.ok(at.every((x,i)=>x>0&&(i===0||x>at[i-1])),'A–E in order, one round');
+ assert.ok(mix.startsWith('Без партнёра'));
 });
