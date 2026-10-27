@@ -99,15 +99,15 @@ const W=V42_WORKOUTS['PRG-FAR-STRAIGHT-1'];
 const P1=programs.find(p=>p.id==='PRG-FAR-STRAIGHT-1');
 
 test('owner program «Прямой и подставка: шаг назад»: 15 rounds 2:00/1:00, no trailing rest, 44:00 through the Tree adapter and real compiler',()=>{
- assert.deepEqual(Object.keys(V42_WORKOUTS),['PRG-FAR-STRAIGHT-1','FT-S9-BODY-BENT-ARM','FT-S9-STEP-BACK','FT-S9-PULLBACK'],'exactly four owner programs in stage 9');
- assert.equal(W.name,'Прямой и подставка: шаг назад');
+ assert.deepEqual(Object.keys(V42_WORKOUTS),['FT-S9-STEP-BACK','PRG-FAR-STRAIGHT-1','FT-S9-BODY-BENT-ARM','FT-S9-PULLBACK'],'exactly four owner programs, owner teaching order (V46): step back, palm, bent arm, pullback');
+ assert.equal(W.name,'Прямые в голову — защита подставкой открытой ладони');
  assert.equal(P1.title,'Прямой и подставка; шаг назад','methodology title untouched');
  assert.equal(W.rounds.length,15);
  assert.deepEqual(W.blocks.map(b=>b[1]),[1,3,4,3,4]);
  assert.ok(W.rounds.every(r=>r.workSec===120&&r.restSec===60));
  assert.equal(workoutTotalSec(W),44*60);
  const stage=stageForWorkout(W);
- assert.equal(stage.title,'Бокс — Прямой и подставка: шаг назад');
+ assert.equal(stage.title,'Бокс — Прямые в голову — защита подставкой открытой ладони');
  const rounds=compileProgram([stage],PRESETS,{cycles:1});
  assert.equal(rounds.length,15);
  assert.equal(rounds.at(-1).restSec,0);
@@ -192,7 +192,7 @@ const crit1=Object.fromEntries(P1.criteria),M1={technique:crit1['Техника'
 
 test('program 2 (source #3): 13 rounds, 38:00; program 1 movement families minus the rear short step, body target, bent arm opposite to the strike',()=>{
  const w=V42_WORKOUTS['FT-S9-BODY-BENT-ARM'];timed(w,13,38);
- assert.equal(w.name,'Прямые в туловище: подставка согнутой руки');
+ assert.equal(w.name,'Прямые в туловище — защита подставкой согнутой руки');
  assert.deepEqual(w.methodology,M1,'same source program fields, verbatim');
  const plan=PLAN.filter((_,i)=>i!==5&&i!==12);
  for(const [i,[st,hand,foot,move,kind,trail]] of plan.entries()){
@@ -211,7 +211,7 @@ test('program 2 (source #3): 13 rounds, 38:00; program 1 movement families minus
 
 test('program 3 (source #4): 11 rounds, 32:00; A steps in, B takes one step back, lead hand forward only against the head',()=>{
  const w=V42_WORKOUTS['FT-S9-STEP-BACK'];timed(w,11,32);
- assert.equal(w.name,'Прямые в голову и туловище: защита шагом назад');
+ assert.equal(w.name,'Защита шагом назад с выставлением передней руки');
  assert.deepEqual(w.methodology,M1);
  const exp=[[LS,'левой','в голову'],[LS,'левой','в голову'],[LS,'правой','в голову'],[LS,'левой','в туловище'],[LS,'правой','в туловище'],[LS,null,null],
   [RS,'левой','в голову'],[RS,'правой','в голову'],[RS,'левой','в туловище'],[RS,'правой','в туловище'],[RS,null,null]];
@@ -231,16 +231,17 @@ test('program 3 (source #4): 11 rounds, 32:00; A steps in, B takes one step back
 
 test('program 4 (owner V45): pullback, left stance, head only, 8 rounds, 23:00; 3/7 step back with the pullback then return, 4/8 step back with the pullback then the lead foot follows',()=>{
  const w=V42_WORKOUTS['FT-S9-PULLBACK'];timed(w,8,23);
- assert.equal(w.name,'Прямые в голову: защита оттяжкой назад');
+ assert.equal(w.name,'Прямые в голову — защита оттяжкой назад');
  assert.ok(Object.values(w.methodology).every(Boolean)&&Object.keys(w.methodology).length===4);
- assert.ok(w.rounds.every(r=>r.stance===LS&&/оттяжк/.test(r.description)&&!/туловище:|в туловище|Б /.test(r.description)));
+ assert.ok(w.rounds.every(r=>r.stance===LS&&/оттяжк/.test(r.description)&&!/в туловище/.test(r.description)));
+ assert.ok(w.rounds.every(r=>r.description.endsWith('С партнёром: А бьёт, Б уходит оттяжкой и отвечает прямым, А защищается подставкой.')),'paired drill is a description, not a round');
  for(const [k,hand] of ['левой','правой'].entries()){
   const [r1,r2,r3,r4]=w.rounds.slice(k*4,k*4+4);
   assert.ok([r1,r2,r3,r4].every(r=>r.hand===hand&&r.name.startsWith('Прямой '+hand)));
-  assert.ok(r1.description.startsWith('Без шага, стопы на месте. Прямой '+hand+' в голову')&&r1.description.includes('и сразу оттяжка назад'));
+  assert.ok(r1.description.startsWith('Без шага, стопы на месте. Прямой '+hand+' в голову')&&r1.description.includes(' рука возвращается к подбородку одновременно с оттяжкой назад'));
   assert.ok(r2.description.startsWith('Передняя левая нога шагает вперёд, одновременно прямой '+hand+' в голову')&&r2.description.includes('левая нога возвращается в исходное положение синхронно с возвратом '+hand+' руки к подбородку и оттяжкой назад'));
-  assert.ok(r3.description.includes('задняя правая нога шагает назад одновременно с оттяжкой. Затем правая нога возвращается в исходное положение'));
-  assert.ok(r4.description.includes('Затем задняя правая шагает назад одновременно с оттяжкой, левая подтягивается: стойка на шаг дальше исходной точки'));
+  assert.ok(r3.description.includes('возврат руки к подбородку, шаг задней правой ноги назад и оттяжка — одновременно. Затем правая нога возвращается в исходное положение: стойка и исходная точка восстановлены'));
+  assert.ok(r4.description.includes('Затем задняя правая шагает назад одновременно с оттяжкой, левая подтягивается к ней: остаётесь на новом месте, на шаг дальше исходной точки'));
   assert.ok(!/возвращается в исходное положение/.test(r4.description.split('Затем задняя')[1]),'4/8: no return to the start');
  }
 });
