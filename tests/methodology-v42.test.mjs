@@ -541,7 +541,10 @@ test('V61: twelve separate short programs in stage 10 / first substage — upwar
  const OPP={'левой':'правой','правой':'левой'},SIDE={'левой':'вправо','правой':'влево'};
  const PM=[['левой','правой','в голову'],['правой','левой','в голову'],['левой','левой','в голову'],['правой','правой','в голову'],['левой','правой','в корпус'],['правой','левой','в корпус'],['левой','левой','в корпус'],['правой','правой','в корпус']];
  const SM=[['левой','правой','в голову'],['правой','левой','в голову'],['левой','правой','в корпус'],['правой','левой','в корпус']];
- const FOOT=[/стопы на месте\./,/шаг задней правой назад, левая подтягивается\./,null];
+ const FOOT=[/стопы на месте\./,/шаг с возвратом — одновременно шаг задней правой назад, левая стоит; затем правая на прежнее место, стойка восстановлена\./,null];
+ // OWNER FOOTWORK CANON V61: step-return moves ONE foot and brings it back, reply from the restored stance; full displacement — the second foot follows, new place, no return
+ const KIND=r=>/стопы на месте/.test(r)?'spot':/шаг с возвратом/.test(r)?'ret':/полное смещение/.test(r)?'full':'';
+ const WANT=['spot','ret','full','spot','ret','full','spot','ret','full','ret','full','full'];
  assert.equal(ORDER61.reduce((s,id)=>s+V42_WORKOUTS[id].rounds.length,0),72);
  ORDER61.forEach((id,k)=>{const w=V42_WORKOUTS[id],n=k<6?8:4;assert.equal(w.name,T[k]);assert.equal(w.stageId,'FAR-STRAIGHT-COUNTER');assert.equal(w.programId,'PRG-FAR-STRAIGHT-2');
   assert.equal(w.rounds.length,n);assert.equal(workoutTotalSec(w),(n*120+(n-1)*60));assert.ok(w.rounds.every(r=>r.workSec===120&&r.restSec===60&&r.cue===r.stance&&r.stance==='левосторонняя стойка'));
@@ -554,15 +557,19 @@ test('V61: twelve separate short programs in stage 10 / first substage — upwar
    assert.ok(d.indexOf('Защита')<d.indexOf('Затем ответный прямой '+ans),'defence, then the answer: '+id+i);
    assert.ok(d.includes('ответный прямой '+ans)&&d.includes(' '+t+' ')&&d.includes('Ответ — после защиты, не вместе с ударом.')&&d.includes('Без партнёра')&&d.endsWith('В правосторонней стойке — зеркально.'),id+i);
    assert.equal(d.includes('В корпус — ниже, сгибанием ног.'),t==='в корпус');
+   const kd=KIND(d);assert.equal(kd,WANT[k],'footwork kind named in every round: '+id+i);
+   if(kd==='ret')assert.ok(/стоит; затем (правая|левая) на прежнее место, стойка восстановлена/.test(d)&&!/подтягивается/.test(d),'one foot moves and returns: '+id+i);
+   if(kd==='full')assert.ok(/подтягивается/.test(d)&&/без возврата|новое место/.test(d)&&!/на прежнее место/.test(d),'second foot follows, new place: '+id+i);
+   assert.ok(w.methodology.execution.includes(kd==='spot'?'Работа ног: стопы на месте.':kd==='ret'?'Работа ног: шаг с возвратом':'Работа ног: полное смещение'),'notes name the footwork kind: '+id);
    assert.ok(!/встречн|уклон внутрь|книг|автор|описан|разучива|одновременно с ударом/i.test(r.name+d),'no counter, no inward slip, no source prose: '+id+i);
    if(k<6){const par=OPP[inc],kind=k<3?'наверх':'наружу',v=k%3;assert.ok(r.name.startsWith('Отбив '+par+' '+kind),r.name);
     assert.ok(d.includes('Защита — отбив '+kind+': '+(par==='правой'?'правая':'левая')+' предплечьем'),'parry by the hand opposite to his: '+id+i);
     if(k>=3)assert.ok(d.includes('руку '+SIDE[inc]+', наружу'),'outward: from his left to my right, from his right to my left: '+id+i);
     assert.equal(d.includes(ans===par?'(та же рука)':'(другая рука)'),true);
     if(v<2)assert.ok(FOOT[v].test(d),id+i);else assert.ok(d.includes(inc==='левой'?'шаг правой вправо, левая подтягивается, ноги не скрещиваются':'шаг левой влево, правая подтягивается, ноги не скрещиваются'),'lateral: lead with the foot on the travel side: '+id+i);
-    if(v===1)assert.ok(d.includes('с шагом вперёд левой'),'step back, then recover the distance: '+id+i);}
+    if(v===1)assert.ok(d.includes('из восстановленной стойки')&&!d.includes('левая подтягивается'),'step-return: one foot only, reply from the restored stance: '+id+i);}
    else{assert.equal(ans,OPP[inc]);assert.ok(d.includes('Защита — уклон '+SIDE[inc]+', наружу от его '+inc+' руки: колени сгибаются'),'outward slip: '+id+i);
     assert.ok(d.includes('подбородок прижат')&&d.includes('голова уходит с линии удара'));
-    const v=k-6;assert.ok([/стопы на месте\./,/шаг задней правой назад; затем правая нога возвращается на место\./,/левая подтягивается полностью — дистанция разорвана\..*с шагом вперёд левой/,
-     /затем так же обратно, на исходное место\..*после возврата/,/ноги не скрещиваются; поворот на (правой|левой) ноге/,/по диагонали вперёд/][v].test(d),'footwork variant: '+id+i);}});});
+    const v=k-6;assert.ok([/стопы на месте\./,/шаг задней правой назад, левая стоит; затем правая на прежнее место, стойка восстановлена\..*из восстановленной стойки/,/шаг задней правой назад, левая подтягивается; дистанция разорвана, без возврата\..*с шагом вперёд левой/,
+     /шаг (правой вправо, левая|левой влево, правая) стоит; затем (правая|левая) на прежнее место, стойка восстановлена\..*из восстановленной стойки/,/ноги не скрещиваются; поворот на (правой|левой) ноге/,/полное смещение по диагонали — шаг (правой вперёд-вправо|левой вперёд-влево), (левая|правая) подтягивается; новое место/][v].test(d),'footwork variant: '+id+i);}});});
 });
