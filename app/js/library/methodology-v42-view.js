@@ -5,8 +5,9 @@
 // with trainings is fully converted (owner-verified), so it shows only them — its book exercises stay in the data, not in the UI.
 // Every other stage lists its programs as read-only cards. Format/equipment chips are not shown on program cards: any program can be done
 // with a partner, on a bag, at a mirror or as shadowboxing. Old library and tree are untouched.
-// V63: stages in V63_SUBSTAGES show the overlay's substages (each training once), then all their book program cards read-only.
-import { V63_STAGE_TITLES, V63_SUBSTAGES, openingStraight } from './methodology-v63-structure.js';
+// V63/V64: stages in V63_SUBSTAGES show the overlay's substages (each training once), then a «Книжные карточки» substage with all their
+// book program cards read-only. No notes and no cross-references (V64).
+import { V63_STAGE_TITLES, V63_SUBSTAGES } from './methodology-v63-structure.js';
 
 export const V42_NO_ROUNDS_NOTICE = 'Раунды будут добавлены после проверки методологии';
 
@@ -124,26 +125,17 @@ export function renderMethodologyV42(doc, data, { workouts = {}, lessonCard } = 
             const placed = new Set(plan.flatMap(s => s.workouts));
             for (const s of plan) {
               const list = s.workouts.map(id => workouts[id]).filter(Boolean);
-              content.append(card(s.id, s.title, list.length ? 'Тренировок: ' + list.length : 'Пока нет программ', list.length, () => {
-                const box = el(doc, 'div', 'ft-route-lesson-list ft-v42-sub-lessons');
-                if (s.note) box.append(el(doc, 'p', 'ft-v42-stage-task', s.note));
-                lessons(box, list);
-                // Rounds with this opening straight inside other programs: listed by number, not repeated as trainings.
-                const also = s.straight ? mine.filter(w => !s.workouts.includes(w.id))
-                  .map(w => [w, w.rounds.flatMap((r, i) => openingStraight(r) === s.straight ? [i + 1] : [])]).filter(([, n]) => n.length) : [];
-                if (also.length) {
-                  box.append(el(doc, 'strong', 'ft-v42-list-label', 'Этот удар есть и в комбинированных программах'));
-                  const ul = el(doc, 'ul', 'ft-v42-exercises ft-v42-aliases');
-                  for (const [w, n] of also) ul.append(el(doc, 'li', 'ft-v42-exercise', w.name + ' — раунды ' + n.join(', ')));
-                  box.append(ul);
-                }
-                return box;
-              }));
+              content.append(card(s.id, s.title, list.length ? '' : 'Пока нет программ', list.length,   // the count chip says how many
+                () => lessons(el(doc, 'div', 'ft-route-lesson-list ft-v42-sub-lessons'), list)));
             }
             lessons(content, mine.filter(w => !placed.has(w.id)));   // a training missing from the overlay is still shown
-            content.append(el(doc, 'strong', 'ft-v42-list-label', 'Книжные программы · ' + stage.programs.length));
-            for (const program of stage.programs) content.append(card(program.id, program.title + (program.review ? ' · повторение' : ''),
-              'Упражнений: ' + program.exercises.length, 0, () => renderProgramBody(doc, program)));
+            // V64: the book program cards sit in one last substage, read-only.
+            content.append(card('BOOK-' + stage.id, 'Книжные карточки', 'Карточек: ' + stage.programs.length, 0, () => {
+              const box = el(doc, 'div', 'ft-route-lesson-list ft-v42-sub-lessons');
+              for (const program of stage.programs) box.append(card(program.id, program.title + (program.review ? ' · повторение' : ''),
+                'Упражнений: ' + program.exercises.length, 0, () => renderProgramBody(doc, program)));
+              return box;
+            }));
             return content;
           }
           // A stage that already has a training shows its cards straight away, without the stage summary.
