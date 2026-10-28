@@ -102,16 +102,19 @@ const ORDER23=['FT-S9-STEPBACK-HEAD','FT-S9-STEPBACK-BODY','FT-S9-STEPBACK-MIXED
 const ORDER10=['FT-S10-ANS-STEPBACK','FT-S10-ANS-PALM','FT-S10-ANS-BENT','FT-S10-ANS-PULL','FT-S10-ANS-PULLSTEP','FT-S10-ANS-ELBOW','FT-S10-ANS-PARRY','FT-S10-ANS-PARRY-BACK','FT-S10-ANS-PARRY-BREAK','FT-S10-ANS-PARRY-SIDE',
  'FT-S10-ANS-BODYPARRY-SPOT','FT-S10-ANS-BODYPARRY-BACK','FT-S10-ANS-BODYPARRY-BREAK','FT-S10-ANS-BODYPARRY-SIDE','FT-S10-ANS-MIXED','FT-S10-ANS-MIXED-BODYPARRY'];
 const ORDER9=[...ORDER23,'FT-S9-PARRY','FT-S9-PARRY-BODY'];
+const ORDER61=['FT-S10-V61-PARRY-UP-SPOT','FT-S10-V61-PARRY-UP-BACK','FT-S10-V61-PARRY-UP-SIDE','FT-S10-V61-PARRY-OUT-SPOT','FT-S10-V61-PARRY-OUT-BACK','FT-S10-V61-PARRY-OUT-SIDE',
+ 'FT-S10-V61-SLIP-OUT-SPOT','FT-S10-V61-SLIP-OUT-BACK','FT-S10-V61-SLIP-OUT-RETREAT','FT-S10-V61-SLIP-OUT-STEPRET','FT-S10-V61-SLIP-OUT-SIDE','FT-S10-V61-SLIP-OUT-DIAG'];
+const S10=[...ORDER10,...ORDER61];
 const own=stage=>Object.keys(V42_WORKOUTS).filter(id=>V42_WORKOUTS[id].stageId===stage);
 const W=V42_WORKOUTS['PRG-FAR-STRAIGHT-1'];
 const P1=programs.find(p=>p.id==='PRG-FAR-STRAIGHT-1');
 
 test('owner program «Прямой и подставка: шаг назад»: 15 rounds 2:00/1:00, no trailing rest, 44:00 through the Tree adapter and real compiler',()=>{
- assert.deepEqual(Object.keys(V42_WORKOUTS),[...ORDER9,...ORDER10],'V51: 15 matrix programs (defence × head/body/mixed), then V50 and V51 microprograms; V57: + parry; V54–V57: stage 10');
- assert.deepEqual(own('FAR-STRAIGHT-ATTDEF'),ORDER9);assert.deepEqual(own('FAR-STRAIGHT-COUNTER'),ORDER10);
+ assert.deepEqual(Object.keys(V42_WORKOUTS),[...ORDER9,...S10],'V51: 15 matrix programs (defence × head/body/mixed), then V50 and V51 microprograms; V57: + parry; V54–V57: stage 10');
+ assert.deepEqual(own('FAR-STRAIGHT-ATTDEF'),ORDER9);assert.deepEqual(own('FAR-STRAIGHT-COUNTER'),S10);
  assert.ok(!V42_WORKOUTS['FT-S9-STEP-BACK'],'the V47 combined step-back program is superseded (V48)');
  assert.equal(ORDER23.reduce((s,id)=>s+V42_WORKOUTS[id].rounds.length,0),220);
- assert.equal(Object.values(V42_WORKOUTS).reduce((s,w)=>s+w.rounds.length,0),238+142,'V59: stage 9 — 25 programs / 238 rounds, stage 10 — 16 programs / 142 rounds');
+ assert.equal(Object.values(V42_WORKOUTS).reduce((s,w)=>s+w.rounds.length,0),238+142+72,'V59: stage 9 — 25 programs / 238 rounds, stage 10 — 16 programs / 142 rounds; V61: + 12 programs / 72 rounds');
  assert.equal(W.name,'Прямые в голову — подставка открытой ладонью');
  assert.equal(P1.title,'Прямой и подставка; шаг назад','methodology title untouched');
  assert.equal(W.rounds.length,15);
@@ -399,7 +402,7 @@ test('V53: section header counts stages; each stage row has a chip with the card
   if(opts.lessonCard){const s2=find(root,'ft-route-section')[1];const st9=find(s2,'ft-route-step').find(x=>x.dataset.stage==='FAR-STRAIGHT-ATTDEF');
    assert.equal(find(st9.children[0],'ft-v42-stage-count')[0].textContent,'25 трен.');
    const st10=find(s2,'ft-route-step').find(x=>x.dataset.stage==='FAR-STRAIGHT-COUNTER');
-   assert.equal(find(st10.children[0],'ft-v42-stage-count')[0].textContent,'16 трен.','V54–V59: stage 10 chip counts its runnable trainings (inside the first substage)');
+   assert.equal(find(st10.children[0],'ft-v42-stage-count')[0].textContent,'28 трен.','V54–V61: stage 10 chip counts its runnable trainings (inside the first substage)');
    assert.equal(find(s2,'ft-v42-stage-count').filter(c=>!c.className.includes('-run')).reduce((n,c)=>n+parseInt(c.textContent),0),71-6,'non-run chips: the other 18 stages, stage 10 counts trainings');}
  }
 });
@@ -486,13 +489,13 @@ test('V58 hierarchy: section → stage 10 → six unnumbered substages; all resp
  assert.equal(asked.length,0,'trainings are built only when their substage opens');
  const [first,...rest]=cards;assert.equal(first.dataset.program,'PRG-FAR-STRAIGHT-2');
  assert.equal(find(first,'ft-v42-program-title')[0].textContent,'Ответный прямой после защиты');
- assert.equal(find(first,'ft-v42-program-meta')[0].textContent,'Тренировок: 16');
- assert.equal(find(first.children[0],'ft-v42-stage-count')[0].textContent,'16 трен.');
+ assert.equal(find(first,'ft-v42-program-meta')[0].textContent,'Тренировок: 28');
+ assert.equal(find(first.children[0],'ft-v42-stage-count')[0].textContent,'28 трен.');
  first.toggle();
- assert.deepEqual(find(first,'ft-route-lesson').map(l=>l.dataset.program),ORDER10,'all 16 response programs, in order, inside the first substage');
- assert.deepEqual(asked,ORDER10.map(id=>[id,'FAR-STRAIGHT-COUNTER']));
+ assert.deepEqual(find(first,'ft-route-lesson').map(l=>l.dataset.program),S10,'all 28 response programs (V54–V59 + V61), in order, inside the first substage');
+ assert.deepEqual(asked,S10.map(id=>[id,'FAR-STRAIGHT-COUNTER']));
  assert.equal(find(first,'ft-v42-exercise').length+find(first,'ft-v42-notice').length+find(first,'ft-v42-criterion').length,0,'converted substage: no placeholder book cards');
- assert.ok(ORDER10.every(id=>V42_WORKOUTS[id].programId==='PRG-FAR-STRAIGHT-2'));
+ assert.ok(S10.every(id=>V42_WORKOUTS[id].programId==='PRG-FAR-STRAIGHT-2'));
  for(const c of rest){assert.ok(!c.className.includes('ft-v42-substage'));assert.equal(find(c.children[0],'ft-v42-stage-count').length,0);c.toggle();
   const p=book.programs.find(x=>x.id===c.dataset.program);
   assert.equal(find(c,'ft-v42-notice')[0].textContent,V42_NO_ROUNDS_NOTICE);assert.equal(find(c,'ft-v42-exercise').length,p.exercises.length,'unconverted substages keep their book cards');
@@ -530,4 +533,36 @@ test('V59 body-level inside parry: stage 9 program (own straight to the body, pa
   assert.ok(/^Партнёр: прямые/.test(d)&&d.includes('в корпус')&&d.includes('отбив внутрь предплечьем')&&d.includes('Затем ответный прямой по очереди левой и правой '+t),i);
   if(i%5===3)assert.ok(d.startsWith('Партнёр: прямые левой в корпус.')&&d.includes('шаг правой вправо'));if(i%5===4)assert.ok(d.startsWith('Партнёр: прямые правой в корпус.')&&d.includes('шаг левой влево'));});
  assert.equal(V42_WORKOUTS['FT-S10-ANS-MIXED'].rounds.length,16);
+});
+
+test('V61: twelve separate short programs in stage 10 / first substage — upward and outward parries 3 × 8, outward slips 6 × 4; owner matrix, defence first, then one answering straight',()=>{
+ const T=['Отбивы наверх на месте','Отбивы наверх с шагом назад','Отбивы наверх с полным боковым смещением','Отбивы наружу на месте','Отбивы наружу с шагом назад','Отбивы наружу с полным боковым смещением',
+  'Уклоны наружу на месте','Уклоны наружу с шагом назад','Уклоны наружу с полным отходом назад','Уклоны наружу с боковым шагом и возвратом','Уклоны наружу с полным боковым смещением','Уклоны наружу с диагональным продвижением вперёд'];
+ const OPP={'левой':'правой','правой':'левой'},SIDE={'левой':'вправо','правой':'влево'};
+ const PM=[['левой','правой','в голову'],['правой','левой','в голову'],['левой','левой','в голову'],['правой','правой','в голову'],['левой','правой','в корпус'],['правой','левой','в корпус'],['левой','левой','в корпус'],['правой','правой','в корпус']];
+ const SM=[['левой','правой','в голову'],['правой','левой','в голову'],['левой','правой','в корпус'],['правой','левой','в корпус']];
+ const FOOT=[/стопы на месте\./,/шаг задней правой назад, левая подтягивается\./,null];
+ assert.equal(ORDER61.reduce((s,id)=>s+V42_WORKOUTS[id].rounds.length,0),72);
+ ORDER61.forEach((id,k)=>{const w=V42_WORKOUTS[id],n=k<6?8:4;assert.equal(w.name,T[k]);assert.equal(w.stageId,'FAR-STRAIGHT-COUNTER');assert.equal(w.programId,'PRG-FAR-STRAIGHT-2');
+  assert.equal(w.rounds.length,n);assert.equal(workoutTotalSec(w),(n*120+(n-1)*60));assert.ok(w.rounds.every(r=>r.workSec===120&&r.restSec===60&&r.cue===r.stance&&r.stance==='левосторонняя стойка'));
+  const c=compileProgram([stageForWorkout(w)],PRESETS,{cycles:1});assert.equal(c.length,n);assert.equal(c.at(-1).restSec,0);
+  assert.deepEqual(Object.keys(w.methodology),['technique','tactics','execution','typicalMistakes']);
+  const mt=Object.values(w.methodology).join(' ');assert.ok(!/книг|автор|описан|разучива|источник|методичк|[А-ЕA-E]–[А-ЕA-E]|урок \d/i.test(mt),'standalone methodology: '+id);
+  assert.ok(/одновременно с ударом партнёра \(так нельзя: ответ — только после защиты\)/.test(w.methodology.typicalMistakes));
+  w.rounds.forEach((r,i)=>{const [inc,ans,t]=(k<6?PM:SM)[i],d=r.description,full=r.stance+' · '+d;assert.ok(full.length<=600&&r.name.length<=100,r.name);assert.equal(r.hand,ans);
+   assert.ok(d.startsWith('Партнёр: прямой '+inc+' в голову. Защита — '),'incoming punch first: '+id+i);
+   assert.ok(d.indexOf('Защита')<d.indexOf('Затем ответный прямой '+ans),'defence, then the answer: '+id+i);
+   assert.ok(d.includes('ответный прямой '+ans)&&d.includes(' '+t+' ')&&d.includes('Ответ — после защиты, не вместе с ударом.')&&d.includes('Без партнёра')&&d.endsWith('В правосторонней стойке — зеркально.'),id+i);
+   assert.equal(d.includes('В корпус — ниже, сгибанием ног.'),t==='в корпус');
+   assert.ok(!/встречн|уклон внутрь|книг|автор|описан|разучива|одновременно с ударом/i.test(r.name+d),'no counter, no inward slip, no source prose: '+id+i);
+   if(k<6){const par=OPP[inc],kind=k<3?'наверх':'наружу',v=k%3;assert.ok(r.name.startsWith('Отбив '+par+' '+kind),r.name);
+    assert.ok(d.includes('Защита — отбив '+kind+': '+(par==='правой'?'правая':'левая')+' предплечьем'),'parry by the hand opposite to his: '+id+i);
+    if(k>=3)assert.ok(d.includes('руку '+SIDE[inc]+', наружу'),'outward: from his left to my right, from his right to my left: '+id+i);
+    assert.equal(d.includes(ans===par?'(та же рука)':'(другая рука)'),true);
+    if(v<2)assert.ok(FOOT[v].test(d),id+i);else assert.ok(d.includes(inc==='левой'?'шаг правой вправо, левая подтягивается, ноги не скрещиваются':'шаг левой влево, правая подтягивается, ноги не скрещиваются'),'lateral: lead with the foot on the travel side: '+id+i);
+    if(v===1)assert.ok(d.includes('с шагом вперёд левой'),'step back, then recover the distance: '+id+i);}
+   else{assert.equal(ans,OPP[inc]);assert.ok(d.includes('Защита — уклон '+SIDE[inc]+', наружу от его '+inc+' руки: колени сгибаются'),'outward slip: '+id+i);
+    assert.ok(d.includes('подбородок прижат')&&d.includes('голова уходит с линии удара'));
+    const v=k-6;assert.ok([/стопы на месте\./,/шаг задней правой назад; затем правая нога возвращается на место\./,/левая подтягивается полностью — дистанция разорвана\..*с шагом вперёд левой/,
+     /затем так же обратно, на исходное место\..*после возврата/,/ноги не скрещиваются; поворот на (правой|левой) ноге/,/по диагонали вперёд/][v].test(d),'footwork variant: '+id+i);}});});
 });
