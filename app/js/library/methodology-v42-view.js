@@ -62,7 +62,7 @@ export function renderProgramBody(doc, program) {
 export function renderMethodologyV42(doc, data, { workouts = {}, lessonCard } = {}) {
   const root = el(doc, 'div', 'ft-route ft-v42');
   // Trainings straight in a stage (no programId) replace its program cards; trainings of a substage sit inside that program card.
-  const all = lessonCard ? Object.values(workouts) : [];
+  const all = lessonCard ? Object.values(workouts).filter(w => !w.archived) : [];   // V66: an archived training keeps its id, off the menu
   const ownOf = stage => all.filter(w => w.stageId === stage.id && !w.programId);
   const subOf = (stage, program) => all.filter(w => w.stageId === stage.id && w.programId === program.id);
   // Stage and substage chips count executable trainings; a stage without any counts its read-only program cards.

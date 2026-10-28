@@ -1,4 +1,4 @@
-// Navigation overlay for the methodology tab: V63 (2026-10-28), regrouped by the owner canon in V64 (2026-10-28) and V65 (2026-10-29). Data only: the book tree
+// Navigation overlay for the methodology tab: V63 (2026-10-28), regrouped by the owner canon in V64 (2026-10-28), V65 and V66 (2026-10-29). Data only: the book tree
 // (methodology-v42-data.js) and the trainings (methodology-v42-rounds.js) are not changed here. A stage listed here shows these substages,
 // each training exactly once, then one «Книжные карточки» substage with all its book program cards read-only. Removing the import in
 // methodology-v42-view.js restores the V58–V61 layout.
@@ -9,8 +9,11 @@ export const V63_STAGE_TITLES = {
 // Literal hand and target of a single straight that opens the round (stance does not mirror it). Double straights and the mixed parry
 // round have none.
 const OWN = /[Пп]рям[а-яё]* (левой|правой)[^.;,]*?в (голову|корпус|туловище)/;
+const LEAD = /^(Левый|Правый) прямой в (голову|корпус)/;   // V66: a stage 9 round name opens with the full straight
 export function openingStraight(round) {
   if (/Два прям/.test(round.name)) return null;
+  const l = LEAD.exec(round.name);
+  if (l) return (l[1] === 'Левый' ? 'L' : 'R') + (l[2] === 'голову' ? 'H' : 'B');
   const m = OWN.exec(round.name) || OWN.exec(round.description);
   return m ? (m[1] === 'левой' ? 'L' : 'R') + (m[2] === 'голову' ? 'H' : 'B') : null;
 }
@@ -21,12 +24,13 @@ const ST = { LH: 'Левый прямой в голову', RH: 'Правый п
 const ANS = { LH: 'Ответный левый прямой в голову', RH: 'Ответный правый прямой в голову', LB: 'Ответный левый прямой в корпус', RB: 'Ответный правый прямой в корпус' };
 const OTHER = { L: 'R', R: 'L' };
 const KIND = { FEET: 'защита ногами', BLOCK: 'подставки', PARRY: 'отбивы', ELBOW: 'двойная локтевая защита', PULL: 'оттяжки', SLIP: 'уклоны', VAR: 'вариативная защита' };
-const VAR9 = { LH: ['FT-S9-VAR-LEFT-HEAD', 'FT-S9-VARX-LEFT-HEAD'], RH: ['FT-S9-VAR-RIGHT-HEAD', 'FT-S9-VARX-RIGHT-HEAD'],
-  LB: ['FT-S9-VAR-LEFT-BODY', 'FT-S9-VARX-LEFT-BODY'], RB: ['FT-S9-VAR-RIGHT-BODY', 'FT-S9-VARX-RIGHT-BODY'] };
+// V66 (2026-10-29, owner TASK V66): per straight — 1 movement card, 2 block cards (palms, bent arms), 8 parry cards (in/out/up/down × left/right
+// hand), 2 double-elbow cards (head, body), 1 pull-back card, 1 variative program of 10 rounds. Replaced V65 cards are archived in the data.
+const PARRY = ['IN', 'OUT', 'UP', 'DOWN'].flatMap(d => ['L', 'R'].map(h => `PARRY-${d}-${h}`));
 function stage9(k) {
-  const p = `FT-S9-${k}-`, o = OTHER[k[0]], elbow = k[1] === 'H' ? [p + 'ELBOW-H', p + 'ELBOW-B'] : [p + 'ELBOW-B'];
-  return [['FEET', [p + 'STEPBACK']], ['BLOCK', [p + 'PALM-' + o, p + 'BENT-' + o]], ['PARRY', [p + 'PARRY-IN-' + o]], ['ELBOW', elbow],
-    ['PULL', [p + 'PULL', p + 'PULLSTEP']], ['VAR', VAR9[k]]].map(([c, workouts]) => ({ id: `S9-${k}-${c}`, title: `${ST[k]} — ${KIND[c]}`, straight: k, workouts }));
+  const p = `FT-S9-${k}-`, o = OTHER[k[0]];
+  return [['FEET', ['STEPBACK']], ['BLOCK', ['PALM-' + o, 'BENT-' + o]], ['PARRY', PARRY], ['ELBOW', ['ELBOW-H', 'ELBOW-B']], ['PULL', ['PULL']], ['VAR', ['VAR']]]
+    .map(([c, s]) => ({ id: `S9-${k}-${c}`, title: `${ST[k]} — ${KIND[c]}`, straight: k, workouts: s.map(x => p + x) }));
 }
 function stage10(k) {
   const p = `FT-S10-ANS-${k}-`;
