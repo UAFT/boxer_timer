@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {METHODOLOGY_V42 as M} from '../app/js/library/methodology-v42-data.js';
 import {renderMethodologyV42,renderProgramBody,V42_NO_ROUNDS_NOTICE} from '../app/js/library/methodology-v42-view.js';
+import {V63_SUBSTAGES,V63_STAGE_TITLES,openingStraight} from '../app/js/library/methodology-v63-structure.js';
 
 const stages=M.sections.flatMap(s=>s.stages);
 const programs=stages.flatMap(t=>t.programs);
@@ -177,7 +178,7 @@ test('approved rounds: compact titles; punch lands with the stepping foot, hand 
 test('partner is optional; B uses the open palm opposite to the strike, no defender step-back; no parrying, no source references, no counterpunch',()=>{
  for(const [i,r] of W.rounds.entries()){
   const d=r.description,palm=r.hand==='левой'?'правой':'левой',guard=r.hand==='левой'?'Правая':'Левая';
-  assert.ok(d.endsWith('С партнёром (по желанию): А бьёт, Б подставляет открытую ладонь '+palm+' руки.'),i);
+  assert.ok(d.endsWith('С партнёром (по желанию): ученик бьёт, партнёр подставляет открытую ладонь '+palm+' руки.'),i);
   assert.ok(d.includes(guard+' перчатка весь раунд у подбородка'),i);
   assert.ok(d.includes('партнёр не обязателен'),i);
   assert.ok(!/шаг назад|париров|отбив|контрудар|ответн|исходном упражнен|источник/i.test(r.name+d),i);
@@ -214,7 +215,7 @@ test('program 2 (source #3): 13 rounds, 38:00; program 1 movement families minus
   const r=w.rounds[i],d=r.description,h=hand.slice(0,-2)+'ая';
   assert.equal(r.stance,st==='L'?LS:RS,i);assert.equal(r.hand,hand,i);
   assert.equal(r.name,TITLES[W.rounds.indexOf(W.rounds.find((x,j)=>PLAN[j]===plan[i]))].replace(/^Прямой (левой|правой) /,'Прямой $1 в туловище '),i);
-  assert.ok(d.endsWith('Б подставляет согнутую в локте '+(hand==='левой'?'правую':'левую')+' руку.'),i);
+  assert.ok(d.endsWith('ученик бьёт, партнёр подставляет согнутую в локте '+(hand==='левой'?'правую':'левую')+' руку.'),i);
   assert.ok(!/ладон|в голову|шаг назад/.test(d),i);
   if(kind==='still'){assert.ok(d.startsWith('Без шага, ноги остаются на месте. Прямой левой в туловище'));continue;}
   const f=foot.split(' ')[1];
@@ -237,10 +238,10 @@ test('V49 matrix cells (V51 approved): counts, attack target per program, mixed 
   w.rounds.forEach((r,i)=>{const d=r.description,body=t[i]==='b';
    assert.equal(/уровень ниже (за счёт )?сгибани\S* ног, таз поворачивается/.test(d),body,'body level: '+id+i);
    const opp=r.hand==='левой'?'правой':'левой';
-   if(/PALM/.test(id))assert.ok(d.includes('подставка открытой ладони '+opp+' руки у подбородка')&&d.endsWith('прямым '+r.hand+' в голову, А защищается.'),id+i);
-   if(/BENT-/.test(id))assert.ok(d.includes('подставка согнутой '+opp+' руки к ')&&d.endsWith('прямым '+r.hand+' в корпус, А защищается.'),id+i);
-   if(id==='FT-S9-ELBOW-HEAD')assert.ok(d.includes('двойная локтевая защита головы')&&d.endsWith('прямым в голову, А защищается.'),id+i);
-   if(id==='FT-S9-ELBOW-BODY')assert.ok(d.includes('двойная локтевая защита корпуса')&&d.endsWith('прямым в корпус, А защищается.'),id+i);
+   if(/PALM/.test(id))assert.ok(d.includes('подставка открытой ладони '+opp+' руки у подбородка')&&d.endsWith('прямым '+r.hand+' в голову, ученик защищается.'),id+i);
+   if(/BENT-/.test(id))assert.ok(d.includes('подставка согнутой '+opp+' руки к ')&&d.endsWith('прямым '+r.hand+' в корпус, ученик защищается.'),id+i);
+   if(id==='FT-S9-ELBOW-HEAD')assert.ok(d.includes('двойная локтевая защита головы')&&d.endsWith('прямым в голову, ученик защищается.'),id+i);
+   if(id==='FT-S9-ELBOW-BODY')assert.ok(d.includes('двойная локтевая защита корпуса')&&d.endsWith('прямым в корпус, ученик защищается.'),id+i);
    if(/STEPBACK/.test(id))assert.ok(d.indexOf('прямой '+r.hand)<d.indexOf('отход одним шагом назад'),'attack first, then the step back: '+id+i);
    if(/PULLBACK-/.test(id))assert.ok(/оттяжк/.test(d)&&!/шагает (вправо|влево)/.test(d),id+i);
   });
@@ -262,7 +263,7 @@ test('V51 microprograms: two straights of the same hand from the spot, then one 
    const second=d.indexOf('. Второй '+t2+'.');assert.ok(second>0&&d.indexOf('Рука возвращается к подбородку')<second,'return to guard before the second punch: '+id+i);
    assert.equal((d.match(/уровень ниже за счёт сгибания ног, таз поворачивается/g)||[]).length,1,'one body punch, level lowered by the legs: '+id+i);
    if(t1==='в корпус')assert.ok(d.slice(0,second).includes('уровень восстанавливается'),'level back before the head punch: '+id+i);
-   assert.ok(d.endsWith('после удара Б отвечает прямым '+Z[i]+', А защищается.'),id+i);
+   assert.ok(d.endsWith('после удара партнёр отвечает прямым '+Z[i]+', ученик защищается.'),id+i);
    assert.ok(!/с шагом|шагает вперёд|шагает вправо|шагает влево/.test(d.slice(0,second+12)),'stationary attack');});
  }
  const all=compileProgram(ORDER23.slice(19).map(id=>stageForWorkout(V42_WORKOUTS[id])),PRESETS,{cycles:1});
@@ -281,7 +282,7 @@ test('V50 microprograms: 6 rounds, 17:00 each, stationary punch, the defence cha
    assert.ok(d.startsWith('Без шага, ноги на месте: прямой '+hand+' '+target+'.'),'stationary attack first: '+id+i);
    assert.equal(/уровень ниже за счёт сгибания ног, таз поворачивается/.test(d),target==='в корпус');
    assert.ok(d.includes('В правосторонней стойке — зеркально.'));
-   assert.ok(d.endsWith('после удара Б отвечает прямым '+Z[i]+', А защищается.'),'partner threat matches the defended zone: '+id+i);
+   assert.ok(d.endsWith('после удара партнёр отвечает прямым '+Z[i]+', ученик защищается.'),'partner threat matches the defended zone: '+id+i);
    assert.ok(!/с шагом|шагает вперёд|шагает вправо|шагает влево/.test(d),'no attacking footwork');});
   const d=w.rounds.map(r=>r.description);
   assert.ok(d[0].includes('Затем')&&d[0].includes('отход одним шагом назад: задняя правая нога шагает назад, левая подтягивается'));
@@ -302,7 +303,7 @@ test('program 4 (owner V45): pullback, left stance, head only, 8 rounds, 23:00; 
  assert.equal(w.name,'Прямые в голову — защита оттяжкой назад');
  assert.ok(Object.values(w.methodology).every(Boolean)&&Object.keys(w.methodology).length===4);
  assert.ok(w.rounds.every(r=>r.stance===LS&&/оттяжк/.test(r.description)&&!/в туловище/.test(r.description)));
- assert.ok(w.rounds.every(r=>r.description.endsWith('С партнёром: А бьёт, Б уходит оттяжкой и отвечает прямым, А защищается подставкой.')),'paired drill is a description, not a round');
+ assert.ok(w.rounds.every(r=>r.description.endsWith('С партнёром: ученик бьёт и оттяжкой уходит от ответного прямого партнёра.')),'paired drill is a description, not a round');
  for(const [k,hand] of ['левой','правой'].entries()){
   const [r1,r2,r3,r4]=w.rounds.slice(k*4,k*4+4);
   assert.ok([r1,r2,r3,r4].every(r=>r.hand===hand&&r.name.startsWith('Прямой '+hand)));
@@ -329,7 +330,7 @@ test('double elbow guard (V47 #5): 16 rounds, 47:00; every attack is a straight 
   assert.ok(d.includes('прямой '+hand+' в голову'),'attack always to the head: '+i);
   assert.ok(!/прямой (левой|правой) в корпус,/.test(d.split('С партнёром')[0]),i);
   assert.ok(d.includes('двойная локтевая защита '+zone),i);
-  assert.ok(d.endsWith('С партнёром: после удара Б бьёт прямой '+(zone==='головы'?'в голову':'в корпус')+', А принимает его на защиту.'),'incoming attack matches the defended zone: '+i);
+  assert.ok(d.endsWith('С партнёром: после удара партнёр бьёт прямой '+(zone==='головы'?'в голову':'в корпус')+', ученик принимает его на защиту.'),'incoming attack matches the defended zone: '+i);
   if(!feet){assert.ok(d.startsWith('Без шага'));continue;}
   assert.ok(d.includes('Левосторонняя стойка: '+feet[0]+'. Правосторонняя — зеркально: '+feet[1]+'.'),i);
   assert.ok(d.includes(vt==='со смещением SIDE'?'Стойка остаётся на новом месте, вне линии атаки':'Шагнувшая нога возвращается на линию атаки'),i);
@@ -351,26 +352,35 @@ test('four methodical fields are the approved V4.2 text verbatim; the six source
  assert.equal(P1.exercises[1].text,'А — прямой правой в голову с места и с шагом; Б — подставка открытой ладони правой руки.');
 });
 
-test('methodology tab: stage 9 shows exactly the owner-approved Tree lesson cards, in order, no wrapper, no summary, no source cards',()=>{
+test('V63 stage 9: substages 9.1–9.4 by the trainee\'s opening straight + «Комбинированная работа»; every training exactly once, whole; book cards visible',()=>{
  const doc=mockDoc();const asked=[];
  const root=renderMethodologyV42(doc,M,{workouts:V42_WORKOUTS,lessonCard:(w,stageId)=>{asked.push([w.id,stageId]);const c=doc.createElement('div');c.className='ft-route-lesson';return c;}});
  const s2=find(root,'ft-route-section')[1];s2.toggle();
- assert.equal(asked.length,0,'cards are built only when the stage opens');
  const step=find(s2,'ft-route-step').find(x=>x.dataset.stage==='FAR-STRAIGHT-ATTDEF');step.toggle();
- const WITH=own('FAR-STRAIGHT-ATTDEF');
- assert.equal(WITH.length,25);
- assert.deepEqual(asked,WITH.map(id=>[id,'FAR-STRAIGHT-ATTDEF']),'once each, in order');
- assert.equal(find(step,'ft-v42-stage-task').length,0);
- const content=find(step,'ft-v42-programs')[0];
- assert.deepEqual(content.children.map(c=>c.dataset.program),WITH,'only the four cards, directly in the stage list');
- assert.equal(find(step,'ft-v42-program').length,0,'no source program cards, no parent card');
- // other stages keep their summary and read-only program cards
- const other=find(s2,'ft-route-step').find(x=>!own(x.dataset.stage).length&&M.sections[1].stages.find(t=>t.id===x.dataset.stage).task);other.toggle();
- assert.equal(find(other,'ft-v42-stage-task').length,1);
- const cards=find(other,'ft-v42-program');
- assert.equal(cards.length,M.sections[1].stages.find(t=>t.id===other.dataset.stage).programs.length);
- cards.forEach(c=>c.toggle());
- for(const c of cards){assert.equal(find(c,'ft-v42-notice')[0].textContent,V42_NO_ROUNDS_NOTICE);assert.ok(find(c,'ft-v42-chip').every(x=>x.textContent==='Повторение'));}
+ assert.equal(find(step.children[0],'ft-route-step-title')[0].textContent,'Одиночные прямые: атака и защита','stage 9 name unchanged');
+ assert.equal(asked.length,0,'trainings are built only when their substage opens');
+ const WITH=own('FAR-STRAIGHT-ATTDEF');assert.equal(WITH.length,25);
+ const subs=find(step,'ft-v42-program').filter(c=>c.dataset.program.startsWith('S9-'));
+ assert.deepEqual(subs.map(c=>find(c,'ft-v42-program-title')[0].textContent),['9.1 Прямой левой в голову','9.2 Прямой правой в голову','9.3 Прямой левой в корпус','9.4 Прямой правой в корпус','Комбинированная работа']);
+ subs.forEach(c=>c.toggle());
+ const shown=subs.flatMap(c=>find(c,'ft-route-lesson').map(l=>l.dataset.program));
+ assert.deepEqual([...shown].sort(),[...WITH].sort(),'all 25, none lost');assert.equal(new Set(shown).size,25,'none duplicated');
+ assert.equal(asked.length,25,'each training built once');
+ assert.deepEqual(subs.map(c=>find(c.children[0],'ft-v42-stage-count')[0].textContent),['1 трен.','1 трен.','1 трен.','1 трен.','21 трен.']);
+ assert.equal(subs.reduce((n,c)=>n+find(c,'ft-route-lesson').reduce((m,l)=>m+V42_WORKOUTS[l.dataset.program].rounds.length,0),0),238,'238 rounds');
+ // single groups hold only programs whose every round opens with that literal straight (stance never mirrors the hand name)
+ for(const [c,g] of subs.slice(0,4).map((c,i)=>[c,['LH','RH','LB','RB'][i]]))
+  for(const l of find(c,'ft-route-lesson'))assert.ok(V42_WORKOUTS[l.dataset.program].rounds.every(r=>openingStraight(r)===g),l.dataset.program);
+ // V51 two-straight programs are not labelled single: they stay whole in the combined substage
+ assert.ok(find(subs[4],'ft-route-lesson').map(l=>l.dataset.program).filter(id=>id.includes('VAR2')).length===4);
+ // references: rounds of the combined programs with this opening straight, by number; not counted as trainings
+ const refs=subs.slice(0,4).map(c=>find(c,'ft-v42-aliases')[0].children.map(li=>li.textContent));
+ assert.ok(refs[0].includes('Прямые в голову — подставка открытой ладонью — раунды 1, 2, 3, 4, 9, 10, 11'));
+ assert.ok(refs[3].includes('Прямые в корпус — подставка согнутой руки — раунды 5, 6, 7, 11, 12, 13'));
+ assert.deepEqual(refs.map(r=>r.reduce((n,t)=>n+t.split(', ').length,0)),[51,52,43,42],'V62 matrix: 57/58/49/48 rounds minus the 6 of each single program');
+ const books=find(step,'ft-v42-program').filter(c=>!c.dataset.program.startsWith('S9-'));
+ assert.deepEqual(books.map(c=>c.dataset.program),SRC9.programs.map(p=>p.id),'four book cards visible again, book order');
+ books.forEach(c=>c.toggle());assert.equal(books.reduce((n,c)=>n+find(c,'ft-v42-exercise').length,0),31,'31 book exercises');
 });
 
 test('one Tree lesson card implementation serves both the Tree and the methodology tab',()=>{
@@ -477,31 +487,51 @@ test('V57/V59 stage 9: inside parry program — own straight, the partner answer
  for(const x of Object.values(V42_WORKOUTS))assert.ok(!/[AА]–[EЕ]|\b[ABCDE] —/.test(JSON.stringify(x)),'no A–E shorthand: '+x.id);
 });
 
-test('V58 hierarchy: section → stage 10 → six unnumbered substages; all response trainings inside the first one, which shows only them',()=>{
+test('V63 stage 10: answer programs by defence family, combined work whole, empty meeting-punch substage, all six book cards visible; stage 11 renamed, 13 book exercises',()=>{
  const doc=mockDoc();const asked=[];
  const root=renderMethodologyV42(doc,M,{workouts:V42_WORKOUTS,lessonCard:(w,stageId)=>{asked.push([w.id,stageId]);const c=doc.createElement('div');c.className='ft-route-lesson';return c;}});
  const s2=find(root,'ft-route-section')[1];s2.toggle();
  const st=find(s2,'ft-route-step').find(x=>x.dataset.stage==='FAR-STRAIGHT-COUNTER');st.toggle();
+ assert.equal(find(st.children[0],'ft-route-step-title')[0].textContent,'Одиночные прямые: ответные, затем встречные','stage 10 name unchanged');
+ assert.equal(find(st.children[0],'ft-v42-stage-count')[0].textContent,'28 трен.');
  const book=M.sections[1].stages.find(t=>t.id==='FAR-STRAIGHT-COUNTER');
- const cards=find(st,'ft-v42-program');
- assert.deepEqual(cards.map(c=>c.dataset.program),book.programs.map(p=>p.id),'six substage cards, book order, nothing flattened into the stage');
+ const subs=find(st,'ft-v42-program').filter(c=>c.dataset.program.startsWith('S10-'));
+ assert.deepEqual(subs.map(c=>find(c,'ft-v42-program-title')[0].textContent),['Ответные после защиты шагом назад','Ответные после оттяжки','Ответные после подставок','Ответные после двойной локтевой защиты',
+  'Ответные после отбивов на месте','Ответные после отбивов с шагом назад','Ответные после отбивов со смещением в сторону (смена угла)','Ответные после уклонов','Комбинированная работа','Встречные удары']);
  assert.equal(find(st,'ft-route-step').length,0,'substages are not numbered stages');
- assert.equal(asked.length,0,'trainings are built only when their substage opens');
- const [first,...rest]=cards;assert.equal(first.dataset.program,'PRG-FAR-STRAIGHT-2');
- assert.equal(find(first,'ft-v42-program-title')[0].textContent,'Ответный прямой после защиты');
- assert.equal(find(first,'ft-v42-program-meta')[0].textContent,'Тренировок: 28');
- assert.equal(find(first.children[0],'ft-v42-stage-count')[0].textContent,'28 трен.');
- first.toggle();
- assert.deepEqual(find(first,'ft-route-lesson').map(l=>l.dataset.program),S10,'all 28 response programs (V54–V59 + V61), in order, inside the first substage');
- assert.deepEqual(asked,S10.map(id=>[id,'FAR-STRAIGHT-COUNTER']));
- assert.equal(find(first,'ft-v42-exercise').length+find(first,'ft-v42-notice').length+find(first,'ft-v42-criterion').length,0,'converted substage: no placeholder book cards');
- assert.ok(S10.every(id=>V42_WORKOUTS[id].programId==='PRG-FAR-STRAIGHT-2'));
- for(const c of rest){assert.ok(!c.className.includes('ft-v42-substage'));assert.equal(find(c.children[0],'ft-v42-stage-count').length,0);c.toggle();
-  const p=book.programs.find(x=>x.id===c.dataset.program);
-  assert.equal(find(c,'ft-v42-notice')[0].textContent,V42_NO_ROUNDS_NOTICE);assert.equal(find(c,'ft-v42-exercise').length,p.exercises.length,'unconverted substages keep their book cards');
-  assert.equal(find(c,'ft-route-lesson').length,0);}
- // the book source of the converted substage stays in the data (UI replacement is not deletion)
+ subs.forEach(c=>c.toggle());
+ const shown=subs.flatMap(c=>find(c,'ft-route-lesson').map(l=>l.dataset.program));
+ assert.deepEqual([...shown].sort(),[...S10].sort(),'all 28');assert.equal(new Set(shown).size,28);
+ assert.deepEqual(subs.map(c=>find(c,'ft-route-lesson').length),[1,2,2,1,4,6,4,6,2,0]);
+ assert.equal(shown.reduce((n,id)=>n+V42_WORKOUTS[id].rounds.length,0),214);
+ assert.deepEqual(find(subs[8],'ft-route-lesson').map(l=>l.dataset.program),['FT-S10-ANS-MIXED','FT-S10-ANS-MIXED-BODYPARRY']);
+ const meet=subs[9];assert.equal(find(meet,'ft-v42-program-meta')[0].textContent,'Пока нет программ');assert.equal(find(meet.children[0],'ft-v42-stage-count').length,0,'no count chip on the empty substage');
+ assert.ok(subs.slice(4,7).every(c=>find(c,'ft-v42-stage-task')[0].textContent.includes('расширение владельца')),'inside body parry marked as owner extension of the book outward parry');
+ assert.ok(S10.every(id=>V42_WORKOUTS[id].programId==='PRG-FAR-STRAIGHT-2'),'programId kept (data unchanged)');
+ const books=find(st,'ft-v42-program').filter(c=>!c.dataset.program.startsWith('S10-'));
+ assert.deepEqual(books.map(c=>c.dataset.program),book.programs.map(p=>p.id),'six book cards, book order');
+ books.forEach(c=>c.toggle());
+ books.forEach((c,i)=>{assert.equal(find(c,'ft-v42-exercise').length,book.programs[i].exercises.length);assert.equal(find(c,'ft-route-lesson').length,0);});
  assert.deepEqual(book.programs[0].exercises.map(e=>e.id),['ROM-P1-S05','ROM-L2-01','ROM-L2-02','ROM-L2-03']);
+ // stage 11: approved title, four book cards with 13 exercises, no trainings
+ const s11=find(s2,'ft-route-step').find(x=>x.dataset.stage==='FAR-PARRY');
+ assert.equal(find(s11.children[0],'ft-route-step-title')[0].textContent,'Защитные действия с переходом на ближнюю дистанцию');
+ assert.equal(M.sections[1].stages.find(t=>t.id==='FAR-PARRY').title,'Отбивы и уклон назад от прямых','data untouched: title comes from the overlay');
+ s11.toggle();const c11=find(s11,'ft-v42-program');c11.forEach(c=>c.toggle());
+ assert.equal(c11.length,4);assert.equal(c11.reduce((n,c)=>n+find(c,'ft-v42-exercise').length,0),13);assert.equal(find(s11,'ft-route-lesson').length,0);
+ // the other stages are unaffected by the overlay
+ assert.deepEqual(Object.keys(V63_SUBSTAGES),['FAR-STRAIGHT-ATTDEF','FAR-STRAIGHT-COUNTER']);assert.deepEqual(Object.keys(V63_STAGE_TITLES),['FAR-PARRY']);
+});
+
+test('V63 opening straight: literal hand and target, matches the V62 per-round matrix (stage 9)',()=>{
+ const n={};for(const id of own('FAR-STRAIGHT-ATTDEF'))for(const r of V42_WORKOUTS[id].rounds){const g=openingStraight(r)||'none';n[g]=(n[g]||0)+1;}
+ assert.deepEqual(n,{LH:57,RH:58,LB:49,RB:48,none:26},'24 two-straight rounds + 2 mixed parry rounds have no single opening straight');
+ const rs=V42_WORKOUTS['PRG-FAR-STRAIGHT-1'].rounds.filter(r=>r.stance.startsWith('правосторонняя'));assert.ok(rs.length&&rs.every(r=>openingStraight(r)[0]===(/левой/.test(r.name)?'L':'R')),'right stance keeps literal hand names');
+});
+
+test('V63 role labels: trainee and partner named explicitly; оттяжка belongs to the trainee in its own programs',()=>{
+ for(const w of Object.values(V42_WORKOUTS))for(const r of w.rounds){assert.ok(!/(^|[^А-Яа-яЁё])[АБ]([^А-Яа-яЁё]|$)/.test(r.description),w.id+' '+r.name);assert.ok((r.stance+' · '+r.description).length<=600);}
+ for(const id of ['FT-S9-PULLBACK','FT-S9-PULLBACK-BODY','FT-S9-PULLBACK-MIXED'])assert.ok(V42_WORKOUTS[id].rounds.every(r=>/оттяжк/.test(r.description.split('С партнёром')[0])&&r.description.endsWith('С партнёром: ученик бьёт и оттяжкой уходит от ответного прямого партнёра.')),id);
 });
 
 test('V59 body-level inside parry: stage 9 program (own straight to the body, partner answers to the body) and stage 10 four 8-round programs + compact mixed',()=>{

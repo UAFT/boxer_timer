@@ -31,3 +31,7 @@
 /* V58: substage card holding trainings: chip on the right of its head. */
 .ft-v42-substage>.ft-v42-program-head{grid-template-columns:minmax(0,1fr) auto;align-items:start}.ft-v42-substage>.ft-v42-program-head .ft-v42-program-meta{grid-column:1}.ft-v42-substage>.ft-v42-program-head .ft-v42-stage-count{grid-column:2;grid-row:1}
 .ft-v42-sub-lessons{padding:0 8px 8px!important}
+/* V63: label before the book program cards and before the round references of a substage. */
+.ft-v42-programs>.ft-v42-list-label,.ft-v42-sub-lessons>.ft-v42-list-label{display:block;margin:12px 0 6px}
+.ft-v42-sub-lessons>.ft-v42-stage-task{margin-top:8px}
+.ft-v42-substage>.ft-v42-program-head .ft-v42-program-title{overflow-wrap:anywhere;hyphens:auto}

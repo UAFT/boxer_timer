@@ -5,6 +5,9 @@
 // with trainings is fully converted (owner-verified), so it shows only them — its book exercises stay in the data, not in the UI.
 // Every other stage lists its programs as read-only cards. Format/equipment chips are not shown on program cards: any program can be done
 // with a partner, on a bag, at a mirror or as shadowboxing. Old library and tree are untouched.
+// V63: stages in V63_SUBSTAGES show the overlay's substages (each training once), then all their book program cards read-only.
+import { V63_STAGE_TITLES, V63_SUBSTAGES, openingStraight } from './methodology-v63-structure.js';
+
 export const V42_NO_ROUNDS_NOTICE = 'Раунды будут добавлены после проверки методологии';
 
 const el = (doc, tag, cls, text) => {
@@ -86,44 +89,68 @@ export function renderMethodologyV42(doc, data, { workouts = {}, lessonCard } = 
         const step = el(doc, 'details', 'ft-route-step');
         step.dataset.stage = stage.id;
         const summary = el(doc, 'summary', 'ft-route-step-head');
-        summary.append(el(doc, 'span', 'ft-route-step-dot', String(stage.no)), el(doc, 'span', 'ft-route-step-title', stage.title), stageChip(stage), el(doc, 'span', 'ft-route-chevron', '⌄'));
+        summary.append(el(doc, 'span', 'ft-route-step-dot', String(stage.no)), el(doc, 'span', 'ft-route-step-title', V63_STAGE_TITLES[stage.id] || stage.title), stageChip(stage), el(doc, 'span', 'ft-route-chevron', '⌄'));
         step.append(summary);
         lazy(step, () => {
           const content = el(doc, 'div', 'ft-route-lesson-list ft-v42-programs');
-          // A stage that already has a training shows its cards straight away, without the stage summary.
-          const own = ownOf(stage);
-          if (own.length) {
-            for (const workout of own) {
+          const lessons = (box, list) => {
+            for (const workout of list) {
               const lesson = lessonCard(workout, stage.id);
               if (!lesson) continue;
               lesson.dataset.program = workout.id;
-              content.append(lesson);
+              box.append(lesson);
             }
+            return box;
+          };
+          const card = (id, title, meta, runs, build) => {
+            const node = el(doc, 'details', 'ft-v42-program' + (runs ? ' ft-v42-substage' : ''));
+            node.dataset.program = id;
+            const top = el(doc, 'summary', 'ft-v42-program-head');
+            top.append(el(doc, 'span', 'ft-v42-program-title', title), el(doc, 'span', 'ft-v42-program-meta', meta));
+            if (runs) top.append(countChip(runs, 0));
+            node.append(top);
+            lazy(node, build);
+            return node;
+          };
+          const bookCard = program => {
+            const sub = subOf(stage, program);
+            return card(program.id, program.title + (program.review ? ' · повторение' : ''),
+              sub.length ? 'Тренировок: ' + sub.length : 'Упражнений: ' + program.exercises.length, sub.length,
+              () => sub.length ? lessons(el(doc, 'div', 'ft-route-lesson-list ft-v42-sub-lessons'), sub) : renderProgramBody(doc, program));
+          };
+          const plan = all.length && V63_SUBSTAGES[stage.id];
+          if (plan) {
+            const mine = all.filter(w => w.stageId === stage.id);
+            const placed = new Set(plan.flatMap(s => s.workouts));
+            for (const s of plan) {
+              const list = s.workouts.map(id => workouts[id]).filter(Boolean);
+              content.append(card(s.id, s.title, list.length ? 'Тренировок: ' + list.length : 'Пока нет программ', list.length, () => {
+                const box = el(doc, 'div', 'ft-route-lesson-list ft-v42-sub-lessons');
+                if (s.note) box.append(el(doc, 'p', 'ft-v42-stage-task', s.note));
+                lessons(box, list);
+                // Rounds with this opening straight inside other programs: listed by number, not repeated as trainings.
+                const also = s.straight ? mine.filter(w => !s.workouts.includes(w.id))
+                  .map(w => [w, w.rounds.flatMap((r, i) => openingStraight(r) === s.straight ? [i + 1] : [])]).filter(([, n]) => n.length) : [];
+                if (also.length) {
+                  box.append(el(doc, 'strong', 'ft-v42-list-label', 'Этот удар есть и в комбинированных программах'));
+                  const ul = el(doc, 'ul', 'ft-v42-exercises ft-v42-aliases');
+                  for (const [w, n] of also) ul.append(el(doc, 'li', 'ft-v42-exercise', w.name + ' — раунды ' + n.join(', ')));
+                  box.append(ul);
+                }
+                return box;
+              }));
+            }
+            lessons(content, mine.filter(w => !placed.has(w.id)));   // a training missing from the overlay is still shown
+            content.append(el(doc, 'strong', 'ft-v42-list-label', 'Книжные программы · ' + stage.programs.length));
+            for (const program of stage.programs) content.append(card(program.id, program.title + (program.review ? ' · повторение' : ''),
+              'Упражнений: ' + program.exercises.length, 0, () => renderProgramBody(doc, program)));
             return content;
           }
+          // A stage that already has a training shows its cards straight away, without the stage summary.
+          const own = ownOf(stage);
+          if (own.length) return lessons(content, own);
           if (stage.task) content.append(el(doc, 'p', 'ft-v42-stage-task', stage.task));
-          for (const program of stage.programs) {
-            const card = el(doc, 'details', 'ft-v42-program');
-            card.dataset.program = program.id;
-            const top = el(doc, 'summary', 'ft-v42-program-head');
-            const sub = subOf(stage, program);
-            top.append(el(doc, 'span', 'ft-v42-program-title', program.title + (program.review ? ' · повторение' : '')));
-            top.append(el(doc, 'span', 'ft-v42-program-meta', sub.length ? 'Тренировок: ' + sub.length : 'Упражнений: ' + program.exercises.length));
-            if (sub.length) { card.className += ' ft-v42-substage'; top.append(countChip(sub.length, 0)); }
-            card.append(top);
-            lazy(card, () => {
-              if (!sub.length) return renderProgramBody(doc, program);
-              const box = el(doc, 'div', 'ft-route-lesson-list ft-v42-sub-lessons');
-              for (const workout of sub) {
-                const lesson = lessonCard(workout, stage.id);
-                if (!lesson) continue;
-                lesson.dataset.program = workout.id;
-                box.append(lesson);
-              }
-              return box;
-            });
-            content.append(card);
-          }
+          for (const program of stage.programs) content.append(bookCard(program));
           return content;
         });
         steps.append(step);
