@@ -63,7 +63,10 @@ export const V63_SUBSTAGES = {
   'FAR-PARRY': [
     { id: 'S11-1', title: '11.1 Прямой левой партнёра: уклон вправо, вход на ближнюю', workouts: ['FT-S11-SLIP-RIGHT-CLOSE'] },
     { id: 'S11-2', title: '11.2 Прямой правой партнёра: уклон влево, вход на ближнюю', workouts: ['FT-S11-SLIP-LEFT-CLOSE'] },
-    { id: 'S11-3', title: '11.3 Комбинированные программы', workouts: [] },
-    { id: 'S11-4', title: '11.4 Другие входы на ближнюю', workouts: [] },
+    // V68 owner TASK 2026-10-29: own substage; the reserved S11-3/S11-4 keep their ids and order, numbers shift by one
+    { id: 'S11-COUNTER', title: '11.3 Вход на ближнюю со встречным ударом', workouts: ['FT-S11-COUNTER-SLIPR-LH', 'FT-S11-COUNTER-SLIPR-LB',
+      'FT-S11-COUNTER-SLIPL-RH', 'FT-S11-COUNTER-SLIPL-RB'] },
+    { id: 'S11-3', title: '11.4 Комбинированные программы', workouts: [] },
+    { id: 'S11-4', title: '11.5 Другие входы на ближнюю', workouts: [] },
   ],
 };
