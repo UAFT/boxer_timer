@@ -7,6 +7,9 @@ export const LIBRARY_KEY = 'fighttech.program.library.v1';
 export const PROGRAM_OPTIONS_KEY = 'fighttech.program.options.v1';
 // Caps the work of compiling and drawing one program; the longest library workout has 32 rounds.
 export const MAX_PROGRAM_ROUNDS = 1000;
+// V70 (owner 2026-10-29): program and stage titles are shown whole and wrap; this is only a storage/import ceiling, far above the
+// longest library title (V69 names ~140 chars + «Бокс — »). ponytail: one bound for all titles.
+export const MAX_TITLE = 400;
 export const tooLongMessage = lang => lang === 'en'
   ? 'This program is too long: more than 1000 rounds. Reduce rounds, blocks or cycles.'
   : 'Программа слишком длинная: больше 1000 раундов. Уменьшите число раундов, блоков или циклов.';
@@ -36,13 +39,13 @@ export function normalizeRoundTimingOverrides(raw) {
   });
 }
 export function normalizeOptions(raw) { return { cycles: bounded(raw?.cycles,1,20,1), cycleRestSec: bounded(raw?.cycleRestSec,0,3600,60) }; }
-export function normalizeLibrary(raw) { return (Array.isArray(raw)?raw:[]).slice(0,100).filter(x=>x && typeof x.id==='string' && typeof x.name==='string').map(x=>({id:x.id,name:x.name.slice(0,80),entries:normalizeProgram(x.entries),options:normalizeOptions(x.options)})); }
+export function normalizeLibrary(raw) { return (Array.isArray(raw)?raw:[]).slice(0,100).filter(x=>x && typeof x.id==='string' && typeof x.name==='string').map(x=>({id:x.id,name:x.name.slice(0,MAX_TITLE),entries:normalizeProgram(x.entries),options:normalizeOptions(x.options)})); }
 
 export function normalizeProgram(raw) {
   const entries = Array.isArray(raw) ? raw : [];
   return entries.slice(0, 24).filter(x => PRESET_NAMES[x?.presetId]).map(x => ({
     presetId: x.presetId,
-    title: typeof x.title==='string' ? x.title.slice(0,80) : '',
+    title: typeof x.title==='string' ? x.title.slice(0,MAX_TITLE) : '',
     roundNames: Array.isArray(x.roundNames) ? x.roundNames.slice(0,200).map(n=>String(n||'').slice(0,240)) : [],
     phaseOneOverrides: Array.isArray(x.phaseOneOverrides) ? x.phaseOneOverrides.slice(0,200).map(n=>String(n||'').slice(0,100)) : [],
     phaseTwoOverrides: Array.isArray(x.phaseTwoOverrides) ? x.phaseTwoOverrides.slice(0,200).map(n=>String(n||'').slice(0,100)) : [],

@@ -28,7 +28,7 @@ import { editableRestField } from './core/ladder-blocks.js';
 import { installLocalization } from './i18n/locale.js';
 import { AUDIO_KEYS } from './core/constants.js';
 import { clonePreset } from './state/presets.js';
-import { compileProgram, normalizeProgram, normalizeOptions, normalizeLibrary, syncStagesWithPreset, MAX_PROGRAM_ROUNDS, tooLongMessage, LIBRARY_KEY, PROGRAM_OPTIONS_KEY, PRESET_NAMES, PROGRAM_KEY } from './core/program.js';
+import { compileProgram, normalizeProgram, normalizeOptions, normalizeLibrary, syncStagesWithPreset, MAX_PROGRAM_ROUNDS, MAX_TITLE, tooLongMessage, LIBRARY_KEY, PROGRAM_OPTIONS_KEY, PRESET_NAMES, PROGRAM_KEY } from './core/program.js';
 import { loadProfileState, saveProfileState, normalizeSettings } from './state/settings-store.js';
 import { writeJson, STORAGE_FULL_MESSAGE } from './state/storage.js';
 import { AudioEngine } from './audio/audio-engine.js';
@@ -465,7 +465,7 @@ function renameProgramStage(index) {
   if (programRunning || !programEntries[index]) return;
   const name = window.prompt('Название этапа', programEntries[index].title || '');
   if (name === null) return;
-  programEntries[index].title = name.trim().slice(0,80);
+  programEntries[index].title = name.trim().slice(0,MAX_TITLE);
   persistProgram();
 }
 
@@ -558,7 +558,7 @@ function bindStageSettings(){
     if(cfg.intervalMode==='two_phase' && !stageTwoPhaseSave(cfg))return;
     // Keep the original library task labels where possible; extra rounds remain editable.
     entry.settings=cfg;
-    entry.title=id('Name').value.trim().slice(0,80);
+    entry.title=id('Name').value.trim().slice(0,MAX_TITLE);
     closeStageSettings();persistProgram();
   });
 }
@@ -619,6 +619,8 @@ function renderProgram() {
     programEntries.forEach((entry,i)=>{
       const card=document.createElement('div');card.className='program-stage-card';card.dataset.stage=String(i);
       const stage=document.createElement('div');stage.className='program-stage';
+      // V70: a long title (e.g. 11.4 owner names) gets the full card width under the buttons instead of a word-breaking column
+      if((entry.title||'').length>40)stage.classList.add('is-long-title');
       const main=document.createElement('div');main.className='program-stage-main';
       const cfg=entry.settings || profiles[entry.presetId];
       const heading=renderStageTitle(document,i+1,entry.title,{config:{...cfg,presetId:entry.presetId}});

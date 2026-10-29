@@ -61,13 +61,24 @@ export const V63_SUBSTAGES = {
       'FT-S10-V61-SLIP-OUT-SPOT', 'FT-S10-V61-SLIP-OUT-BACK', 'FT-S10-V61-SLIP-OUT-RETREAT', 'FT-S10-V61-SLIP-OUT-STEPRET',
       'FT-S10-V61-SLIP-OUT-SIDE', 'FT-S10-V61-SLIP-OUT-DIAG', 'FT-S10-ANS-MIXED', 'FT-S10-ANS-MIXED-BODYPARRY'] }]),
   'FAR-PARRY': [
-    { id: 'S11-1', title: '11.1 Прямой левой партнёра: уклон вправо, вход на ближнюю', workouts: ['FT-S11-SLIP-RIGHT-CLOSE'] },
-    { id: 'S11-2', title: '11.2 Прямой правой партнёра: уклон влево, вход на ближнюю', workouts: ['FT-S11-SLIP-LEFT-CLOSE'] },
+    { id: 'S11-1', title: '11.1 Защита от левого прямого: уклон вправо, вход на ближнюю', workouts: ['FT-S11-SLIP-RIGHT-CLOSE'] },
+    { id: 'S11-2', title: '11.2 Защита от правого прямого: уклон влево, вход на ближнюю', workouts: ['FT-S11-SLIP-LEFT-CLOSE'] },
+    // V70 owner TASK 2026-10-29: 11.1–11.4 headings as approved
     // V68/V69 owner TASKs 2026-10-29: own substages; the reserved S11-3/S11-4 keep their ids and order, numbers shift
-    { id: 'S11-COUNTER', title: '11.3 Вход на ближнюю со встречным ударом', workouts: ['FT-S11-COUNTER-SLIPR-LH', 'FT-S11-COUNTER-SLIPR-LB',
+    { id: 'S11-COUNTER', title: '11.3 Защита от прямых ударов через уклон со встречным ударом', workouts: ['FT-S11-COUNTER-SLIPR-LH', 'FT-S11-COUNTER-SLIPR-LB',
       'FT-S11-COUNTER-SLIPL-RH', 'FT-S11-COUNTER-SLIPL-RB'] },
-    { id: 'S11-PARRY', title: '11.4 Вход на ближнюю через отбив внутрь', workouts: ['FT-S11-PARRY-IN-RIGHT-CLOSE', 'FT-S11-PARRY-IN-LEFT-CLOSE'] },
+    { id: 'S11-PARRY', title: '11.4 Вход на ближнюю через отбив внутрь со скручиванием корпуса', workouts: ['FT-S11-PARRY-IN-RIGHT-CLOSE', 'FT-S11-PARRY-IN-LEFT-CLOSE'] },
     { id: 'S11-3', title: '11.5 Комбинированные программы', workouts: [] },
     { id: 'S11-4', title: '11.6 Другие входы на ближнюю', workouts: [] },
+  ],
+  // V70 owner TASK 2026-10-29: stage 12 «Нырок от прямых» — pure defence first (12.1/12.2), then the answer AFTER the duck (12.3), then the
+  // meeting straight WITH the duck (12.4). 12.3/12.4 headings are ours (owner gave only 12.1/12.2): open question in the V70 report.
+  'FAR-DUCK-STRAIGHT': [
+    { id: 'S12-1', title: '12.1 Защита от левого прямого: нырок вправо', workouts: ['FT-S12-DUCK-RIGHT'] },
+    { id: 'S12-2', title: '12.2 Защита от правого прямого: нырок влево', workouts: ['FT-S12-DUCK-LEFT'] },
+    { id: 'S12-ANS', title: '12.3 Нырок с ответным прямым — удар после защиты', workouts: ['FT-S12-DUCKR-ANS-L', 'FT-S12-DUCKR-ANS-R',
+      'FT-S12-DUCKL-ANS-L', 'FT-S12-DUCKL-ANS-R'] },
+    { id: 'S12-MEET', title: '12.4 Нырок со встречным прямым — удар вместе с защитой', workouts: ['FT-S12-DUCKR-MEET-L', 'FT-S12-DUCKR-MEET-R',
+      'FT-S12-DUCKL-MEET-L', 'FT-S12-DUCKL-MEET-R'] },
   ],
 };

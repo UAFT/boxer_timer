@@ -469,6 +469,9 @@ input::placeholder,textarea::placeholder{color:#75838d;opacity:1}
   margin:0;
   padding:0;
 }
+/* V70: long titles (over 40 characters) take row 2 across the whole card, words are not split. */
+.program-panel .program-stage-card>.program-stage.is-long-title>.program-stage-main{grid-column:1/-1;grid-row:2}
+.program-panel .program-stage-card>.program-stage.is-long-title .program-stage-workout{overflow-wrap:break-word}
 .program-panel .program-stage-card>.program-stage>.program-stage-main>.program-stage-title-stack{
   display:flex!important;
   flex-direction:column;

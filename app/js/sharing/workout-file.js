@@ -1,4 +1,4 @@
-import { PRESET_NAMES, MAX_PROGRAM_ROUNDS, normalizeOptions, normalizeProgram } from '../core/program.js';
+import { PRESET_NAMES, MAX_PROGRAM_ROUNDS, MAX_TITLE, normalizeOptions, normalizeProgram } from '../core/program.js';
 import { clonePreset } from '../state/presets.js';
 
 export const WORKOUT_FILE_FORMAT = 'fighttech.workout';
@@ -41,7 +41,7 @@ function checkEntries(entries, options) {
   let total = 0;
   for (const entry of entries) {
     if (!plain(entry) || !Object.hasOwn(PRESET_NAMES,entry.presetId)) invalid();
-    if (!string(entry.title,80) || !integer(entry.restAfterSec,0,3600)) invalid();
+    if (!string(entry.title,MAX_TITLE) || !integer(entry.restAfterSec,0,3600)) invalid();
     for (const [key,length] of [['roundNames',240],['phaseOneOverrides',100],['phaseTwoOverrides',100],['roundDescriptions',600]]) {
       if (entry[key] != null && (!Array.isArray(entry[key]) || entry[key].length > 200 || entry[key].some(x=>!string(x,length)))) invalid();
     }
@@ -68,7 +68,7 @@ export function parseWorkoutFile(contents) {
   if (!plain(value) || value.format !== WORKOUT_FILE_FORMAT) throw new WorkoutFileError('invalid');
   if (![1,WORKOUT_FILE_VERSION].includes(value.version)) throw new WorkoutFileError('version');
   if(value.version===1 && value.entries?.some(e=>['two_phase','count_up'].includes(e?.settings?.intervalMode) || e?.phaseOneOverrides?.length || e?.phaseTwoOverrides?.length || e?.roundTimingOverrides?.some(Boolean)))invalid();
-  if (!string(value.name,80,true) || !plain(value.options) || !integer(value.options.cycles,1,20)
+  if (!string(value.name,MAX_TITLE,true) || !plain(value.options) || !integer(value.options.cycles,1,20)
       || !integer(value.options.cycleRestSec,0,3600)) invalid();
   checkEntries(value.entries,value.options);
   const entries = normalizeProgram(value.entries);
