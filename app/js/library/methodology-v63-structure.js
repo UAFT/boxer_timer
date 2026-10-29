@@ -3,6 +3,7 @@
 // each training exactly once, then one «Книжные карточки» substage with all its book program cards read-only. Removing the import in
 // methodology-v42-view.js restores the V58–V61 layout.
 export const V63_STAGE_TITLES = {
+  'FAR-STRAIGHT-COUNTER': 'Одиночные прямые: защита — ответ, встречные',   // V67 owner TASK 2026-10-29
   'FAR-PARRY': 'Защитные действия с переходом на ближнюю дистанцию',
 };
 
@@ -36,7 +37,8 @@ function stage10(k) {
   const p = `FT-S10-ANS-${k}-`;
   return [['FEET', ['STEPBACK']], ['BLOCK', ['PALM', 'BENT']], ['PARRY', ['PARRY-HEAD', 'PARRY-BODY', 'PARRY-OUT', 'PARRY-UP']], ['ELBOW', ['ELBOW']],
     ['PULL', ['PULL', 'PULLSTEP']], ['SLIP', ['SLIP']], ['VAR', ['BASE']]]
-    .map(([c, s]) => ({ id: `S10-${k}-${c}`, title: `${ANS[k]} — ${KIND[c]}`, answer: k, workouts: s.map(x => p + x) }));
+    // V67: defence first, then the answer
+    .map(([c, s]) => ({ id: `S10-${k}-${c}`, title: `${KIND[c][0].toUpperCase()}${KIND[c].slice(1)} — ${ANS[k][0].toLowerCase()}${ANS[k].slice(1)}`, answer: k, workouts: s.map(x => p + x) }));
 }
 const number = (no, list) => list.map((s, i) => ({ ...s, title: `${no}.${i + 1} ${s.title}` }));
 export const V63_SUBSTAGES = {
@@ -48,7 +50,8 @@ export const V63_SUBSTAGES = {
     { id: 'S9-DOUBLE', title: 'Два прямых одной рукой — вариативная защита', workouts: [
       'FT-S9-VAR2-LEFT-HEAD-BODY', 'FT-S9-VAR2-LEFT-BODY-HEAD', 'FT-S9-VAR2-RIGHT-HEAD-BODY', 'FT-S9-VAR2-RIGHT-BODY-HEAD'] }]),
   'FAR-STRAIGHT-COUNTER': number(10, [...['LH', 'RH', 'LB', 'RB'].flatMap(stage10),
-    { id: 'S10-MEET', title: 'Защита со встречной атакой', workouts: [] },
+    { id: 'S10-MEET', title: 'Встречные', workouts: ['FT-S10-MEET-SLIPR-LB', 'FT-S10-MEET-SLIPR-LH', 'FT-S10-MEET-SLIPR-LHOOK',
+      'FT-S10-MEET-SLIPL-RB', 'FT-S10-MEET-SLIPL-RH', 'FT-S10-MEET-SLIPL-RHOOK'] },
     { id: 'S10-MIXED', title: 'Комбинированные программы', workouts: [
       'FT-S10-ANS-STEPBACK', 'FT-S10-ANS-PULL', 'FT-S10-ANS-PULLSTEP', 'FT-S10-ANS-PALM', 'FT-S10-ANS-BENT', 'FT-S10-ANS-ELBOW',
       'FT-S10-ANS-PARRY', 'FT-S10-ANS-PARRY-BACK', 'FT-S10-ANS-PARRY-BREAK', 'FT-S10-ANS-PARRY-SIDE',
