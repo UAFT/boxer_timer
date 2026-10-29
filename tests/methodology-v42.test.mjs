@@ -405,10 +405,10 @@ test('V66 stage 9: per straight — movement, blocks, 8 parries, double elbow, p
 test('V66 stage 9 owner round names: N1–N8, P1–P4 by both hands, R1–R4 in all 8 parries (jump back everywhere), E1–E5 without side moves, T1–T5 + the old pull-back round, 10 variative rounds 29:00; side moves only as the TASK lists',()=>{
  for(const k of K4){const u=U9[k],s=k[0]==='L'?'вправо':'влево',p=`FT-S9-${k}-`,R=id=>V42_WORKOUTS[p+id].rounds.map(r=>r.name);
   assert.equal(V42_WORKOUTS[p+'STEPBACK'].name,u+' — защита перемещением');
-  assert.deepEqual(R('STEPBACK'),[u+' с места — защита шагом назад с возвратом',u+' с места — защита шагом назад с возвратом',
-   u+' с шагом вперёд и возвратом — защита шагом назад',u+' с шагом вперёд и возвратом — защита шагом назад',
+  assert.deepEqual(R('STEPBACK'),[u+' с места — защита шагом назад с подтягиванием ноги и возвратом',u+' с места — защита шагом назад с подтягиванием ноги и возвратом',
+   u+' с шагом вперёд и возвратом — защита шагом назад с подтягиванием ноги',u+' с шагом вперёд и возвратом — защита шагом назад с подтягиванием ноги',
    u+' — полный отход назад с разрывом дистанции',u+' — защита скачком назад с разрывом дистанции',u+' — защита боковым шагом '+s,u+' — защита диагональным шагом назад-'+s,
-   ...(k[1]==='H'?[u+' — защита диагональным шагом вперёд-'+s,u+' — защита ровным приседом вниз']:[])],'N1–N8; C, D: no forward diagonal, no squat');
+   ...(k[1]==='H'?[u+' — защита диагональным шагом вперёд-'+s,u+' — защита ровным приседом вниз']:[])],'N1–N8 (N1/N2: the step back with the leg pulled up, owner GAP decision §2); C, D: no forward diagonal, no squat');
   assert.deepEqual(V42_WORKOUTS[p+'STEPBACK'].rounds.slice(0,4).map(r=>r.stance),['левосторонняя стойка','правосторонняя стойка','левосторонняя стойка','правосторонняя стойка'],'both stances kept');
   for(const [x,t,g] of [['PALM','ладонью','подставки ладонями'],['BENT','согнутой рукой','подставки согнутыми руками']]){const id=x+'-'+OTH[k[0]],r=R(id);
    assert.equal(V42_WORKOUTS[p+id].name,u+' — '+g);
@@ -438,16 +438,37 @@ test('V66 stage 9 owner round names: N1–N8, P1–P4 by both hands, R1–R4 in 
  assert.deepEqual(X,E,'extra parry moves: exactly the TASK list (+ the existing inside-parry shift); C, D: no new side or diagonal moves');
 });
 
-test('V66 provenance: a round the V65 cards had keeps stance, hand, text and timing verbatim (owner name only); a new round is a TASK item with the straight taken verbatim from a sibling',()=>{
+test('V66 provenance: a round the V65 cards had keeps stance, hand, text and timing verbatim (owner name only; N1 + the owner\'s return); a new round is a TASK item with the straight taken verbatim from a sibling, both stances, technique quoted from approved rounds or a GAP',()=>{
  let kept=0,made=0;
  for(const id of CARDS9){const w=V42_WORKOUTS[id];assert.equal(w.sourceRounds.length,w.rounds.length,id);assert.equal(w.blocks.reduce((n,b)=>n+b[1],0),w.rounds.length,id);
   assert.ok(Object.values(w.methodology).every(Boolean)&&Object.keys(w.methodology).length===4,id);
   assert.equal(new Set(w.sourceRounds.filter(s=>!s.task).map(s=>s.program+'#'+s.round)).size,w.sourceRounds.filter(s=>!s.task).length,'no round twice: '+id);
   w.sourceRounds.forEach((s,i)=>{const r=w.rounds[i];
-   if(s.task){assert.equal(s.task,'V66',id+i);assert.ok(r.description.includes(' Затем — '+r.name.split(' — ').slice(1).join(' — ')+'.')&&r.description.endsWith('бой с тенью, зеркало или мешок.'),id+i);made++;}
-   else{const src=V42_WORKOUTS[s.program];assert.ok(src&&!src.sourceRounds,id+i);assert.deepEqual({...r,name:''},{...src.rounds[s.round-1],name:''},id+i);kept++;}
+   if(s.task){assert.equal(s.task,'V66',id+i);assert.ok(r.description.includes(' Затем — '+r.name.split(' — ').slice(1).join(' — ')+'.')&&r.description.endsWith('бой с тенью, зеркало или мешок.'),id+i);made++;
+    assert.equal(r.stance,'обе стойки','GAP decision §5: a new round serves both stances, no duplicate: '+id+i);
+    // GAP decision §7: technique only as a verbatim quote of an approved original round; no source → no section, the round is a listed GAP
+    const t=/ Техника: (.*?)\.(?= Перемещение| Защита — имитация)/.exec(r.description),m=/ Перемещение: (.*?) \(левосторонняя стойка; в правосторонней — зеркально\)\./.exec(r.description);
+    const refs=(s.technique||[]).map(x=>{const [pid,n]=x.split('#'),src=V42_WORKOUTS[pid];assert.ok(src&&!src.sourceRounds,x);return src.rounds[n-1].description.toLowerCase();});
+    assert.equal(refs.length,(t?1:0)+(m?1:0),id+i);for(const q of [t,m])if(q)assert.ok(refs.some(d=>d.includes(q[1].toLowerCase())),'quoted verbatim: '+id+i);
+    if(/-VAR$/.test(id))assert.ok(!t&&!m&&!s.gap,'variative: no mechanics listed (TASK §6): '+id+i);
+    else if((!t&&!/-STEPBACK$/.test(id))||(!m&&/скачк|присед|боков|диагонал/.test(r.name.split(' — ').slice(1).join(' — '))))assert.ok(s.gap&&s.gap.length,'missing technique is a GAP: '+id+i);}
+   else{const src=V42_WORKOUTS[s.program];assert.ok(src&&!src.sourceRounds,id+i);
+    const o=src.rounds[s.round-1],d=s.addendum?o.description.replace(' Можно работать',r.name.includes(' с места — ')?' Затем возврат в исходную точку. Можно работать':' Можно работать'):o.description;
+    if(s.addendum)assert.equal(s.addendum,'V66-GAP-2');assert.deepEqual({...r,name:''},{...o,name:'',description:d},id+i);kept++;}
    assert.ok(r.workSec===120&&r.restSec===60&&r.cue===r.stance,id+i);});}
  assert.deepEqual([kept,made],[92,251],'92 existing rounds renamed (4 moved from the pull-back-with-step cards), 251 TASK rounds');
+});
+
+test('V66 owner GAP decisions (ADDENDUM 2026-10-29): §1 A «наружу левой» keeps its left moves, §3 C right / D left only, §4 no diagonals for B «внутрь левой», §5 new rounds both stances, §6 old block side rounds kept (16, mirrored step in the right stance), §7 technique quoted or GAP',()=>{
+ const all=CARDS9.flatMap(id=>V42_WORKOUTS[id].rounds.map((r,i)=>[id,r,V42_WORKOUTS[id].sourceRounds[i]]));
+ assert.deepEqual(V42_WORKOUTS['FT-S9-LH-PARRY-OUT-L'].rounds.slice(4).map(r=>r.name.split(' рукой ')[1]),['с боковым шагом влево','с диагональным шагом вперёд-влево','с диагональным шагом назад-влево'],'§1 exception kept');
+ for(const [k,ok,no] of [['LB','вправо','влево'],['RB','влево','вправо']])assert.ok(all.filter(([id])=>id.startsWith(`FT-S9-${k}-`)).every(([,r])=>!r.name.includes(no)&&!/вперёд-(вправо|влево)/.test(r.name)),'§3 '+k);
+ assert.ok(V42_WORKOUTS['FT-S9-RH-PARRY-IN-L'].rounds.every(r=>!/диагонал/.test(r.name)),'§4');
+ const made=all.filter(([,,s])=>s.task);assert.equal(made.length,251);assert.ok(made.every(([,r])=>r.stance==='обе стойки'),'§5');
+ const side=all.filter(([id,r,s])=>/-(PALM|BENT)-/.test(id)&&!s.task&&/с шагом (вправо|влево)|со смещением/.test(r.name));assert.equal(side.length,16,'§6');
+ assert.ok(side.every(([,r])=>/Правосторонняя — зеркально: [^.]*шагает (вправо|влево)/.test(r.description)),'§6: text kept as it was (GAP for the owner)');
+ assert.deepEqual([made.filter(([,,s])=>s.technique).length,made.filter(([,,s])=>s.gap).length],[129,155],'§7: rounds with quoted technique, rounds with a GAP');
+ assert.equal(all.filter(([,r])=>r.description.includes('Затем возврат в исходную точку.')).length,8,'§2: N1 in both stances × 4 straights');
 });
 
 test('V65 side-step canon: a lateral defence moves away from the partner\'s free hand — right from his left straight, left from his right; never the mirror',()=>{
