@@ -471,6 +471,18 @@ test('V66 owner GAP decisions (ADDENDUM 2026-10-29): §1 A «наружу лев
  assert.equal(all.filter(([,r])=>r.description.includes('Затем возврат в исходную точку.')).length,8,'§2: N1 in both stances × 4 straights');
 });
 
+test('V66 right-stance rounds (owner TASK 29.10): the 37 existing ones only — front foot right, rear foot left, the straight keeps the hand of its name; directions as named, nothing mirrored blindly',()=>{
+ const rs=Object.values(V42_WORKOUTS).flatMap(w=>w.rounds.map((r,i)=>[w,r,i]).filter(([,r])=>r.stance==='правосторонняя стойка'));
+ assert.equal(rs.length,37);assert.deepEqual([...new Set(rs.map(([w])=>w.id))].length,9);assert.ok(rs.every(([w])=>w.stageId==='FAR-STRAIGHT-ATTDEF'));
+ for(const [w,r,i] of rs){const d=r.description,id=w.id+'#'+(i+1);
+  const h=(/(?:^|\s)(?:Прямой (левой|правой)|(Левый|Правый) прямой)/.exec(r.name)||[]);const hand=h[1]||(h[2]==='Левый'?'левой':'правой');
+  assert.ok(d.includes('прямой '+hand),'the straight keeps its hand: '+id);
+  assert.ok(!/(задн\S* прав|передн\S* лев)/i.test(d),'right stance: no rear right / front left: '+id);
+  if(/шагает вперёд/.test(d))assert.ok(/Передняя правая нога шагает вперёд/.test(d),'forward: the front right foot starts: '+id);
+  if(/шагает назад/.test(d))assert.ok(/задняя левая нога шагает назад, правая подтягивается/.test(d),'back: the rear left foot starts, the right follows: '+id);
+  for(const side of ['вправо','влево'])if(r.name.includes(side))assert.ok(d.includes('шагает '+side),'direction as named: '+id);}
+});
+
 test('V65 side-step canon: a lateral defence moves away from the partner\'s free hand — right from his left straight, left from his right; never the mirror',()=>{
  let n=0;
  for(const w of Object.values(V42_WORKOUTS)){
