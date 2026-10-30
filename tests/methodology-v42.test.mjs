@@ -123,7 +123,8 @@ const C11=['SLIPR-LH','SLIPR-LB','SLIPL-RH','SLIPL-RB'].map(x=>'FT-S11-COUNTER-'
 const P11=['FT-S11-PARRY-IN-RIGHT-CLOSE','FT-S11-PARRY-IN-LEFT-CLOSE'];   // V69: 11.4 inside-parry entry
 const K12=['ANS-L','ANS-R','MEET-L','MEET-R'];   // V70: stage 12 duck — per side: pure defence, then 2 answer + 2 meeting programs
 const D12=[['R','RIGHT'],['L','LEFT']].flatMap(([s,d])=>['FT-S12-DUCK-'+d,...K12.map(k=>`FT-S12-DUCK${s}-${k}`)]);
-const E12=['FT-S12-DUCKR-MEET-LB-CLOSE','FT-S12-DUCKL-MEET-RB-CLOSE'];   // V71: 12.5 contralateral entry (variant B) + 11.1/11.2 series
+const E12=['FT-S12-DUCKR-MEET-LB-CLOSE','FT-S12-DUCKL-MEET-RB-CLOSE'];
+const X13=['FT-S13-CROSS-R','FT-S13-CROSS-L'];   // V72: 13.1 right cross over the left arm, 13.2 its full mirror (left jab over the right arm)   // V71: 12.5 contralateral entry (variant B) + 11.1/11.2 series
 const CARDS9=K4.flatMap(k=>['STEPBACK','PALM-'+OTH[k[0]],'BENT-'+OTH[k[0]],...PAR,'ELBOW-H','ELBOW-B','PULL','VAR'].map(x=>`FT-S9-${k}-${x}`));
 const ARCH9=[...X9,...K4.map(k=>`FT-S9-${k}-PULLSTEP`),'FT-S9-VAR-LEFT-HEAD','FT-S9-VAR-LEFT-BODY','FT-S9-VAR-RIGHT-HEAD','FT-S9-VAR-RIGHT-BODY'];
 const own=stage=>Object.keys(V42_WORKOUTS).filter(id=>V42_WORKOUTS[id].stageId===stage);
@@ -131,11 +132,11 @@ const W=V42_WORKOUTS['PRG-FAR-STRAIGHT-1'];
 const P1=programs.find(p=>p.id==='PRG-FAR-STRAIGHT-1');
 
 test('owner program «Прямой и подставка: шаг назад»: 15 rounds 2:00/1:00, no trailing rest, 44:00 through the Tree adapter and real compiler',()=>{
- assert.deepEqual(Object.keys(V42_WORKOUTS),[...ORDER9,...S10,...X9,...X10,...X11,...Y9,...Y10,...Z9,...M10,...C11,...P11,...D12,...E12],'V51: 15 matrix programs (defence × head/body/mixed), then V50 and V51 microprograms; V57: + parry; V54–V57: stage 10; V64, V65, V66, V67, V68, V69, V70 appended');
- assert.deepEqual(own('FAR-STRAIGHT-ATTDEF'),[...ORDER9,...X9,...Y9,...Z9]);assert.deepEqual(own('FAR-STRAIGHT-COUNTER'),[...S10,...X10,...Y10,...M10]);assert.deepEqual(own('FAR-PARRY'),[...X11,...C11,...P11]);assert.deepEqual(own('FAR-DUCK-STRAIGHT'),[...D12,...E12]);
+ assert.deepEqual(Object.keys(V42_WORKOUTS),[...ORDER9,...S10,...X9,...X10,...X11,...Y9,...Y10,...Z9,...M10,...C11,...P11,...D12,...E12,...X13],'V51: 15 matrix programs (defence × head/body/mixed), then V50 and V51 microprograms; V57: + parry; V54–V57: stage 10; V64, V65, V66, V67, V68, V69, V70 appended');
+ assert.deepEqual(own('FAR-STRAIGHT-ATTDEF'),[...ORDER9,...X9,...Y9,...Z9]);assert.deepEqual(own('FAR-STRAIGHT-COUNTER'),[...S10,...X10,...Y10,...M10]);assert.deepEqual(own('FAR-PARRY'),[...X11,...C11,...P11]);assert.deepEqual(own('FAR-DUCK-STRAIGHT'),[...D12,...E12]);assert.deepEqual(own('FAR-CROSS'),X13);
  assert.ok(!V42_WORKOUTS['FT-S9-STEP-BACK'],'the V47 combined step-back program is superseded (V48)');
  assert.equal(ORDER23.reduce((s,id)=>s+V42_WORKOUTS[id].rounds.length,0),220);
- assert.equal(Object.values(V42_WORKOUTS).reduce((s,w)=>s+w.rounds.length,0),238+142+72+20+160+14+104+52-100+343+36+28+14+70+14,'V59: stage 9 — 25 programs / 238 rounds, stage 10 — 16 programs / 142 rounds; V61: + 12 programs / 72 rounds; V64: + 20 / 160 assembled, 14 stage 11; V65: + 104 / 52 copied; V66: 26 stage 9 cards rebuilt (100 → 343 rounds with the 34 new ones); V67: 6 × 6 counters; V68: 4 × 7 counter entries; V69: 2 × 7 parry entries; V70: 10 × 7 duck');
+ assert.equal(Object.values(V42_WORKOUTS).reduce((s,w)=>s+w.rounds.length,0),238+142+72+20+160+14+104+52-100+343+36+28+14+70+14+14,'V59: stage 9 — 25 programs / 238 rounds, stage 10 — 16 programs / 142 rounds; V61: + 12 programs / 72 rounds; V64: + 20 / 160 assembled, 14 stage 11; V65: + 104 / 52 copied; V66: 26 stage 9 cards rebuilt (100 → 343 rounds with the 34 new ones); V67: 6 × 6 counters; V68: 4 × 7 counter entries; V69: 2 × 7 parry entries; V70: 10 × 7 duck');
  assert.equal(W.name,'Прямые в голову — подставка открытой ладонью');
  assert.equal(P1.title,'Прямой и подставка; шаг назад','methodology title untouched');
  assert.equal(W.rounds.length,15);
@@ -548,7 +549,7 @@ test('V53: section header counts stages; each stage row has a chip with the card
    assert.equal(find(st9.children[0],'ft-v42-stage-count')[0].textContent,'81 трен.');
    const st10=find(s2,'ft-route-step').find(x=>x.dataset.stage==='FAR-STRAIGHT-COUNTER');
    assert.equal(find(st10.children[0],'ft-v42-stage-count')[0].textContent,'82 трен.','V54–V61: stage 10 chip counts its runnable trainings (inside the first substage); V67: + 6 counters');
-   assert.equal(find(s2,'ft-v42-stage-count').filter(c=>!c.className.includes('-run')).reduce((n,c)=>n+parseInt(c.textContent),0),71-6-4-2,'non-run chips: the other 16 stages; stages 9, 10, 11, 12 count trainings (V64: stage 11 has two; V70: stage 12)');}
+   assert.equal(find(s2,'ft-v42-stage-count').filter(c=>!c.className.includes('-run')).reduce((n,c)=>n+parseInt(c.textContent),0),71-6-4-2-2,'non-run chips: the other 15 stages; stages 9, 10, 11, 12, 13 count trainings (V64: stage 11 has two; V70: stage 12; V72: stage 13)');}
  }
 });
 
@@ -667,7 +668,7 @@ test('V65 stage 10: a substage = one answering straight + one kind of defence, s
  assert.deepEqual(sub11.map(c=>find(c,'ft-route-lesson').map(l=>l.dataset.program)),[['FT-S11-SLIP-RIGHT-CLOSE'],['FT-S11-SLIP-LEFT-CLOSE'],C11,P11,[],[]]);
  const b11=find(s11,'ft-v42-program').find(c=>c.dataset.program==='BOOK-FAR-PARRY');b11.toggle();const c11=find(b11,'ft-v42-program');c11.forEach(c=>c.toggle());
  assert.equal(c11.length,4);assert.equal(c11.reduce((n,c)=>n+find(c,'ft-v42-exercise').length,0),13);
- assert.deepEqual(Object.keys(V63_SUBSTAGES),['FAR-STRAIGHT-ATTDEF','FAR-STRAIGHT-COUNTER','FAR-PARRY','FAR-DUCK-STRAIGHT']);assert.deepEqual(Object.keys(V63_STAGE_TITLES),['FAR-STRAIGHT-COUNTER','FAR-PARRY']);
+ assert.deepEqual(Object.keys(V63_SUBSTAGES),['FAR-STRAIGHT-ATTDEF','FAR-STRAIGHT-COUNTER','FAR-PARRY','FAR-DUCK-STRAIGHT','FAR-CROSS']);assert.deepEqual(Object.keys(V63_STAGE_TITLES),['FAR-STRAIGHT-COUNTER','FAR-PARRY','FAR-CROSS']);
 });
 
 test('V64 stage 11: the owner series, 11.2 mirrors 11.1; 7 rounds 2:00/1:00; the partner attacks first, the series follows the slip',()=>{
@@ -924,4 +925,38 @@ test('V71 stage 12.5: duck + meeting straight to the body with the contralateral
  }
  // variant A / older wording is not rewritten (owner: both entry mechanics are correct)
  assert.ok(V42_WORKOUTS['FT-S11-COUNTER-SLIPR-LB'].rounds[0].description.includes('шаг правой вперёд-вправо, левая нога подтягивается'));
+});
+
+test('V72 stage 13 «Встречный удар через руку (кросс)»: 13.1 right cross over the left arm, 13.2 full mirror (left jab), both left stance; second punch on the landing of the second foot; book cards kept',()=>{
+ const doc=mockDoc();
+ const root=renderMethodologyV42(doc,M,{workouts:V42_WORKOUTS,lessonCard:(w)=>{const c=doc.createElement('div');c.className='ft-route-lesson';c.dataset.program=w.id;return c;}});
+ const s2=find(root,'ft-route-section')[1];s2.toggle();
+ const st=find(s2,'ft-route-step').find(x=>x.dataset.stage==='FAR-CROSS');st.toggle();
+ assert.equal(find(st.children[0],'ft-route-step-title')[0].textContent,'Встречный удар через руку (кросс)');
+ assert.equal(find(st.children[0],'ft-v42-stage-count')[0].textContent,'2 трен.');
+ const sub=find(st,'ft-v42-program').filter(c=>c.dataset.program.startsWith('S13-'));sub.forEach(c=>c.toggle());
+ assert.deepEqual(sub.map(c=>find(c,'ft-route-lesson').map(l=>l.dataset.program)),[['FT-S13-CROSS-R'],['FT-S13-CROSS-L']]);
+ const book=find(st,'ft-v42-program').find(c=>c.dataset.program==='BOOK-FAR-CROSS');book.toggle();
+ assert.deepEqual(find(book,'ft-v42-program').map(c=>c.dataset.program),['PRG-FAR-CROSS-1','PRG-FAR-CROSS-O1'],'the two textbook cards stay, read-only');
+ assert.deepEqual(M.sections[1].stages.find(t=>t.id==='FAR-CROSS').programs.map(p=>p.id),['PRG-FAR-CROSS-1','PRG-FAR-CROSS-O1'],'data untouched');
+ const all=Object.values(V42_WORKOUTS).flatMap(w=>w.rounds.map(r=>r.name));
+ for(const [id,att,dir,diag,first,second,punch,hand,follow] of [
+   ['FT-S13-CROSS-R','левой','влево','вперёд-влево','левой','правая','правый кросс','правой',['короткий прямой левой в корпус','левый апперкот в челюсть','левый боковой в корпус']],
+   ['FT-S13-CROSS-L','правой','вправо','вперёд-вправо','правой','левая','левый джеб','левой',['короткий прямой правой в корпус','правый апперкот в челюсть','правый боковой в корпус']]]){
+  const w=V42_WORKOUTS[id];
+  assert.equal(w.stageId,'FAR-CROSS');assert.equal(w.rounds.length,7);assert.equal(workoutTotalSec(w),20*60);
+  const k=compileProgram([stageForWorkout(w)],PRESETS,{cycles:1});assert.equal(k.length,7);assert.equal(k.at(-1).restSec,0);
+  assert.deepEqual(Object.keys(w.methodology),['technique','tactics','execution','typicalMistakes']);
+  assert.ok(w.provenance.methodology.every(([sec,t,src])=>w.methodology[sec].includes(t)&&src));
+  w.rounds.forEach((r,j)=>{const d=r.description;
+   assert.deepEqual([r.workSec,r.restSec,r.stance,r.hand],[120,60,'левосторонняя стойка',hand]);
+   assert.ok(r.name.length<=100&&r.stance.length+3+d.length<=600&&all.filter(n=>n===r.name).length===1,r.name);
+   assert.ok(d.startsWith(`Партнёр атакует с дальней дистанции: прямой ${att} в голову. Во время его удара одновременно: уклон ${dir}, внутрь, шаг ${first} ноги ${diag} по диагонали и встречный ${punch} в челюсть — сверху-сбоку, поверх его ${att} руки; не после защиты.`),id+j);
+   assert.ok(!/ответн|правосторонн|зеркально/.test(r.name+d),id+j);
+   if(j===0)assert.ok(d.includes('без второго удара')&&!d.includes('постановк'),id);
+   if(j===1)assert.ok(d.includes(`Затем ${second} нога тоже шагает ${diag} и ставится на опору — ближняя дистанция; второго удара нет.`),id);
+   if(j>=2&&j<=4){assert.ok(d.includes(`Затем ${second} нога шагает ${diag}, и одновременно с её постановкой на опору — ${follow[j-2]}, не после шага; ближняя дистанция.`),id+j);assert.ok(r.name.includes(follow[j-2]),id+j);}
+   if(j>=5)assert.ok(d.includes('одновременно с её постановкой на опору')&&d.includes('продолжени'),id+j);
+  });
+ }
 });

@@ -5,6 +5,7 @@
 export const V63_STAGE_TITLES = {
   'FAR-STRAIGHT-COUNTER': 'Одиночные прямые: защита — ответ, встречные',   // V67 owner TASK 2026-10-29
   'FAR-PARRY': 'Защитные действия с переходом на ближнюю дистанцию',
+  'FAR-CROSS': 'Встречный удар через руку (кросс)',   // V72 owner TASK 2026-10-30
 };
 
 // Literal hand and target of a single straight that opens the round (stance does not mirror it). Double straights and the mixed parry
@@ -83,5 +84,10 @@ export const V63_SUBSTAGES = {
     // V71 owner ADDENDA 2026-10-30: contralateral entry (variant B) and its confirmed mirror; heading is ours (GAP-V71-1)
     { id: 'S12-CLOSE', title: '12.5 Нырок со встречным прямым в корпус — вход на ближнюю и серии', workouts: ['FT-S12-DUCKR-MEET-LB-CLOSE',
       'FT-S12-DUCKL-MEET-RB-CLOSE'] },
+  ],
+  // V72 owner TASK + ADDENDA 2026-10-30: 13.1 and its confirmed full mirror 13.2, both in the left stance; headings are ours (GAP-V72-2)
+  'FAR-CROSS': [
+    { id: 'S13-1', title: '13.1 Защита от левого прямого: уклон влево, встречный правый кросс, вход на ближнюю', workouts: ['FT-S13-CROSS-R'] },
+    { id: 'S13-2', title: '13.2 Защита от правого прямого: уклон вправо, встречный левый джеб, вход на ближнюю', workouts: ['FT-S13-CROSS-L'] },
   ],
 };
