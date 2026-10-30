@@ -32,6 +32,8 @@ const pairs = [
 ['Оплата ожидает подтверждения.','Payment is awaiting confirmation.'],
 ['Подписка закончилась.','Subscription has ended.'],
 ['Подключитесь к интернету, чтобы проверить подписку.','Connect to the internet to verify your subscription.'],
+['Не удалось проверить подписку в Google Play. Попробуйте позже.','Could not verify the subscription with Google Play. Try again later.'],
+['Проверьте дату и время на телефоне.','Check the date and time on your phone.'],
 ['Доступ активен до','Access is active until'],
 ['Статус подписки недоступен.','Subscription status is unavailable.'],
 ['Покупка через Google Play недоступна для этого аккаунта или региона.','Google Play purchase is unavailable for this account or region.'],

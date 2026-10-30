@@ -82,6 +82,7 @@ function normalizeRecord(value) {
     record.cloudProjectNumber = value.cloudProjectNumber;
   }
   if (typeof value.integrity === 'boolean') record.integrity = value.integrity;
+  if (value.verifiedOnce === true) record.verifiedOnce = true;
   return record;
 }
 
@@ -196,6 +197,7 @@ export async function createBillingAccess(options = {}) {
 
   verifiedPayload = await verifyTicket(record.ticket);
   if (record.ticket && !verifiedPayload) record.ticket = null;
+  if (verifiedPayload) record.verifiedOnce = true;
   persist();
 
   function getRecord() {
@@ -212,13 +214,18 @@ export async function createBillingAccess(options = {}) {
   }
 
   function decision() {
+    // No trustworthy clock, no start (fail closed); a valid clock only ever moves effectiveNow forward.
+    if (!Number.isFinite(Number(clock()))) {
+      return { allowed: false, reason: 'clock_unavailable', state: 'clock_unavailable', accessUntil: 0, trialEnd: 0, paidUntil: 0, verified: false };
+    }
     const current = effectiveNow();
     if (verifiedPayload) {
+      const paidUntil = finiteNumber(verifiedPayload.paidUntil, 0);
       const state = typeof verifiedPayload.state === 'string' ? verifiedPayload.state : 'expired';
       const accessUntil = finiteNumber(verifiedPayload.accessUntil, 0);
       const trialEnd = finiteNumber(verifiedPayload.trialEnd, 0);
       if (current < accessUntil) {
-        return { allowed: true, reason: state, state, accessUntil, trialEnd, verified: true };
+        return { allowed: true, reason: state, state, accessUntil, trialEnd, paidUntil, verified: true };
       }
       return {
         allowed: false,
@@ -228,6 +235,7 @@ export async function createBillingAccess(options = {}) {
         state,
         accessUntil,
         trialEnd,
+        paidUntil,
         verified: true
       };
     }
@@ -237,13 +245,15 @@ export async function createBillingAccess(options = {}) {
       finiteNumber(config.offlineUnverifiedMs, 0),
       finiteNumber(config.trialMs, 0)
     );
-    const allowed = current < accessUntil;
+    // The offline start window exists only before the first server answer; a damaged ticket does not reopen it.
+    const allowed = !record.verifiedOnce && current < accessUntil;
     return {
       allowed,
       reason: allowed ? 'local_trial' : 'needs_network',
       state: 'local_trial',
       accessUntil,
       trialEnd,
+      paidUntil: 0,
       verified: false
     };
   }
@@ -405,6 +415,7 @@ export async function createBillingAccess(options = {}) {
     const payload = await verifyTicket(data.ticket);
     if (payload) {
       record.ticket = clone(data.ticket);
+      record.verifiedOnce = true;
       verifiedPayload = payload;
     }
     persist();

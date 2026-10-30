@@ -101,7 +101,7 @@ class Base(unittest.TestCase):
         der = encode_dss_signature(int.from_bytes(sig[:32], 'big'), int.from_bytes(sig[32:], 'big'))
         self.public.verify(der, data, ec.ECDSA(hashes.SHA256()))       # raises if the signature is wrong
         payload = json.loads(data)
-        self.assertEqual(sorted(payload), ['accessUntil', 'device', 'entitlements', 'issuedAt', 'state', 'trialEnd', 'trialStart', 'v'])
+        self.assertEqual(sorted(payload), ['accessUntil', 'device', 'entitlements', 'issuedAt', 'paidUntil', 'state', 'trialEnd', 'trialStart', 'v'])
         return payload
 
     def rtdn(self, note, message_id='m1', auth='Bearer good'):
@@ -181,16 +181,46 @@ class PurchaseTests(Base):
         self.clock.t += 20 * DAY
         p = self.call(purchases=['tok'])
         self.assertEqual((p['state'], p['entitlements']), ('subscribed', ['base']))
-        self.assertEqual(p['accessUntil'], (self.clock.t + 7 * DAY) * 1000)       # ticket age cap
-        self.clock.t += 7 * 3600
+        self.assertEqual(p['accessUntil'], (self.clock.t + DAY) * 1000)           # 24 h after the Google check
+        self.assertEqual(p['paidUntil'], (T0 + 30 * DAY) * 1000)
+        self.clock.t += 2 * 3600
         self.call(purchases=['tok'])
         self.assertEqual(self.google.acks, [(PRODUCT, 'tok')])
 
-    def test_access_until_caps(self):
+    def test_paid_through_boundary(self):
+        # 24 h after the check, but never past the paid-through date; auto-renewal adds nothing offline.
         self.google.sub('auto', expiry=T0 + 2 * DAY, auto=True, acked=True)
-        self.assertEqual(self.call(purchases=['auto'])['accessUntil'], (T0 + 5 * DAY) * 1000)   # expiry + 3 days
-        self.google.sub('noauto', expiry=T0 + 2 * DAY, auto=False, acked=True)
-        self.assertEqual(self.call(install='install-0002', android='b' * 16, purchases=['noauto'])['accessUntil'], (T0 + 2 * DAY) * 1000)
+        self.assertEqual(self.call(purchases=['auto'])['accessUntil'], (T0 + DAY) * 1000)
+        self.google.sub('soon', expiry=T0 + 10 * 3600, auto=True, acked=True)
+        p = self.call(install='install-0002', android='b' * 16, purchases=['soon'])
+        self.assertEqual((p['accessUntil'], p['paidUntil']), ((T0 + 10 * 3600) * 1000, (T0 + 10 * 3600) * 1000))
+
+    def test_google_unreachable_23h_keeps_25h_stops(self):
+        self.google.sub('tok', acked=True, expiry=T0 + 30 * DAY)
+        self.clock.t += 20 * DAY
+        verified = self.clock.t
+        self.call(purchases=['tok'])
+        self.google.down = True
+        self.clock.t = verified + 23 * 3600
+        p = self.call()
+        self.assertEqual((p['state'], p['accessUntil']), ('subscribed', (verified + DAY) * 1000))   # not extended by the new call
+        self.clock.t = verified + 25 * 3600
+        p = self.call()
+        self.assertEqual((p['state'], p['accessUntil'], p['entitlements']), ('unverified', 0, []))
+        self.google.down = False                       # reconnection: verified again at once
+        p = self.call()
+        self.assertEqual((p['state'], p['accessUntil']), ('subscribed', (self.clock.t + DAY) * 1000))
+
+    def test_grace_keeps_access_from_the_verified_state(self):
+        self.google.sub('tok', state='SUBSCRIPTION_STATE_IN_GRACE_PERIOD', acked=True, expiry=T0 - 3600)
+        self.clock.t += 20 * DAY
+        p = self.call(purchases=['tok'])
+        self.assertEqual((p['state'], p['accessUntil']), ('grace', (self.clock.t + DAY) * 1000))
+
+    def test_rtdn_refused_until_configured(self):
+        self.make(FT_RTDN_SERVICE_ACCOUNT='')
+        with self.assertRaises(fe.ApiError) as e: self.rtdn({'testNotification': {}})
+        self.assertEqual((e.exception.status, e.exception.code), (401, 'rtdn_not_configured'))
 
     def test_unknown_product_and_unconfirmed_tokens_never_grant(self):
         self.clock.t += 20 * DAY
@@ -238,7 +268,10 @@ class PurchaseTests(Base):
         self.google.sub('tok', state='SUBSCRIPTION_STATE_CANCELED', acked=True, expiry=T0 + 30 * DAY, auto=False)
         self.assertEqual(self.rtdn({'subscriptionNotification': {'notificationType': 3, 'purchaseToken': 'tok'}}), 'ok')
         p = self.call()
-        self.assertEqual((p['state'], p['accessUntil']), ('canceled', (T0 + 27 * DAY) * 1000))
+        self.assertEqual((p['state'], p['accessUntil'], p['paidUntil']), ('canceled', (T0 + 21 * DAY) * 1000, (T0 + 30 * DAY) * 1000))
+        self.clock.t = T0 + 29 * DAY + 12 * 3600       # canceling keeps the paid period, up to the paid-through date
+        p = self.call()
+        self.assertEqual((p['state'], p['accessUntil']), ('canceled', (T0 + 30 * DAY) * 1000))
         self.clock.t = T0 + 31 * DAY
         self.google.sub('tok', state='SUBSCRIPTION_STATE_EXPIRED', acked=True, expiry=T0 + 30 * DAY, auto=False)
         self.assertEqual(self.call()['state'], 'expired')
@@ -274,21 +307,21 @@ class PurchaseTests(Base):
         self.assertEqual(states, ['subscribed'] * 5 + ['trial_expired'])
         self.assertEqual(self.call(install='install-0000', android=f'{0:016}')['state'], 'subscribed')
 
-    def test_stale_state_is_rechecked_after_6_hours(self):
+    def test_stale_state_is_rechecked_after_1_hour(self):
         self.google.sub('tok', acked=True)
         self.call(purchases=['tok'])
         calls = self.google.calls
-        self.clock.t += 3600
+        self.clock.t += 1800
         self.call(purchases=['tok'])
         self.assertEqual(self.google.calls, calls)
-        self.clock.t += 6 * 3600
+        self.clock.t += 3600
         self.call(purchases=['tok'])
         self.assertEqual(self.google.calls, calls + 1)
 
     def test_subscriber_offline_ticket_is_capped(self):
         self.google.sub('tok', acked=True, expiry=T0 + 60 * DAY)
         p = self.call(purchases=['tok'])
-        self.assertEqual(p['accessUntil'], (T0 + 7 * DAY) * 1000)
+        self.assertEqual(p['accessUntil'], (T0 + DAY) * 1000)
 
 
 class IntegrityTests(Base):

@@ -28,9 +28,10 @@ from cryptography.hazmat.primitives.asymmetric.utils import decode_dss_signature
 
 DAY = 86400
 TRIAL_DAYS = 14
-TICKET_MAX_AGE = 7 * DAY          # a subscriber may train offline this long after the last check
-RENEWAL_LEEWAY = 3 * DAY          # an auto-renewing subscription seen offline past its expiry
-RECHECK_AFTER = 6 * 3600          # without RTDN, ask Google again when the stored state is older
+# Owner decision 2026-10-30: paid access lasts at most 24 h after the last successful Google check, and never
+# past the verified paid-through date. The trial is a separate, unchanged contract (server dates, 14 days).
+PAID_OFFLINE_WINDOW = 24 * 3600
+RECHECK_AFTER = 3600              # without RTDN, ask Google again when the stored state is older
 DEVICE_RETENTION = 400 * DAY
 PURCHASE_RETENTION = 90 * DAY     # after expiry
 MAX_BODY = 16 * 1024
@@ -329,11 +330,12 @@ class Service:
                                  (p['token'], self.cfg.max_devices)).fetchall()
             if device['device_key'] not in [d[0] for d in devices]:
                 continue                                    # one purchase, too many phones: this one is over the limit
-            state, until = self._purchase_access(p, now)
+            state, until, paid = self._purchase_access(p, now)
             rank = (until > 0, until, p['expiry_time'] or 0)
             if best is None or rank > best[0]:
-                best = (rank, state, until, self.cfg.products.get(p['product_id'], []))
+                best = (rank, state, until, self.cfg.products.get(p['product_id'], []), paid)
         trial_end = device['trial_end']
+        paid_until = best[4] if best else 0
         if best and best[2] > 0:
             state, until, ents = best[1], best[2], best[3]
         elif now < trial_end:
@@ -341,17 +343,26 @@ class Service:
         else:
             state, until, ents = (best[1] if best else 'trial_expired'), 0, []
         payload = {'v': 1, 'device': device['device_key'][:16], 'state': state, 'trialStart': device['trial_start'] * 1000,
-                   'trialEnd': trial_end * 1000, 'accessUntil': until * 1000, 'entitlements': ents, 'issuedAt': now * 1000}
+                   'trialEnd': trial_end * 1000, 'accessUntil': until * 1000, 'entitlements': ents, 'issuedAt': now * 1000,
+                   'paidUntil': paid_until * 1000}
         return self.sign(payload)
 
     @staticmethod
     def _purchase_access(p, now):
-        if p['voided']: return 'revoked', 0
-        if p['state'] in GRANTING and (p['expiry_time'] or 0) > now:
-            limit = p['expiry_time'] + (RENEWAL_LEEWAY if p['auto_renew'] and p['state'] != 'SUBSCRIPTION_STATE_CANCELED' else 0)
-            return GRANTING[p['state']], min(now + TICKET_MAX_AGE, limit)
-        if p['state'] in GRANTING: return 'expired', 0
-        return DENYING.get(p['state'], 'expired'), 0
+        """(state, accessUntil, paidUntil) in seconds. accessUntil = min(last Google check + 24 h, paid-through).
+        A canceled auto-renewal keeps the paid period; refund, revocation and expiry end it at the next check.
+        Grace period: Play says the user keeps access, so it is granted from the verified state even if
+        expiryTime has passed, still only 24 h past the last check."""
+        if p['voided']: return 'revoked', 0, 0
+        expiry, state = p['expiry_time'] or 0, p['state']
+        grace = state == 'SUBSCRIPTION_STATE_IN_GRACE_PERIOD'
+        if state in GRANTING and (expiry > now or grace):
+            until = (p['checked_at'] or 0) + PAID_OFFLINE_WINDOW
+            if expiry > now: until = min(until, expiry)
+            if until > now: return GRANTING[state], until, expiry
+            return 'unverified', 0, expiry          # Google unreachable for 24 h: no paid access we cannot vouch for
+        if state in GRANTING: return 'expired', 0, expiry
+        return DENYING.get(state, 'expired'), 0, expiry
 
     def sign(self, payload):
         data = json.dumps(payload, separators=(',', ':'), sort_keys=True).encode()
@@ -360,6 +371,8 @@ class Service:
 
     # ---------- RTDN ----------
     def rtdn(self, body, authorization):
+        if not self.cfg.rtdn_email or not self.cfg.rtdn_audience:
+            raise ApiError(401, 'rtdn_not_configured')       # before Play Console: refuse without touching Google libs
         claims = self.verify_oidc(authorization.removeprefix('Bearer ').strip(), self.cfg.rtdn_audience) if authorization.startswith('Bearer ') else None
         if not claims or claims.get('email') != self.cfg.rtdn_email or not claims.get('email_verified'):
             raise ApiError(401, 'unauthorized')

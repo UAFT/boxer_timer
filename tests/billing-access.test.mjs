@@ -86,14 +86,83 @@ test('clock moved back after a check does not extend access', async () => {
   assert.equal(access.getRecord().lastSeen, T0 + 15 * DAY);
 });
 
-test('subscriber offline: allowed until accessUntil, then ticket_stale', async () => {
-  const ticket = await sign({ state: 'subscribed', trialEnd: T0 - DAY, accessUntil: T0 + 7 * DAY, issuedAt: T0 });
+// Owner 2026-10-30: a paid ticket works offline at most 24 h after the server's last Google check
+// and never past the paid-through date (both already folded into accessUntil by the server).
+const HOUR = 3600e3;
+const paid = (extra = {}) => sign({ state: 'subscribed', trialEnd: T0 - DAY, accessUntil: T0 + 24 * HOUR,
+  paidUntil: T0 + 20 * DAY, issuedAt: T0, ...extra });
+
+test('subscriber offline: 23 h allowed, 25 h stale; the card date is the paid-through date', async () => {
+  const { access, clock } = await make({ fetch: reply({ ticket: await paid() }) });
+  await access.refresh();
+  clock.t = T0 + 23 * HOUR;
+  assert.equal(access.canStart(), true);
+  assert.equal(access.decision().paidUntil, T0 + 20 * DAY);
+  clock.t = T0 + 25 * HOUR;
+  assert.deepEqual([access.canStart(), access.decision().reason], [false, 'ticket_stale']);
+});
+
+test('paid-through boundary: access ends at paidUntil even inside the 24 h window', async () => {
+  const ticket = await paid({ accessUntil: T0 + 10 * HOUR, paidUntil: T0 + 10 * HOUR });
   const { access, clock } = await make({ fetch: reply({ ticket }) });
   await access.refresh();
-  clock.t = T0 + 6 * DAY;
+  clock.t = T0 + 10 * HOUR - 1;
   assert.equal(access.canStart(), true);
-  clock.t = T0 + 7 * DAY;
-  assert.deepEqual([access.canStart(), access.decision().reason], [false, 'ticket_stale']);
+  clock.t = T0 + 10 * HOUR;
+  assert.equal(access.canStart(), false);
+});
+
+test('cancel keeps the paid period; refund, revocation, expiry and unverified stop at the next check', async () => {
+  let ticket = await paid({ state: 'canceled' });
+  const fetch = async () => ({ ok: true, status: 200, json: async () => ({ ticket }) });
+  const { access, clock } = await make({ fetch });
+  await access.refresh();
+  assert.deepEqual([access.canStart(), access.decision().state], [true, 'canceled']);
+  for (const state of ['revoked', 'expired', 'unverified', 'on_hold']) {
+    clock.t += HOUR;
+    ticket = await sign({ state, trialEnd: T0 - DAY, accessUntil: 0, paidUntil: 0, issuedAt: clock.t });
+    await access.refresh();
+    assert.deepEqual([access.canStart(), access.decision().reason], [false, state]);
+  }
+});
+
+test('offline paid access is not extended by clock rollback, a new install or a re-signed copy', async () => {
+  const storage = memoryStorage();
+  const { access, clock } = await make({ storage, fetch: reply({ ticket: await paid() }) });
+  await access.refresh();
+  clock.t = T0 + 25 * HOUR;
+  assert.equal(access.canStart(), false);
+  clock.t = T0 + HOUR;                                      // phone clock set back
+  assert.equal(access.canStart(), false);
+  const forged = await paid({ accessUntil: T0 + 99 * DAY });
+  const edited = JSON.parse(storage.getItem(BILLING_STORAGE_KEY));
+  edited.ticket = { ...edited.ticket, payload: forged.payload };         // valid payload, old signature
+  storage.setItem(BILLING_STORAGE_KEY, JSON.stringify(edited));
+  const again = await make({ storage, now: T0 + HOUR });
+  assert.equal(again.access.canStart(), false);
+  const fresh = await make({ now: T0 + 25 * HOUR });         // reinstall: no ticket, first open now
+  assert.equal(fresh.access.decision().reason, 'local_trial');          // the trial contract, decided by the server on first contact
+});
+
+test('network recovery revalidates and replaces the stale ticket at once', async () => {
+  let online = false;
+  const fetch = async () => {
+    if (!online) throw new TypeError('offline');
+    return { ok: true, status: 200, json: async () => ({ ticket: await paid({ accessUntil: T0 + 50 * HOUR, issuedAt: T0 + 26 * HOUR }) }) };
+  };
+  const first = await paid();
+  const storage = memoryStorage({ [BILLING_STORAGE_KEY]: JSON.stringify({ installId: 'i-0001', firstOpenAt: T0 - 20 * DAY, lastSeen: T0, ticket: first }) });
+  const { access } = await make({ storage, fetch, now: T0 + 26 * HOUR });
+  assert.equal(access.canStart(), false);
+  online = true;
+  assert.equal((await access.refresh()).status, 'updated');
+  assert.equal(access.canStart(), true);
+});
+
+test('an unusable clock fails closed', async () => {
+  const { access, clock } = await make();
+  clock.t = NaN;
+  assert.deepEqual([access.canStart(), access.decision().reason], [false, 'clock_unavailable']);
 });
 
 test('network and 5xx errors keep the ticket and retry 30 s, 2 min, 10 min; 4xx does not retry', async () => {

@@ -16,6 +16,8 @@ const TEXT = Object.freeze({
   pending: 'Оплата ожидает подтверждения.',
   expired: 'Подписка закончилась.',
   stale: 'Подключитесь к интернету, чтобы проверить подписку.',
+  unverified: 'Не удалось проверить подписку в Google Play. Попробуйте позже.',
+  clock: 'Проверьте дату и время на телефоне.',
   active: 'Доступ активен до',
   unknown: 'Статус подписки недоступен.',
   unavailable: 'Покупка через Google Play недоступна для этого аккаунта или региона.',
@@ -109,9 +111,12 @@ export function createBillingPaywall({ access, plugin, document, openSettings } 
     if (key === 'local_trial' || key === 'trial') return setStatusLine(TEXT.localTrial, decision.trialEnd || decision.accessUntil);
     if (key === 'needs_network') return setStatusLine(TEXT.needsNetwork);
     if (key === 'trial_expired') return setStatusLine(TEXT.trialExpired);
-    if (key === 'subscribed' || key === 'active') return setStatusLine(TEXT.subscribed, decision.accessUntil);
+    // Paid-through date from Google, not the 24-hour offline window.
+    if (key === 'subscribed' || key === 'active') return setStatusLine(TEXT.subscribed, decision.paidUntil || decision.accessUntil);
     if (key === 'grace') return setStatusLine(TEXT.grace);
-    if (key === 'canceled' || key === 'cancelled') return setStatusLine(TEXT.canceled, decision.accessUntil);
+    if (key === 'canceled' || key === 'cancelled') return setStatusLine(TEXT.canceled, decision.paidUntil || decision.accessUntil);
+    if (key === 'unverified') return setStatusLine(TEXT.unverified);
+    if (key === 'clock_unavailable') return setStatusLine(TEXT.clock);
     if (key === 'on_hold') return setStatusLine(TEXT.onHold);
     if (key === 'paused') return setStatusLine(TEXT.paused);
     if (key === 'pending') return setStatusLine(TEXT.pending);

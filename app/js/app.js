@@ -1037,6 +1037,8 @@ async function installBilling() {
     };
     check();
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') check(); });
+    // Back online: revalidate at once (a refund or revocation is learned here, at most 24 h late offline).
+    window.addEventListener('online', () => { checkedAt = Date.now(); access.refresh().catch(() => {}); });
   } catch (error) {
     console.warn('billing unavailable', error);
   }
