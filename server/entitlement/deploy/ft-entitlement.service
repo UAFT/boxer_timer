@@ -1,0 +1,44 @@
+[Unit]
+Description=Fight Tech entitlement API
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=ft-entitlement
+Group=ft-entitlement
+WorkingDirectory=/opt/ft-entitlement
+Environment=PYTHONDONTWRITEBYTECODE=1
+Environment=PYTHONUNBUFFERED=1
+EnvironmentFile=/etc/ft-entitlement/environment
+ExecStart=/usr/bin/python3 -B /opt/ft-entitlement/ft_entitlement.py
+Restart=on-failure
+RestartSec=5s
+TimeoutStopSec=30s
+UMask=0077
+
+# The database is the service's only writable persistent state.
+StateDirectory=ft-entitlement
+StateDirectoryMode=0700
+ProtectSystem=strict
+ReadWritePaths=/var/lib/ft-entitlement
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+NoNewPrivileges=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+LockPersonality=true
+MemoryDenyWriteExecute=true
+ProtectClock=true
+ProtectControlGroups=true
+ProtectKernelLogs=true
+ProtectKernelModules=true
+ProtectKernelTunables=true
+RestrictNamespaces=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+SystemCallArchitectures=native
+
+[Install]
+WantedBy=multi-user.target
