@@ -60,11 +60,13 @@ await js(`document.querySelector('#programLibraryList .ft-library-folder').click
 const added = await js(`(()=>{const b=[...document.querySelectorAll('#programLibraryList button')].find(b=>!b.disabled&&/plus|add/i.test(b.className+b.innerHTML));if(!b)return false;b.click();return true})()`);
 shot('04_folder'); step('library_add', { added });
 if (!added) fail('could not add a library workout');
-// Android Back closes the dialog (Capacitor App plugin listener).
+// Android Back inside a folder goes up to the sections, the next Back closes the dialog (Capacitor App plugin listener).
+adb('shell', 'input', 'keyevent', '4'); await sleep(1200);
+const upLevel = await js(`({open:!document.getElementById('programLibraryModal').hidden,folders:document.querySelectorAll('#programLibraryList .ft-library-folder').length})`);
 adb('shell', 'input', 'keyevent', '4'); await sleep(1200);
 const libClosed = await js(`document.getElementById('programLibraryModal').hidden`);
-step('back_closes_library', { libClosed, foreground: foreground() });
-if (!libClosed || !foreground()) fail('Back did not close the library');
+step('back_in_library', { upLevel, libClosed, foreground: foreground() });
+if (!upLevel.open || upLevel.folders < 5 || !libClosed || !foreground()) fail('Back in the library: expected folder → sections → closed');
 
 // Workout with a JS heartbeat.
 await js(`window.__beats=[];setInterval(()=>window.__beats.push(Date.now()),1000);true`);
