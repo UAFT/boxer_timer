@@ -59,8 +59,9 @@ async function mine(p, name) {
   await p.js(`document.getElementById('programLibraryModal').hidden=true`);
   return r;
 }
-function backup(name) {
-  adb('shell', 'am', 'force-stop', PKG);
+async function settle() { adb('shell', 'input', 'keyevent', '3'); await sleep(10000); adb('shell', 'am', 'force-stop', PKG); await sleep(1000); }
+async function backup(name) {
+  await settle();
   adb('shell', 'tar', '-czf', `/sdcard/${name}.tgz`, '-C', '/data/data', PKG);
   adb('pull', `/sdcard/${name}.tgz`, `${OUT}/${name}.tgz`);
 }
@@ -79,14 +80,15 @@ await p.js(`(()=>{const prog=JSON.parse(localStorage.getItem('andar.fight.timer.
   localStorage.setItem('fighttech.program.options.v1',JSON.stringify({cycles:3,cycleRestSec:30}));
   const s=JSON.parse(localStorage.getItem('andar.fight.timer.settings.v11')||'{}');
   localStorage.setItem('andar.fight.timer.settings.v11',JSON.stringify({...s,rounds:7,workSec:150,restSec:45}));
-  localStorage.setItem('fighttech.language.v1','en');return true})()`);
-p.close(); adb('shell', 'am', 'force-stop', PKG); await sleep(1000);
+  localStorage.setItem('fighttech.language.v1','ru');return true})()`);
+// Chromium writes localStorage to disk with a delay: leave the app through Home and wait before stopping it.
+p.close(); await settle();
 p = await openApp('old_reopen');
 const seeded = await storage(p), uiOld = await ui(p), mineOld = await mine(p, '01_old_mine');
 step('seeded_old', { added, keys: Object.keys(seeded), ui: uiOld, mine: mineOld, ...pkgInfo() });
 writeFileSync(`${OUT}/storage_old.json`, JSON.stringify(seeded, null, 1));
-if (!added || !mineOld.hasSeed || !mineOld.tree || !mineOld.methodology || uiOld.lang !== 'en') fail('seeding in the old methodology build');
-p.close(); backup('data_1_old');
+if (!added || !SEEDED.slice(0, 4).every(k => k in seeded) || seeded['fighttech.language.v1'] !== 'ru' || !mineOld.hasSeed || !mineOld.tree || !mineOld.methodology || uiOld.lang !== 'ru') fail('seeding in the old methodology build');
+p.close(); await backup('data_1_old');
 const first = pkgInfo().firstInstallTime;
 
 // Same keys, same values; a later build may add keys of its own (for example the Play MVP billing record).
@@ -104,10 +106,10 @@ p = await openApp('mvp');
 if (p) {
   const d = compare('mvp', await storage(p)), u = await ui(p), m = await mine(p, '02_mvp_mine');
   step('mvp', { diff: d, ui: u, mine: m, ...pkgInfo() });
-  if (d.changed.length || d.missing.length || !m.hasSeed || m.tree || m.methodology || u.lang !== 'en' || u.main !== uiOld.main) fail('data or variant after the Play MVP upgrade');
+  if (d.changed.length || d.missing.length || !m.hasSeed || m.tree || m.methodology || u.lang !== 'ru' || u.main !== uiOld.main) fail('data or variant after the Play MVP upgrade');
   p.close();
 }
-backup('data_2_mvp');
+await backup('data_2_mvp');
 
 // 3. The old methodology build cannot go back over the MVP: Android refuses a lower versionCode and keeps the app.
 const down = adb('install', '-r', OLD).trim();
@@ -124,10 +126,10 @@ if (p) {
   const meth = await p.js(`({items:document.getElementById('programLibraryList').children.length,text:document.getElementById('programLibraryList').innerText.length})`);
   shot('04_new_methodology');
   step('new', { diff: d, ui: u, mine: m, methodology: meth, ...pkgInfo() });
-  if (d.changed.length || d.missing.length || !m.hasSeed || !m.tree || !m.methodology || !(meth?.items > 0) || u.lang !== 'en' || u.main !== uiOld.main) fail('data or variant after returning to the methodology build');
+  if (d.changed.length || d.missing.length || !m.hasSeed || !m.tree || !m.methodology || !(meth?.items > 0) || u.lang !== 'ru' || u.main !== uiOld.main) fail('data or variant after returning to the methodology build');
   p.close();
 }
-backup('data_3_new');
+await backup('data_3_new');
 const last = pkgInfo();
 step('install_history', { firstInstallTime_unchanged: last.firstInstallTime === first, ...last });
 if (last.firstInstallTime !== first) fail('firstInstallTime changed: the app was reinstalled, not updated');
