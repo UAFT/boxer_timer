@@ -1,0 +1,79 @@
+name: Upgrade path (methodology → Play MVP → methodology)
+# Release APKs only, each taken from the CI run that built and signed it.
+on:
+  push:
+    branches:
+      - 'ci/upgrade-path-*'
+    paths:
+      - '.github/upgrade/**'
+      - '.github/workflows/upgrade-path.yml'
+permissions:
+  contents: read
+  actions: read
+env:
+  OLD_RUN: '41042999242'
+  OLD_SHA256: 8d44dcb38e18d43871b587aa101abbbcf3c23c8e249984fbd0acc24dac828611
+  MVP_RUN: '41086947998'
+  MVP_SHA256: dae0abbaf7e4f005e2409f2db14302ccf1dfa53d4b8a3abd1f28d0d74bca6650
+  NEW_RUN: '41099793317'
+  NEW_SHA256: b9796026713dd5c922af8158efa8968d05715d2acf6f2e1c9fc36f9a68df32c7
+jobs:
+  upgrade:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/download-artifact@v4
+        with:
+          name: andar-fight-timer-signed-apk
+          run-id: ${{ env.OLD_RUN }}
+          github-token: ${{ github.token }}
+          path: old
+      - uses: actions/download-artifact@v4
+        with:
+          name: fight-tech-play-mvp-aab
+          run-id: ${{ env.MVP_RUN }}
+          github-token: ${{ github.token }}
+          path: mvp
+      - uses: actions/download-artifact@v4
+        with:
+          name: andar-fight-timer-signed-apk
+          run-id: ${{ env.NEW_RUN }}
+          github-token: ${{ github.token }}
+          path: new
+      - name: Check SHA-256, package, versionCode and signer
+        run: |
+          set -euo pipefail
+          cp old/andar-fight-timer-signed.apk old.apk
+          cp mvp/fight-tech-play-mvp-universal.apk mvp.apk
+          cp new/andar-fight-timer-signed.apk new.apk
+          printf '%s  old.apk\n%s  mvp.apk\n%s  new.apk\n' "$OLD_SHA256" "$MVP_SHA256" "$NEW_SHA256" | sha256sum -c
+          SDK_TOOLS="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)"
+          for a in old mvp new; do
+            "$SDK_TOOLS/aapt2" dump badging $a.apk | sed -n 1p
+            "$SDK_TOOLS/apksigner" verify --print-certs $a.apk | grep -E 'Signer #1 certificate (DN|SHA-256)'
+            "$SDK_TOOLS/apksigner" verify --print-certs $a.apk | grep -q 'SHA-256 digest: d67520cb4997f75410ab3402e04835239023c5fec79b1e4d16c2bc7029b50950'
+          done
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Upgrade path on Android 16 (API 36) emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 36
+          target: google_apis
+          arch: x86_64
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -no-boot-anim -camera-back none
+          script: node .github/upgrade/upgrade_path.mjs old.apk mvp.apk new.apk upgrade
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: upgrade-path
+          path: upgrade/
+          retention-days: 30
