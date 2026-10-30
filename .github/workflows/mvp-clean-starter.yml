@@ -1,0 +1,82 @@
+name: Play MVP clean starter data (update keeps programs, no «Ранее добавленные»)
+# Release APKs only, each taken from the CI run that built and signed it.
+on:
+  push:
+    branches:
+      - 'ci/mvp-clean-starter-*'
+    paths:
+      - '.github/upgrade/mvp_clean_starter.mjs'
+      - '.github/workflows/mvp-clean-starter.yml'
+permissions:
+  contents: read
+  actions: read
+env:
+  TO_RUN: '41114385900'
+  TO_SHA256: 865cee987c58ca088f63547ca2492a7b1be76b88c323bf022c4859a70843f72e
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - from: mvp-1.0.11
+            run: '41086947998'
+            artifact: fight-tech-play-mvp-aab
+            file: fight-tech-play-mvp-universal.apk
+            sha256: dae0abbaf7e4f005e2409f2db14302ccf1dfa53d4b8a3abd1f28d0d74bca6650
+          - from: methodology-0.2.190
+            run: '41099793317'
+            artifact: andar-fight-timer-signed-apk
+            file: andar-fight-timer-signed.apk
+            sha256: b9796026713dd5c922af8158efa8968d05715d2acf6f2e1c9fc36f9a68df32c7
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          run-id: ${{ matrix.run }}
+          github-token: ${{ github.token }}
+          path: from
+      - uses: actions/download-artifact@v4
+        with:
+          name: fight-tech-play-mvp-aab
+          run-id: ${{ env.TO_RUN }}
+          github-token: ${{ github.token }}
+          path: to
+      - name: Check SHA-256, package, versionCode and signer
+        run: |
+          set -euo pipefail
+          cp "from/${{ matrix.file }}" from.apk
+          cp to/fight-tech-play-mvp-universal.apk to.apk
+          printf '%s  from.apk\n%s  to.apk\n' "${{ matrix.sha256 }}" "$TO_SHA256" | sha256sum -c
+          SDK_TOOLS="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)"
+          for a in from to; do
+            "$SDK_TOOLS/aapt2" dump badging $a.apk | sed -n 1p
+            "$SDK_TOOLS/apksigner" verify --verbose --print-certs $a.apk > $a.signer.txt 2>&1 || { cat $a.signer.txt; exit 1; }
+            grep -qi 'd67520cb4997f75410ab3402e04835239023c5fec79b1e4d16c2bc7029b50950' $a.signer.txt
+          done
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Update on Android 16 (API 36) emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 36
+          target: google_apis
+          arch: x86_64
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -no-boot-anim -camera-back none
+          script: node .github/upgrade/mvp_clean_starter.mjs from.apk to.apk out
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: clean-starter-${{ matrix.from }}
+          path: out/
+          retention-days: 30
