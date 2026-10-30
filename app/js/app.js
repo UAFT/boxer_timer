@@ -15,6 +15,9 @@ import {installIntervalModeCombo} from './ui/interval-mode-combo.js';
 import {isPlaybackProtected, applyPresetWithoutInterrupting, applyLiveMetronome, playbackState} from './ui/playback-guard.js';
 import { installScreenWake } from './platform/screen-wake.js';
 import { installBackButton } from './platform/back-button.js';
+import { BILLING_CONFIG } from './billing/config.js';
+import { createBillingAccess } from './billing/access.js';
+import { createBillingPaywall } from './billing/paywall.js';
 import {loadRoundTimingEditor,readRoundTimingEditor,saveRoundTiming,installRoundTimeSwipes} from './ui/round-time-editor.js';
 import {hasLadder} from './core/ladder-blocks.js';
 import {stageTwoPhaseLoad,stageTwoPhaseSave,roundTwoPhaseLoad,roundTwoPhaseSave} from './ui/two-phase-editor.js';
@@ -64,6 +67,8 @@ const ROUND_START_SYNC_EVENTS = new Set(['round-start-zero', 'rest-end-zero', 'b
 const ZERO_TRANSITION_EVENTS = new Set(['round-start-zero', 'round-end-zero', 'rest-end-zero', 'block-rest-start-zero', 'block-rest-end-zero', 'phase-two-start-zero', 'workout-end-zero']);
 
 const els = getDomRefs();
+// Trial/subscription gate. Until the stored ticket is verified (a few ms after start) it opens only when not enforced.
+let billing = { canStart: () => !BILLING_CONFIG.enforce, showCard() { openSettings(els); } };
 const screenWake = installScreenWake();
 const audio = new AudioEngine();
 const metronome = new MetronomeEngine(audio);
@@ -246,6 +251,8 @@ async function handleToggleRun() {
   }
 
   await audioReady;
+  // Only a new start is gated: pause/continue above and a running workout are never stopped by billing.
+  if (!billing.canStart()) { billing.showCard(); return; }
   // Start after «Готово» runs the same workout (or program) again from the beginning.
   if (timer.state.phase === 'finished') handleReset();
   if (programEntries.length && !programRunning) { startProgram(); return; }
@@ -570,6 +577,7 @@ function refuseTooLong(entries, options) {
   return true;
 }
 function startProgram() {
+  if (!isPlaybackProtected(timer,programRunning) && !billing.canStart()) { billing.showCard(); return; }
   if (!programEntries.length || isPlaybackProtected(timer,programRunning) || refuseTooLong(programEntries,programOptions)) return;
   audio.stopAll();
   metronome.stop();
@@ -1009,8 +1017,29 @@ function bootstrap() {
   els.ladderFullPause.addEventListener('click', handleToggleRun);
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') audio.wake(); });
   installBackButton({ isWorkoutActive: () => playbackState(timer.state) !== 'off' });
+  installBilling();
   renderCurrentState();
   installLocalization(document.querySelectorAll('[data-language]'));
+}
+
+async function installBilling() {
+  const plugin = window.Capacitor?.Plugins?.FtBilling || null;
+  try {
+    const access = await createBillingAccess({ plugin, appVersion: 'play-mvp' });
+    const paywall = createBillingPaywall({ access, plugin, document, openSettings: () => openSettings(els) });
+    billing = { canStart: access.canStart, showCard: paywall.showCard };
+    plugin?.addListener?.('purchasesUpdated', paywall.handlePurchasesUpdated);
+    let checkedAt = -Infinity;
+    const check = () => {
+      if (Date.now() - checkedAt < access.config.recheckMs) return;
+      checkedAt = Date.now();
+      access.refresh().catch(() => {});
+    };
+    check();
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') check(); });
+  } catch (error) {
+    console.warn('billing unavailable', error);
+  }
 }
 
 bootstrap();
