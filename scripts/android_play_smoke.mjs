@@ -21,7 +21,8 @@ const launch = () => adb('shell', 'am', 'start', '-W', '-n', `${PKG}/.MainActivi
 const crashes = () => adb('logcat', '-d').split('\n').filter(l => l.includes('FATAL EXCEPTION') || (l.includes('AndroidRuntime') && l.includes(PKG)));
 
 // 1. Release APK.
-adb('install', '-r', RELEASE); adb('logcat', '-c'); launch(); await sleep(10);
+// A cold emulator needs time before the WebView paints.
+adb('install', '-r', RELEASE); adb('logcat', '-c'); launch(); await sleep(25);
 const dumpsys = adb('shell', 'dumpsys', 'package', PKG);
 report.release = { targetSdk: (dumpsys.match(/targetSdk=(\d+)/) || [])[1], versionName: (dumpsys.match(/versionName=(\S+)/) || [])[1], foreground: foreground(), crashes: crashes() };
 shot('01_release_main'); step('release_launch', report.release);
@@ -39,6 +40,8 @@ let seq = 0; const waiting = new Map();
 ws.onmessage = m => { const d = JSON.parse(m.data); waiting.get(d.id)?.(d); waiting.delete(d.id); };
 const js = expr => new Promise(ok => { const id = ++seq; waiting.set(id, d => ok(d.result?.result?.value)); ws.send(JSON.stringify({ id, method: 'Runtime.evaluate', params: { expression: expr, returnByValue: true, awaitPromise: true } })); });
 const click = id => js(`document.getElementById(${JSON.stringify(id)}).click()`);
+for (let i = 0; i < 60 && !(await js(`document.visibilityState==='visible'&&!!document.getElementById('startBtn')&&document.readyState==='complete'`)); i++) { if (i % 10 === 9) launch(); await sleep(1000); }
+await sleep(2000);
 const secs = t => { const m = /^(\d+):(\d\d)$/.exec((t || '').trim()); return m ? +m[1] * 60 + +m[2] : null; };
 const state = () => js(`({main:document.getElementById('mainTime').textContent,rem:document.getElementById('metricRemaining').textContent,phase:document.getElementById('phaseLabel').textContent,round:document.getElementById('roundLabel').textContent,
   btn:document.getElementById('startBtn').textContent.trim(),hint:!document.getElementById('ftBackHint')?.hidden,visible:document.visibilityState,now:Date.now()})`);
