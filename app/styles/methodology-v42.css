@@ -25,7 +25,7 @@
 .ft-v42-stage-count{flex:0 0 auto;margin-left:auto;padding:2px 7px;border:1px solid #cbd2d3;border-radius:999px;background:#f1f3f4;color:#576166;font-size:11px;font-weight:600;white-space:nowrap;font-variant-numeric:tabular-nums}
 .ft-v42-stage-count-run{border-color:#9cc4b8;background:#e6f2ee;color:#1f6b59}
 /* V54: up to 340px the four tab labels take their own width, so the tab row and the library list under it fit the modal. */
-@media (max-width:340px){.program-library-modal .ft-library-nav{grid-template-columns:repeat(4,auto) 42px!important;gap:2px!important}
+@media (max-width:340px){.program-library-modal .ft-library-nav{grid-template-columns:repeat(2,minmax(0,1fr)) 44px!important;gap:2px!important}
  .program-library-modal,.program-library-modal .program-library-list{grid-template-columns:minmax(0,1fr)}}
 .ft-v42 .ft-route-section-name{min-width:0;overflow-wrap:anywhere}
 /* V58: substage card holding trainings: chip on the right of its head. */

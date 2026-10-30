@@ -11,6 +11,7 @@ test('Google Play MVP: Tree and Methodology tabs are hidden, Mine/Library/import
     assert.doesNotMatch(html, new RegExp('id="' + id + '"[^>]*hidden'), id);
   // Two visible tabs plus the import button.
   assert.ok(css.includes('.ft-library-nav{grid-template-columns:repeat(2,minmax(min-content,1fr)) 44px!important'));
+  assert.ok(css.includes('@media (max-width:340px){.program-library-modal .ft-library-nav{grid-template-columns:repeat(2,minmax(0,1fr)) 44px!important'));
   // No other entry point into the methodology or the tree.
   assert.equal((html.match(/Методик|Дерево/g) || []).length, 2);
 });

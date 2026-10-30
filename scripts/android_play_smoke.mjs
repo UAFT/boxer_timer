@@ -21,12 +21,15 @@ const launch = () => adb('shell', 'am', 'start', '-W', '-n', `${PKG}/.MainActivi
 const crashes = () => adb('logcat', '-d').split('\n').filter(l => l.includes('FATAL EXCEPTION') || (l.includes('AndroidRuntime') && l.includes(PKG)));
 
 // 1. Release APK.
-// A cold emulator needs time before the WebView paints.
-adb('install', '-r', RELEASE); adb('logcat', '-c'); launch(); await sleep(25);
+// A cold emulator needs time before the WebView paints: wait until the screenshot is no longer a blank page
+// (a blank 320×640 capture is a few kB, the timer screen tens of kB).
+adb('install', '-r', RELEASE); adb('logcat', '-c'); launch();
+const t0 = Date.now(); let painted = 0;
+while (Date.now() - t0 < 120000) { const size = execFileSync('adb', ['exec-out', 'screencap', '-p'], { maxBuffer: 64 << 20 }).length; if (size > 20000) { painted = size; break; } await sleep(2000); }
 const dumpsys = adb('shell', 'dumpsys', 'package', PKG);
-report.release = { targetSdk: (dumpsys.match(/targetSdk=(\d+)/) || [])[1], versionName: (dumpsys.match(/versionName=(\S+)/) || [])[1], foreground: foreground(), crashes: crashes() };
+report.release = { paint_s: painted ? Math.round((Date.now() - t0) / 1000) : null, png_bytes: painted, targetSdk: (dumpsys.match(/targetSdk=(\d+)/) || [])[1], versionName: (dumpsys.match(/versionName=(\S+)/) || [])[1], foreground: foreground(), crashes: crashes() };
 shot('01_release_main'); step('release_launch', report.release);
-if (!report.release.foreground || report.release.crashes.length) fail('release APK did not start cleanly');
+if (!report.release.foreground || report.release.crashes.length || !painted) fail('release APK did not start and paint cleanly');
 adb('uninstall', PKG);
 
 // 2. Debug build through DevTools.
@@ -49,9 +52,10 @@ const state = () => js(`({main:document.getElementById('mainTime').textContent,r
 // Library: Mine / Library / import only.
 await click('programLibraryOpen'); await sleep(800);
 const nav = await js(`[...document.querySelector('.ft-library-nav').children].filter(b=>b.offsetParent!==null).map(b=>b.id)`);
+const navFills = await js(`(()=>{const n=document.querySelector('.ft-library-nav'),v=[...n.children].filter(b=>b.offsetParent!==null),r=e=>e.getBoundingClientRect();return Math.abs(r(v[v.length-1]).right-r(n).right)<=1&&v.every(b=>r(b).right<=r(n).right+0.5)})()`);
 const methodText = await js(`/Методик|Methodolog|Дерево|Tree/.test(document.body.innerText)`);
-shot('02_library_mine'); step('library_tabs', { nav, methodText });
-if (JSON.stringify(nav) !== JSON.stringify(['programLibraryMine', 'programLibraryTemplates', 'ftWorkoutImportBtn']) || methodText) fail('library tabs: ' + JSON.stringify(nav));
+shot('02_library_mine'); step('library_tabs', { nav, navFills, methodText });
+if (JSON.stringify(nav) !== JSON.stringify(['programLibraryMine', 'programLibraryTemplates', 'ftWorkoutImportBtn']) || methodText || !navFills) fail('library tabs: ' + JSON.stringify(nav));
 await click('programLibraryTemplates'); await sleep(800);
 const folders = await js(`[...document.querySelectorAll('#programLibraryList .ft-library-folder')].map(b=>b.getAttribute('aria-label'))`);
 shot('03_library'); step('library_folders', { folders });
