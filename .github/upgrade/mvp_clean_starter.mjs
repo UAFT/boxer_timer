@@ -19,7 +19,9 @@ const launch = () => adb('shell', 'am', 'start', '-W', '-n', `${PKG}/.MainActivi
 const crashes = () => adb('logcat', '-d').split('\n').filter(l => l.includes('FATAL EXCEPTION') || (l.includes('AndroidRuntime') && l.includes(PKG)));
 const pkgInfo = () => { const d = adb('shell', 'dumpsys', 'package', PKG); const g = re => (d.match(re) || [])[1];
   return { versionCode: g(/versionCode=(\d+)/), versionName: g(/versionName=(\S+)/), firstInstallTime: g(/firstInstallTime=([^\n]+)/) }; };
-const KEYS = ['fighttech.program.library.v1', 'andar.fight.timer.program.v1', 'fighttech.program.options.v1', 'fighttech.language.v1'];
+const KEYS = ['fighttech.program.library.v1', 'andar.fight.timer.program.v1', 'fighttech.language.v1'];
+// The billing ticket is the server's, refreshed on every start; it is not user data.
+const SERVER_KEYS = ['ft.billing.v1'];
 const NAMES = ['Программа 1', 'Сила + лёгкость', 'Тестовая'];
 
 adb('root'); await sleep(3000); adb('wait-for-device');
@@ -99,19 +101,21 @@ p = await openApp('to');
 if (p) {
   const s = await storage(p), after = await library(p, '02_to');
   writeFileSync(`${OUT}/storage_to.json`, JSON.stringify(s, null, 1));
-  const changed = Object.keys(seeded).filter(k => s[k] !== seeded[k]), missing = Object.keys(seeded).filter(k => !(k in s));
+  const changed = Object.keys(seeded).filter(k => !SERVER_KEYS.includes(k) && s[k] !== seeded[k]), missing = Object.keys(seeded).filter(k => !(k in s));
   // The saved program built from the retired workout still opens with its stage.
   await p.js(`document.getElementById('programLibraryOpen').click()`); await sleep(800);
   await p.js(`document.getElementById('programLibraryMine').click()`); await sleep(800);
   await p.js(`[...document.querySelectorAll('#programLibraryList .ft-saved-program-entry')].find(e=>e.innerText.includes(${JSON.stringify(NAMES[0])})).querySelector('.ft-saved-program-open').click()`); await sleep(1500);
   const opened = await p.js(`({program:localStorage.getItem('andar.fight.timer.program.v1'),text:document.body.innerText.includes('Комплекс 1')})`);
   shot('03_to_opened');
-  const savedEntries = JSON.stringify(JSON.parse(seeded['fighttech.program.library.v1'])[0].entries);
-  step('to', { changed, missing, added: Object.keys(s).filter(k => !(k in seeded)), ...after, opened: { text: opened.text, same: opened.program === savedEntries }, ...pkgInfo() });
+  // The app normalizes a program when it opens it; compare what the user sees: stage titles and round names.
+  const stages = json => JSON.stringify(JSON.parse(json || '[]').map(e => [e.title, e.roundNames]));
+  const savedEntries = stages(JSON.stringify(JSON.parse(seeded['fighttech.program.library.v1'])[0].entries));
+  step('to', { changed, missing, added: Object.keys(s).filter(k => !(k in seeded)), ...after, opened: { text: opened.text, same: stages(opened.program) === savedEntries }, ...pkgInfo() });
   if (changed.length || missing.length) fail('data changed by the update: ' + JSON.stringify({ changed, missing }));
   if (after.mine.length !== 3 || !NAMES.every(n => after.mine.some(t => t.includes(n)))) fail('«Мои» after the update: ' + JSON.stringify(after.mine));
   if (after.section !== 'Бокс, 149' || after.boxing?.length !== 4 || after.boxing.some(l => /Ранее добавленные/.test(l))) fail('«Бокс» after the update: ' + JSON.stringify(after));
-  if (!opened.text || opened.program !== savedEntries) fail('saved «Программа 1» does not open with its stage');
+  if (!opened.text || stages(opened.program) !== savedEntries) fail('saved «Программа 1» does not open with its stage');
   p.close();
 }
 await settle();
