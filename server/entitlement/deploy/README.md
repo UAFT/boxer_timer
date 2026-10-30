@@ -190,3 +190,15 @@ curl --fail http://127.0.0.1:8805/healthz
 
 Restore the matching application version before restarting if the rollback is
 also reverting a schema migration.
+
+## Production as deployed (2026-10-30)
+- `ft-entitlement.service` (system user `ft-entitlement`), code `/opt/ft-entitlement/ft_entitlement.py`,
+  config `/etc/ft-entitlement/environment` (paths only), keys `/etc/ft-entitlement/{signing.pem,pepper}` 600,
+  database `/var/lib/ft-entitlement/ft.sqlite3`, backup `/etc/cron.d/ft-entitlement-backup` 03:17 daily → `/var/backups/ft-entitlement` (14 kept).
+- Public URL `https://andarfighttech.com/ft-api/` through the Cloudflare tunnel → nginx `127.0.0.1:8084` → `127.0.0.1:8805`; see `nginx-ft-api.conf`.
+- Trials only: no Google service account yet, Integrity `off`, RTDN refused (401) until configured. The app build ships `enforce: false`.
+- **google-auth for the service user** (needed only once the Google key is installed; today it exists only in the uaft user's site-packages):
+  `sudo python3 -m venv --system-site-packages /opt/ft-entitlement/venv && sudo /opt/ft-entitlement/venv/bin/pip install 'google-auth>=2.31'`,
+  then `ExecStart=/opt/ft-entitlement/venv/bin/python3 -B /opt/ft-entitlement/ft_entitlement.py`.
+- Update: copy the new `ft_entitlement.py`, `sudo systemctl restart ft-entitlement`, check `/ft-api/healthz`.
+- Rollback: `sudo systemctl disable --now ft-entitlement`, remove the `location /ft-api/` block (backup of the site file is kept with the project), `sudo nginx -t && sudo systemctl reload nginx`. The app keeps working: without the server it allows 3 days, and blocking is off in this build.
