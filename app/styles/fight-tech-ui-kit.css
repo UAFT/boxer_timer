@@ -112,6 +112,19 @@ body.program-timer-collapsed .timer-reveal-toggle .timer-disclosure-icon{color:v
 .settings-note,.settings-field-label,.field-label,.round-edit-modal label,.ft-stage-two-phase>label,.ft-phase-name-fields label,.ladder-explainer,.settings-inline-note,.ft-delete-message,.ft-import-details{color:var(--ft-secondary)}
 .settings-card,.settings-toggle-row,.block-settings,.ladder-preview{background:var(--ft-surface);border:1px solid var(--ft-line);border-radius:var(--ft-radius-card);color:var(--ft-ink)}
 .settings-card-title,.settings-field-stack,.settings-stepper-value,.ladder-preview-title{color:var(--ft-ink)}
+.ft-subscription-card{display:grid;gap:var(--ft-space-3)}
+.ft-subscription-status,.ft-subscription-message,.ft-subscription-test-note{margin:0;line-height:1.45}
+.ft-subscription-status{font-weight:700;color:var(--ft-ink)}
+.ft-subscription-date{white-space:nowrap;font-variant-numeric:tabular-nums}
+.ft-subscription-message,.ft-subscription-test-note{color:var(--ft-secondary);font-size:13px}
+.ft-subscription-offers{display:grid;gap:var(--ft-space-2)}
+.ft-subscription-product{padding:var(--ft-space-3);background:var(--ft-card);border:1px solid var(--ft-line);border-radius:var(--ft-radius-control)}
+.ft-subscription-product-name{font-weight:700}
+.ft-subscription-prices{display:grid;gap:var(--ft-space-1);margin-top:var(--ft-space-1);color:var(--ft-steel)}
+.ft-subscription-price{font-variant-numeric:tabular-nums}
+.ft-subscription-actions{display:flex;flex-wrap:wrap;gap:var(--ft-space-2)}
+.ft-subscription-actions button{min-height:var(--ft-touch-target);padding:9px 13px;background:var(--ft-raised);color:var(--ft-ink);border:1px solid var(--ft-line);border-radius:var(--ft-radius-control);box-shadow:var(--ft-shadow);font-weight:700}
+.ft-subscription-actions #ftSubscriptionPurchase{background:var(--ft-steel-gradient);border-color:var(--ft-steel);color:#fff}
 .settings-stepper-value,.ladder-preview-row{background:var(--ft-card);color:var(--ft-ink)}
 .ladder-preview-row strong{background:var(--ft-steel-gradient);color:#fff}
 .ladder-preview-row strong:last-child{background:var(--ft-well);color:var(--ft-ink)}
