@@ -58,6 +58,10 @@ const methodText = await js(`/Методик|Methodolog|Дерево|Tree/.test(
 shot('02_library_mine'); step('library_tabs', { nav, navFills, methodText });
 const tabs = METHODOLOGY ? ['programLibraryMine', 'programLibraryTemplates', 'ftTreePreviewTab', 'ftMethodV42Tab', 'ftWorkoutImportBtn'] : ['programLibraryMine', 'programLibraryTemplates', 'ftWorkoutImportBtn'];
 if (JSON.stringify([...nav].sort()) !== JSON.stringify([...tabs].sort()) || methodText !== METHODOLOGY || !navFills) fail('library tabs: ' + JSON.stringify(nav));
+// Fresh install (owner 2026-10-31): «Мои» holds no preloaded programs, only the empty-state hint.
+const mine = await js(`({empty:!!document.querySelector('#programLibraryList .ft-mine-empty'),cards:document.querySelectorAll('#programLibraryList .ft-saved-program-entry').length})`);
+step('mine_fresh_install', mine);
+if (!mine?.empty || mine.cards) fail('«Мои» is not empty on a fresh install: ' + JSON.stringify(mine));
 if (METHODOLOGY) {
   for (const [id, name] of [['ftTreePreviewTab', '02a_tree'], ['ftMethodV42Tab', '02b_methodology']]) {
     await click(id); await sleep(1000);
@@ -70,6 +74,14 @@ await click('programLibraryTemplates'); await sleep(800);
 const folders = await js(`[...document.querySelectorAll('#programLibraryList .ft-library-folder')].map(b=>b.getAttribute('aria-label'))`);
 shot('03_library'); step('library_folders', { folders });
 if (!(folders?.length >= 5)) fail('library folders missing');
+if (!METHODOLOGY) {
+  // Play MVP «Бокс»: four folders, 149 workouts, no «Ранее добавленные».
+  await js(`document.querySelectorAll('#programLibraryList .ft-library-folder')[1].click()`); await sleep(600);
+  const boxing = await js(`[...document.querySelectorAll('#programLibraryList .ft-library-folder')].map(b=>b.getAttribute('aria-label'))`);
+  shot('03a_boxing'); step('boxing_folders', { section: folders[1], boxing });
+  if (!/, 149$/.test(folders[1]) || boxing?.length !== 4 || boxing.some(l => /Ранее добавленные|Previously added/.test(l))) fail('Play MVP boxing folders: ' + JSON.stringify(boxing));
+  await click('programLibraryBack'); await sleep(600);
+}
 await js(`document.querySelector('#programLibraryList .ft-library-folder').click()`); await sleep(600);
 const added = await js(`(()=>{const b=[...document.querySelectorAll('#programLibraryList button')].find(b=>!b.disabled&&/plus|add/i.test(b.className+b.innerHTML));if(!b)return false;b.click();return true})()`);
 shot('04_folder'); step('library_add', { added });

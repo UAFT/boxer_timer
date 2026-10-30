@@ -1,10 +1,10 @@
 import {stageModeLabel} from './stage-mode-label.js';
-import { CATEGORIES, LIBRARY } from '../library/catalog.js';
+import { CATEGORIES, LIBRARY, RETIRED_LIBRARY } from '../library/catalog.js';
 
 // View-only parsing of known library labels. Stored titles are left untouched.
 const savedTitleLookup = new Map();
 const legacyBoxingLabels = ['Основная работа', 'Основная тренировка · мешок'];
-for (const workout of LIBRARY) {
+for (const workout of [...LIBRARY, ...RETIRED_LIBRARY]) {
   const category = CATEGORIES.find(([id]) => id === workout.category)?.[1];
   if (!category) continue;
   const variants = workout.category === 'boxing' ? [category, ...legacyBoxingLabels] : [category];

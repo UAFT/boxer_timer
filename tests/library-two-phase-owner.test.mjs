@@ -18,7 +18,7 @@ test('new two-phase section and stable IDs, existing categories preserved',()=>{
  assert.deepEqual(CATEGORIES.find(([id])=>id==='two_phase'),['two_phase','Двухфазные']);
  assert.deepEqual(LIBRARY.filter(x=>x.category==='two_phase').map(x=>x.id),cases.map(x=>x.id));
  assert.equal(new Set(LIBRARY.map(x=>x.id)).size,LIBRARY.length);
- assert.equal(LIBRARY.length,189);
+ assert.equal(LIBRARY.length,186);
 });
 for(const item of cases){
  test(item.id+' uses real TWO_PHASE engine: per-round phases, names, rest and exact total',()=>{

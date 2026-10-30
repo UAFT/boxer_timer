@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
-import {LIBRARY, CATEGORIES} from '../app/js/library/catalog.js';
+import {LIBRARY, CATEGORIES, RETIRED_LIBRARY} from '../app/js/library/catalog.js';
 import {BOXING_LIBRARY, SHARED_SHADOW_BAG_IDS} from '../app/js/library/boxing-149.js';
 import {stageForWorkout} from '../app/js/library/native-adapter.js';
 import {libraryLevel, libraryUp, libraryOpen, UNFILED} from '../app/js/library/library-browser.js';
@@ -25,7 +25,7 @@ test('149 unique workouts in four boxing folders with the approved subfolders',(
  assert.equal(BOXING_LIBRARY.length,149);
  assert.equal(new Set(boxing.map(x=>x.id)).size,149);
  assert.equal(new Set(LIBRARY.map(x=>x.id)).size,LIBRARY.length);
- assert.equal(LIBRARY.length,40+149);
+ assert.equal(LIBRARY.length,37+149);
  assert.deepEqual(count(boxing,x=>x.folder),{[BAG]:84,[SHADOW]:45,[WEIGHTS]:18,[CIRCUITS]:2});
  assert.deepEqual(count(boxing,x=>x.folder+' › '+x.subfolder),{
   [BAG+' › Дальняя дистанция']:24,[BAG+' › Средняя дистанция / Боковые в голову']:12,
@@ -123,11 +123,11 @@ test('library navigation: sections, boxing folders and subfolders with counts, B
  const root=libraryLevel(LIBRARY,CATEGORIES,{});
  assert.equal(root.back,false);
  assert.deepEqual(root.items.map(i=>i.key),CATEGORIES.map(([id])=>id));
- assert.equal(root.items.find(i=>i.key==='boxing').count,152);
+ assert.equal(root.items.find(i=>i.key==='boxing').count,149);
  let path=libraryOpen({},root.items.find(i=>i.key==='boxing'));
  const folders=libraryLevel(LIBRARY,CATEGORIES,path);
  assert.equal(folders.title,'Бокс');
- assert.deepEqual(folders.items.map(i=>[i.label,i.count]),[[BAG,84],[SHADOW,54],[WEIGHTS,18],[CIRCUITS,2],[UNFILED,3]]);
+ assert.deepEqual(folders.items.map(i=>[i.label,i.count]),[[BAG,84],[SHADOW,54],[WEIGHTS,18],[CIRCUITS,2]]);
  path=libraryOpen(path,folders.items[0]);
  const bag=libraryLevel(LIBRARY,CATEGORIES,path);
  assert.deepEqual(bag.items.map(i=>i.count),[24,12,12,12,12,12]);
@@ -146,7 +146,8 @@ test('library navigation: sections, boxing folders and subfolders with counts, B
  assert.ok(shared.items.every(i=>i.workout.folder===BAG));
  // A lone subfolder is skipped; sections without folders list workouts directly, as before.
  assert.deepEqual(libraryLevel(LIBRARY,CATEGORIES,{category:'boxing',folder:CIRCUITS}).items.map(i=>i.workout.id),['DEGTYAREV_CIRCUIT','ROMANENKO_COMBINED']);
- assert.deepEqual(libraryLevel(LIBRARY,CATEGORIES,{category:'boxing',folder:UNFILED}).items.map(i=>i.workout.id),['B01','B02','B05']);
+ // Play MVP 2026-10-31: no «Ранее добавленные» folder; its three drafts left the library.
+ assert.deepEqual(libraryLevel(LIBRARY,CATEGORIES,{category:'boxing',folder:UNFILED}).items,[]);
  for(const [id] of CATEGORIES.filter(([id])=>id!=='boxing')){
   const level=libraryLevel(LIBRARY,CATEGORIES,{category:id});
   assert.deepEqual(level.items.map(i=>i.workout.id),LIBRARY.filter(w=>w.category===id).map(w=>w.id),id);
@@ -161,7 +162,9 @@ test('boxing author descriptions replace legacy notes without changing rounds',(
 });
 
 test('the 40 workouts that existed before the boxing library build exactly the same stages',()=>{
+ // Play MVP 2026-10-31: B01/B02/B05 moved out of the library to RETIRED_LIBRARY, unchanged.
  const legacy=LIBRARY.filter(w=>w.mode!=='boxing_sequence');
+ legacy.splice(4,0,...RETIRED_LIBRARY);
  assert.equal(legacy.length,40);
  // Hash of the same list built by commit 8546ab4, before any boxing workout was added.
  // Play MVP changed exactly two public texts: C03 has a Russian name, B01/B02 lost an internal provenance note.

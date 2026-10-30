@@ -41,3 +41,35 @@ test('Google Play MVP: My Programs start empty, library cards hide the book meth
   assert.match(view, /const method = null;/);
   assert.doesNotMatch(view, /'Источник'/);
 });
+
+test('Google Play MVP 2026-10-31: «Бокс» has no «Ранее добавленные», counts come from the remaining data', async () => {
+  const { LIBRARY, CATEGORIES, RETIRED_LIBRARY } = await import('../app/js/library/catalog.js');
+  const { libraryLevel, UNFILED } = await import('../app/js/library/library-browser.js');
+  const sections = Object.fromEntries(libraryLevel(LIBRARY, CATEGORIES, {}).items.map(i => [i.key, i.count]));
+  assert.deepEqual(sections, { warmup: 4, boxing: 149, two_phase: 3, interval: 4, amrap: 4, afap: 4, emom: 4, tabata: 4, cardio: 4, abs: 4, cooldown: 2 });
+  const folders = libraryLevel(LIBRARY, CATEGORIES, { category: 'boxing' }).items.map(i => [i.label, i.count]);
+  assert.deepEqual(folders, [['Работа на мешке', 84], ['Работа перед зеркалом / Бой с тенью', 54], ['Работа с отягощением / Физподготовка', 18], ['Круговые тренировки', 2]]);
+  assert.ok(!folders.some(([label]) => label === UNFILED));
+  assert.deepEqual(RETIRED_LIBRARY.map(w => w.id), ['B01', 'B02', 'B05']);
+  assert.ok(!LIBRARY.some(w => RETIRED_LIBRARY.some(r => r.id === w.id)));
+});
+
+test('Google Play MVP 2026-10-31: programs already on the phone survive the update unchanged', async () => {
+  const { normalizeLibrary } = await import('../app/js/core/program.js');
+  const { stageTitleParts } = await import('../app/js/ui/stage-title.js');
+  const { clonePreset } = await import('../app/js/state/presets.js');
+  // The three programs from the owner's phone screenshot, one with a stage added earlier from the retired «Комплекс 1».
+  const stage = title => ({ presetId: 'classic2', title, roundNames: [], phaseOneOverrides: [], phaseTwoOverrides: [], roundDescriptions: [],
+    roundTimingOverrides: [], settings: { ...clonePreset('classic2'), rounds: 2, workSec: 60, restSec: 30 }, restAfterSec: 0 });
+  const stored = [
+    { id: 'p1', name: 'Программа 1', entries: [stage('Бокс — Комплекс 1')], options: { cycles: 1, cycleRestSec: 60 } },
+    { id: 'p2', name: 'Сила + лёгкость', entries: [stage('Двухфазные — Сила + лёгкость')], options: { cycles: 2, cycleRestSec: 45 } },
+    { id: 'p3', name: 'Тестовая', entries: [stage('Своё')], options: { cycles: 1, cycleRestSec: 60 } }
+  ];
+  assert.deepEqual(normalizeLibrary(JSON.parse(JSON.stringify(stored))), stored);
+  assert.deepEqual(stageTitleParts('Бокс — Комплекс 1'), { category: 'Бокс', workout: 'Комплекс 1' });
+  // Nothing in the app removes saved programs on start; only the user's own delete rewrites the list.
+  const app = readFileSync(new URL('../app/js/app.js', import.meta.url), 'utf8');
+  assert.doesNotMatch(app, /localStorage\.(clear|removeItem)\(/);
+  assert.equal((app.match(/store\(LIBRARY_KEY/g) || []).length, 1);
+});

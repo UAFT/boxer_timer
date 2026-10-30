@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { CATEGORIES, LIBRARY, findWorkout, buildSteps } from '../app/js/library/catalog.js';
+import { CATEGORIES, LIBRARY, RETIRED_LIBRARY, buildSteps } from '../app/js/library/catalog.js';
 import { stageForWorkout } from '../app/js/library/native-adapter.js';
 import { compileProgram } from '../app/js/core/program.js';
 import { clonePreset } from '../app/js/state/presets.js';
@@ -12,14 +12,15 @@ const names = [
 
 test('main workout category retains its identity and drops equipment restriction', () => {
   assert.equal(CATEGORIES.find(([id]) => id === 'boxing')?.[1], 'Бокс');
-  assert.equal(LIBRARY.filter(w => w.category === 'boxing' && w.mode !== 'boxing_sequence').length, 3);
-  assert.equal(LIBRARY.length, 189);
+  // Play MVP 2026-10-31: the three pre-folder drafts left the library; they stay only for saved stage titles.
+  assert.equal(LIBRARY.filter(w => w.category === 'boxing' && w.mode !== 'boxing_sequence').length, 0);
+  assert.equal(LIBRARY.length, 186);
   assert.equal(new Set(LIBRARY.map(w => w.id)).size, LIBRARY.length);
-  assert.deepEqual(['B01','B02','B05'], LIBRARY.filter(w => w.category === 'boxing' && w.mode !== 'boxing_sequence').map(w => w.id));
+  assert.deepEqual(['B01','B02','B05'], RETIRED_LIBRARY.map(w => w.id));
 });
 
 test('B05 seven two-minute rounds, six one-minute rests, 20-minute total', () => {
-  const workout = findWorkout('B05');
+  const workout = RETIRED_LIBRARY.find(w => w.id === 'B05');
   assert.ok(workout);
   assert.equal(workout.equipment, 'Гантели');
   assert.deepEqual(workout.tasks, names);

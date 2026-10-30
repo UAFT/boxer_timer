@@ -21,14 +21,18 @@ const makeTwoPhase = (id,name,first,rounds,work,rest,opts={}) => ({
   phaseOneOverrides:opts.phaseOneOverrides || [],
   roundTimingOverrides:opts.roundTimingOverrides || []
 });
+// Play MVP (owner 2026-10-31): the three boxing drafts from before folders («Ранее добавленные») are not in the library.
+// Kept only so stage titles a user saved from them earlier still show their section; saved programs are never rewritten.
+export const RETIRED_LIBRARY = [
+  make('B01','boxing','Комплекс 1','interval',['Работа в челноке','Защита + комбинация ударов','Боковые одиночные и сдвоенные','Одиночные акцентированные удары в корпус','Ближний бой','Вольный бой'],{work:60,rest:30,note:''}),
+  make('B02','boxing','Комплекс 2','interval',['Акцентированные одиночные','Любые двойки','Любые тройки','Серия, акцент корпус','Вольная работа','Вольная работа, акцент корпус'],{work:60,rest:30,note:''}),
+  make('B05','boxing','Работа с гантелями','interval',['Прямые удары','Боковые удары','Удары снизу','Защитные действия','Свободный стиль в сильной стойке','Свободный стиль в слабой стойке','Ускорение'],{work:120,rest:60,equipment:'Гантели',source:'Owner-approved training 2026-10-21'})
+];
 export const LIBRARY = [
   make('W01','warmup','Скакалка','interval',['Свободная скакалка'],{rounds:3,work:180,rest:60}),
   make('W02','warmup','Суставная гимнастика','interval',['Плечи и руки','Таз и корпус','Колени и голеностоп','Лёгкие движения'],{work:60,rest:0}),
   make('W03','warmup','Работа ног','interval',['Шаги вперёд и назад','Шаги в стороны','Движение по кругу','Свободные передвижения'],{work:60,rest:0}),
   make('W04','warmup','Динамическая разминка','interval',['Лёгкий бег','Движения руками','Приставные шаги','Лёгкий бой с тенью'],{work:60,rest:0}),
-  make('B01','boxing','Комплекс 1','interval',['Работа в челноке','Защита + комбинация ударов','Боковые одиночные и сдвоенные','Одиночные акцентированные удары в корпус','Ближний бой','Вольный бой'],{work:60,rest:30,note:''}),
-  make('B02','boxing','Комплекс 2','interval',['Акцентированные одиночные','Любые двойки','Любые тройки','Серия, акцент корпус','Вольная работа','Вольная работа, акцент корпус'],{work:60,rest:30,note:''}),
-  make('B05','boxing','Работа с гантелями','interval',['Прямые удары','Боковые удары','Удары снизу','Защитные действия','Свободный стиль в сильной стойке','Свободный стиль в слабой стойке','Ускорение'],{work:120,rest:60,equipment:'Гантели',source:'Owner-approved training 2026-10-21'}),
   makeTwoPhase('TP01','Сила + лёгкость','Кувалда',5,60,60,{equipment:'Кувалда'}),
   makeTwoPhase('TP02','Сила + лёгкость 2','Медицинбол',5,60,60,{equipment:'Медицинбол'}),
   makeTwoPhase('TP03','Сила + лёгкость — микс','Кувалда',6,30,40,{

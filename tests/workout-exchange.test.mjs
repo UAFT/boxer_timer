@@ -2,11 +2,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import { stageForWorkout } from '../app/js/library/native-adapter.js';
-import { LIBRARY } from '../app/js/library/catalog.js';
+import { LIBRARY, RETIRED_LIBRARY } from '../app/js/library/catalog.js';
 import {parseWorkoutFile, serializeWorkoutFile, storeImportedWorkout, resolveSenderSettings, workoutFileName, WorkoutFileError, WORKOUT_FILE_MAX_BYTES} from '../app/js/sharing/workout-file.js';
 import {shareWorkout} from '../app/js/sharing/file-transfer.js';
 
-const workout=stageForWorkout(LIBRARY.find(w=>w.id==='B05'));
+const workout=stageForWorkout(RETIRED_LIBRARY.find(w=>w.id==='B05'));
 const example={name:'Бокс · Силовая',entries:[workout,{...workout,title:'Мой блок',roundNames:['Руки','Ноги'],roundDescriptions:['Сильно',''],restAfterSec:55}],options:{cycles:2,cycleRestSec:90}};
 
 test('ftworkout v1 JSON roundtrip preserves settings, descriptions, cycles, offline structure',()=>{

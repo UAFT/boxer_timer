@@ -29,7 +29,7 @@ test('folder counters: bold, far right, no parentheses, counted from the data',(
  assert.match(css,/\.ft-library-count\{margin-left:auto;font-weight:800/);
  const root=libraryLevel(LIBRARY,CATEGORIES,{});
  for(const item of root.items)assert.equal(item.count,LIBRARY.filter(w=>w.category===item.key).length);
- assert.equal(root.items.find(i=>i.key==='boxing').count,152);
+ assert.equal(root.items.find(i=>i.key==='boxing').count,149);
 });
 
 test('bag workout card: compact line from real rounds, no task list, plan in playback order without final rest',()=>{
@@ -97,7 +97,7 @@ test('plus adds once and only on its own tap; expanding never adds; disabled sta
 });
 
 test('every library workout renders a card whose plan matches its compiled rounds',()=>{
- assert.equal(LIBRARY.length,189);
+ assert.equal(LIBRARY.length,186);
  for(const w of LIBRARY){
   const rounds=roundsOf(w),c=card(w);
   c.children[0].onclick();
