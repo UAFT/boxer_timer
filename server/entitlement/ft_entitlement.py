@@ -426,9 +426,20 @@ def make_handler(service):
             self.send_response(status)
             self.send_header('Content-Type', 'application/json')
             self.send_header('Cache-Control', 'no-store')
+            # The app's WebView origin is https://localhost; no cookies or credentials, so any origin is safe.
+            self.send_header('Access-Control-Allow-Origin', '*')
             self.send_header('Content-Length', str(len(data)))
             self.end_headers()
             self.wfile.write(data)
+
+        def do_OPTIONS(self):
+            self.send_response(204)
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.send_header('Access-Control-Allow-Methods', 'POST, GET')
+            self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+            self.send_header('Access-Control-Max-Age', '86400')
+            self.send_header('Content-Length', '0')
+            self.end_headers()
 
         def do_GET(self):
             self._send(200, {'ok': True}) if self.path == '/healthz' else self._send(404, {'error': 'not_found'})

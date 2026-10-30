@@ -386,6 +386,10 @@ class HttpTests(Base):
                 return e.code, e.read()
         try:
             with urllib.request.urlopen(base + '/healthz') as r: self.assertEqual(r.status, 200)
+            pre = urllib.request.Request(base + '/v1/entitlement', method='OPTIONS', headers={'Origin': 'https://localhost'})
+            with urllib.request.urlopen(pre) as r:
+                self.assertEqual((r.status, r.headers['Access-Control-Allow-Origin']), (204, '*'))
+                self.assertIn('Content-Type', r.headers['Access-Control-Allow-Headers'])
             status, body = post('/v1/entitlement', {'installId': 'install-0001', 'androidId': ANDROID_ID, 'firstOpenAt': T0 * 1000})
             self.assertEqual(status, 200)
             self.assertEqual(self.ticket(json.loads(body))['state'], 'trial')
