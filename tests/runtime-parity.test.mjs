@@ -17,7 +17,7 @@ test('methodology APK: Android 15+ system bars, API 36, versionCode above the Pl
   assert.ok(flow.includes('"adjustMarginsForEdgeToEdge":"auto"'));
   assert.ok(flow.includes("key+' = 36'") && flow.includes("grep -q \"targetSdkVersion:'36'\""));
   assert.ok(flow.includes("str(20000+(int(time.time())-1793318400)//60)"));
-  assert.ok(flow.includes('FT_VARIANT: methodology') && flow.includes('scripts/android_play_smoke.mjs'));
+  assert.ok(flow.includes("&& 'play' || 'methodology'") && flow.includes('scripts/android_play_smoke.mjs'));
 });
 
 test('every Library string of the unchanged methodology data has English, Russian stays as is', async () => {

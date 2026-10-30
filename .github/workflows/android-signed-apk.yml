@@ -113,7 +113,8 @@ jobs:
       - name: Smoke test on Android 16 (API 36) emulator
         uses: reactivecircus/android-emulator-runner@v2
         env:
-          FT_VARIANT: methodology
+          # Shared by both branches: the Play MVP hides Tree and Methodology, the methodology build shows them.
+          FT_VARIANT: ${{ startsWith(github.ref_name, 'release/play-mvp') && 'play' || 'methodology' }}
         with:
           api-level: 36
           target: google_apis
