@@ -54,8 +54,9 @@ jobs:
           SDK_TOOLS="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)"
           for a in old mvp new; do
             "$SDK_TOOLS/aapt2" dump badging $a.apk | sed -n 1p
-            "$SDK_TOOLS/apksigner" verify --print-certs $a.apk | grep -E 'Signer #1 certificate (DN|SHA-256)'
-            "$SDK_TOOLS/apksigner" verify --print-certs $a.apk | grep -q 'SHA-256 digest: d67520cb4997f75410ab3402e04835239023c5fec79b1e4d16c2bc7029b50950'
+            "$SDK_TOOLS/apksigner" verify --verbose --print-certs $a.apk > $a.signer.txt 2>&1 || { cat $a.signer.txt; exit 1; }
+            grep -E 'Verified using|SHA-256' $a.signer.txt
+            grep -qi 'd67520cb4997f75410ab3402e04835239023c5fec79b1e4d16c2bc7029b50950' $a.signer.txt
           done
       - name: Enable KVM
         run: |
