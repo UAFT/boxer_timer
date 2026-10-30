@@ -123,6 +123,7 @@ const C11=['SLIPR-LH','SLIPR-LB','SLIPL-RH','SLIPL-RB'].map(x=>'FT-S11-COUNTER-'
 const P11=['FT-S11-PARRY-IN-RIGHT-CLOSE','FT-S11-PARRY-IN-LEFT-CLOSE'];   // V69: 11.4 inside-parry entry
 const K12=['ANS-L','ANS-R','MEET-L','MEET-R'];   // V70: stage 12 duck — per side: pure defence, then 2 answer + 2 meeting programs
 const D12=[['R','RIGHT'],['L','LEFT']].flatMap(([s,d])=>['FT-S12-DUCK-'+d,...K12.map(k=>`FT-S12-DUCK${s}-${k}`)]);
+const E12=['FT-S12-DUCKR-MEET-LB-CLOSE','FT-S12-DUCKL-MEET-RB-CLOSE'];   // V71: 12.5 contralateral entry (variant B) + 11.1/11.2 series
 const CARDS9=K4.flatMap(k=>['STEPBACK','PALM-'+OTH[k[0]],'BENT-'+OTH[k[0]],...PAR,'ELBOW-H','ELBOW-B','PULL','VAR'].map(x=>`FT-S9-${k}-${x}`));
 const ARCH9=[...X9,...K4.map(k=>`FT-S9-${k}-PULLSTEP`),'FT-S9-VAR-LEFT-HEAD','FT-S9-VAR-LEFT-BODY','FT-S9-VAR-RIGHT-HEAD','FT-S9-VAR-RIGHT-BODY'];
 const own=stage=>Object.keys(V42_WORKOUTS).filter(id=>V42_WORKOUTS[id].stageId===stage);
@@ -130,11 +131,11 @@ const W=V42_WORKOUTS['PRG-FAR-STRAIGHT-1'];
 const P1=programs.find(p=>p.id==='PRG-FAR-STRAIGHT-1');
 
 test('owner program «Прямой и подставка: шаг назад»: 15 rounds 2:00/1:00, no trailing rest, 44:00 through the Tree adapter and real compiler',()=>{
- assert.deepEqual(Object.keys(V42_WORKOUTS),[...ORDER9,...S10,...X9,...X10,...X11,...Y9,...Y10,...Z9,...M10,...C11,...P11,...D12],'V51: 15 matrix programs (defence × head/body/mixed), then V50 and V51 microprograms; V57: + parry; V54–V57: stage 10; V64, V65, V66, V67, V68, V69, V70 appended');
- assert.deepEqual(own('FAR-STRAIGHT-ATTDEF'),[...ORDER9,...X9,...Y9,...Z9]);assert.deepEqual(own('FAR-STRAIGHT-COUNTER'),[...S10,...X10,...Y10,...M10]);assert.deepEqual(own('FAR-PARRY'),[...X11,...C11,...P11]);assert.deepEqual(own('FAR-DUCK-STRAIGHT'),D12);
+ assert.deepEqual(Object.keys(V42_WORKOUTS),[...ORDER9,...S10,...X9,...X10,...X11,...Y9,...Y10,...Z9,...M10,...C11,...P11,...D12,...E12],'V51: 15 matrix programs (defence × head/body/mixed), then V50 and V51 microprograms; V57: + parry; V54–V57: stage 10; V64, V65, V66, V67, V68, V69, V70 appended');
+ assert.deepEqual(own('FAR-STRAIGHT-ATTDEF'),[...ORDER9,...X9,...Y9,...Z9]);assert.deepEqual(own('FAR-STRAIGHT-COUNTER'),[...S10,...X10,...Y10,...M10]);assert.deepEqual(own('FAR-PARRY'),[...X11,...C11,...P11]);assert.deepEqual(own('FAR-DUCK-STRAIGHT'),[...D12,...E12]);
  assert.ok(!V42_WORKOUTS['FT-S9-STEP-BACK'],'the V47 combined step-back program is superseded (V48)');
  assert.equal(ORDER23.reduce((s,id)=>s+V42_WORKOUTS[id].rounds.length,0),220);
- assert.equal(Object.values(V42_WORKOUTS).reduce((s,w)=>s+w.rounds.length,0),238+142+72+20+160+14+104+52-100+343+36+28+14+70,'V59: stage 9 — 25 programs / 238 rounds, stage 10 — 16 programs / 142 rounds; V61: + 12 programs / 72 rounds; V64: + 20 / 160 assembled, 14 stage 11; V65: + 104 / 52 copied; V66: 26 stage 9 cards rebuilt (100 → 343 rounds with the 34 new ones); V67: 6 × 6 counters; V68: 4 × 7 counter entries; V69: 2 × 7 parry entries; V70: 10 × 7 duck');
+ assert.equal(Object.values(V42_WORKOUTS).reduce((s,w)=>s+w.rounds.length,0),238+142+72+20+160+14+104+52-100+343+36+28+14+70+14,'V59: stage 9 — 25 programs / 238 rounds, stage 10 — 16 programs / 142 rounds; V61: + 12 programs / 72 rounds; V64: + 20 / 160 assembled, 14 stage 11; V65: + 104 / 52 copied; V66: 26 stage 9 cards rebuilt (100 → 343 rounds with the 34 new ones); V67: 6 × 6 counters; V68: 4 × 7 counter entries; V69: 2 × 7 parry entries; V70: 10 × 7 duck');
  assert.equal(W.name,'Прямые в голову — подставка открытой ладонью');
  assert.equal(P1.title,'Прямой и подставка; шаг назад','methodology title untouched');
  assert.equal(W.rounds.length,15);
@@ -864,12 +865,12 @@ test('V70 stage 12 «Нырок от прямых»: 2 pure-defence + 4 answer +
  const s2=find(root,'ft-route-section')[1];s2.toggle();
  const st=find(s2,'ft-route-step').find(x=>x.dataset.stage==='FAR-DUCK-STRAIGHT');st.toggle();
  assert.equal(find(st.children[0],'ft-route-step-title')[0].textContent,'Нырок от прямых');
- assert.equal(find(st.children[0],'ft-v42-stage-count')[0].textContent,'10 трен.');
+ assert.equal(find(st.children[0],'ft-v42-stage-count')[0].textContent,'12 трен.');
  const sub=find(st,'ft-v42-program').filter(c=>c.dataset.program.startsWith('S12-'));sub.forEach(c=>c.toggle());
  assert.deepEqual(sub.map(c=>find(c,'ft-v42-program-title')[0].textContent),['12.1 Защита от левого прямого: нырок вправо','12.2 Защита от правого прямого: нырок влево',
-  '12.3 Нырок с ответным прямым — удар после защиты','12.4 Нырок со встречным прямым — удар вместе с защитой']);
+  '12.3 Нырок с ответным прямым — удар после защиты','12.4 Нырок со встречным прямым — удар вместе с защитой','12.5 Нырок со встречным прямым в корпус — вход на ближнюю и серии']);
  assert.deepEqual(sub.map(c=>find(c,'ft-route-lesson').map(l=>l.dataset.program)),[['FT-S12-DUCK-RIGHT'],['FT-S12-DUCK-LEFT'],
-  ['FT-S12-DUCKR-ANS-L','FT-S12-DUCKR-ANS-R','FT-S12-DUCKL-ANS-L','FT-S12-DUCKL-ANS-R'],['FT-S12-DUCKR-MEET-L','FT-S12-DUCKR-MEET-R','FT-S12-DUCKL-MEET-L','FT-S12-DUCKL-MEET-R']]);
+  ['FT-S12-DUCKR-ANS-L','FT-S12-DUCKR-ANS-R','FT-S12-DUCKL-ANS-L','FT-S12-DUCKL-ANS-R'],['FT-S12-DUCKR-MEET-L','FT-S12-DUCKR-MEET-R','FT-S12-DUCKL-MEET-L','FT-S12-DUCKL-MEET-R'],E12]);
  const book=find(st,'ft-v42-program').find(c=>c.dataset.program==='BOOK-FAR-DUCK-STRAIGHT');book.toggle();const cards=find(book,'ft-v42-program');cards.forEach(c=>c.toggle());
  assert.deepEqual(cards.map(c=>c.dataset.program),['PRG-FAR-DUCK-1','PRG-FAR-DEF-O2'],'the two textbook cards stay, read-only');
  assert.equal(cards.reduce((n,c)=>n+find(c,'ft-v42-exercise').length,0),6);
@@ -902,4 +903,25 @@ test('V70 stage 12 «Нырок от прямых»: 2 pure-defence + 4 answer +
   assert.deepEqual(V42_WORKOUTS[b].rounds.map(r=>r.name),V42_WORKOUTS[a].rounds.map(r=>mirror(r.name)),b);
  // diagonal foot order is not in any source: the rounds name the direction only (GAP)
  for(const id of D12)for(const r of V42_WORKOUTS[id].rounds.slice(4,6))assert.ok(/шаг по диагонали (назад|вперёд)-(вправо|влево)\./.test(r.description)&&!/по диагонали[^.]*(нога|толчок)/.test(r.description),id);
+});
+
+test('V71 stage 12.5: duck + meeting straight to the body with the contralateral foot (variant B and its mirror), close range, the 11.1/11.2 series word for word',()=>{
+ const all=Object.values(V42_WORKOUTS).flatMap(w=>w.rounds.map(r=>r.name));
+ for(const [id,src,dir,att,punch,first,second,diag] of [['FT-S12-DUCKR-MEET-LB-CLOSE','FT-S11-SLIP-RIGHT-CLOSE','вправо','левой','левый','правой','левая','вперёд-вправо'],
+   ['FT-S12-DUCKL-MEET-RB-CLOSE','FT-S11-SLIP-LEFT-CLOSE','влево','правой','правый','левой','правая','вперёд-влево']]){
+  const w=V42_WORKOUTS[id],S=V42_WORKOUTS[src];
+  assert.equal(w.stageId,'FAR-DUCK-STRAIGHT');assert.deepEqual(w.blocks,[['Серии',6],['Сводный раунд',1]]);assert.equal(workoutTotalSec(w),20*60);
+  const k=compileProgram([stageForWorkout(w)],PRESETS,{cycles:1});assert.equal(k.length,7);assert.equal(k.at(-1).restSec,0);
+  assert.ok(w.provenance.methodology.every(([sec,t,s])=>w.methodology[sec].includes(t)&&s));
+  w.rounds.forEach((r,j)=>{const d=r.description;
+   assert.deepEqual([r.workSec,r.restSec,r.stance,r.hand],[120,60,'левосторонняя стойка',att]);
+   assert.ok(r.name.length<=100&&r.stance.length+3+d.length<=600&&all.filter(n=>n===r.name).length===1,r.name);
+   assert.ok(d.startsWith(`Партнёр атакует с дальней дистанции: прямой ${att} в голову. Во время его удара одновременно: нырок ${dir}`),id+j);
+   assert.ok(d.includes(`встречный ${punch} прямой в корпус — в нижней фазе, не после защиты, вместе с шагом ${first} ноги ${diag}; затем ${second} нога тоже ${diag}, ноги не скрещиваются — ближняя дистанция.`),id+j);
+   assert.ok(!/ответн|подтягива|нарок/.test(d+r.name),id+j);
+   if(j<6){const series=S.rounds[j].name.split('вход — ')[1];assert.equal(r.name,'Нырок, встречный в корпус → '+series);assert.ok(d.includes('последующая серия: '+series+'.'),id+j);}
+  });
+ }
+ // variant A / older wording is not rewritten (owner: both entry mechanics are correct)
+ assert.ok(V42_WORKOUTS['FT-S11-COUNTER-SLIPR-LB'].rounds[0].description.includes('шаг правой вперёд-вправо, левая нога подтягивается'));
 });

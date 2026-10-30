@@ -80,5 +80,8 @@ export const V63_SUBSTAGES = {
       'FT-S12-DUCKL-ANS-L', 'FT-S12-DUCKL-ANS-R'] },
     { id: 'S12-MEET', title: '12.4 Нырок со встречным прямым — удар вместе с защитой', workouts: ['FT-S12-DUCKR-MEET-L', 'FT-S12-DUCKR-MEET-R',
       'FT-S12-DUCKL-MEET-L', 'FT-S12-DUCKL-MEET-R'] },
+    // V71 owner ADDENDA 2026-10-30: contralateral entry (variant B) and its confirmed mirror; heading is ours (GAP-V71-1)
+    { id: 'S12-CLOSE', title: '12.5 Нырок со встречным прямым в корпус — вход на ближнюю и серии', workouts: ['FT-S12-DUCKR-MEET-LB-CLOSE',
+      'FT-S12-DUCKL-MEET-RB-CLOSE'] },
   ],
 };
