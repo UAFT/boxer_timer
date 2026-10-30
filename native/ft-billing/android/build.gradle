@@ -37,6 +37,8 @@ repositories {
 
 dependencies {
     implementation project(':capacitor-android')
+    // Plugin.getActivity() is an AppCompatActivity; capacitor-android keeps appcompat off our classpath.
+    implementation "androidx.appcompat:appcompat:${rootProject.ext.has('androidxAppCompatVersion') ? rootProject.ext.androidxAppCompatVersion : '1.7.0'}"
     implementation 'com.android.billingclient:billing:9.1.0'
     implementation 'com.google.android.play:integrity:1.4.0'
 }
