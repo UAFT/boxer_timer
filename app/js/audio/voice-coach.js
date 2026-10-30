@@ -1,3 +1,4 @@
+import { translateText } from '../i18n/locale.js';
 // Optional device text-to-speech; offline when an OS voice is installed.
 let lastKey = '';
 let generation = 0;
@@ -19,7 +20,7 @@ export function announceRound(eventType, round, language = 'ru') {
   if (key === lastKey) return;
   lastKey = key;
   const thisGeneration = ++generation;
-  const name = round.roundName || round.stageTitle || '';
+  const name = translateText(round.roundName || round.stageTitle || '', language);
   const number = round.blockCount > 1 ? round.localRound : round.stageRound;
   const message = eventType === 'round-end-zero'
     ? (language === 'en' ? 'Rest' : 'Отдых')
