@@ -14,7 +14,7 @@ permissions:
 jobs:
   signed-apk:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -31,7 +31,8 @@ jobs:
         run: |
           rm -rf android
           rm -f capacitor.config.ts
-          echo '{"appId":"com.andarfighttech.boxertimer","appName":"Fight Tech Interval Timer","webDir":"dist"}' > capacitor.config.json
+          # Android 15+ draws the app under the status and navigation bars (edge-to-edge); "auto" keeps the WebView inside them.
+          echo '{"appId":"com.andarfighttech.boxertimer","appName":"Fight Tech Interval Timer","webDir":"dist","android":{"adjustMarginsForEdgeToEdge":"auto"}}' > capacitor.config.json
           npx cap add android
           npx cap sync android
       - name: Apply Fight Tech launcher icon
@@ -47,23 +48,33 @@ jobs:
           for file in Path('android/app/src/main/res').glob('mipmap-anydpi-v26/ic_launcher*.xml'):
               file.unlink()
           PYICON
-      - name: Set stable package ID and increasing versionCode
+      - name: Target API 36, stable package ID, increasing versionCode
         env:
           BUILD_NUMBER: ${{ github.run_number }}
         run: |
           python3 - <<'PY'
-          import os,re,pathlib
+          import os,re,pathlib,time
+          # Same Android platform as the Play MVP build: target and compile against API 36.
+          p=pathlib.Path('android/variables.gradle')
+          s=p.read_text()
+          for key in ('compileSdkVersion','targetSdkVersion'):
+              s,n=re.subn(key+r'\s*=\s*\d+', key+' = 36', s, count=1)
+              assert n==1, key
+          p.write_text(s)
+          with open('android/gradle.properties','a') as f: f.write('\nandroid.suppressUnsupportedCompileSdk=36\n')
           p=pathlib.Path('android/app/build.gradle')
           s=p.read_text()
           assert 'com.andarfighttech.boxertimer' in s, 'Unexpected applicationId: refuse to sign'
-          s,n=re.subn(r'versionCode\s+\d+', 'versionCode '+str(int(os.environ['BUILD_NUMBER'])+1000), s, count=1)
+          # One package ID for the methodology and Play MVP builds: whichever is built later installs over the other.
+          # 20000 + minutes since 2026-10-30 UTC, the same clock in both workflows, above the Play MVP 1.0.6 (10006).
+          s,n=re.subn(r'versionCode\s+\d+', 'versionCode '+str(20000+(int(time.time())-1793318400)//60), s, count=1)
           assert n==1, 'Could not set versionCode'
           s,n=re.subn(r'versionName\s+"[^"]+"', 'versionName "0.2.'+os.environ['BUILD_NUMBER']+'"', s, count=1)
           assert n==1, 'Could not set versionName'
           p.write_text(s)
           PY
       - name: Build unsigned release APK
-        run: cd android && chmod +x gradlew && ./gradlew --no-daemon assembleRelease
+        run: cd android && chmod +x gradlew && ./gradlew --no-daemon assembleRelease assembleDebug
       - name: Sign release APK with permanent keystore
         env:
           KEYSTORE_B64: ${{ secrets.ANDAR_TIMER_KEYSTORE_BASE64 }}
@@ -82,9 +93,38 @@ jobs:
           "$SDK_TOOLS/apksigner" sign --ks "$RUNNER_TEMP/andar-timer.jks" --ks-key-alias andar-fight-timer --ks-pass env:STORE_PASS --key-pass env:KEY_PASS --out andar-fight-timer-signed.apk "$RUNNER_TEMP/andar-aligned.apk"
           "$SDK_TOOLS/apksigner" verify --verbose --print-certs andar-fight-timer-signed.apk
           rm -f "$RUNNER_TEMP/andar-timer.jks"
+          "$SDK_TOOLS/aapt2" dump badging andar-fight-timer-signed.apk | grep -E "^package|targetSdkVersion|sdkVersion|uses-permission" | tee badging.txt
+          grep -q "targetSdkVersion:'36'" badging.txt
+          sha256sum andar-fight-timer-signed.apk | tee SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         with:
           name: andar-fight-timer-signed-apk
-          path: andar-fight-timer-signed.apk
+          path: |
+            andar-fight-timer-signed.apk
+            badging.txt
+            SHA256SUMS.txt
           if-no-files-found: error
+          retention-days: 30
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Smoke test on Android 16 (API 36) emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        env:
+          # Shared by both branches: the Play MVP hides Tree and Methodology, the methodology build shows them.
+          FT_VARIANT: ${{ startsWith(github.ref_name, 'release/play-mvp') && 'play' || 'methodology' }}
+        with:
+          api-level: 36
+          target: google_apis
+          arch: x86_64
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -no-boot-anim -camera-back none
+          script: node scripts/android_play_smoke.mjs andar-fight-timer-signed.apk android/app/build/outputs/apk/debug/app-debug.apk smoke
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: andar-fight-timer-smoke
+          path: smoke/
           retention-days: 30

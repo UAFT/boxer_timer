@@ -40,7 +40,7 @@ const pairs = [
 ['Лестница раундов','Round ladder'],['Показаны первые','Showing first'],['все раунды','all rounds'],
 ['Скоростной · 20/20 · 24 раунда','Speed · 20/20 · 24 rounds'],
 ['Здесь появятся ваши программы. Соберите тренировку на главном экране или добавьте упражнения из Библиотеки и нажмите «Сохранить».','Your programs will appear here. Build a workout on the main screen or add exercises from the Library, then tap Save.'],
-// Google Play MVP: remaining interface strings.
+// Remaining interface strings (shared with the Play MVP).
 ['Обычный таймер','Standard timer'],
 ['Остановить программу','Stop program'],
 ['Время этого раунда','This round time'],
@@ -149,7 +149,22 @@ const pairs = [
 ['Основная тренировка · мешок','Main workout · bag'],
 ['Показать план','Show plan'],
 ['Вариант 1','Option 1'],
-['Вариант 2','Option 2']
+['Вариант 2','Option 2'],
+// Tree and Methodology interface labels (their content stays in the owner's Russian).
+['Дерево','Tree'],
+['Методика','Methodology'],
+['Путь обучения','Learning path'],
+['Все ступени','All stages'],
+['Пройдено','Completed'],
+['Текущее','Current'],
+['Отметить пройденным','Mark as completed'],
+['Уроки пока не назначены','No lessons assigned yet'],
+['Не удалось открыть методику.','Could not open the methodology.'],
+['Загрузка…','Loading…'],
+['Техника:','Technique:'],
+['Тактика:','Tactics:'],
+['Особенности выполнения:','Execution notes:'],
+['Типичные ошибки:','Common mistakes:']
 ].sort((a,b)=>b[0].length-a[0].length);
 // Every timer tick re-visits every text node: compile once and remember each string's result.
 // One pass over UI and Library phrases together: at each position the longest known phrase wins, so a Library
@@ -177,7 +192,10 @@ export function installLocalization(buttons) {
       if (!node.nodeValue.trim()) return;
       const previous = originals.get(node);
       const source = previous && (node.nodeValue === previous.ru || node.nodeValue === previous.en) ? previous.ru : node.nodeValue;
-      const en = translateText(source,'en');
+      let en = translateText(source,'en');
+      // Tree, Methodology and card descriptions hold the owner's and the book's own wording:
+      // English only when every word is known, never half-translated.
+      if (/[А-Яа-яЁё]/.test(en) && node.parentElement?.closest('.ft-route,.ft-card-section-text')) en = source;
       originals.set(node,{ru:source,en});
       const desired = lang === 'en' ? en : source;
       if (node.nodeValue !== desired) node.nodeValue = desired;

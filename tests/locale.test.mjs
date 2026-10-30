@@ -21,7 +21,7 @@ test('a refresh pass compiles no patterns and keeps the original translations',(
   pairs.sort((a,b)=>b[0].length-a[0].length);
   const reference=text=>pairs.reduce((r,[ru,en])=>r.replace(new RegExp('(?<![А-Яа-яЁё])'+ru.replace(/[.*+?^$()|[\]{}\\]/g,'\\$&')+'(?![А-Яа-яЁё])','g'),en),text);
   const samples=[...pairs.map(p=>p[0]),'Этап 2/3 · Блок 1/2 · Раунд 4/6 · Джеб','Отдых 00:30','Работа · Лестница','Мой бой: Работа ногами','3 раунда × 2 блока · отдых между блоками 01:00'];
-  // Play MVP: library parts (here «Джеб») are looked up in LIBRARY_EN before the UI patterns.
+  // Library parts (here «Джеб») are looked up in LIBRARY_EN before the UI patterns.
   const expected=samples.map(reference).map(x=>x.replace('· Джеб','· Jab'));
   let built=0;const Native=globalThis.RegExp;
   globalThis.RegExp=new Proxy(Native,{construct(target,args){built++;return new target(...args);}});

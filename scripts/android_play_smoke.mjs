@@ -1,4 +1,4 @@
-// Smoke test of the Play MVP on an Android emulator.
+// Smoke test on an Android emulator, shared by the Play MVP and the methodology build (FT_VARIANT=methodology).
 // 1. The signed release APK (from the AAB) installs, launches and does not crash.
 // 2. A debug build of the same project is driven through the WebView DevTools protocol: library tabs,
 //    Library → add a workout, start, screen lock, Home, Back. Timer time is compared with wall time,
@@ -8,6 +8,7 @@ import { execFileSync } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
 
 const PKG = 'com.andarfighttech.boxertimer';
+const METHODOLOGY = process.env.FT_VARIANT === 'methodology';
 const [RELEASE, DEBUG, OUT] = process.argv.slice(2);
 mkdirSync(OUT, { recursive: true });
 const adb = (...a) => { try { return execFileSync('adb', a, { encoding: 'utf8', maxBuffer: 64 << 20 }); } catch (e) { return String(e.stdout || ''); } };
@@ -49,13 +50,22 @@ const secs = t => { const m = /^(\d+):(\d\d)$/.exec((t || '').trim()); return m 
 const state = () => js(`({main:document.getElementById('mainTime').textContent,rem:document.getElementById('metricRemaining').textContent,phase:document.getElementById('phaseLabel').textContent,round:document.getElementById('roundLabel').textContent,
   btn:document.getElementById('startBtn').textContent.trim(),hint:!document.getElementById('ftBackHint')?.hidden,visible:document.visibilityState,now:Date.now()})`);
 
-// Library: Mine / Library / import only.
+// Library tabs: the Play MVP shows Mine / Library / import only, the methodology build adds Tree and Methodology.
 await click('programLibraryOpen'); await sleep(800);
 const nav = await js(`[...document.querySelector('.ft-library-nav').children].filter(b=>b.offsetParent!==null).map(b=>b.id)`);
 const navFills = await js(`(()=>{const n=document.querySelector('.ft-library-nav'),v=[...n.children].filter(b=>b.offsetParent!==null),r=e=>e.getBoundingClientRect();return Math.abs(r(v[v.length-1]).right-r(n).right)<=1&&v.every(b=>r(b).right<=r(n).right+0.5)})()`);
 const methodText = await js(`/Методик|Methodolog|Дерево|Tree/.test(document.body.innerText)`);
 shot('02_library_mine'); step('library_tabs', { nav, navFills, methodText });
-if (JSON.stringify(nav) !== JSON.stringify(['programLibraryMine', 'programLibraryTemplates', 'ftWorkoutImportBtn']) || methodText || !navFills) fail('library tabs: ' + JSON.stringify(nav));
+const tabs = METHODOLOGY ? ['programLibraryMine', 'programLibraryTemplates', 'ftTreePreviewTab', 'ftMethodV42Tab', 'ftWorkoutImportBtn'] : ['programLibraryMine', 'programLibraryTemplates', 'ftWorkoutImportBtn'];
+if (JSON.stringify([...nav].sort()) !== JSON.stringify([...tabs].sort()) || methodText !== METHODOLOGY || !navFills) fail('library tabs: ' + JSON.stringify(nav));
+if (METHODOLOGY) {
+  for (const [id, name] of [['ftTreePreviewTab', '02a_tree'], ['ftMethodV42Tab', '02b_methodology']]) {
+    await click(id); await sleep(1000);
+    const shown = await js(`({items:document.getElementById('programLibraryList').children.length,text:document.getElementById('programLibraryList').innerText.length})`);
+    shot(name); step(name, shown);
+    if (!(shown?.items > 0 && shown.text > 100)) fail(name + ' is empty');
+  }
+}
 await click('programLibraryTemplates'); await sleep(800);
 const folders = await js(`[...document.querySelectorAll('#programLibraryList .ft-library-folder')].map(b=>b.getAttribute('aria-label'))`);
 shot('03_library'); step('library_folders', { folders });
@@ -99,6 +109,10 @@ adb('shell', 'input', 'keyevent', '4'); await sleep(1500);
 const fgTwice = foreground(); launch(); await sleep(2500);
 const twice = await state(); step('back_twice', { minimized: !fgTwice, after: twice });
 if (fgTwice || secs(twice.rem) === null || secs(twice.rem) >= secs(s2.rem)) fail('second Back: expected minimize with the workout still running');
+
+// Speech: recorded, never asserted. Round announcements need speechSynthesis inside the WebView.
+report.speech = await js(`new Promise(ok=>{const s=globalThis.speechSynthesis;if(!s)return ok({available:false});setTimeout(()=>ok({available:true,voices:s.getVoices().map(v=>v.lang+' '+v.name).slice(0,20)}),1500)})`);
+step('speech', report.speech);
 
 report.crashes = crashes();
 report.js_errors = adb('logcat', '-d').split('\n').filter(l => /Capacitor\/Console.*(ERROR|Uncaught)|chromium.*Uncaught/.test(l)).slice(0, 20);

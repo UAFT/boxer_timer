@@ -52,7 +52,7 @@ jobs:
           BUILD_NUMBER: ${{ github.run_number }}
         run: |
           python3 - <<'PY'
-          import os,re,pathlib
+          import os,re,pathlib,time
           p=pathlib.Path('android/variables.gradle')
           s=p.read_text()
           for key in ('compileSdkVersion','targetSdkVersion'):
@@ -64,8 +64,9 @@ jobs:
           p=pathlib.Path('android/app/build.gradle')
           s=p.read_text()
           assert 'com.andarfighttech.boxertimer' in s, 'Unexpected applicationId: refuse to sign'
-          # Play versionCodes start at 10001, above every direct-install APK (1000 + run number).
-          s,n=re.subn(r'versionCode\s+\d+', 'versionCode '+str(int(os.environ['BUILD_NUMBER'])+10000), s, count=1)
+          # One package ID for the Play MVP and the methodology build: whichever is built later installs over the other.
+          # 20000 + minutes since 2026-10-30 UTC, the same clock in both workflows, above 1.0.6 (10006) and every 0.2.x APK.
+          s,n=re.subn(r'versionCode\s+\d+', 'versionCode '+str(20000+(int(time.time())-1793318400)//60), s, count=1)
           assert n==1, 'Could not set versionCode'
           s,n=re.subn(r'versionName\s+"[^"]+"', 'versionName "1.0.'+os.environ['BUILD_NUMBER']+'"', s, count=1)
           assert n==1, 'Could not set versionName'
