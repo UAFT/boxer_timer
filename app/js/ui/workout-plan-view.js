@@ -131,7 +131,8 @@ export function renderLibraryWorkoutCard(doc, workout, { rounds = [], lang = 'ru
   const icon = () => plus.replaceChildren(plusIcon ? plusIcon() : '+');
   icon();
   plus.addEventListener('click', () => { if (onAdd?.()) { plus.replaceChildren('✓'); setTimeout(icon, 800); } });
-  const method = workout.mode === 'boxing_sequence' ? workout.methodology : null;
+  // Google Play MVP: book methodology stays in the data but is not shown (methodology is a later release).
+  const method = null;
   const description = el => method ? renderDescription(doc, el, [
     ['Техника:', method.technique || ''],
     ['Тактика:', method.tactics || ''],
@@ -140,8 +141,7 @@ export function renderLibraryWorkoutCard(doc, workout, { rounds = [], lang = 'ru
   ], lang, true) : renderDescription(doc, el, [
     [ru ? 'Оборудование' : 'Equipment', workout.equipment],
     [ru ? 'Упражнения' : 'Exercises', workout.mode === 'boxing_sequence' ? '' : (workout.tasks || []).join(' · ')],
-    [ru ? 'Примечание' : 'Note', workout.note],
-    [ru ? 'Источник' : 'Source', workout.source]
+    [ru ? 'Примечание' : 'Note', workout.note]
   ], lang);
   return renderCompactCard(doc, { className: 'ft-library-workout', title: workout.name, rounds, lang, description, actions: [plus],
     badge: DRAFT.test(workout.note || '') ? (ru ? 'Черновик — см. описание' : 'Draft — see description') : '',

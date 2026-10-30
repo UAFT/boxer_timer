@@ -33,7 +33,7 @@ test('the same cue is not repeated, a newer phrase replaces a pending one, Engli
  const spoken=speech(t);
  announceRound('round-start-zero',rounds[0],'en');announceRound('round-start-zero',rounds[0],'en');
  t.mock.timers.tick(650);
- assert.deepEqual(spoken,[['Round 1. Джеб. Go!','en-US']]);
+ assert.deepEqual(spoken,[['Round 1. Jab. Go!','en-US']]);   // Play MVP: library names are spoken in English too
  announceRound('round-end-zero',rounds[0],'ru');announceRound('rest-end-zero',rounds[1],'ru');
  t.mock.timers.tick(650);
  assert.deepEqual(spoken.slice(1).map(x=>x[0]),['Раунд 2. Кросс. Работа!']);

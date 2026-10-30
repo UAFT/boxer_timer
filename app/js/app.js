@@ -739,6 +739,7 @@ function bindProgramLibrary() {
       }
       return;
     }
+    if(!savedPrograms.length){const empty=document.createElement('p');empty.className='ft-card-empty ft-mine-empty';empty.textContent='Здесь появятся ваши программы. Соберите тренировку на главном экране или добавьте упражнения из Библиотеки и нажмите «Сохранить».';list.append(empty);}
     for(const entry of savedPrograms) {
       list.append(renderSavedProgramCard(document,entry,profiles,{
         lang:document.documentElement.lang,

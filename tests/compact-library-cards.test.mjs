@@ -77,11 +77,11 @@ test('description: source notes and draft warning when present, honest empty sta
  assert.equal(actions.children[0].attributes['aria-controls'],info.id);
  actions.children[0].onclick();
  assert.equal(info.hidden,false);assert.equal(body.attributes['aria-expanded'],'false','description does not open the plan');
- assert.deepEqual(findAll(empty,'ft-card-section-label').map(x=>x.textContent),['Техника:','Тактика:','Особенности выполнения:','Типичные ошибки:']);
- assert.ok(findAll(empty,'ft-card-section-text')[0].textContent.length>0);
+ // Play MVP: the book methodology is not shown on library cards; a boxing card has no description sections.
+ assert.deepEqual(findAll(empty,'ft-card-section-label').map(x=>x.textContent),[]);
  assert.equal(findAll(empty,'ft-program-badge').length,0);
  const legacy=card(byId('I03'));legacy.children[1].children[0].onclick();
- assert.deepEqual(findAll(legacy,'ft-card-section-label').map(x=>x.textContent),['Оборудование','Упражнения','Источник']);
+ assert.deepEqual(findAll(legacy,'ft-card-section-label').map(x=>x.textContent),['Оборудование','Упражнения']);
 });
 
 test('plus adds once and only on its own tap; expanding never adds; disabled state kept',async()=>{

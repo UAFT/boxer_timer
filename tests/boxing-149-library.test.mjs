@@ -164,6 +164,9 @@ test('the 40 workouts that existed before the boxing library build exactly the s
  const legacy=LIBRARY.filter(w=>w.mode!=='boxing_sequence');
  assert.equal(legacy.length,40);
  // Hash of the same list built by commit 8546ab4, before any boxing workout was added.
- assert.equal(createHash('sha256').update(JSON.stringify(legacy.map(w=>[w.id,stageForWorkout(w)]))).digest('hex'),
+ // Play MVP changed exactly two public texts: C03 has a Russian name, B01/B02 lost an internal provenance note.
+ const note='Черновая копия заданий со скриншота; оригинальная личная программа не меняется.';
+ const before=w=>w.id==='C03'?{...w,name:'Battle ropes'}:['B01','B02'].includes(w.id)?{...w,note}:w;
+ assert.equal(createHash('sha256').update(JSON.stringify(legacy.map(before).map(w=>[w.id,stageForWorkout(w)]))).digest('hex'),
   '72b52a10ec15ee0e000681bda4cc873636b46668f7a1f7431bef203b164affa7');
 });

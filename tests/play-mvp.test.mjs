@@ -15,3 +15,29 @@ test('Google Play MVP: Tree and Methodology tabs are hidden, Mine/Library/import
   // No other entry point into the methodology or the tree.
   assert.equal((html.match(/Методик|Дерево/g) || []).length, 2);
 });
+
+test('Google Play MVP: every Library string has English, Russian stays as is, no mixed words', async () => {
+  globalThis.localStorage ??= { getItem() { return null; }, setItem() {} };
+  const { translateText } = await import('../app/js/i18n/locale.js');
+  const { LIBRARY, CATEGORIES } = await import('../app/js/library/catalog.js');
+  const texts = new Set(CATEGORIES.map(c => c[1]));
+  for (const w of LIBRARY) {
+    for (const s of [w.name, w.folder, w.subfolder, w.note, w.equipment, w.phaseOneName, w.phaseTwoName, ...(w.tasks || [])]) if (s) texts.add(s);
+    for (const r of Array.isArray(w.rounds) ? w.rounds : []) for (const s of [r.name, r.description, r.stance]) if (s) texts.add(s);
+  }
+  const left = [...texts].filter(s => /[А-Яа-яЁё]/.test(translateText(s, 'en')));
+  assert.deepEqual(left, []);
+  for (const s of texts) assert.equal(translateText(s, 'ru'), s);
+  assert.equal(translateText('Работа ног', 'en'), 'Footwork');                          // not «Work ног»
+  assert.equal(translateText('1. Джеб с шагом вперёд и назад', 'en'), '1. Jab with a step forward and back');
+  assert.equal(translateText('Разминка, 4', 'en'), 'Warm-up, 4');
+});
+
+test('Google Play MVP: My Programs start empty, library cards hide the book methodology', () => {
+  const app = readFileSync(new URL('../app/js/app.js', import.meta.url), 'utf8');
+  const view = readFileSync(new URL('../app/js/ui/workout-plan-view.js', import.meta.url), 'utf8');
+  assert.match(app, /let savedPrograms = \[\];/);
+  assert.match(app, /if\(!savedPrograms\.length\)\{const empty=/);
+  assert.match(view, /const method = null;/);
+  assert.doesNotMatch(view, /'Источник'/);
+});
