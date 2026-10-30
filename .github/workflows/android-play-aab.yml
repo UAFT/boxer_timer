@@ -1,6 +1,7 @@
 name: Android Play MVP AAB
 # Google Play MVP only (release/play-mvp-* branches). Builds a signed AAB with targetSdk 36,
-# derives a universal APK from that AAB with bundletool and smoke-tests it on an Android 16 emulator.
+# derives a universal APK from that AAB with bundletool and smoke-tests it on an Android 16 emulator
+# (release APK: launch; debug build of the same project: UI, lock screen, Home, Back through WebView DevTools).
 # Nothing is uploaded to Google Play: the AAB is a workflow artifact for the owner.
 on:
   workflow_dispatch:
@@ -29,7 +30,8 @@ jobs:
         run: |
           rm -rf android
           rm -f capacitor.config.ts
-          echo '{"appId":"com.andarfighttech.boxertimer","appName":"Fight Tech Interval Timer","webDir":"dist"}' > capacitor.config.json
+          # Android 15+ draws the app under the status and navigation bars (edge-to-edge); "auto" keeps the WebView inside them.
+          echo '{"appId":"com.andarfighttech.boxertimer","appName":"Fight Tech Interval Timer","webDir":"dist","android":{"adjustMarginsForEdgeToEdge":"auto"}}' > capacitor.config.json
           npx cap add android
           npx cap sync android
       - name: Apply Fight Tech launcher icon
@@ -70,7 +72,7 @@ jobs:
           p.write_text(s)
           PY
       - name: Build release AAB
-        run: cd android && chmod +x gradlew && ./gradlew --no-daemon bundleRelease
+        run: cd android && chmod +x gradlew && ./gradlew --no-daemon bundleRelease assembleDebug
       - name: Sign AAB, derive universal APK
         env:
           KEYSTORE_B64: ${{ secrets.ANDAR_TIMER_KEYSTORE_BASE64 }}
@@ -115,7 +117,7 @@ jobs:
           arch: x86_64
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -no-boot-anim -camera-back none
-          script: python3 scripts/android_play_smoke.py out/fight-tech-play-mvp-universal.apk smoke
+          script: node scripts/android_play_smoke.mjs out/fight-tech-play-mvp-universal.apk android/app/build/outputs/apk/debug/app-debug.apk smoke
       - uses: actions/upload-artifact@v4
         if: always()
         with:
