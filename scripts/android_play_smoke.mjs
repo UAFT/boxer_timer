@@ -114,6 +114,14 @@ if (fgTwice || secs(twice.rem) === null || secs(twice.rem) >= secs(s2.rem)) fail
 report.speech = await js(`new Promise(ok=>{const s=globalThis.speechSynthesis;if(!s)return ok({available:false});setTimeout(()=>ok({available:true,voices:s.getVoices().map(v=>v.lang+' '+v.name).slice(0,20)}),1500)})`);
 step('speech', report.speech);
 
+// Billing plugin (Play MVP only): the Kotlin bridge answers; nothing is bought. The google_apis image has no Play Store,
+// so BILLING_UNAVAILABLE / SERVICE_UNAVAILABLE here is expected and recorded, not a failure.
+if (!METHODOLOGY) {
+  report.billing = await js(`(async()=>{const b=globalThis.Capacitor?.Plugins?.FtBilling;if(!b)return {plugin:false};const d=await b.deviceInfo();const q=await b.queryPurchases();const p=await b.getProducts({productIds:['ft_smoke_probe']});return {plugin:true,androidId:!!d.androidId,purchases:q.responseCode,products:p.responseCode}})()`);
+  step('billing', report.billing);
+  if (!report.billing?.plugin || !report.billing.androidId) fail('FtBilling plugin is not registered or has no ANDROID_ID');
+}
+
 report.crashes = crashes();
 report.js_errors = adb('logcat', '-d').split('\n').filter(l => /Capacitor\/Console.*(ERROR|Uncaught)|chromium.*Uncaught/.test(l)).slice(0, 20);
 if (report.crashes.length) fail('crash in logcat');

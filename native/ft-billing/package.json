@@ -1,0 +1,13 @@
+{
+  "name": "ft-billing",
+  "version": "0.1.0",
+  "private": true,
+  "capacitor": {
+    "android": {
+      "src": "android"
+    }
+  },
+  "peerDependencies": {
+    "@capacitor/core": "^7.0.0"
+  }
+}
