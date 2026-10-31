@@ -106,7 +106,7 @@ if (!upLevel.open || upLevel.folders < 5 || !libClosed || !foreground()) fail('B
 // not in localStorage, and the calendar shows it.
 if (!METHODOLOGY) {
   await click('programSaveOpen'); await sleep(600);
-  await js(`(()=>{const d=document.getElementById('programSaveDest');d.value='diary';d.dispatchEvent(new Event('change'));return true})()`); await sleep(600);
+  await js(`document.querySelector('#programSaveDest [data-value="diary"]').click()`); await sleep(600);
   await js(`document.querySelector('#programSaveCalendar .ft-diary-day.is-today').click()`); await sleep(400);
   const label = await js(`document.getElementById('programSaveConfirm').textContent`);
   shot('04a_save_diary');
@@ -116,7 +116,20 @@ if (!METHODOLOGY) {
   const chip = await js(`document.querySelector('.ft-diary-day.is-today').className`);
   shot('04b_diary_assigned'); step('diary_assign', { label, file, chip });
   if (!(file?.a?.sessions === 1 && file.localStorageDiary?.length === 0 && /is-planned/.test(chip))) fail('diary assignment not stored in the data folder: ' + JSON.stringify({ file, chip }));
-  await click('programLibraryClose'); await sleep(400);
+  // STAGE 3.1: Diary → today → Add → Library → two blocks → × writes ONE appointment and comes back to the same date.
+  await js(`document.querySelector('.ft-diary-day.is-today').click()`); await sleep(300);
+  await js(`document.querySelector('.ft-diary-add-toggle').click()`); await sleep(300);
+  await js(`document.querySelector('.ft-diary-source-menu [data-value="library"]').click()`); await sleep(600);
+  for (let i = 0; i < 4 && !(await js(`!!document.querySelector('.ft-library-add:not([disabled])')`)); i++) { await js(`document.querySelector('.ft-library-folder').click()`); await sleep(400); }
+  await js(`document.querySelectorAll('.ft-library-add:not([disabled])')[0].click()`); await sleep(800);
+  await js(`document.querySelectorAll('.ft-library-add:not([disabled])')[1].click()`); await sleep(800);
+  shot('04c_library_draft');
+  await click('programLibraryClose'); await sleep(1500);
+  const draft = await js(`(async()=>{const fs=Capacitor.Plugins.Filesystem;const all=[];for(const s of ['a','b']){try{all.push(JSON.parse((await fs.readFile({path:'fighttech-diary-'+s+'.json',directory:'DATA',encoding:'utf8'})).data))}catch{}}const d=all.sort((x,y)=>y.seq-x.seq)[0];return {seq:d.seq,stages:d.sessions.map(x=>d.snapshots[x.planRef].entries.length),open:!document.getElementById('programLibraryModal').hidden,diaryTab:document.getElementById('programLibraryDiary').classList.contains('is-active'),selectedToday:!!document.querySelector('.ft-diary-day.is-today.is-selected'),cards:document.querySelectorAll('.ft-diary-session').length}})()`);
+  shot('04d_diary_after_x'); step('diary_library_x', draft);
+  if (!(JSON.stringify(draft?.stages) === '[1,2]' && draft.open && draft.diaryTab && draft.selectedToday && draft.cards === 2)) fail('Diary → Library → × did not write one appointment back to the date: ' + JSON.stringify(draft));
+  adb('shell', 'input', 'keyevent', '4'); await sleep(1200);
+  if (!(await js(`document.getElementById('programLibraryModal').hidden`))) fail('Back did not close the diary');
 }
 
 // Workout with a JS heartbeat.
@@ -165,7 +178,21 @@ if (!METHODOLOGY) {
   const recorded = await js(`(async()=>{const fs=Capacitor.Plugins.Filesystem;const all=[];for(const s of ['a','b']){try{all.push(JSON.parse((await fs.readFile({path:'fighttech-diary-'+s+'.json',directory:'DATA',encoding:'utf8'})).data))}catch{}}const d=all.sort((x,y)=>y.seq-x.seq)[0];return {seq:d.seq,sessions:d.sessions.map(x=>({status:x.status,origin:x.origin,facts:x.facts})),runLeft:localStorage.getItem('fighttech.diary.run.v1')}})()`);
   step('diary_record', { progress: progress && { roundsDone: progress.roundsDone, activeMs: progress.activeMs }, recorded });
   const run = recorded?.sessions?.find(x => x.facts);
-  if (!(run?.status === 'partial' && run.facts.activeSec > 30 && recorded.runLeft === null && recorded.sessions.length === 1)) fail('diary run not recorded: ' + JSON.stringify(recorded));
+  if (!(run?.status === 'partial' && run.facts.activeSec > 30 && recorded.runLeft === null && recorded.sessions.length === 2)) fail('diary run not recorded: ' + JSON.stringify(recorded));
+  // STAGE 3.1: «Спрашивать»; Android Back on «Записать?» is no answer: the run waits and is asked again when «Дневник» opens.
+  await js(`(()=>{document.getElementById('settingsBtn').click();document.querySelector('[data-diary-record="ask"]').click();document.getElementById('closeSettingsBtn').click();return true})()`);
+  await js(`document.getElementById('programStart').click()`); await sleep(9000);
+  await js(`document.getElementById('resetBtn').click()`); await sleep(1200);
+  const asked = await js(`!document.getElementById('programDeleteConfirmModal').hidden && document.getElementById('programDeleteConfirmTitle').textContent`);
+  shot('09_record_question');
+  adb('shell', 'input', 'keyevent', '4'); await sleep(1200);
+  const afterBack = await js(`({open:!document.getElementById('programDeleteConfirmModal').hidden,pending:JSON.parse(localStorage.getItem('fighttech.diary.pending.v1')||'[]').length})`);
+  await click('programLibraryOpen'); await sleep(600); await click('programLibraryDiary'); await sleep(1200);
+  const again = await js(`!document.getElementById('programDeleteConfirmModal').hidden`);
+  await click('programDeleteConfirmAccept'); await sleep(1500);
+  const final = await js(`(async()=>{const fs=Capacitor.Plugins.Filesystem;const all=[];for(const s of ['a','b']){try{all.push(JSON.parse((await fs.readFile({path:'fighttech-diary-'+s+'.json',directory:'DATA',encoding:'utf8'})).data))}catch{}}const d=all.sort((x,y)=>y.seq-x.seq)[0];return {sessions:d.sessions.length,pending:JSON.parse(localStorage.getItem('fighttech.diary.pending.v1')||'[]').length}})()`);
+  step('diary_back_on_question', { asked, afterBack, again, final });
+  if (!(asked && !afterBack.open && afterBack.pending === 1 && again && final.sessions === 3 && final.pending === 0)) fail('Back on «Записать?» lost or declined the run: ' + JSON.stringify({ asked, afterBack, again, final }));
 }
 
 report.crashes = crashes();

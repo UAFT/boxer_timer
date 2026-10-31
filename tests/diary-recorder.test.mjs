@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {createRecorder,roundsDoneFrom,applyRun,recordMode,RUN_KEY,RECORD_KEY} from '../app/js/diary/recorder.js';
+import {createRecorder,roundsDoneFrom,applyRun,recordMode,RUN_KEY,RECORD_KEY,PENDING_KEY} from '../app/js/diary/recorder.js';
+import {timerLabel} from '../app/js/diary/calendar-view.js';
 import {openDiary,newSession,localDate} from '../app/js/diary/store.js';
 
 const memoryStorage=()=>{const m=new Map();return {getItem:k=>m.has(k)?m.get(k):null,setItem:(k,v)=>m.set(k,String(v)),removeItem:k=>m.delete(k),map:m};};
@@ -56,7 +57,7 @@ test('pause alone records nothing; pause then resume keeps one run', () => {
   const id=rec.active.runId;
   drive(rec,c,[[0,'work',1],[20000,'work',1,true],[600000,'work',1,true],[0,'work',1,false],[10000,'rest',1]]);
   assert.equal(rec.active.runId,id,'still the same run');
-  assert.equal(rec.leftover(),null,'an active run is not a leftover');
+  assert.deepEqual(rec.pending(),[],'an active run is not waiting for an answer');
   assert.equal(rec.active.activeMs,30000);
 });
 
@@ -67,15 +68,16 @@ test('crash or kill: the run left behind keeps its last real progress and is off
   drive(rec,c,[[0,'work',1],[180000,'rest',1],[60000,'work',2],[100000,'work',2,true]]);
   // process killed here; a new app start:
   const next=createRecorder({storage:st,now:c.now});
-  const left=next.leftover();
+  const [left]=next.pending();
   assert.equal(left.status,'partial');
   assert.equal(left.roundsDone,1);
   assert.equal(left.sessionId,'d1');
+  assert.equal(st.getItem(RUN_KEY),null,'moved into the queue');
   next.settle(left.runId);
-  assert.equal(next.leftover(),null,'settled runs are never offered again');
+  assert.deepEqual(next.pending(),[],'settled runs are never offered again');
   // killed before any real work: nothing to offer
   const r2=createRecorder({storage:st,now:c.now});r2.begin({snap:snap('B'),roundsTotal:3,origin:'timer'});r2.observe(S('countdown',1),false);
-  assert.equal(createRecorder({storage:st,now:c.now}).leftover(),null);
+  assert.deepEqual(createRecorder({storage:st,now:c.now}).pending(),[]);
 });
 
 test('a finished run not yet saved survives a restart as finished', () => {
@@ -83,9 +85,65 @@ test('a finished run not yet saved survives a restart as finished', () => {
   rec.begin({snap:snap('A',1),roundsTotal:1,origin:'timer'});
   drive(rec,c,[[0,'work',1],[180000,'finished',1]]);
   const run=rec.finish(true);
-  const left=createRecorder({storage:st,now:c.now}).leftover();
+  const [left]=createRecorder({storage:st,now:c.now}).pending();
   assert.equal(left.runId,run.runId);
   assert.equal(left.status,'done');
+});
+
+test('closing «Записать?» without an answer keeps the run: asked again, and a new run does not overwrite it', () => {
+  const st=memoryStorage(),c=clock(Date.now()),rec=createRecorder({storage:st,now:c.now});
+  rec.begin({snap:snap('First',1),roundsTotal:1,origin:'timer'});
+  drive(rec,c,[[0,'work',1],[180000,'finished',1]]);
+  const first=rec.finish(true);
+  // dismissed: nothing settles it. The next run starts and is stopped early.
+  rec.begin({snap:snap('Second',3),roundsTotal:3,origin:'timer'});
+  drive(rec,c,[[0,'work',1],[180000,'rest',1]]);
+  const again=createRecorder({storage:st,now:c.now}); // even a crash right now loses neither
+  assert.deepEqual(again.pending().map(r=>r.runId),[first.runId,rec.active.runId]);
+  const second=rec.finish(false);
+  assert.deepEqual(rec.pending().map(r=>[r.runId,r.status]),[[first.runId,'done'],[second.runId,'partial']],'both wait, oldest first, once each');
+  rec.settle(first.runId);
+  assert.deepEqual(rec.pending().map(r=>r.runId),[second.runId]);
+});
+
+test('storage full when a run ends: the run stays in RUN_KEY and is still offered', () => {
+  const st=memoryStorage(),c=clock(Date.now()),rec=createRecorder({storage:st,now:c.now});
+  rec.begin({snap:snap('A',1),roundsTotal:1,origin:'timer'});
+  drive(rec,c,[[0,'work',1],[60000,'work',1]]);
+  const set=st.setItem;st.setItem=(k,v)=>{if(k===PENDING_KEY)throw new Error('QuotaExceededError');set(k,v);};
+  const run=rec.finish(false);
+  assert.equal(JSON.parse(st.getItem(RUN_KEY)).runId,run.runId);
+  st.setItem=set;
+  assert.deepEqual(createRecorder({storage:st,now:c.now}).pending().map(r=>[r.runId,r.status]),[[run.runId,'partial']]);
+});
+
+test("yesterday's appointment started today: today gets the record, yesterday stays missed", () => {
+  const draft={sessions:[],snapshots:{}};
+  const yesterday=newSession(draft.snapshots,{date:'2026-11-14',snap:snap('Plan'),programId:'p1',origin:'save'});
+  draft.sessions.push(yesterday);
+  applyRun(draft,{runId:'r1',date:'2026-11-15',startedAt:1,endedAt:2,roundsDone:3,roundsTotal:3,activeMs:540000,status:'done',
+    snap:snap('Plan'),sessionId:yesterday.id,programId:'p1',origin:'program'});
+  assert.equal(yesterday.status,'planned','not moved, not filled: the calendar shows it missed');
+  assert.equal(yesterday.date,'2026-11-14');
+  assert.deepEqual(draft.sessions.map(s=>[s.date,s.status]),[['2026-11-14','planned'],['2026-11-15','done']]);
+});
+
+test('plain-timer names follow the modes the main timer really has, in both languages', () => {
+  const t=(presetId,settings,lang)=>timerLabel({presetId,settings},lang);
+  assert.equal(t('classic3',{intervalMode:'standard'},'ru'),'Таймер 3′ · обычный');
+  assert.equal(t('classic2',{intervalMode:'ladder'},'ru'),'Таймер 2′ · лестница');
+  assert.equal(t('classic2',{intervalMode:'ladder',blockEnabled:true},'ru'),'Таймер 2′ · лестница + блоки');
+  assert.equal(t('classic1',{intervalMode:'two_phase'},'ru'),'Таймер 1′ · две фазы');
+  assert.equal(t('classic1',{intervalMode:'two_phase',ladderEnabled:true,blockEnabled:true},'ru'),'Таймер 1′ · две фазы + лестница + блоки');
+  assert.equal(t('classic1',{intervalMode:'two_phase',blockEnabled:true},'ru'),'Таймер 1′ · две фазы','blocks need a ladder');
+  assert.equal(t('classic3',{intervalMode:'count_up',blockEnabled:true},'ru'),'Таймер 3′ · прямой отсчёт');
+  assert.equal(t('tabata2020x24',{intervalMode:'standard'},'ru'),'Таймер Скоростной · обычный');
+  assert.equal(t('tabata2020x24',{intervalMode:'ladder',blockEnabled:true},'en'),'Timer Speed · ladder + blocks');
+  assert.equal(t('classic1',{intervalMode:'two_phase',ladderEnabled:true},'en'),'Timer 1′ · two phases + ladder');
+  assert.equal(t('classic3',{intervalMode:'count_up'},'en'),'Timer 3′ · count up');
+  // the main timer's mode chips are exactly these four
+  const html=readFileSync(new URL('../app/index.html',import.meta.url),'utf8');
+  assert.deepEqual([...html.matchAll(/data-interval-mode="(\w+)"/g)].map(m=>m[1]),['standard','two_phase','ladder','count_up']);
 });
 
 test('recording is idempotent and anchored to the start date across midnight', () => {

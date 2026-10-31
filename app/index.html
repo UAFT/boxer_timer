@@ -225,6 +225,7 @@
     </div>
     <div class="modal-backdrop ft-delete-overlay" id="programDeleteConfirmModal" hidden>
       <section class="settings-modal panel ft-delete-dialog" role="alertdialog" aria-modal="true" aria-labelledby="programDeleteConfirmTitle" aria-describedby="programDeleteConfirmMessage">
+        <button type="button" id="programDeleteConfirmDismiss" class="ft-delete-dismiss" aria-label="Закрыть окно">×</button>
         <h2 id="programDeleteConfirmTitle">Удалить программу?</h2>
         <p id="programDeleteConfirmMessage" class="ft-delete-message">Программа будет удалена без возможности восстановления.</p>
         <div class="ft-delete-name" id="programDeleteConfirmName"></div>
@@ -283,8 +284,8 @@
         <div class="settings-head"><h2 id="programSaveTitle">Сохранить программу</h2><button type="button" id="programSaveClose" aria-label="Закрыть окно">×</button></div>
         <div class="ft-save-fields">
           <label for="programNameInput">Название</label><input id="programNameInput" type="text" maxlength="400" />
-          <label for="programSaveDest">Куда сохранить</label>
-          <select id="programSaveDest"><option value="mine">В мои программы</option><option value="diary">В дневник</option><option value="both">В мои программы и дневник</option></select>
+          <span class="ft-save-label">Куда сохранить</span>
+          <div id="programSaveDest"></div>
         </div>
         <div id="programSaveCalendar" class="ft-diary ft-save-calendar" hidden></div>
         <p id="programSaveWarning" class="ft-diary-alert" role="alert" hidden></p>

@@ -14,11 +14,12 @@ export function installDeleteConfirmation(doc = document) {
   const acceptButton = get('programDeleteConfirmAccept');
   let pending = null;
 
-  function close(restoreFocus = true, accepted = false) {
+  // dismissed: closed without an answer (Back, outside tap, Esc, ×). Only the dialog's own cancel button means «no».
+  function close(restoreFocus = true, accepted = false, dismissed = false) {
     const previous = pending;
     pending = null;
     overlay.hidden = true;
-    if (!accepted) previous?.onCancel?.();
+    if (!accepted) (dismissed && previous?.onDismiss ? previous.onDismiss : previous?.onCancel)?.();
     doc.removeEventListener('keydown', onKeyDown);
     if (restoreFocus && previous) {
       const target = previous.trigger?.isConnected ? previous.trigger : get('programLibraryMine');
@@ -29,7 +30,7 @@ export function installDeleteConfirmation(doc = document) {
     if (!pending) return;
     if (event.key === 'Escape') {
       event.preventDefault();
-      close();
+      close(true, false, true);
       return;
     }
     if (event.key !== 'Tab') return;
@@ -44,7 +45,8 @@ export function installDeleteConfirmation(doc = document) {
     }
   }
   cancelButton.addEventListener('click', () => close());
-  overlay.addEventListener('click', event => { if (event.target === overlay) close(); });
+  get('programDeleteConfirmDismiss')?.addEventListener('click', () => close(true, false, true));
+  overlay.addEventListener('click', event => { if (event.target === overlay) close(true, false, true); });
   acceptButton.addEventListener('click', () => {
     if (!pending) return;
     const { onConfirm } = pending;
@@ -54,8 +56,9 @@ export function installDeleteConfirmation(doc = document) {
   });
   // labels: optional { ru, en } overrides, e.g. the diary's «Удалить из календаря?».
   // tone 'neutral': the same dialog for a non-destructive question (diary «Записать тренировку?»).
-  return function confirmDeletion({ name, trigger, onConfirm, onCancel, labels: custom, tone }) {
-    if (pending || typeof onConfirm !== 'function') return;
+  // onDismiss: closed without an answer; without it, dismissing counts as cancel. Returns false when another question is open.
+  return function confirmDeletion({ name, trigger, onConfirm, onCancel, onDismiss, labels: custom, tone }) {
+    if (pending || typeof onConfirm !== 'function') return false;
     const lang = doc.documentElement.lang === 'en' ? 'en' : 'ru';
     const copy = { ...deleteDialogLabels(lang), ...custom?.[lang] };
     get('programDeleteConfirmTitle').textContent = copy.title;
@@ -64,9 +67,10 @@ export function installDeleteConfirmation(doc = document) {
     cancelButton.textContent = copy.cancel;
     acceptButton.textContent = copy.delete;
     overlay.classList?.toggle('is-neutral', tone === 'neutral');
-    pending = { trigger, onConfirm, onCancel };
+    pending = { trigger, onConfirm, onCancel, onDismiss };
     overlay.hidden = false;
     doc.addEventListener('keydown', onKeyDown);
     cancelButton.focus();
+    return true;
   };
 }

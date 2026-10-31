@@ -1,7 +1,10 @@
 // «Дневник» tab: month calendar and, under it, the selected day's workouts. The same calendar picks dates in «Сохранить».
-import { compileProgram } from '../core/program.js';
-import { createActionIcon, renderSavedProgramCard, russianCount, timeWords } from '../ui/library-card-view.js';
-import { dayDots, dayStatus, localDate, monthCells, newId } from './store.js';
+import { compileProgram, normalizeOptions, normalizeProgram, PRESET_NAMES } from '../core/program.js';
+import { hasLadder } from '../core/ladder-blocks.js';
+import { LIBRARY, stageForWorkout } from '../library/native-adapter.js';
+import { createActionIcon, renderSavedProgramCard, russianCount, timeClock, timeWords } from '../ui/library-card-view.js';
+import { libraryDescription, renderCompactCard, renderDescription } from '../ui/workout-plan-view.js';
+import { dayDots, dayStatus, dropUnused, localDate, monthCells, newId } from './store.js';
 
 const TEXT = {
   ru: { prev: 'Предыдущий месяц', next: 'Следующий месяц', today: 'Сегодня', count: 'Тренировок: ', month: 'Месяц', year: 'Год',
@@ -14,6 +17,11 @@ const TEXT = {
     menu: 'Действия', move: 'Перенести на дату', repeat: 'Повторить на дату', remove: 'Удалить из календаря',
     pickMove: name => 'Выберите дату, чтобы перенести «' + name + '»', pickRepeat: name => 'Выберите дату, чтобы повторить «' + name + '»',
     cancelPick: 'Не переносить', loading: 'Загрузка дневника…',
+    assignDates: 'Назначить на даты', pickAssign: name => 'Отметьте даты для «' + name + '»', pickDates: 'Выберите даты в календаре',
+    start: 'Начать тренировку', edit: 'Изменить', stage: 'Этап ', between: 'Отдых между этапами: ', betweenCycles: 'Пауза между циклами: ',
+    cycles: n => 'Циклы: ' + n, roundsCount: n => russianCount(n), total: 'Всего: ', noLimit: 'Без ограничения времени',
+    deleteForever: 'Удалить тренировку', draftFailed: 'Не удалось записать тренировку в дневник. Добавленные блоки сохранены здесь — нажмите × ещё раз.',
+    untitled: 'Новая программа', timer: 'Таймер', modes: { standard: 'обычный', ladder: 'лестница', two_phase: 'две фазы', count_up: 'прямой отсчёт', blocks: 'блоки', speed: 'Скоростной' },
     newer: 'Дневник записан более новой версией приложения. Обновите приложение: записи сохранены, но здесь их нельзя изменить.',
     damaged: 'Файл дневника не читается. Записи не изменялись и не удалялись; изменения дневника отключены.',
     failed: 'Не удалось записать дневник. Ничего не изменено.' },
@@ -27,6 +35,11 @@ const TEXT = {
     menu: 'Actions', move: 'Move to date', repeat: 'Repeat on date', remove: 'Remove from calendar',
     pickMove: name => 'Pick a date to move «' + name + '»', pickRepeat: name => 'Pick a date to repeat «' + name + '»',
     cancelPick: 'Cancel', loading: 'Loading diary…',
+    assignDates: 'Assign to dates', pickAssign: name => 'Tick the dates for «' + name + '»', pickDates: 'Pick dates in the calendar',
+    start: 'Start workout', edit: 'Edit', stage: 'Stage ', between: 'Rest between stages: ', betweenCycles: 'Rest between cycles: ',
+    cycles: n => 'Cycles: ' + n, roundsCount: n => n + (n === 1 ? ' round' : ' rounds'), total: 'Total: ', noLimit: 'No time limit',
+    deleteForever: 'Delete workout', draftFailed: 'Could not write the workout to the diary. The added blocks are kept here — tap × again.',
+    untitled: 'New program', timer: 'Timer', modes: { standard: 'standard', ladder: 'ladder', two_phase: 'two phases', count_up: 'count up', blocks: 'blocks', speed: 'Speed' },
     newer: 'The diary was written by a newer app version. Update the app: records are kept but cannot be changed here.',
     damaged: 'The diary file cannot be read. No record was changed or deleted; diary changes are off.',
     failed: 'Could not write the diary. Nothing was changed.' }
@@ -50,6 +63,40 @@ function button(doc, className, text, onClick) {
   const b = el(doc, 'button', className, text); b.type = 'button'; b.addEventListener('click', onClick); return b;
 }
 
+// Plain-timer runs are named from what was actually set, in the language shown now: preset (3′/2′/1′/Speed) and the
+// main timer's modes — standard, ladder (+ blocks), two phases (+ ladder, + blocks), count up.
+export function timerLabel(entry, lang) {
+  const t = diaryText(lang), c = entry?.settings || {}, m = t.modes;
+  const preset = entry?.presetId === 'tabata2020x24' ? m.speed : PRESET_NAMES[entry?.presetId] || '';
+  const mode = c.intervalMode === 'count_up' ? m.count_up
+    : c.intervalMode === 'two_phase' ? m.two_phase + (c.ladderEnabled ? ' + ' + m.ladder : '')
+    : c.intervalMode === 'ladder' ? m.ladder : m.standard;
+  return t.timer + (preset ? ' ' + preset : '') + ' · ' + mode + (hasLadder(c) && c.blockEnabled && c.intervalMode !== 'count_up' ? ' + ' + m.blocks : '');
+}
+export const sessionTitle = (session, snap, lang) =>
+  session.origin === 'timer' && snap?.entries?.length === 1 ? timerLabel(snap.entries[0], lang) : snap?.name || diaryText(lang).untitled;
+
+// In-app dropdown in the Tree filter's style (never the OS picker). options: [[value, text]].
+const watched = new WeakSet();
+export function dropdown(doc, { label, options, value, onChange, className = '' }) {
+  if (!watched.has(doc)) {
+    watched.add(doc);
+    doc.addEventListener('pointerdown', e => { for (const d of doc.querySelectorAll('details.ft-dropdown[open]')) if (!d.contains(e.target)) d.open = false; });
+  }
+  const box = el(doc, 'details', 'ft-route-filter-menu ft-dropdown' + (className ? ' ' + className : ''));
+  const trigger = el(doc, 'summary', 'ft-route-filter-trigger');
+  trigger.setAttribute('aria-label', label + ': ' + (options.find(([v]) => v === value)?.[1] ?? ''));
+  trigger.append(el(doc, 'span', 'ft-dropdown-value', options.find(([v]) => v === value)?.[1] ?? ''), el(doc, 'span', 'ft-route-filter-arrow', '⌄'));
+  const list = el(doc, 'div', 'ft-route-filter-options'); list.setAttribute('role', 'listbox');
+  for (const [v, text] of options) {
+    const o = button(doc, 'ft-route-filter-option' + (v === value ? ' is-active' : ''), text, () => { box.open = false; if (v !== value) onChange(v); });
+    o.setAttribute('role', 'option'); o.setAttribute('aria-selected', String(v === value)); o.dataset.value = String(v);
+    list.append(o);
+  }
+  box.append(trigger, list);
+  return box;
+}
+
 // Month grid with ‹ › and a tap-to-open month/year selector. multi: each tap toggles a date (kept across months).
 export function createCalendar(doc, { now = () => new Date(), multi = false } = {}) {
   const cal = { month: null, selected: multi ? new Set() : null, picker: false };
@@ -71,17 +118,11 @@ export function createCalendar(doc, { now = () => new Date(), multi = false } = 
     if (cal.picker) {
       // Inline month and year; a change moves the calendar at once, a second tap on the title folds it.
       const row = el(doc, 'div', 'ft-diary-picker');
-      const select = (label, options, value, apply) => {
-        const s = el(doc, 'select', 'ft-diary-select'); s.setAttribute('aria-label', label);
-        for (const [v, text] of options) { const o = el(doc, 'option', '', text); o.value = String(v); s.append(o); }
-        s.value = String(value); s.addEventListener('change', () => apply(Number(s.value)));
-        return s;
-      };
       const years = sessions.map(s => Number(s.date.slice(0, 4)));
       const thisYear = Number(today.slice(0, 4));
       const from = Math.min(thisYear - 10, cal.month.y, ...years), to = Math.max(thisYear + 10, cal.month.y, ...years);
-      row.append(select(t.month, Array.from({ length: 12 }, (_, m) => [m, monthName(m)]), cal.month.m, m => go(cal.month.y, m)),
-        select(t.year, Array.from({ length: to - from + 1 }, (_, i) => [from + i, String(from + i)]), cal.month.y, y => go(y, cal.month.m)));
+      row.append(dropdown(doc, { label: t.month, className: 'ft-diary-select', options: Array.from({ length: 12 }, (_, m) => [m, monthName(m)]), value: cal.month.m, onChange: m => go(cal.month.y, m) }),
+        dropdown(doc, { label: t.year, className: 'ft-diary-select', options: Array.from({ length: to - from + 1 }, (_, i) => [from + i, String(from + i)]), value: cal.month.y, onChange: y => go(y, cal.month.m) }));
       surface.append(row);
     }
     if (hint) surface.append(hint);
@@ -115,10 +156,19 @@ export function createCalendar(doc, { now = () => new Date(), multi = false } = 
   return cal;
 }
 
-// host: getDiary(), savedPrograms(), openSession(session, snap), openProgram(program, date), assign(program, date),
-// startLibrary(date), confirmRemove({name, trigger, onConfirm}).
+// A stage that came from the library gets the library card's own description; any other stage, an honest empty state.
+let byTitle = null;
+function libraryWorkout(stage) {
+  if (!byTitle) { byTitle = new Map(); for (const w of LIBRARY) { const st = stageForWorkout(w); if (st?.title && !byTitle.has(st.title)) byTitle.set(st.title, w); } }
+  return byTitle.get(stage.title) || null;
+}
+const stageName = (stage, lang) => stage.title || timerLabel(stage, lang);
+
+// host: getDiary(), savedPrograms(), profiles(), openSession(session, snap), startSession(session, snap), openProgram(program, date),
+// assign(snapshots, program, date), startLibrary(date), confirmRemove({name, trigger, onConfirm}), confirmDelete({...}).
 export function createDiaryView(doc, host, { now = () => new Date() } = {}) {
   const cal = createCalendar(doc, { now });
+  const multi = createCalendar(doc, { now, multi: true });
   let pick = null, adding = false, source = 'mine', note = '';
 
   // Only what was recorded: never-started and partly done are told apart; partial shows the rounds and stages really finished.
@@ -131,46 +181,78 @@ export function createDiaryView(doc, host, { now = () => new Date() } = {}) {
     return t.running + ' · ' + t.rounds(done, session.facts?.roundsTotal) + stages;
   }
 
+  // One workout = one card: title, status, rounds and total time (work, rests, between stages), then each stage as the
+  // existing compact card (tap: its rounds; ☰: its description) with the real rest between stages.
   function sessionCard(diary, session, today, t, lang, rerender) {
     const snap = diary.snapshot(session.execRef || session.planRef) || { name: t.program, entries: [], options: {} };
-    const program = { id: session.id, name: snap.name || t.program, entries: snap.entries, options: snap.options };
+    const name = sessionTitle(session, snap, lang);
+    const entries = normalizeProgram(snap.entries), options = normalizeOptions(snap.options);
+    const all = compileProgram(entries, {}, options);
+    const card = el(doc, 'article', 'ft-diary-session is-' + (session.status === 'planned' && session.date < today ? 'missed' : session.status));
+    const top = el(doc, 'div', 'ft-diary-session-top');
+    top.append(el(doc, 'strong', 'ft-diary-session-name ft-program-title', name), menu(diary, session, name, t, rerender));
     const times = [stateText(session, today, t, snap)];
     if (session.startedAt) times.push(t.started + new Intl.DateTimeFormat(lang === 'en' ? 'en' : 'ru', { hour: '2-digit', minute: '2-digit' }).format(new Date(session.startedAt)));
     if (session.facts?.activeSec > 0) times.push(t.actual + timeWords(session.facts.activeSec, lang));
-    const menu = el(doc, 'details', 'ft-diary-menu');
-    const summary = el(doc, 'summary', 'ft-diary-menu-button', '⋮'); summary.setAttribute('aria-label', t.menu + ': ' + program.name);
-    const items = el(doc, 'div', 'ft-diary-menu-list');
-    const choose = kind => () => { pick = { kind, id: session.id, name: program.name }; menu.open = false; rerender(); };
-    if (session.status === 'planned') items.append(button(doc, 'ft-diary-menu-item', t.move, choose('move')));
-    items.append(button(doc, 'ft-diary-menu-item', t.repeat, choose('repeat')));
-    const remove = button(doc, 'ft-diary-menu-item', t.remove, () => {
-      menu.open = false;
-      host.confirmRemove({ name: program.name + ' · ' + session.date.split('-').reverse().join('.'), trigger: summary, onConfirm: () => change(diary, d => {
-        const s = d.sessions.find(x => x.id === session.id); if (!s) return false;
-        // Removing an assignment keeps the record (status canceled): history is never erased from storage.
-        s.status = 'canceled'; s.canceledAt = Date.now(); s.updatedAt = s.canceledAt;
-      }, rerender) });
+    const total = all.reduce((sum, r) => sum + r.workSec + (r.phaseTwoSec || 0) + r.restSec + (r.blockRestSec || 0), 0);
+    card.append(top, el(doc, 'p', 'ft-program-badge', times.join(' · ')),
+      el(doc, 'p', 'ft-diary-session-facts', [t.roundsCount(all.length), ...(options.cycles > 1 ? [t.cycles(options.cycles)] : []),
+        all.some(r => r.intervalMode === 'count_up') ? t.noLimit : t.total + timeWords(total, lang)].join(' · ')));
+    const stages = el(doc, 'div', 'ft-diary-stages');
+    entries.forEach((stage, i) => {
+      const workout = libraryWorkout(stage);
+      stages.append(renderCompactCard(doc, { className: 'ft-diary-stage', title: t.stage + (i + 1) + ' · ' + stageName(stage, lang),
+        rounds: compileProgram([stage], {}, { cycles: 1 }), lang,
+        description: elx => workout ? libraryDescription(doc, elx, workout, lang) : renderDescription(doc, elx, [], lang) }));
+      if (i < entries.length - 1) stages.append(el(doc, 'p', 'ft-diary-between', t.between + timeClock(stage.restAfterSec)));
     });
-    items.append(remove);
-    menu.append(summary, items);
-    const card = renderSavedProgramCard(doc, program, {}, { lang, badge: times.join(' · '), actions: [menu], onOpen: () => host.openSession(session, snap) });
-    card.classList.add('ft-diary-session', 'is-' + session.status);
+    if (options.cycles > 1) stages.append(el(doc, 'p', 'ft-diary-between', t.betweenCycles + timeClock(options.cycleRestSec)));
+    const actions = el(doc, 'div', 'ft-diary-session-actions');
+    actions.append(button(doc, 'ft-diary-start', t.start, () => host.startSession(session, snap)),
+      button(doc, 'ft-diary-edit', t.edit, () => host.openSession(session, snap)));
+    card.append(stages, actions);
     return card;
   }
 
+  function menu(diary, session, name, t, rerender) {
+    const box = el(doc, 'details', 'ft-diary-menu');
+    const summary = el(doc, 'summary', 'ft-diary-menu-button', '⋮'); summary.setAttribute('aria-label', t.menu + ': ' + name);
+    const items = el(doc, 'div', 'ft-diary-menu-list');
+    const choose = kind => () => { pick = { kind, id: session.id, name }; box.open = false; if (kind === 'assign') { multi.selected.clear(); multi.month = null; multi.show(session.date); } rerender(); };
+    const label = name + ' · ' + session.date.split('-').reverse().join('.');
+    if (session.status === 'planned') items.append(button(doc, 'ft-diary-menu-item', t.move, choose('move')));
+    items.append(button(doc, 'ft-diary-menu-item', t.repeat, choose('repeat')), button(doc, 'ft-diary-menu-item', t.assignDates, choose('assign')));
+    if (session.status === 'planned') items.append(button(doc, 'ft-diary-menu-item', t.remove, () => {
+      box.open = false;
+      host.confirmRemove({ name: label, trigger: summary, onConfirm: () => change(diary, d => {
+        const s = d.sessions.find(x => x.id === session.id); if (!s) return false;
+        // Removing an assignment keeps the record (status canceled): it only leaves the calendar.
+        s.status = 'canceled'; s.canceledAt = Date.now(); s.updatedAt = s.canceledAt;
+      }, rerender) });
+    }));
+    else items.append(button(doc, 'ft-diary-menu-item', t.deleteForever, () => {
+      box.open = false;
+      // Owner 2026-10-31: a done or partial record may be deleted for good, after the stronger confirmation.
+      host.confirmDelete({ name: label, trigger: summary, onConfirm: () => change(diary, d => {
+        const i = d.sessions.findIndex(x => x.id === session.id); if (i < 0) return false;
+        d.sessions.splice(i, 1); dropUnused(d);
+      }, rerender) });
+    }));
+    box.append(summary, items);
+    return box;
+  }
+
   async function change(diary, mutate, rerender) {
-    note = (await diary.commit(mutate)) ? '' : diaryText(doc.documentElement.lang).failed;
+    note = (await diary.commit(mutate)) === false ? diaryText(doc.documentElement.lang).failed : '';
     rerender();
   }
 
   function addPanel(diary, date, t, lang, rerender) {
     const panel = el(doc, 'div', 'ft-diary-add');
-    const label = el(doc, 'label', 'ft-diary-source', t.source);
-    const select = el(doc, 'select', 'ft-diary-select');
-    for (const [v, text] of [['mine', t.mine], ['library', t.library]]) { const o = el(doc, 'option', '', text); o.value = v; select.append(o); }
-    select.value = source;
-    select.addEventListener('change', () => { source = select.value; if (source === 'library') { source = 'mine'; adding = false; host.startLibrary(date); } else rerender(); });
-    label.append(select); panel.append(label);
+    const label = el(doc, 'div', 'ft-diary-source');
+    label.append(el(doc, 'span', '', t.source), dropdown(doc, { label: t.source, className: 'ft-diary-source-menu', options: [['mine', t.mine], ['library', t.library]], value: source,
+      onChange: v => { if (v === 'library') { adding = false; host.startLibrary(date); } else { source = v; rerender(); } } }));
+    panel.append(label);
     const programs = host.savedPrograms();
     if (!programs.length) panel.append(el(doc, 'p', 'ft-card-empty', t.noMine));
     for (const program of programs) {
@@ -182,6 +264,23 @@ export function createDiaryView(doc, host, { now = () => new Date() } = {}) {
       panel.append(renderSavedProgramCard(doc, program, host.profiles(), { lang, actions: [plus], onOpen: () => host.openProgram(program, date) }));
     }
     return panel;
+  }
+
+  // «Назначить на даты»: the same workout on more dates. A date that already has it planned is skipped, its own date stays.
+  function assignMore(diary, rerender) {
+    const { id } = pick, dates = [...multi.selected].sort();
+    pick = null;
+    change(diary, d => {
+      const s = d.sessions.find(x => x.id === id); if (!s) return false;
+      const ref = s.execRef || s.planRef, at = Date.now();
+      let added = 0;
+      for (const date of dates) {
+        if (date === s.date || d.sessions.some(x => x.date === date && x.status === 'planned' && (x.planRef === ref || (s.programId && x.programId === s.programId)))) continue;
+        d.sessions.push({ id: newId('d'), date, status: 'planned', programId: s.programId ?? null, planRef: ref, origin: 'assign', repeatOf: s.id, createdAt: at, updatedAt: at });
+        added++;
+      }
+      if (!added) return false;
+    }, rerender);
   }
 
   function render(list, lang = 'ru') {
@@ -196,22 +295,31 @@ export function createDiaryView(doc, host, { now = () => new Date() } = {}) {
     let hint = null;
     if (pick) {
       hint = el(doc, 'div', 'ft-diary-hint');
-      hint.append(el(doc, 'span', '', (pick.kind === 'move' ? t.pickMove : t.pickRepeat)(pick.name)), button(doc, 'ft-diary-hint-cancel', '×', () => { pick = null; rerender(); }));
+      hint.append(el(doc, 'span', '', ({ move: t.pickMove, repeat: t.pickRepeat, assign: t.pickAssign })[pick.kind](pick.name)), button(doc, 'ft-diary-hint-cancel', '×', () => { pick = null; rerender(); }));
       hint.lastChild.setAttribute('aria-label', t.cancelPick);
     }
-    const onTap = key => {
-      adding = false;
-      if (!pick) return;
-      const { kind, id } = pick; pick = null;
-      change(diary, d => {
-        const s = d.sessions.find(x => x.id === id); if (!s) return false;
-        if (kind === 'move') { if (s.status !== 'planned' || s.date === key) return false; s.date = key; s.updatedAt = Date.now(); return; }
-        const now = Date.now();
-        d.sessions.push({ id: newId('d'), date: key, status: 'planned', programId: s.programId ?? null,
-          planRef: s.execRef || s.planRef, origin: 'repeat', repeatOf: s.id, createdAt: now, updatedAt: now });
-      }, rerender);
-    };
-    root.append(cal.render(lang, sessions, { onTap, onChange: rerender, hint }));
+    if (pick?.kind === 'assign') {
+      const surface = multi.render(lang, sessions, { onChange: rerender, hint });
+      const n = multi.selected.size;
+      const go = button(doc, 'ft-diary-assign-confirm', n ? assignLabel(n, lang) : t.pickDates, () => assignMore(diary, rerender));
+      go.disabled = !n;
+      surface.append(go);
+      root.append(surface);
+    } else {
+      const onTap = key => {
+        adding = false;
+        if (!pick) return;
+        const { kind, id } = pick; pick = null;
+        change(diary, d => {
+          const s = d.sessions.find(x => x.id === id); if (!s) return false;
+          if (kind === 'move') { if (s.status !== 'planned' || s.date === key) return false; s.date = key; s.updatedAt = Date.now(); return; }
+          const at = Date.now();
+          d.sessions.push({ id: newId('d'), date: key, status: 'planned', programId: s.programId ?? null,
+            planRef: s.execRef || s.planRef, origin: 'repeat', repeatOf: s.id, createdAt: at, updatedAt: at });
+        }, rerender);
+      };
+      root.append(cal.render(lang, sessions, { onTap, onChange: rerender, hint }));
+    }
 
     const detail = el(doc, 'section', 'ft-diary-detail');
     const selected = cal.selected;
@@ -231,5 +339,6 @@ export function createDiaryView(doc, host, { now = () => new Date() } = {}) {
     root.append(detail);
     list.replaceChildren(root);
   }
-  return { render, calendar: cal };
+  // show(date): open the diary on this date (after a library pick, «×» comes back here).
+  return { render, calendar: cal, show(date) { pick = null; adding = false; cal.selected = date; cal.show(date); } };
 }

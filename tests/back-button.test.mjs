@@ -50,6 +50,14 @@ test('a dialog over the library closes before the library, the full-screen plan 
  assert.equal(g.press(),'closed');assert.deepEqual(g.clicks,['ladderExpand']);
 });
 
+test('Back on a confirmation presses its × (no answer), not its cancel button',()=>{
+ const f=fixture();
+ f.elements.programDeleteConfirmModal.hidden=false;
+ f.elements.programDeleteConfirmDismiss={id:'programDeleteConfirmDismiss',hidden:false,click(){f.clicks.push('programDeleteConfirmDismiss');}};
+ f.press();
+ assert.deepEqual(f.clicks,['programDeleteConfirmDismiss']);
+});
+
 test('during a workout the first press warns, a second press within 2.5 s minimizes',()=>{
  const f=fixture({active:true});
  assert.equal(f.press(),'warned');

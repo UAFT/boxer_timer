@@ -25,7 +25,7 @@ import { installWorkoutExchange } from './sharing/workout-exchange-ui.js';
 import { storeImportedWorkout, resolveSenderSettings } from './sharing/workout-file.js';
 import { renderSavedProgramCard, createActionIcon } from './ui/library-card-view.js';
 import { renderLibraryWorkoutCard, renderPlanList, planSummary } from './ui/workout-plan-view.js';
-import { syncEditorProgramHeader, editorProgramIdentity, programHeading } from './ui/program-presentation.js';
+import { syncEditorProgramHeader, editorProgramIdentity } from './ui/program-presentation.js';
 import { renderPresetOrders } from './ui/preset-order.js';
 import { editableRestField } from './core/ladder-blocks.js';
 import { installLocalization } from './i18n/locale.js';
@@ -48,8 +48,8 @@ import {
   setSettingsForm
 } from './ui/render.js';
 import { bindControls, bindPresetTabs } from './ui/bindings.js';
-import { createDiaryView, createCalendar, assignLabel } from './diary/calendar-view.js';
-import { openDiary, newSession, putSnapshot, localDate } from './diary/store.js';
+import { createDiaryView, createCalendar, assignLabel, timerLabel, sessionTitle, dropdown, diaryText } from './diary/calendar-view.js';
+import { openDiary, newSession, putSnapshot, localDate, dropUnused } from './diary/store.js';
 import { createRecorder, applyRun, recordMode, RECORD_KEY } from './diary/recorder.js';
 
 const DEFAULT_PRESET_ID = 'classic3';
@@ -386,31 +386,43 @@ function diarySnap(name,entries,options) {
 // STAGE 3: a run starts recording with what is actually started (a program from the editor, or the plain timer).
 function beginRun(rounds) {
   const lang=document.documentElement.lang;
-  const snap=rounds ? diarySnap(openedProgramName || programHeading('',programEntries,profiles,programOptions,lang).name,programEntries,programOptions)
-    : diarySnap((lang==='en'?'Timer ':'Таймер ')+PRESET_NAMES[activePresetId],[{presetId:activePresetId,title:'',settings:structuredClone(activeSettings)}],{});
+  const snap=rounds ? diarySnap(openedProgramName,programEntries,programOptions)
+    : diarySnap(timerLabel({presetId:activePresetId,settings:activeSettings},lang),[{presetId:activePresetId,title:'',settings:structuredClone(activeSettings)}],{});
   recorder.begin({snap,roundsTotal:rounds ? rounds.length : compileProgram(snap.entries,{},snap.options).length,
     sessionId:rounds ? editorDiary?.sessionId ?? null : null,programId:rounds ? openedProgramId : null,origin:rounds ? 'program' : 'timer'});
 }
 // Finished (completed) or stopped early. Pause never comes here. Nothing is offered when nothing was done.
 function endRun(completed) {
-  const run=recorder.finish(completed);
-  if (run) offerRun(run);
+  if (recorder.finish(completed)) offerPending();
 }
-async function offerRun(run) {
+// Every finished run waits in the recorder's queue until it is recorded or the user answers «Не записывать».
+// Closing the question any other way (Back, outside tap, Esc, ×) is no answer: the run stays and is asked again
+// on the next app start or when «Дневник» opens.
+let offering=false;
+async function offerPending() {
+  if (offering) return;
   const diary=await diaryReady;
-  // A read-only diary keeps the run waiting (it stays in RUN_KEY) instead of losing it.
+  // A read-only diary keeps the runs waiting instead of losing them.
   if (diary.state!=='ok') return;
-  if (diary.sessions.some(s=>s.runId===run.runId)) { recorder.settle(run.runId); return; }
-  if (recordMode()==='auto') { recordRun(run); return; }
+  const run=recorder.pending()[0];
+  if (!run) return;
+  if (diary.sessions.some(s=>s.runId===run.runId)) { recorder.settle(run.runId); return offerPending(); }
+  if (recordMode()==='auto') { if (await recordRun(run)) offerPending(); return; }
   const en=document.documentElement.lang==='en',done=run.status==='done';
   const facts=(en?'Rounds completed: ':'Выполнено раундов: ')+run.roundsDone+(en?' of ':' из ')+run.roundsTotal;
-  confirmDeletion({name:run.snap.name+' · '+run.date.split('-').reverse().join('.'),trigger:null,tone:'neutral',
+  const name=sessionTitle(run,run.snap,document.documentElement.lang);
+  offering=confirmDeletion({name:name+' · '+run.date.split('-').reverse().join('.'),trigger:null,tone:'neutral',
     labels:{ru:{title:done?'Записать тренировку в дневник?':'Тренировка не завершена. Записать в дневник?',message:facts,cancel:'Не записывать',delete:'Записать'},
       en:{title:done?'Save the workout to the diary?':'The workout was not finished. Save it to the diary?',message:facts,cancel:'Do not save',delete:'Save'}},
-    onConfirm:()=>recordRun(run),onCancel:()=>recorder.settle(run.runId)});
+    onConfirm:async()=>{offering=false;if(await recordRun(run))offerPending();},
+    onCancel:()=>{offering=false;recorder.settle(run.runId);offerPending();},
+    onDismiss:()=>{offering=false;}});
 }
 async function recordRun(run) {
-  if (await diaryStore.commit(d=>applyRun(d,run))) recorder.settle(run.runId);
+  const ok=await diaryStore.commit(d=>applyRun(d,run));
+  // null: this run is already in the diary.
+  if (ok!==false) recorder.settle(run.runId);
+  return ok!==false;
 }
 
 function store(key, value) {
@@ -731,6 +743,28 @@ function bindProgramLibrary() {
   const library=byId('programLibraryModal');
   const save=byId('programSaveModal');
   const close=()=>{library.hidden=true;save.hidden=true;libraryDraft=null;};
+  // «×» of the library window. A workout being collected for a diary date is written there first; the window then
+  // shows that date in «Дневник». With nothing collected it goes back to the date as well. A failed write keeps the draft.
+  async function closeLibrary() {
+    if (!libraryDraft) return close();
+    if (libraryDraft.entries.length && !(await saveLibraryDraft())) return;
+    const date=libraryDraft.date;
+    libraryDraft=null;libraryTab='diary';libraryPath={};diary.show(date);renderLibrary();
+  }
+  // One draft = one appointment: the first block creates it, every next block updates the same one (same id).
+  async function saveLibraryDraft() {
+    const draft=libraryDraft;
+    const snap=diarySnap('',draft.entries,{});
+    const ok=await diaryStore?.commit(d=>{
+      const own=draft.sessionId && d.sessions.find(x=>x.id===draft.sessionId && x.status==='planned');
+      if(own){own.planRef=putSnapshot(d.snapshots,snap);own.updatedAt=Date.now();dropUnused(d);return;}
+      const session=newSession(d.snapshots,{date:draft.date,snap,programId:null,origin:'diary'});
+      d.sessions.push(session);draft.sessionId=session.id;
+    });
+    draft.failed=ok===false;
+    if(libraryDraft===draft && libraryTab==='templates')renderLibrary();
+    return !draft.failed;
+  }
   // The library changes only once it is on disk; a full storage leaves it as it was.
   function persistLibrary(next) {if(!store(LIBRARY_KEY,next))return false;savedPrograms=next;return true;}
   const exchange=installWorkoutExchange({
@@ -762,19 +796,31 @@ function bindProgramLibrary() {
   diaryReady.then(()=>{if(!library.hidden && libraryTab==='diary')renderLibrary();});
   // A library block picked from «Дневник → Добавить тренировку» starts a new workout; further blocks join it.
   let libraryDraft=null;
+  // An appointment opens in the existing editor as a copy of its snapshot; «Мои» and other dates are not touched.
+  const openSession=(session,snap)=>openEntry({id:session.programId,name:sessionTitle(session,snap,document.documentElement.lang),entries:snap.entries,options:snap.options},
+    !savedPrograms.some(p=>p.id===session.programId),{date:session.date,sessionId:session.id});
   const diary=createDiaryView(document,{
     getDiary:()=>diaryStore,
     savedPrograms:()=>savedPrograms,
     profiles:()=>profiles,
-    openSession:(session,snap)=>openEntry({id:session.programId,name:snap.name,entries:snap.entries,options:snap.options},
-      !savedPrograms.some(p=>p.id===session.programId),{date:session.date,sessionId:session.id}),
+    openSession,
+    // «Начать тренировку»: the existing timer, linked to this appointment. Started on another day, the run is recorded
+    // on its own start date and the appointment's date keeps its status (moving it is «Перенести на дату»).
+    startSession:async(session,snap)=>{
+      if(!openSession(session,snap))return;
+      await audio.unlock();startProgram();
+    },
     openProgram:(program,date)=>openEntry(program,false,{date,sessionId:null}),
     assign:(snapshots,program,date)=>newSession(snapshots,{date,snap:diarySnap(program.name,program.entries,program.options),programId:program.id,origin:'diary'}),
-    startLibrary:date=>{libraryDraft={date,count:0};libraryTab='templates';libraryPath={};renderLibrary();},
+    startLibrary:date=>{libraryDraft={date,entries:[],sessionId:null,failed:false};libraryTab='templates';libraryPath={};renderLibrary();},
     confirmRemove:opts=>confirmDeletion({...opts,labels:{
       ru:{title:'Удалить из календаря?',message:'Тренировка исчезнет из календаря. Программа в «Мои» останется.',delete:'Удалить'},
-      en:{title:'Remove from calendar?',message:'The workout leaves the calendar. The program in «Mine» stays.',delete:'Remove'}}})
+      en:{title:'Remove from calendar?',message:'The workout leaves the calendar. The program in «Mine» stays.',delete:'Remove'}}}),
+    confirmDelete:opts=>confirmDeletion({...opts,labels:{
+      ru:{title:'Удалить тренировку безвозвратно?',message:'Запись о выполнении и назначение на эту дату будут удалены навсегда. Программа в «Мои» и другие даты не изменятся.',delete:'Удалить навсегда'},
+      en:{title:'Delete the workout permanently?',message:'The execution record and the assignment for this date will be deleted for good. The program in «Mine» and other dates stay unchanged.',delete:'Delete permanently'}}})
   });
+
   function renderLibrary() {
     const list=byId('programLibraryList');list.replaceChildren();
     byId('ftWorkoutExchangeToolbar').hidden=libraryTab!=='mine';
@@ -792,10 +838,11 @@ function bindProgramLibrary() {
     byId('programLibraryTitle').textContent=libraryTab==='mine'?'Мои программы':level.title;
     if(libraryTab==='templates') {
       if(libraryDraft) {
-        const en=document.documentElement.lang==='en',[y,m,d]=libraryDraft.date.split('-');
+        const en=document.documentElement.lang==='en',[y,m,d]=libraryDraft.date.split('-'),n=libraryDraft.entries.length;
         list.append(Object.assign(document.createElement('p'),{className:'ft-diary-hint ft-library-draft',textContent:en
-          ?'New workout for '+d+'.'+m+'.'+y+(libraryDraft.count?': blocks added — '+libraryDraft.count+'. Close the window and tap «Save».':'. Tap + on a block: it becomes stage 1.')
-          :'Новая тренировка на '+d+'.'+m+'.'+y+(libraryDraft.count?': добавлено блоков — '+libraryDraft.count+'. Закройте окно и нажмите «Сохранить».':'. Нажмите + у блока: он станет этапом 1.')}));
+          ?'New workout for '+d+'.'+m+'.'+y+(n?': stages added — '+n+'. Each + adds one more stage; × returns to the diary.':'. Tap + on a block: it becomes stage 1.')
+          :'Новая тренировка на '+d+'.'+m+'.'+y+(n?': добавлено этапов — '+n+'. Каждый + добавляет ещё этап; × вернёт в дневник.':'. Нажмите + у блока: он станет этапом 1.')}));
+        if(libraryDraft.failed)list.append(Object.assign(document.createElement('p'),{className:'ft-diary-alert',role:'alert',textContent:diaryText(document.documentElement.lang).draftFailed}));
       }
       for(const item of level.items) {
         if(item.kind!=='workout') {
@@ -812,17 +859,18 @@ function bindProgramLibrary() {
         list.append(renderLibraryWorkoutCard(document,workout,{
           rounds:preview?compileProgram([preview],profiles,{cycles:1}):[],
           lang:document.documentElement.lang,
-          addDisabled:!preview || programRunning || (programEntries.length>=24 && !(libraryDraft && !libraryDraft.count)),
+          addDisabled:!preview || (libraryDraft ? libraryDraft.entries.length>=24 : programRunning || programEntries.length>=24),
           plusIcon:()=>createActionIcon(document,'plus'),
           onAdd:()=>{
-            const stage=stageForWorkout(workout);if(!stage||programRunning)return false;
-            if(libraryDraft&&!libraryDraft.count){
-              if(isPlaybackProtected(timer,programRunning))return false;
-              programEntries=[];openedProgramId=null;openedProgramName='';editorDiary={date:libraryDraft.date,sessionId:null};
+            const stage=stageForWorkout(workout);if(!stage)return false;
+            // A diary draft collects its own stages; the timer screen's workout is not touched.
+            if(libraryDraft){
+              if(libraryDraft.entries.length>=24)return false;
+              libraryDraft.entries.push(stage);saveLibraryDraft();
+              return true;
             }
-            if(programEntries.length>=24)return false;
+            if(programRunning||programEntries.length>=24)return false;
             programEntries.push(stage);persistProgram();
-            if(libraryDraft){libraryDraft.count++;renderLibrary();}
             return true;
           }
         }));
@@ -1011,26 +1059,31 @@ function bindProgramLibrary() {
   }
   byId('ftMethodV42Tab').addEventListener('click',()=>{libraryTab='method';libraryPath={};renderLibrary();});
   byId('programLibraryOpen').addEventListener('click',()=>{libraryTab='mine';libraryPath={};renderLibrary();library.hidden=false;});
-  byId('programLibraryClose').addEventListener('click',close);
+  byId('programLibraryClose').addEventListener('click',closeLibrary);
   byId('programLibraryBack').addEventListener('click',()=>{libraryPath=libraryUp(libraryPath);renderLibrary();});
   byId('programLibraryMine').addEventListener('click',()=>{libraryTab='mine';libraryDraft=null;libraryPath={};renderLibrary();});
   byId('programLibraryTemplates').addEventListener('click',()=>{libraryTab='templates';libraryDraft=null;libraryPath={};renderLibrary();});
-  byId('programLibraryDiary').addEventListener('click',()=>{libraryTab='diary';libraryDraft=null;libraryPath={};renderLibrary();});
+  byId('programLibraryDiary').addEventListener('click',()=>{libraryTab='diary';libraryDraft=null;libraryPath={};renderLibrary();offerPending();});
   // «Сохранить»: one destination, one button. The diary part assigns dates on the inline calendar.
   const saveCal=createCalendar(document,{multi:true});
-  const nameInput=byId('programNameInput'),dest=byId('programSaveDest'),confirmSave=byId('programSaveConfirm');
+  const nameInput=byId('programNameInput'),confirmSave=byId('programSaveConfirm');
+  const dest={value:'mine'};
   let saving=false,collisionAck=null;
   function renderSaveDialog() {
     const lang=document.documentElement.lang,en=lang==='en',withDiary=dest.value!=='mine';
+    byId('programSaveDest').replaceChildren(dropdown(document,{label:en?'Save to':'Куда сохранить',className:'ft-save-dest',value:dest.value,
+      options:en?[['mine','To my programs'],['diary','To the diary'],['both','To my programs and diary']]:[['mine','В мои программы'],['diary','В дневник'],['both','В мои программы и дневник']],
+      onChange:v=>{dest.value=v;renderSaveDialog();}}));
     const box=byId('programSaveCalendar');box.hidden=!withDiary;
     if(withDiary)box.replaceChildren(saveCal.render(lang,diaryStore?.sessions||[],{onChange:renderSaveDialog}));
     const n=saveCal.selected.size;
-    confirmSave.textContent=!withDiary?(en?'Save':'Сохранить'):n?assignLabel(n,lang,dest.value==='both'):(en?'Pick dates in the calendar':'Выберите даты в календаре');
+    const asNew=collisionAck && collisionAck===nameInput.value.trim() && dest.value!=='diary';
+    confirmSave.textContent=asNew&&!withDiary?(en?'Save as new':'Сохранить как новую'):!withDiary?(en?'Save':'Сохранить'):n?assignLabel(n,lang,dest.value==='both'):(en?'Pick dates in the calendar':'Выберите даты в календаре');
     confirmSave.disabled=saving || (withDiary && (!n || diaryStore?.state!=='ok'));
     const warn=byId('programSaveWarning'),name=nameInput.value.trim();
-    warn.hidden=!(collisionAck && collisionAck===name && dest.value!=='diary');
-    warn.textContent=en?'«'+name+'» already exists in «Mine». Press again to save one more program with this name, or change the name.'
-      :'Программа «'+name+'» уже есть в «Мои». Нажмите ещё раз, чтобы сохранить ещё одну с этим названием, или измените название.';
+    warn.hidden=!asNew;
+    warn.textContent=en?'«'+name+'» already exists in «Mine». Change the name, or press the button again to save it as a new program with the same name.'
+      :'Программа «'+name+'» уже есть в «Мои». Измените название или нажмите кнопку ещё раз, чтобы сохранить её как новую с тем же названием.';
   }
   byId('programSaveOpen').addEventListener('click',()=>{
     nameInput.value=openedProgramName||'';collisionAck=null;
@@ -1039,7 +1092,6 @@ function bindProgramLibrary() {
     if(editorDiary){saveCal.selected.add(editorDiary.date);saveCal.show(editorDiary.date);}
     save.hidden=false;renderSaveDialog();
   });
-  dest.addEventListener('change',renderSaveDialog);
   nameInput.addEventListener('input',()=>{if(collisionAck){collisionAck=null;renderSaveDialog();}});
   byId('programSaveClose').addEventListener('click',close);
   confirmSave.addEventListener('click',async()=>{
@@ -1052,8 +1104,9 @@ function bindProgramLibrary() {
     const before=savedPrograms,existing=editorProgramIdentity(openedProgramId,savedPrograms);
     let programId=existing?.id||null;
     if(toMine) {
-      // The open «Мои» program under its own name is updated in place; any other name makes a new program.
-      if(existing && existing.name===name) {
+      // The open «Мои» program under its own name is updated in place (by its id); any other name makes a new program.
+      // An appointment opened from «Дневник» is a copy: saving it to «Мои» always makes a new program, the source stays.
+      if(existing && existing.name===name && !editorDiary?.sessionId) {
         if(!persistLibrary(savedPrograms.map(x=>x.id===existing.id?snapshot(name,existing.id):x)))return;
       } else {
         if(savedPrograms.length>=100){window.alert(en?'«Mine» already holds 100 programs. Delete one you no longer need.':'В «Мои» уже 100 программ. Удалите ненужную.');return;}
@@ -1066,7 +1119,7 @@ function bindProgramLibrary() {
     }
     if(toDiary) {
       saving=true;renderSaveDialog();
-      const snap=diarySnap(name || programHeading('',programEntries,profiles,programOptions,lang).name,programEntries,programOptions);
+      const snap=diarySnap(name,programEntries,programOptions);
       const ctx=editorDiary,today=localDate();
       let todayId=null;
       const ok=await diaryStore.commit(d=>{
@@ -1158,8 +1211,7 @@ function bootstrap() {
   installBilling();
   bindDiaryRecordSetting();
   // A run cut short by a crash or kill: offered (or recorded) once, with the progress it really had.
-  const leftover=recorder.leftover();
-  if (leftover) offerRun(leftover);
+  offerPending();
   renderCurrentState();
   installLocalization(document.querySelectorAll('[data-language]'));
 }

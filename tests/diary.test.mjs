@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {openDiary,newSession,putSnapshot,dayStatus,dayDots,monthCells,localDate} from '../app/js/diary/store.js';
-import {assignLabel} from '../app/js/diary/calendar-view.js';
+import {openDiary,newSession,putSnapshot,dayStatus,dayDots,monthCells,localDate,dropUnused} from '../app/js/diary/store.js';
+import {assignLabel,diaryText} from '../app/js/diary/calendar-view.js';
 
 const TODAY='2026-11-15';
 const s=(date,status,id=date+status+Math.random())=>({id,date,status});
@@ -123,4 +123,37 @@ test('capacity: 3500 records over ten years stay readable and nothing is dropped
   assert.equal(again.sessions[0].date,'2017-01-01','oldest record still there');
   assert.equal(Object.keys(JSON.parse(back.files.a).snapshots).length,40,'repeats share snapshots');
   assert.ok(back.files.a.length<1.2e6,'about 300 bytes per record: '+back.files.a.length);
+});
+
+test('commit: true when written, null when there was nothing to change, false on failure', async () => {
+  const files={},back={read:async s=>files[s]??null,write:async(s,t)=>{files[s]=t;}};
+  const d=await openDiary(back);
+  assert.equal(await d.commit(()=>false),null);
+  assert.deepEqual(files,{},'nothing written');
+  assert.equal(await d.commit(x=>{x.sessions.push(newSession(x.snapshots,{date:'2026-11-15',snap:{name:'A',entries:[],options:{}},origin:'test'}));}),true);
+  back.write=async()=>{throw new Error('disk');};
+  assert.equal(await d.commit(x=>{x.sessions.length=0;}),false);
+  assert.equal(d.sessions.length,1);
+});
+
+test('dropUnused removes only snapshots no session (canceled included) points at', () => {
+  const draft={sessions:[],snapshots:{}};
+  const a=newSession(draft.snapshots,{date:'2026-11-15',snap:{name:'A'},origin:'t'});
+  const c=newSession(draft.snapshots,{date:'2026-11-16',snap:{name:'C'},origin:'t'});c.status='canceled';
+  const done=newSession(draft.snapshots,{date:'2026-11-17',snap:{name:'P'},origin:'t'});done.execRef=putSnapshot(draft.snapshots,{name:'E'});
+  putSnapshot(draft.snapshots,{name:'orphan'});
+  draft.sessions.push(a,c,done);
+  dropUnused(draft);
+  assert.deepEqual(Object.values(draft.snapshots).map(x=>x.name).sort(),['A','C','E','P']);
+});
+
+test('STAGE 3.1 UI ships RU and EN together and uses no native selects in the diary or «Сохранить»', () => {
+  const view=readFileSync(new URL('../app/js/diary/calendar-view.js',import.meta.url),'utf8');
+  const html=readFileSync(new URL('../app/index.html',import.meta.url),'utf8');
+  assert.ok(!/createElement\('select'\)|'select', 'ft-diary-select'/.test(view));
+  assert.ok(!/<select id="programSaveDest"/.test(html));
+  const shape=o=>Object.fromEntries(Object.entries(o).map(([k,v])=>[k,v&&typeof v==='object'&&!Array.isArray(v)?shape(v):typeof v]));
+  assert.deepEqual(shape(diaryText('en')),shape(diaryText('ru')),'every Russian diary string has an English one');
+  const strings=o=>Object.values(o).flatMap(v=>typeof v==='function'?[String(v(1,2))]:Array.isArray(v)?v.flat():v&&typeof v==='object'?strings(v):[v]);
+  assert.deepEqual(strings(diaryText('en')).filter(x=>/[А-Яа-яЁё]/.test(x)),[],'English texts are English');
 });

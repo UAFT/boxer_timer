@@ -8,7 +8,8 @@
 //  4. otherwise the app moves to the background, as Android 12+ does for a root screen.
 const CLOSERS = [
   ['ftLanguageList', 'ftLanguageTrigger'],
-  ['programDeleteConfirmModal', 'programDeleteConfirmCancel'],
+  // × first: Back closes a question without answering it (the diary's «Записать?» is asked again later).
+  ['programDeleteConfirmModal', 'programDeleteConfirmDismiss', 'programDeleteConfirmCancel'],
   ['ftWorkoutImportModal', 'ftWorkoutImportCancel'],
   ['roundEditModal', 'roundEditCancel'],
   ['stageSettingsModal', 'stageSettingsCancel'],

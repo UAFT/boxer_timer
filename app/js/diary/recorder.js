@@ -1,11 +1,13 @@
 // STAGE 3: what a timer run actually did, recorded into the diary. Nothing here invents progress:
 // rounds count only once their work phase has ended, time only while the timer runs (not paused, not the countdown).
-// The run in progress is mirrored to localStorage so a crash or kill still leaves its real progress behind.
+// The run in progress is mirrored to localStorage so a crash or kill still leaves its real progress behind;
+// a finished run waits in a queue until it is recorded or explicitly declined.
 import { writeJson } from '../state/storage.js';
 import { localDate, newId, newSession, putSnapshot } from './store.js';
 
 export const RUN_KEY = 'fighttech.diary.run.v1';
 export const RECORD_KEY = 'fighttech.diary.record.v1';
+export const PENDING_KEY = 'fighttech.diary.pending.v1';
 const WORKING = new Set(['work', 'work_two', 'count_up']);
 
 // Gear setting «Запись тренировок в дневник»: 'auto' records at once, anything else asks first.
@@ -25,10 +27,25 @@ export function createRecorder({ storage = globalThis.localStorage, now = () => 
   let run = null, lastPhase = 'idle', lastPaused = false, savedAt = 0;
   // ponytail: whole-run rewrite every phase change and at most every 10 s; a crash loses at most 10 s of counted time.
   const save = () => { savedAt = now(); writeJson(RUN_KEY, run, storage); };
+  const read = key => { try { return JSON.parse(storage.getItem(key) || 'null'); } catch { return null; } };
+  const queue = () => (Array.isArray(read(PENDING_KEY)) ? read(PENDING_KEY) : []).filter(r => r && typeof r.runId === 'string' && r.snap);
+  // A run left in RUN_KEY by a crash, kill, or an earlier version joins the queue with its last saved progress, never more.
+  function adopt() {
+    if (run) return;
+    const saved = read(RUN_KEY);
+    if (!saved || typeof saved.runId !== 'string' || !saved.snap) { storage.removeItem(RUN_KEY); return; }
+    if (!saved.status) {
+      if (!saved.roundsDone && saved.activeMs < 1000) { storage.removeItem(RUN_KEY); return; }
+      saved.status = 'partial'; saved.endedAt = saved.updatedAt;
+    }
+    const list = queue();
+    if (list.some(r => r.runId === saved.runId) || writeJson(PENDING_KEY, [...list, saved], storage)) storage.removeItem(RUN_KEY);
+  }
   return {
     get active() { return run; },
     // snap: the program exactly as started (edits made before Start included). link: {sessionId, programId}.
     begin({ snap, roundsTotal, sessionId = null, programId = null, origin }) {
+      adopt();
       const t = now();
       run = { runId: newId('r'), date: localDate(new Date(t)), startedAt: t, updatedAt: t, snap, roundsTotal, sessionId, programId, origin,
         roundsDone: 0, activeMs: 0 };
@@ -46,7 +63,7 @@ export function createRecorder({ storage = globalThis.localStorage, now = () => 
       run.roundsDone = done; lastPhase = state?.phase || 'idle'; lastPaused = !!paused;
       if (changed || t - savedAt >= 10000) save();
     },
-    // completed: the timer reached its end. Returns the finished run, or null when nothing was actually done.
+    // completed: the timer reached its end. Returns the finished run (now waiting in the queue), or null when nothing was done.
     finish(completed) {
       if (!run) return null;
       const ended = run;
@@ -55,24 +72,18 @@ export function createRecorder({ storage = globalThis.localStorage, now = () => 
       ended.status = completed ? 'done' : 'partial';
       if (completed) ended.roundsDone = ended.roundsTotal || ended.roundsDone;
       if (!completed && !ended.roundsDone && ended.activeMs < 1000) { storage.removeItem(RUN_KEY); return null; }
-      writeJson(RUN_KEY, ended, storage);
+      // Queued first, then the active copy goes; a full storage keeps it in RUN_KEY, where adopt() finds it later.
+      if (writeJson(PENDING_KEY, [...queue().filter(r => r.runId !== ended.runId), ended], storage)) storage.removeItem(RUN_KEY);
+      else writeJson(RUN_KEY, ended, storage);
       return ended;
     },
-    // A run left behind by a crash or kill: its last saved progress, never more. Null when there is none.
-    leftover() {
-      if (run) return null;
-      let saved;
-      try { saved = JSON.parse(storage.getItem(RUN_KEY) || 'null'); } catch { return null; }
-      if (!saved || typeof saved.runId !== 'string' || !saved.snap) return null;
-      if (!saved.status) {
-        if (!saved.roundsDone && saved.activeMs < 1000) { storage.removeItem(RUN_KEY); return null; }
-        saved.status = 'partial'; saved.endedAt = saved.updatedAt;
-      }
-      return saved;
-    },
+    // Finished runs not yet recorded or declined, oldest first. Closing the question without an answer leaves them here.
+    pending() { adopt(); return queue(); },
     // Recorded or declined: the run is settled and never offered again.
     settle(runId) {
-      try { if (JSON.parse(storage.getItem(RUN_KEY) || 'null')?.runId === runId) storage.removeItem(RUN_KEY); } catch { storage.removeItem(RUN_KEY); }
+      const list = queue();
+      if (list.some(r => r.runId === runId)) writeJson(PENDING_KEY, list.filter(r => r.runId !== runId), storage);
+      if (read(RUN_KEY)?.runId === runId) storage.removeItem(RUN_KEY);
     }
   };
 }

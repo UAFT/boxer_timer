@@ -121,6 +121,24 @@ export function renderDescription(doc, el, sections, lang = 'ru', showEmpty = fa
   }
 }
 
+// The library card's ☰ panel; the diary shows the same panel for a stage that came from the library.
+export function libraryDescription(doc, el, workout, lang = 'ru') {
+  const ru = lang !== 'en';
+  // Google Play MVP: book methodology stays in the data but is not shown (methodology is a later release).
+  const method = null;
+  if (method) return renderDescription(doc, el, [
+    ['Техника:', method.technique || ''],
+    ['Тактика:', method.tactics || ''],
+    ['Особенности выполнения:', method.execution || ''],
+    ['Типичные ошибки:', method.typicalMistakes || '']
+  ], lang, true);
+  renderDescription(doc, el, [
+    [ru ? 'Оборудование' : 'Equipment', workout.equipment],
+    [ru ? 'Упражнения' : 'Exercises', workout.mode === 'boxing_sequence' ? '' : (workout.tasks || []).join(' · ')],
+    [ru ? 'Примечание' : 'Note', workout.note]
+  ], lang);
+}
+
 const DRAFT = /ПРОЕКТ|НЕ ГОТОВ|DRAFT|NOT READY/i;
 // Library workout: same compact card; + adds the stage exactly as before.
 export function renderLibraryWorkoutCard(doc, workout, { rounds = [], lang = 'ru', addDisabled = false, onAdd, plusIcon } = {}) {
@@ -131,18 +149,7 @@ export function renderLibraryWorkoutCard(doc, workout, { rounds = [], lang = 'ru
   const icon = () => plus.replaceChildren(plusIcon ? plusIcon() : '+');
   icon();
   plus.addEventListener('click', () => { if (onAdd?.()) { plus.replaceChildren('✓'); setTimeout(icon, 800); } });
-  // Google Play MVP: book methodology stays in the data but is not shown (methodology is a later release).
-  const method = null;
-  const description = el => method ? renderDescription(doc, el, [
-    ['Техника:', method.technique || ''],
-    ['Тактика:', method.tactics || ''],
-    ['Особенности выполнения:', method.execution || ''],
-    ['Типичные ошибки:', method.typicalMistakes || '']
-  ], lang, true) : renderDescription(doc, el, [
-    [ru ? 'Оборудование' : 'Equipment', workout.equipment],
-    [ru ? 'Упражнения' : 'Exercises', workout.mode === 'boxing_sequence' ? '' : (workout.tasks || []).join(' · ')],
-    [ru ? 'Примечание' : 'Note', workout.note]
-  ], lang);
+  const description = el => libraryDescription(doc, el, workout, lang);
   return renderCompactCard(doc, { className: 'ft-library-workout', title: workout.name, rounds, lang, description, actions: [plus],
     badge: DRAFT.test(workout.note || '') ? (ru ? 'Черновик — см. описание' : 'Draft — see description') : '',
     plan: rounds.length ? undefined : el => add(doc, el, 'p', 'ft-card-empty', ru ? 'План недоступен: требуется отдельный режим таймера.' : 'No plan: needs a separate timer mode.') });

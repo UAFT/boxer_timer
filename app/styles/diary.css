@@ -78,3 +78,33 @@
 #programSaveConfirm:disabled{opacity:.55}
 #programSaveWarning[hidden]{display:none}
 .ft-diary .ft-diary-session .ft-program-badge{color:var(--d-green);background:none;font-weight:600}
+
+/* STAGE 3.1. In-app dropdowns reuse the Tree filter look (.ft-route-filter-*), sized for the diary and «Сохранить». */
+.ft-dropdown{margin:0;min-width:0}
+.ft-dropdown .ft-route-filter-trigger{min-height:36px;padding:0 10px;gap:6px;border-radius:10px;font-size:14px}
+.ft-dropdown .ft-dropdown-value{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ft-dropdown .ft-route-filter-options{max-height:260px;overflow-y:auto;z-index:8}
+.ft-save-dest .ft-route-filter-trigger{min-height:42px;background:#f9fafb}
+.ft-save-label{font-size:14px}
+.ft-diary-source{grid-template-columns:auto minmax(0,1fr)}
+/* Workout card in the day panel: title + ⋮, status, totals, stages (existing compact cards), rest between stages, actions. */
+.ft-diary .ft-diary-session{display:grid;gap:6px;padding:10px 0}
+.ft-diary-session-top{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;gap:6px}
+.ft-diary .ft-diary-session-name{font-size:15px;line-height:1.3;overflow-wrap:anywhere;padding-top:9px}
+.ft-diary .ft-diary-session>.ft-program-badge{margin:0;font-size:13px}
+.ft-diary-session-facts{margin:0;font-size:13px;color:var(--d-muted)}
+.ft-diary-stages{display:grid;gap:4px}
+.ft-diary .ft-diary-stage{margin:0}
+.ft-diary-between{margin:0;padding:4px 10px;border-left:2px solid var(--d-done);font-size:12px;color:var(--d-muted);font-variant-numeric:tabular-nums}
+.ft-diary-session-actions{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:6px}
+.ft-diary .ft-diary-start,.ft-diary .ft-diary-edit,.ft-diary .ft-diary-assign-confirm{min-height:42px;height:auto;padding:8px 10px;line-height:1.2;white-space:normal;border-radius:12px;font-weight:650;box-shadow:none}
+.ft-diary .ft-diary-start,.ft-diary .ft-diary-assign-confirm{background:var(--d-green);border:1px solid #577c7a;color:#fff}
+.ft-diary .ft-diary-edit{background:#f4f6f8;border:1px solid #d0d7dc;color:var(--d-ink)}
+.ft-diary .ft-diary-assign-confirm{width:100%;margin-top:10px}
+.ft-diary .ft-diary-assign-confirm:disabled{opacity:.55}
+/* «×» of the confirmation: closes without answering (Back does the same). */
+.ft-delete-dialog{position:relative}
+.ft-delete-dialog .ft-delete-dismiss{position:absolute;top:8px;right:8px;width:36px;height:36px;min-height:0;padding:0;border:0;border-radius:10px;background:transparent;color:inherit;font-size:22px;line-height:1;box-shadow:none}
+.ft-delete-dialog h2{padding-right:36px}
+/* Neutral question («Записать?»): white text on green; the UI kit's red delete text loads later and won otherwise. */
+.ft-delete-overlay.is-neutral #programDeleteConfirmAccept{background:#365f60;border-color:#577c7a;color:#fff}

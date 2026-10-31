@@ -54,6 +54,12 @@ export function putSnapshot(snapshots, snap) {
   }
 }
 
+// Snapshots no session points at any more (an edited draft, a permanently deleted record). Canceled sessions keep theirs.
+export function dropUnused(draft) {
+  const used = new Set(draft.sessions.flatMap(s => [s.planRef, s.execRef]));
+  for (const ref of Object.keys(draft.snapshots)) if (!used.has(ref)) delete draft.snapshots[ref];
+}
+
 // state: ok | newer (written by a later app version) | damaged (no readable copy). Only ok is ever written,
 // so a file this version cannot read is left exactly as it is.
 export async function openDiary(backend = defaultBackend()) {
@@ -81,12 +87,13 @@ export async function openDiary(backend = defaultBackend()) {
     state,
     get sessions() { return data.sessions; },
     snapshot: ref => data.snapshots[ref] || null,
-    // mutate(draft) edits a copy; the copy replaces the diary only once it is written. Resolves false on failure.
+    // mutate(draft) edits a copy; the copy replaces the diary only once it is written. Resolves true when written,
+    // null when mutate declined (returned false: nothing to change), false when the diary is read-only or the write failed.
     commit(mutate) {
       const run = queue.then(async () => {
         if (state !== 'ok') return false;
         const draft = structuredClone(data);
-        if (mutate(draft) === false) return false;
+        if (mutate(draft) === false) return null;
         draft.seq = data.seq + 1;
         const target = slot === 'a' ? 'b' : 'a';
         try { await backend.write(target, JSON.stringify(draft)); } catch { return false; }
