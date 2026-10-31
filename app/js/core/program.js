@@ -1,6 +1,7 @@
 import { totalRoundsForConfig, workSecForRound, phaseTwoSecForRound, restSecAfterRound, blockRestSecAfterRound } from './schedule.js';
 import { normalizeSettings } from '../state/settings-store.js';
 import { PRESETS } from '../state/presets.js';
+import { normalizeStageMetronome, roundBpm } from './metronome-plan.js';
 export const PRESET_NAMES = { classic3: '3′', classic2: '2′', classic1: '1′', tabata2020x24: '⚡' };
 export const PROGRAM_KEY = 'andar.fight.timer.program.v1';
 export const LIBRARY_KEY = 'fighttech.program.library.v1';
@@ -52,7 +53,9 @@ export function normalizeProgram(raw) {
     roundDescriptions: Array.isArray(x.roundDescriptions) ? x.roundDescriptions.slice(0,200).map(n=>String(n||'').slice(0,600)) : [],
     roundTimingOverrides: normalizeRoundTimingOverrides(x.roundTimingOverrides),
     settings: stageSettings(x.settings),
-    restAfterSec: Math.max(0, Math.min(3600, Math.round((Number(x.restAfterSec) || 0) / 5) * 5))
+    restAfterSec: Math.max(0, Math.min(3600, Math.round((Number(x.restAfterSec) || 0) / 5) * 5)),
+    // Absent on stages that never had one, so their stored shape (and snapshot hashes) stay as they were.
+    ...(normalizeStageMetronome(x.metronome) ? { metronome: normalizeStageMetronome(x.metronome) } : {})
   }));
 }
 // A stage with its own settings follows its preset tab only in the fields just changed in Settings.
@@ -94,7 +97,8 @@ export function compileProgram(entries, profiles, options = {}) {
         block: (config.intervalMode==='ladder'||(config.intervalMode==='two_phase'&&config.ladderEnabled)) && config.blockEnabled ? Math.floor((i-1)/config.rounds)+1 : 1,
         blockCount: (config.intervalMode==='ladder'||(config.intervalMode==='two_phase'&&config.ladderEnabled)) && config.blockEnabled ? config.blockCount : 1,
         localRound: (i-1)%config.rounds+1,
-        localRounds: config.rounds
+        localRounds: config.rounds,
+        ...(stage.metronome?.enabled ? { metronome: { bpm: roundBpm(stage.metronome, i), mode: stage.metronome.mode } } : {})
       });
     }
   }

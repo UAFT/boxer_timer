@@ -10,6 +10,7 @@ const pairs = [
 ['Готово','Finished'],['Готов','Ready'],['Работа','Work'],['Отдых','Rest'],['Отсчёт','Countdown'],['Пауза','Pause'],
 ['Вся программа','Full program'],['Текущий раунд','Current round'],['Программа готова','Program ready'],['Всего','Total'],['Осталось','Remaining'],['Старт','Start'],['Продолжить','Resume'],['Сброс','Reset'],
 ['Длина раунда','Round duration'],['Время отдыха','Rest duration'],['Раунды','Rounds'],
+['Метроном этапа','Stage metronome'],['Режим метронома','Metronome mode'],['Темп, уд/мин','Tempo, beats/min'],['Свой темп для каждого раунда','Own tempo for each round'],
 ['Метроном','Metronome'],['Прямой','Straight'],['Дробный','Subdivision'],['уд/мин','BPM'],
 ['Вкл','On'],['Выкл','Off'],['Недоступно','Unavailable'],
 ['ЛЕСТНИЦА','LADDER'],['ПРОГРАММА','PROGRAM'],['Лестница','Ladder'],['Обычный','Standard'],

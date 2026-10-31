@@ -35,6 +35,7 @@ import { compileProgram, normalizeProgram, normalizeOptions, normalizeLibrary, s
 import { loadProfileState, saveProfileState, normalizeSettings } from './state/settings-store.js';
 import { writeJson, STORAGE_FULL_MESSAGE } from './state/storage.js';
 import { AudioEngine } from './audio/audio-engine.js';
+import { normalizeStageMetronome, roundBpm, metronomeLine, DEFAULT_BPM, BPM_MIN, BPM_MAX } from './core/metronome-plan.js';
 import { MetronomeEngine } from './audio/metronome-engine.js';
 import { TimerEngine } from './timer/timer-engine.js';
 import { getDomRefs } from './ui/dom.js';
@@ -146,6 +147,9 @@ const builtInPrograms = [
 ];
 let programRunning = false;
 let programSnapshot = null;
+// STAGE 4: the stage and round editors work on one list of stages — the timer screen's program (mainTarget) or, from
+// «Дневник», the copy held by one appointment. Same dialogs and rules; only where the result is written differs.
+const mainTarget={get entries(){return programEntries;},save:persistProgram,locked:()=>programRunning,minStages:0};
 const uiState = {
   metronomePanel: 'collapsed',
   ladderExpanded: false
@@ -186,6 +190,7 @@ timer = new TimerEngine({
     phaseToggle.render(liveTimerSettings(),state);
     renderProgram();
     syncTimerVisibility();
+    followStageMetronome();
     metronome.syncPhase(state);
   },
   onStateChange: (state) => {
@@ -195,6 +200,7 @@ timer = new TimerEngine({
     phaseToggle.render(liveTimerSettings(),state);
     renderProgram();
     syncTimerVisibility();
+    followStageMetronome();
     metronome.syncPhase(state);
     screenWake.sync(playbackState(state));
   },
@@ -219,13 +225,29 @@ timer = new TimerEngine({
   }
 });
 
-function syncMetronome() {
+// STAGE 4: in a program, a round of a stage with its own metronome plays that stage's tempo (per round when set);
+// other rounds and the plain timer keep the timer screen's metronome exactly as before.
+let metronomeKey = null;
+function metronomeConfig() {
   const settings = liveTimerSettings();
-  metronome.setConfig({
+  const stage = programRunning ? programSnapshot?.[Math.max(1, timer.state?.roundIndex || 1) - 1]?.metronome : null;
+  if (stage) return { enabled: !isMetronomeLocked(settings), bpm: stage.bpm, mode: stage.mode };
+  return {
     enabled: settings.metronomeEnabled && isMetronomePanelOpen() && !isMetronomeLocked(settings),
     bpm: settings.metronomeBpm,
     mode: settings.metronomeMode
-  });
+  };
+}
+function syncMetronome() {
+  const config = metronomeConfig(), key = JSON.stringify(config);
+  // In a program an unchanged tempo is left alone: re-applying it restarted the beat, so Pause played one extra beat.
+  if (programRunning && key === metronomeKey) return;
+  metronomeKey = key;
+  metronome.setConfig(config);
+}
+// Called on every tick of a program: a new round with another tempo restarts the beat from its first count; same tempo, nothing changes.
+function followStageMetronome() {
+  if (programRunning && JSON.stringify(metronomeConfig()) !== metronomeKey) syncMetronome();
 }
 
 function applySettings(nextSettings, { liveMetronome = false } = {}) {
@@ -445,20 +467,20 @@ function addProgramStage(presetId) {
   timerDisclosure.keepExpandedOnPresetAdd();
   persistProgram();
 }
-function removeProgramStage(index) {
-  if (programRunning) return;
-  programEntries.splice(index,1);
-  persistProgram();
+function removeProgramStage(index,t=mainTarget) {
+  if (t.locked() || t.entries.length<=t.minStages) return;
+  t.entries.splice(index,1);
+  t.save();
 }
-function moveProgramStage(index, delta) {
-  if (programRunning || index+delta<0 || index+delta>=programEntries.length) return;
-  [programEntries[index],programEntries[index+delta]]=[programEntries[index+delta],programEntries[index]];
-  persistProgram();
+function moveProgramStage(index, delta, t=mainTarget) {
+  if (t.locked() || index+delta<0 || index+delta>=t.entries.length) return;
+  [t.entries[index],t.entries[index+delta]]=[t.entries[index+delta],t.entries[index]];
+  t.save();
 }
-function setProgramRest(index,delta) {
-  if (programRunning || !programEntries[index]) return;
-  programEntries[index].restAfterSec = Math.max(0,Math.min(3600,programEntries[index].restAfterSec+delta));
-  persistProgram();
+function setProgramRest(index,delta,t=mainTarget) {
+  if (t.locked() || !t.entries[index]) return;
+  t.entries[index].restAfterSec = Math.max(0,Math.min(3600,t.entries[index].restAfterSec+delta));
+  t.save();
 }
 let roundEditorContext=null;
 function closeRoundEditor() {
@@ -467,14 +489,14 @@ function closeRoundEditor() {
   roundEditorContext=null;
   trigger?.focus();
 }
-function renameProgramRound(stageIndex, roundIndex, description=false, trigger=null) {
-  if (programRunning || !programEntries[stageIndex]) return;
-  const stage=programEntries[stageIndex];
+function renameProgramRound(stageIndex, roundIndex, description=false, trigger=null, target=mainTarget) {
+  if (target.locked() || !target.entries[stageIndex]) return;
+  const stage=target.entries[stageIndex];
   const field=description?'roundDescriptions':'roundNames';
   const input=document.getElementById('roundEditInput');
   const en=document.documentElement.lang==='en';
   const label=description?(en?'Exercise description':'Описание упражнения'):(en?'Exercise name':'Название упражнения');
-  roundEditorContext={stageIndex,roundIndex,field,description,trigger};
+  roundEditorContext={stageIndex,roundIndex,field,description,trigger,target};
   document.getElementById('roundEditTitle').textContent=label;
   document.getElementById('roundEditLabel').textContent=label;
   document.getElementById('roundEditCancel').textContent=en?'Cancel':'Отмена';
@@ -501,8 +523,8 @@ function bindRoundEditor() {
   document.getElementById('roundEditCancel').addEventListener('click',closeRoundEditor);
   document.getElementById('roundEditSave').addEventListener('click',()=>{
     const ctx=roundEditorContext;
-    if (!ctx || programRunning || !programEntries[ctx.stageIndex]) return closeRoundEditor();
-    const stage=programEntries[ctx.stageIndex];
+    if (!ctx || ctx.target.locked() || !ctx.target.entries[ctx.stageIndex]) return closeRoundEditor();
+    const stage=ctx.target.entries[ctx.stageIndex];
     const roundConfig=stage.settings || profiles[stage.presetId];
     const timings=ctx.description?{}:readRoundTimingEditor(roundConfig,ctx.roundIndex);
     if(timings===null)return;
@@ -516,7 +538,7 @@ function bindRoundEditor() {
       saveRoundTiming(stage,ctx.roundIndex,roundConfig,timings);
     }
     closeRoundEditor();
-    persistProgram();
+    ctx.target.save();
   });
   modal.addEventListener('click',event=>{if(event.target===modal)closeRoundEditor();});
   modal.addEventListener('keydown',event=>{
@@ -536,11 +558,11 @@ function renameProgramStage(index) {
   persistProgram();
 }
 
-let stageSettingsIndex = null;
-function openStageSettings(index) {
-  if(programRunning || !programEntries[index])return;
-  stageSettingsIndex=index;
-  const entry=programEntries[index], cfg=entry.settings || profiles[entry.presetId];
+let stageSettingsIndex = null, stageSettingsTarget = mainTarget;
+function openStageSettings(index, target=mainTarget) {
+  if(target.locked() || !target.entries[index])return;
+  stageSettingsIndex=index;stageSettingsTarget=target;
+  const entry=target.entries[index], cfg=entry.settings || profiles[entry.presetId];
   const id=name=>document.getElementById('stageSettings'+name);
   id('Name').value=entry.title||'';
   for(const key of ['Work','Rest']){const v=Number(cfg[key==='Work'?'workSec':'restSec'])||0;id(key+'Min').value=Math.floor(v/60);id(key+'Sec').value=v%60;}
@@ -551,6 +573,7 @@ function openStageSettings(index) {
   id('LadderEnabled').checked=!!cfg.ladderEnabled;
   id('BlockEnabled').checked=!!cfg.blockEnabled;
   stageTwoPhaseLoad(cfg);
+  stageMetronomeLoad(entry.metronome);
   syncStageSettingsMode();
   document.getElementById('stageSettingsModal').hidden=false;
 }
@@ -580,9 +603,60 @@ function syncStageSettingsMode(){
   document.getElementById('stageSettingsPhaseTwoStepField').hidden=mode!=='two_phase'||!ladder;
   document.getElementById('stageSettingsTwoPhase').hidden=mode!=='two_phase';
   document.getElementById('stageSettingsBlockFields').hidden=!ladder || !document.getElementById('stageSettingsBlockEnabled').checked;
+  if(stageMetroDraft)renderStageMetronome();
+}
+// STAGE 4 stage metronome, under the timing controls: on/off, straight/subdivided, tempo, and optionally a tempo per
+// round (blank = the stage tempo, so rounds added later inherit it; tempos of removed rounds are kept if they come back).
+let stageMetroDraft=null;
+const metroField=name=>document.getElementById('stageSettingsMetro'+name);
+const validBpm=v=>{const n=Number(v);return v!=='' && Number.isInteger(n) && n>=BPM_MIN && n<=BPM_MAX ? n : null;};
+const bpmHint=lang=>lang==='en'?'Enter a tempo from 1 to 300 beats/min':'Введите темп от 1 до 300 уд/мин';
+function stageMetronomeLoad(saved) {
+  const m=normalizeStageMetronome(saved)||{enabled:false,mode:'direct',bpm:DEFAULT_BPM,perRound:false,roundBpm:[]};
+  stageMetroDraft={mode:m.mode,roundBpm:[...m.roundBpm]};
+  metroField('On').checked=m.enabled;metroField('Bpm').value=m.bpm;metroField('PerRound').checked=m.perRound;
+  renderStageMetronome();
+}
+function stageDialogRounds() {
+  const id=name=>document.getElementById('stageSettings'+name),mode=id('Mode').value;
+  if(mode==='count_up')return 1;
+  const count=key=>Math.max(1,Math.min(99,Math.round(Number(id(key).value))||1));
+  const blocks=hasLadder({intervalMode:mode,ladderEnabled:id('LadderEnabled').checked}) && id('BlockEnabled').checked ? count('Blocks') : 1;
+  return Math.min(200,count('Rounds')*blocks);
+}
+function renderStageMetronome() {
+  const lang=document.documentElement.lang,en=lang==='en',on=metroField('On').checked,bpm=validBpm(metroField('Bpm').value);
+  metroField('Fields').hidden=!on;
+  document.querySelectorAll('[data-stage-metro]').forEach(b=>{const selected=b.dataset.stageMetro===stageMetroDraft.mode;b.classList.toggle('selected',selected);b.setAttribute('aria-pressed',String(selected));});
+  metroField('Interval').textContent=bpm?metronomeLine(bpm,lang):bpmHint(lang);
+  const box=metroField('Rounds');
+  box.hidden=!on || !metroField('PerRound').checked;
+  if(box.hidden)return box.replaceChildren();
+  const rows=[];
+  for(let i=0;i<stageDialogRounds();i++){
+    const row=document.createElement('label');row.className='ft-stage-metro-round';
+    const name=document.createElement('span');name.textContent=(en?'Round ':'Раунд ')+(i+1);
+    const input=document.createElement('input');Object.assign(input,{type:'number',inputMode:'numeric',min:BPM_MIN,max:BPM_MAX,step:1,placeholder:bpm?String(bpm):''});
+    input.value=stageMetroDraft.roundBpm[i]??'';
+    input.setAttribute('aria-label',en?'Round '+(i+1)+' tempo, beats/min':'Темп раунда '+(i+1)+', уд/мин');
+    const line=document.createElement('small');
+    const show=()=>{const own=validBpm(input.value);stageMetroDraft.roundBpm[i]=own;line.textContent=input.value!=='' && !own ? bpmHint(lang) : (own||bpm) ? metronomeLine(own||bpm,lang) : '';};
+    input.addEventListener('input',show);show();
+    row.append(name,input,line);rows.push(row);
+  }
+  box.replaceChildren(...rows);
+}
+// undefined: nothing to store (the stage never had a metronome and it stays off); null: a value is invalid, stay in the dialog.
+function stageMetronomeRead(saved) {
+  const on=metroField('On').checked,bpm=validBpm(metroField('Bpm').value),perRound=metroField('PerRound').checked;
+  if(on && !bpm){metroField('Bpm').focus();metroField('Bpm').reportValidity();return null;}
+  const bad=on && perRound && [...metroField('Rounds').querySelectorAll('input')].find(x=>x.value!=='' && !validBpm(x.value));
+  if(bad){bad.focus();bad.reportValidity();return null;}
+  if(!on && !saved)return undefined;
+  return normalizeStageMetronome({enabled:on,mode:stageMetroDraft.mode,bpm:bpm??saved?.bpm??DEFAULT_BPM,perRound,roundBpm:stageMetroDraft.roundBpm});
 }
 function closeStageSettings(){
-  document.getElementById('stageSettingsModal').hidden=true;stageSettingsIndex=null;
+  document.getElementById('stageSettingsModal').hidden=true;stageSettingsIndex=null;stageSettingsTarget=mainTarget;
 }
 function bindStageSettings(){
   const id=name=>document.getElementById('stageSettings'+name);
@@ -595,14 +669,17 @@ function bindStageSettings(){
     syncStageSettingsMode();
   });
   id('BlockEnabled').addEventListener('change',syncStageSettingsMode);
+  for(const name of ['MetroOn','MetroPerRound'])id(name).addEventListener('change',renderStageMetronome);
+  for(const name of ['MetroBpm','Rounds','Blocks'])id(name).addEventListener('input',renderStageMetronome);
+  document.querySelectorAll('[data-stage-metro]').forEach(b=>b.addEventListener('click',()=>{stageMetroDraft.mode=b.dataset.stageMetro;renderStageMetronome();}));
   installStageTimeSteppers({lookup:id});
   id('Cancel').addEventListener('click',closeStageSettings);
   document.getElementById('stageSettingsModal').addEventListener('click',event=>{
     if(event.target.id==='stageSettingsModal')closeStageSettings();
   });
   id('Save').addEventListener('click',()=>{
-    const index=stageSettingsIndex;
-    if(index===null || programRunning || !programEntries[index])return;
+    const index=stageSettingsIndex,target=stageSettingsTarget;
+    if(index===null || target.locked() || !target.entries[index])return;
     const specs=[['Rounds',1,99],['PhaseTwoStep',-600,600],['WorkStep',-600,600],
       ['RestStep',-600,600],['Blocks',1,99],['BlockRest',0,3600]];
     const values={};
@@ -614,7 +691,7 @@ function bindStageSettings(){
       values[key]=n;
     }
     for(const key of ['Work','Rest']){const min=Number(id(key+'Min').value),sec=Number(id(key+'Sec').value);if(!Number.isInteger(min)||!Number.isInteger(sec)||min<0||min>60||sec<0||sec>59||min*60+sec>3600||(key==='Work'&&min*60+sec<5)){id(key+'Min').focus();return;}values[key]=min*60+sec;}
-    const entry=programEntries[index];
+    const entry=target.entries[index];
     const cfg=structuredClone(entry.settings || profiles[entry.presetId]);
     Object.assign(cfg,{workSec:values.Work,restSec:values.Rest,rounds:values.Rounds,
       workStepSec:values.WorkStep,restStepSec:values.RestStep,phaseTwoStepSec:values.PhaseTwoStep,
@@ -623,10 +700,13 @@ function bindStageSettings(){
       blockEnabled:(id('Mode').value==='ladder'||(id('Mode').value==='two_phase'&&id('LadderEnabled').checked))&&id('BlockEnabled').checked,
       blockCount:values.Blocks,blockRestSec:values.BlockRest});
     if(cfg.intervalMode==='two_phase' && !stageTwoPhaseSave(cfg))return;
+    const metro=stageMetronomeRead(entry.metronome);
+    if(metro===null)return;
     // Keep the original library task labels where possible; extra rounds remain editable.
     entry.settings=cfg;
     entry.title=id('Name').value.trim().slice(0,MAX_TITLE);
-    closeStageSettings();persistProgram();
+    if(metro)entry.metronome=metro;
+    closeStageSettings();target.save();
   });
 }
 
@@ -656,6 +736,7 @@ function exitProgram() {
   programRunning=false;
   programSnapshot=null;
   timer.applyConfig({ ...activeSettings, presetId: activePresetId });
+  syncMetronome();
   renderCurrentState();
 }
 function formatProgramTime(sec) {return String(Math.floor(sec/60)).padStart(2,'0')+':'+String(sec%60).padStart(2,'0');}
@@ -663,6 +744,82 @@ function stageTiming(entry) {
   const rounds=compileProgram([entry],profiles,{cycles:1});
   const total=rounds.reduce((sum,round)=>sum+round.workSec+(round.phaseTwoSec||0)+round.restSec+(round.blockRestSec||0),0);
   return {rounds,total};
+}
+// Stage cards of the «ПРОГРАММА» editor. STAGE 4: the same cards serve a diary appointment (target = its copy,
+// collapsible with expanded = {has(i), toggle(i)}, roundTimes = each round's time under its name).
+const smallLine=(className,text)=>{const line=document.createElement('small');line.className=className;line.textContent=text;return line;};
+function roundTimeText(round,withRest) {
+  const work=formatProgramTime(round.workSec)+(round.phaseTwoSec?' + '+formatProgramTime(round.phaseTwoSec):'');
+  return withRest && round.restSec ? work+' · отдых '+formatProgramTime(round.restSec) : work;
+}
+function renderStageCards(list,entries,opts) {
+  const {target=mainTarget,editable=true,collapsible=false,expanded=null,roundTimes=false}=opts,lang=document.documentElement.lang;
+  list.replaceChildren();
+  entries.forEach((entry,i)=>{
+    const card=document.createElement('div');card.className='program-stage-card';card.dataset.stage=String(i);
+    const stage=document.createElement('div');stage.className='program-stage';
+    // V70: a long title (e.g. 11.4 owner names) gets the full card width under the buttons instead of a word-breaking column
+    if((entry.title||'').length>40)stage.classList.add('is-long-title');
+    const main=document.createElement('div');main.className='program-stage-main';
+    const cfg=entry.settings || profiles[entry.presetId];
+    const heading=renderStageTitle(document,i+1,entry.title,{config:{...cfg,presetId:entry.presetId}});
+    const detail=document.createElement('small');
+    detail.className='program-stage-timing';
+    const timing=stageTiming(entry), english=document.documentElement.lang==='en';
+    timing.manual=entry.roundTimingOverrides?.some(Boolean);
+    for(const [klass,text] of stageTimingRows(cfg,timing,english)){const item=document.createElement('span');item.className=klass;item.textContent=text;detail.append(item);}
+    main.append(heading);stage.append(main);
+    const open=!collapsible || expanded.has(i);
+    if (collapsible) {
+      // Diary: a tap on the heading or the timing line opens and closes the stage; closed it shows only title and timing.
+      // The timing line is the focusable toggle (the heading holds the action buttons and lays out as display:contents).
+      card.classList.toggle('is-collapsed',!open);
+      detail.classList.add('ft-stage-toggle');detail.tabIndex=0;detail.setAttribute('role','button');detail.setAttribute('aria-expanded',String(open));
+      detail.setAttribute('aria-label',(lang==='en'?'Rounds of stage ':'Раунды этапа ')+(i+1));
+      const toggle=()=>{expanded.toggle(i);renderStageCards(list,entries,opts);list.querySelector(`[data-stage="${i}"] .ft-stage-toggle`)?.focus();};
+      stage.addEventListener('click',e=>{if(!e.target.closest('button'))toggle();});
+      detail.addEventListener('click',toggle);
+      detail.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();toggle();}});
+    }
+    if (editable && open) {
+      const edit=document.createElement('button');edit.type='button';edit.textContent='✎';edit.className='program-stage-edit';edit.setAttribute('aria-label','Настройки этапа '+(i+1));edit.addEventListener('click',()=>openStageSettings(i,target));stage.append(edit);
+      for (const [label,fn] of [['↑',()=>moveProgramStage(i,-1,target)],['↓',()=>moveProgramStage(i,1,target)],['×',()=>removeProgramStage(i,target)]]) {
+        const b=document.createElement('button');b.type='button';b.textContent=label;b.setAttribute('aria-label',label==='×'?'Удалить этап':label==='↑'?'Поднять этап':'Опустить этап');b.addEventListener('click',fn);stage.append(b);
+      }
+    }
+    card.append(stage,detail);
+    if (editable && open && cfg.intervalMode!=='count_up') {
+      const compiled=compileProgram([entry],profiles,{cycles:1}),rounds=compiled.length;
+      const editor=document.createElement('div');editor.className='program-round-editor';
+      // Round names, descriptions and times are stored for the first 200 rounds only.
+      for(let j=0;j<Math.min(rounds,200);j++) {
+        const line=document.createElement('div');line.className='program-round-edit-row';
+        const label=document.createElement('span');
+        const local=hasLadder(cfg)&&cfg.blockEnabled ? (j%Math.max(1,cfg.rounds))+1 : j+1;
+        const block=hasLadder(cfg)&&cfg.blockEnabled&&cfg.blockCount>1 ? 'Блок '+(Math.floor(j/Math.max(1,cfg.rounds))+1)+' · ' : '';
+        // «Раунд N ·» stays regular; the exercise name is set apart (owner, STAGE 4).
+        const roundName=document.createElement('strong');roundName.className='program-round-name';
+        roundName.textContent=entry.roundNames?.[j]|| (cfg.intervalMode==='two_phase' ? [entry.phaseOneOverrides?.[j]||cfg.phaseOneName||'Фаза 1',entry.phaseTwoOverrides?.[j]||cfg.phaseTwoName||'Фаза 2'].join(' / ') : 'Без названия');
+        label.append(block+'Раунд '+local+' · ',roundName);
+        if (roundTimes) label.append(smallLine('program-round-time',roundTimeText(compiled[j],j<rounds-1)));
+        if (entry.metronome?.enabled) label.append(smallLine('program-round-metronome',metronomeLine(roundBpm(entry.metronome,j+1),lang)));
+        const edit=document.createElement('button');edit.type='button';edit.textContent='✎';edit.setAttribute('aria-label','Название раунда '+(j+1));edit.addEventListener('click',()=>renameProgramRound(i,j,false,edit,target));
+        const desc=document.createElement('button');desc.type='button';desc.textContent='≡';desc.setAttribute('aria-label','Описание раунда '+(j+1));desc.addEventListener('click',()=>renameProgramRound(i,j,true,desc,target));
+        line.append(label,edit,desc);editor.append(line);
+      }
+      if(rounds>200){const note=document.createElement('small');note.textContent='Названия, описания и время задаются для первых 200 раундов';editor.append(note);}
+      card.append(editor);
+    }
+    if (i<entries.length-1) {
+      const rest=document.createElement('div');rest.className='program-rest';
+      const label=document.createElement('span');label.className='program-rest-label';label.textContent='Отдых между этапами';
+      const minus=document.createElement('button');minus.textContent='−';minus.disabled=!editable;minus.addEventListener('click',()=>setProgramRest(i,-5,target));
+      const time=document.createElement('strong');time.textContent=String(Math.floor(entry.restAfterSec/60)).padStart(2,'0')+':'+String(entry.restAfterSec%60).padStart(2,'0');
+      const plus=document.createElement('button');plus.textContent='+';plus.disabled=!editable;plus.addEventListener('click',()=>setProgramRest(i,5,target));
+      const controls=document.createElement('div');controls.className='program-rest-controls';controls.append(time,minus,plus);rest.append(label,controls);card.append(rest);
+    }
+    list.append(card);
+  });
 }
 function renderProgram() {
   const panel=document.getElementById('programPanel');
@@ -683,57 +840,9 @@ function renderProgram() {
   const activeIndex=programRunning && timer.state.roundIndex>0 ? programSnapshot?.[timer.state.roundIndex-1]?.stageIndex : -1;
   // Stage entries reference live preset profiles; refresh details when a preset changes.
   // During playback, keep the compiled program snapshot stable.
-  const signature=JSON.stringify([programEntries,programRunning,programRunning ? null : programEntries.map(entry=>profiles[entry.presetId])]);
+  const signature=JSON.stringify([programEntries,programRunning,programRunning ? null : programEntries.map(entry=>profiles[entry.presetId]),document.documentElement.lang]);
   if (list.dataset.signature!==signature) {
-    list.replaceChildren();
-    programEntries.forEach((entry,i)=>{
-      const card=document.createElement('div');card.className='program-stage-card';card.dataset.stage=String(i);
-      const stage=document.createElement('div');stage.className='program-stage';
-      // V70: a long title (e.g. 11.4 owner names) gets the full card width under the buttons instead of a word-breaking column
-      if((entry.title||'').length>40)stage.classList.add('is-long-title');
-      const main=document.createElement('div');main.className='program-stage-main';
-      const cfg=entry.settings || profiles[entry.presetId];
-      const heading=renderStageTitle(document,i+1,entry.title,{config:{...cfg,presetId:entry.presetId}});
-      const detail=document.createElement('small');
-      detail.className='program-stage-timing';
-      const timing=stageTiming(entry), english=document.documentElement.lang==='en';
-      timing.manual=entry.roundTimingOverrides?.some(Boolean);
-      for(const [klass,text] of stageTimingRows(cfg,timing,english)){const item=document.createElement('span');item.className=klass;item.textContent=text;detail.append(item);}
-      main.append(heading);stage.append(main);
-      if (!programRunning) {
-        const edit=document.createElement('button');edit.type='button';edit.textContent='✎';edit.className='program-stage-edit';edit.setAttribute('aria-label','Настройки этапа '+(i+1));edit.addEventListener('click',()=>openStageSettings(i));stage.append(edit);
-        for (const [label,fn] of [['↑',()=>moveProgramStage(i,-1)],['↓',()=>moveProgramStage(i,1)],['×',()=>removeProgramStage(i)]]) {
-          const b=document.createElement('button');b.type='button';b.textContent=label;b.setAttribute('aria-label',label==='×'?'Удалить этап':label==='↑'?'Поднять этап':'Опустить этап');b.addEventListener('click',fn);stage.append(b);
-        }
-      }
-      card.append(stage,detail);
-      if (!programRunning && cfg.intervalMode!=='count_up') {
-        const rounds=compileProgram([entry],profiles,{cycles:1}).length;
-        const editor=document.createElement('div');editor.className='program-round-editor';
-        // Round names, descriptions and times are stored for the first 200 rounds only.
-        for(let j=0;j<Math.min(rounds,200);j++) {
-          const line=document.createElement('div');line.className='program-round-edit-row';
-          const label=document.createElement('span');
-          const local=hasLadder(cfg)&&cfg.blockEnabled ? (j%Math.max(1,cfg.rounds))+1 : j+1;
-          const block=hasLadder(cfg)&&cfg.blockEnabled&&cfg.blockCount>1 ? 'Блок '+(Math.floor(j/Math.max(1,cfg.rounds))+1)+' · ' : '';
-          label.textContent=block+'Раунд '+local+' · '+(entry.roundNames?.[j]|| (cfg.intervalMode==='two_phase' ? [entry.phaseOneOverrides?.[j]||cfg.phaseOneName||'Фаза 1',entry.phaseTwoOverrides?.[j]||cfg.phaseTwoName||'Фаза 2'].join(' / ') : 'Без названия'));
-          const edit=document.createElement('button');edit.type='button';edit.textContent='✎';edit.setAttribute('aria-label','Название раунда '+(j+1));edit.addEventListener('click',()=>renameProgramRound(i,j,false,edit));
-          const desc=document.createElement('button');desc.type='button';desc.textContent='≡';desc.setAttribute('aria-label','Описание раунда '+(j+1));desc.addEventListener('click',()=>renameProgramRound(i,j,true,desc));
-          line.append(label,edit,desc);editor.append(line);
-        }
-        if(rounds>200){const note=document.createElement('small');note.textContent='Названия, описания и время задаются для первых 200 раундов';editor.append(note);}
-        card.append(editor);
-      }
-      if (i<programEntries.length-1) {
-        const rest=document.createElement('div');rest.className='program-rest';
-        const label=document.createElement('span');label.className='program-rest-label';label.textContent='Отдых между этапами';
-        const minus=document.createElement('button');minus.textContent='−';minus.disabled=programRunning;minus.addEventListener('click',()=>setProgramRest(i,-5));
-        const time=document.createElement('strong');time.textContent=String(Math.floor(entry.restAfterSec/60)).padStart(2,'0')+':'+String(entry.restAfterSec%60).padStart(2,'0');
-        const plus=document.createElement('button');plus.textContent='+';plus.disabled=programRunning;plus.addEventListener('click',()=>setProgramRest(i,5));
-        const controls=document.createElement('div');controls.className='program-rest-controls';controls.append(time,minus,plus);rest.append(label,controls);card.append(rest);
-      }
-      list.append(card);
-    });
+    renderStageCards(list,programEntries,{editable:!programRunning});
     list.dataset.signature=signature;
   }
   for (const card of list.querySelectorAll('.program-stage-card')) card.classList.toggle('is-current',Number(card.dataset.stage)===activeIndex);
@@ -778,8 +887,8 @@ function bindProgramLibrary() {
       renderLibrary();
     }
   });
-  function snapshot(name,id) {
-    return {id,name,entries:normalizeProgram(programEntries.map(x=>({...x,settings:x.settings || structuredClone(profiles[x.presetId])}))),options:normalizeOptions(programOptions)};
+  function snapshot(name,id,src) {
+    return {id,name,entries:normalizeProgram(src.entries.map(x=>({...x,settings:x.settings || structuredClone(profiles[x.presetId])}))),options:normalizeOptions(src.options)};
   }
   function openEntry(entry, builtIn=false, diaryContext=null) {
     if (isPlaybackProtected(timer,programRunning)) return false;
@@ -803,7 +912,6 @@ function bindProgramLibrary() {
     getDiary:()=>diaryStore,
     savedPrograms:()=>savedPrograms,
     profiles:()=>profiles,
-    openSession,
     // «Начать тренировку»: the existing timer, linked to this appointment. Started on another day, the run is recorded
     // on its own start date and the appointment's date keeps its status (moving it is «Перенести на дату»).
     startSession:async(session,snap)=>{
@@ -811,6 +919,23 @@ function bindProgramLibrary() {
       await audio.unlock();startProgram();
     },
     openProgram:(program,date)=>openEntry(program,false,{date,sessionId:null}),
+    // STAGE 4: a planned appointment shows the editor's stage cards. Their pencils, arrows and rest steppers edit this
+    // appointment's own copy (a new snapshot for this session only): the library, «Мои» and other dates are untouched.
+    renderStages:(session,snap,{expanded,commit})=>{
+      const entries=normalizeProgram(snap.entries);
+      const box=document.createElement('div');box.className='program-panel ft-diary-program';
+      const list=document.createElement('div');list.className='program-list';box.append(list);
+      const target={entries,locked:()=>false,minStages:1,save:()=>commit(d=>{
+        const own=d.sessions.find(x=>x.id===session.id && x.status==='planned');if(!own)return false;
+        own.planRef=putSnapshot(d.snapshots,diarySnap(snap.name||'',entries,snap.options));own.updatedAt=Date.now();dropUnused(d);
+      })};
+      renderStageCards(list,entries,{target,collapsible:true,expanded,roundTimes:true});
+      return box;
+    },
+    // «Сохранить как…»: the existing save dialog with this appointment as the source. «Мои» always gets a new program.
+    saveAs:(session,snap)=>openSaveDialog({entries:normalizeProgram(snap.entries),options:normalizeOptions(snap.options),
+      name:sessionTitle(session,snap,document.documentElement.lang),programId:null,
+      diary:session.status==='planned'?{date:session.date,sessionId:session.id}:null}),
     assign:(snapshots,program,date)=>newSession(snapshots,{date,snap:diarySnap(program.name,program.entries,program.options),programId:program.id,origin:'diary'}),
     startLibrary:date=>{libraryDraft={date,entries:[],sessionId:null,failed:false};libraryTab='templates';libraryPath={};renderLibrary();byId('programLibraryModal').querySelector('section').scrollTop=0;},
     confirmRemove:opts=>confirmDeletion({...opts,labels:{
@@ -1085,42 +1210,61 @@ function bindProgramLibrary() {
     warn.textContent=en?'«'+name+'» already exists in «Mine». Change the name, or press the button again to save it as a new program with the same name.'
       :'Программа «'+name+'» уже есть в «Мои». Измените название или нажмите кнопку ещё раз, чтобы сохранить её как новую с тем же названием.';
   }
-  byId('programSaveOpen').addEventListener('click',()=>{
-    nameInput.value=openedProgramName||'';collisionAck=null;
-    dest.value=editorDiary?'diary':'mine';
+  // source null: the timer screen's program. From «Дневник» (STAGE 4): {entries, options, name, programId, diary}.
+  let saveSource=null;
+  const sourceOf=()=>saveSource||{entries:programEntries,options:programOptions,name:openedProgramName,programId:openedProgramId,diary:editorDiary};
+  function openSaveDialog(source) {
+    saveSource=source;
+    const src=sourceOf();
+    nameInput.value=src.name||'';collisionAck=null;
+    dest.value=source?'mine':src.diary?'diary':'mine';
     saveCal.selected.clear();saveCal.picker=false;saveCal.month=null;
-    if(editorDiary){saveCal.selected.add(editorDiary.date);saveCal.show(editorDiary.date);}
+    if(src.diary){saveCal.selected.add(src.diary.date);saveCal.show(src.diary.date);}
     save.hidden=false;renderSaveDialog();
-  });
+  }
+  // Closing a dialog opened from «Дневник» goes back to the diary on the same date.
+  const closeSave=()=>{if(!saveSource)return close();save.hidden=true;saveSource=null;renderLibrary();};
+  // Generated texts (tempo, decimal comma) are written per language: redraw when the language really changes.
+  // ponytail: the translator sets lang on every refresh, so compare with the last value.
+  let shownLang=document.documentElement.lang;
+  new MutationObserver(()=>{
+    if(document.documentElement.lang===shownLang)return;
+    shownLang=document.documentElement.lang;
+    renderCurrentState();
+    if(!library.hidden)renderLibrary();
+    if(!byId('stageSettingsModal').hidden && stageMetroDraft)renderStageMetronome();
+  }).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
+  byId('programSaveOpen').addEventListener('click',()=>openSaveDialog(null));
   nameInput.addEventListener('input',()=>{if(collisionAck){collisionAck=null;renderSaveDialog();}});
-  byId('programSaveClose').addEventListener('click',close);
+  byId('programSaveClose').addEventListener('click',closeSave);
   confirmSave.addEventListener('click',async()=>{
-    if(saving || refuseTooLong(programEntries,programOptions))return;
+    const src=sourceOf();
+    if(saving || refuseTooLong(src.entries,src.options))return;
     const lang=document.documentElement.lang,en=lang==='en';
     const name=nameInput.value.trim().slice(0,MAX_TITLE),toMine=dest.value!=='diary',toDiary=dest.value!=='mine';
     const dates=[...saveCal.selected].sort();
     if(toMine && !name){nameInput.focus();return;}
     if(toDiary && (!dates.length || diaryStore?.state!=='ok'))return;
-    const before=savedPrograms,existing=editorProgramIdentity(openedProgramId,savedPrograms);
+    const before=savedPrograms,existing=editorProgramIdentity(src.programId,savedPrograms);
     let programId=existing?.id||null;
     if(toMine) {
       // The open «Мои» program under its own name is updated in place (by its id); any other name makes a new program.
       // An appointment opened from «Дневник» is a copy: saving it to «Мои» always makes a new program, the source stays.
-      if(existing && existing.name===name && !editorDiary?.sessionId) {
-        if(!persistLibrary(savedPrograms.map(x=>x.id===existing.id?snapshot(name,existing.id):x)))return;
+      if(existing && existing.name===name && !src.diary?.sessionId) {
+        if(!persistLibrary(savedPrograms.map(x=>x.id===existing.id?snapshot(name,existing.id,src):x)))return;
       } else {
         if(savedPrograms.length>=100){window.alert(en?'«Mine» already holds 100 programs. Delete one you no longer need.':'В «Мои» уже 100 программ. Удалите ненужную.');return;}
         // Same name as another «Мои» program: warned inline; the second press (same name) saves it as a new one.
         if(savedPrograms.some(x=>x.name===name) && collisionAck!==name){collisionAck=name;renderSaveDialog();nameInput.focus();return;}
         const id='p'+Date.now()+'-'+Math.random().toString(36).slice(2,8);
-        if(!persistLibrary([...savedPrograms,snapshot(name,id)]))return;
+        if(!persistLibrary([...savedPrograms,snapshot(name,id,src)]))return;
         programId=id;
       }
     }
     if(toDiary) {
       saving=true;renderSaveDialog();
-      const snap=diarySnap(name,programEntries,programOptions);
-      const ctx=editorDiary,today=localDate();
+      const snap=diarySnap(name,src.entries,src.options);
+      const ctx=src.diary,today=localDate();
       let todayId=null;
       const ok=await diaryStore.commit(d=>{
         const ref=putSnapshot(d.snapshots,snap),now=Date.now();
@@ -1143,8 +1287,9 @@ function bindProgramLibrary() {
         return;
       }
       // Assigned for today: starting now fills that assignment instead of adding a second session.
-      editorDiary=todayId?{date:today,sessionId:todayId}:null;
+      if(!saveSource)editorDiary=todayId?{date:today,sessionId:todayId}:null;
     }
+    if(saveSource)return closeSave();
     if(toMine){openedProgramId=programId;openedProgramName=name;}
     close();renderCurrentState();
   });

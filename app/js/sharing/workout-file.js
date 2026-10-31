@@ -55,6 +55,9 @@ function checkEntries(entries, options) {
         }
       }
     }
+    // STAGE 4 stage metronome: a small object; normalizeProgram keeps only valid tempos.
+    if (entry.metronome != null && (!plain(entry.metronome) || Object.keys(entry.metronome).length > 5
+      || (entry.metronome.roundBpm != null && (!Array.isArray(entry.metronome.roundBpm) || entry.metronome.roundBpm.length > 200)))) invalid();
     if (!plain(entry.settings)) invalid(); // v1 files always carry sender settings
     const cfg = checkSettings(entry.settings,entry.presetId);
     total += cfg.rounds * (cfg.blockEnabled && (cfg.intervalMode === 'ladder'||(cfg.intervalMode==='two_phase'&&cfg.ladderEnabled)) ? cfg.blockCount : 1);

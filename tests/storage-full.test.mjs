@@ -29,5 +29,5 @@ test('every program and library write in the app goes through the checked helper
  const app=readFileSync(new URL('../app/js/app.js',import.meta.url),'utf8');
  assert.equal(/localStorage\.setItem/.test(app),false);
  assert.ok(app.includes('function persistLibrary(next) {if(!store(LIBRARY_KEY,next))return false;savedPrograms=next;return true;}'));
- for(const call of ['if(!persistLibrary(savedPrograms.filter(','if(!persistLibrary(savedPrograms.map(','if(!persistLibrary([...savedPrograms,snapshot(name,id)]))return;'])assert.ok(app.includes(call),call);
+ for(const call of ['if(!persistLibrary(savedPrograms.filter(','if(!persistLibrary(savedPrograms.map(','if(!persistLibrary([...savedPrograms,snapshot(name,id,src)]))return;'])assert.ok(app.includes(call),call);
 });

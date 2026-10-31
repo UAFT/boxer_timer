@@ -111,3 +111,38 @@
 /* STAGE 3.2: destination options open inside the dialog flow, so the dialog grows or scrolls instead of clipping them. */
 #programSaveDest .ft-route-filter-options{position:static;margin-top:4px;max-height:none}
 #programSaveModal .settings-modal{max-height:min(92dvh,760px)}
+/* STAGE 4: stage and round dialogs open over the library window (Diary editing). */
+#roundEditModal,#stageSettingsModal{z-index:40}
+/* Diary appointment: the «ПРОГРАММА» editor's stage cards, without the editor panel's own frame. */
+.ft-diary .ft-diary-program.program-panel{padding:0;margin:0;background:transparent;border:0;box-shadow:none;gap:8px}
+.ft-diary .ft-diary-program .program-list{display:grid;gap:8px}
+.ft-diary-program .ft-stage-toggle{cursor:pointer;border-radius:8px}
+.ft-diary-program .ft-stage-toggle:focus-visible{outline:3px solid var(--ft-steel,#365f60);outline-offset:2px}
+.ft-diary-program .program-stage-card>.program-stage-timing{position:relative;padding-right:30px!important}
+.ft-diary-program .program-stage-card>.program-stage-timing::after{content:'⌃';position:absolute;right:8px;bottom:8px;font-size:18px;line-height:1;color:var(--ft-secondary,#5d6b73)}
+.ft-diary-program .program-stage-card.is-collapsed>.program-stage-timing::after{content:'⌄'}
+.ft-diary .ft-diary-session-actions{grid-template-columns:minmax(0,1fr)!important;display:grid}
+.ft-diary-program .program-stage{cursor:pointer}
+/* Round rows: «Раунд N ·» regular, exercise name semibold; time and tempo lines under it. */
+.program-round-edit-row .program-round-name{font-weight:650;color:var(--ft-ink,#1b2229)}
+.program-round-edit-row small{display:block;font-size:12px;line-height:1.35;color:var(--ft-secondary,#5d6b73)}
+.program-round-edit-row .program-round-metronome{color:var(--ft-steel,#365f60)}
+/* Diary bottom action: one outlined «Начать тренировку». */
+.ft-diary .ft-diary-session-actions .ft-diary-start{width:100%;min-height:46px;background:transparent!important;border:1px solid #1f5a45!important;color:#1f5a45!important;font-weight:750;box-shadow:none!important;border-radius:12px}
+/* Stage metronome block of the stage dialog. */
+.ft-stage-metronome{display:grid;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--ft-line,#d5dde2)}
+#stageSettingsMetroFields{display:grid;gap:8px}
+#stageSettingsMetroFields[hidden],#stageSettingsMetroRounds[hidden]{display:none}
+.ft-stage-metro-modes{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.ft-stage-metro-modes button{min-height:42px;border-radius:10px;border:1px solid var(--ft-line,#c7d0d2);background:var(--ft-raised,#f4f6f8);color:var(--ft-ink,#1b2229)}
+.ft-stage-metro-modes button.selected{background:var(--ft-steel-gradient,#365f60);border-color:#577c7a;color:#fff}
+.ft-stage-metro-interval{margin:0;color:var(--ft-steel,#365f60);font-weight:650;font-variant-numeric:tabular-nums}
+.ft-stage-metro-rounds{display:grid;gap:6px;max-height:280px;overflow-y:auto}
+.ft-stage-metro-round{display:grid;grid-template-columns:minmax(0,1fr) 88px;gap:2px 8px;align-items:center}
+.ft-stage-metro-round input{min-height:40px;width:100%;box-sizing:border-box}
+.ft-stage-metro-round small{grid-column:1/-1;color:var(--ft-secondary,#5d6b73);font-variant-numeric:tabular-nums}
+/* Diary cards are narrower than the editor: the title takes the full width (as V70 long titles do); closed, there are no buttons. */
+.ft-diary .ft-diary-program .program-stage-card>.program-stage>.program-stage-main{grid-column:1/-1;grid-row:2}
+.ft-diary .ft-diary-program .program-stage-card.is-collapsed>.program-stage{grid-template-columns:minmax(0,1fr)}
+.ft-diary .ft-diary-program .program-stage-card.is-collapsed>.program-stage>.program-stage-main{grid-row:1}
+.ft-diary .ft-diary-program .program-stage-card>.program-stage .program-stage-workout{overflow-wrap:break-word}

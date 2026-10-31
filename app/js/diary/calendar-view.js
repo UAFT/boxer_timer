@@ -18,7 +18,7 @@ const TEXT = {
     pickMove: name => 'Выберите дату, чтобы перенести «' + name + '»', pickRepeat: name => 'Выберите дату, чтобы повторить «' + name + '»',
     cancelPick: 'Не переносить', loading: 'Загрузка дневника…',
     assignDates: 'Назначить на даты', pickAssign: name => 'Отметьте даты для «' + name + '»', pickDates: 'Выберите даты в календаре',
-    start: 'Начать тренировку', edit: 'Изменить', stage: 'Этап ', between: 'Отдых между этапами: ', betweenCycles: 'Пауза между циклами: ',
+    start: 'Начать тренировку', saveAs: 'Сохранить как…', stage: 'Этап ', between: 'Отдых между этапами: ', betweenCycles: 'Пауза между циклами: ',
     cycles: n => 'Циклы: ' + n, roundsCount: n => russianCount(n), total: 'Всего: ', noLimit: 'Без ограничения времени',
     deleteForever: 'Удалить тренировку', draftFailed: 'Не удалось записать тренировку в дневник. Добавленные блоки сохранены здесь — нажмите × ещё раз.',
     untitled: 'Новая программа', timer: 'Таймер', modes: { standard: 'обычный', ladder: 'лестница', two_phase: 'две фазы', count_up: 'прямой отсчёт', blocks: 'блоки', speed: 'Скоростной' },
@@ -36,7 +36,7 @@ const TEXT = {
     pickMove: name => 'Pick a date to move «' + name + '»', pickRepeat: name => 'Pick a date to repeat «' + name + '»',
     cancelPick: 'Cancel', loading: 'Loading diary…',
     assignDates: 'Assign to dates', pickAssign: name => 'Tick the dates for «' + name + '»', pickDates: 'Pick dates in the calendar',
-    start: 'Start workout', edit: 'Edit', stage: 'Stage ', between: 'Rest between stages: ', betweenCycles: 'Rest between cycles: ',
+    start: 'Start workout', saveAs: 'Save as…', stage: 'Stage ', between: 'Rest between stages: ', betweenCycles: 'Rest between cycles: ',
     cycles: n => 'Cycles: ' + n, roundsCount: n => n + (n === 1 ? ' round' : ' rounds'), total: 'Total: ', noLimit: 'No time limit',
     deleteForever: 'Delete workout', draftFailed: 'Could not write the workout to the diary. The added blocks are kept here — tap × again.',
     untitled: 'New program', timer: 'Timer', modes: { standard: 'standard', ladder: 'ladder', two_phase: 'two phases', count_up: 'count up', blocks: 'blocks', speed: 'Speed' },
@@ -77,12 +77,15 @@ export const sessionTitle = (session, snap, lang) =>
   session.origin === 'timer' && snap?.entries?.length === 1 ? timerLabel(snap.entries[0], lang) : snap?.name || diaryText(lang).untitled;
 
 // In-app dropdown in the Tree filter's style (never the OS picker). options: [[value, text]].
+// A tap anywhere outside an open dropdown or ⋮ menu closes it; taps inside (its items, its own toggle) work as usual.
 const watched = new WeakSet();
+function closeOnOutsideTap(doc) {
+  if (watched.has(doc)) return;
+  watched.add(doc);
+  doc.addEventListener('pointerdown', e => { for (const d of doc.querySelectorAll('details.ft-dropdown[open],details.ft-diary-menu[open]')) if (!d.contains(e.target)) d.open = false; });
+}
 export function dropdown(doc, { label, options, value, onChange, className = '' }) {
-  if (!watched.has(doc)) {
-    watched.add(doc);
-    doc.addEventListener('pointerdown', e => { for (const d of doc.querySelectorAll('details.ft-dropdown[open]')) if (!d.contains(e.target)) d.open = false; });
-  }
+  closeOnOutsideTap(doc);
   const box = el(doc, 'details', 'ft-route-filter-menu ft-dropdown' + (className ? ' ' + className : ''));
   const trigger = el(doc, 'summary', 'ft-route-filter-trigger');
   trigger.setAttribute('aria-label', label + ': ' + (options.find(([v]) => v === value)?.[1] ?? ''));
@@ -164,12 +167,16 @@ function libraryWorkout(stage) {
 }
 const stageName = (stage, lang) => stage.title || timerLabel(stage, lang);
 
-// host: getDiary(), savedPrograms(), profiles(), openSession(session, snap), startSession(session, snap), openProgram(program, date),
+// host: getDiary(), savedPrograms(), profiles(), startSession(session, snap), openProgram(program, date),
+// renderStages(session, snap, {expanded, commit}), saveAs(session, snap),
 // assign(snapshots, program, date), startLibrary(date), confirmRemove({name, trigger, onConfirm}), confirmDelete({...}).
 export function createDiaryView(doc, host, { now = () => new Date() } = {}) {
   const cal = createCalendar(doc, { now });
   const multi = createCalendar(doc, { now, multi: true });
   let pick = null, adding = false, source = 'mine', note = '';
+  // Opened stages of planned appointments (session id + stage index), kept while the diary is redrawn after an edit.
+  const opened = new Set();
+  closeOnOutsideTap(doc);
 
   // Only what was recorded: never-started and partly done are told apart; partial shows the rounds and stages really finished.
   function stateText(session, today, t, snap) {
@@ -190,7 +197,7 @@ export function createDiaryView(doc, host, { now = () => new Date() } = {}) {
     const all = compileProgram(entries, {}, options);
     const card = el(doc, 'article', 'ft-diary-session is-' + (session.status === 'planned' && session.date < today ? 'missed' : session.status));
     const top = el(doc, 'div', 'ft-diary-session-top');
-    top.append(el(doc, 'strong', 'ft-diary-session-name ft-program-title', name), menu(diary, session, name, t, rerender));
+    top.append(el(doc, 'strong', 'ft-diary-session-name ft-program-title', name), menu(diary, session, snap, name, t, rerender));
     const times = [stateText(session, today, t, snap)];
     if (session.startedAt) times.push(t.started + new Intl.DateTimeFormat(lang === 'en' ? 'en' : 'ru', { hour: '2-digit', minute: '2-digit' }).format(new Date(session.startedAt)));
     if (session.facts?.activeSec > 0) times.push(t.actual + timeWords(session.facts.activeSec, lang));
@@ -199,7 +206,13 @@ export function createDiaryView(doc, host, { now = () => new Date() } = {}) {
       el(doc, 'p', 'ft-diary-session-facts', [t.roundsCount(all.length), ...(options.cycles > 1 ? [t.cycles(options.cycles)] : []),
         all.some(r => r.intervalMode === 'count_up') ? t.noLimit : t.total + timeWords(total, lang)].join(' · ')));
     const stages = el(doc, 'div', 'ft-diary-stages');
-    entries.forEach((stage, i) => {
+    // A planned appointment is edited in place with the editor's own stage cards (STAGE 4); a done or partial record
+    // stays read-only history.
+    if (session.status === 'planned' && host.renderStages) {
+      const key = i => session.id + ':' + i;
+      stages.append(host.renderStages(session, snap, { expanded: { has: i => opened.has(key(i)), toggle: i => opened.has(key(i)) ? opened.delete(key(i)) : opened.add(key(i)) },
+        commit: mutate => change(diary, mutate, rerender) }));
+    } else entries.forEach((stage, i) => {
       const workout = libraryWorkout(stage);
       stages.append(renderCompactCard(doc, { className: 'ft-diary-stage', title: t.stage + (i + 1) + ' · ' + stageName(stage, lang),
         rounds: compileProgram([stage], {}, { cycles: 1 }), lang,
@@ -208,13 +221,13 @@ export function createDiaryView(doc, host, { now = () => new Date() } = {}) {
     });
     if (options.cycles > 1) stages.append(el(doc, 'p', 'ft-diary-between', t.betweenCycles + timeClock(options.cycleRestSec)));
     const actions = el(doc, 'div', 'ft-diary-session-actions');
-    actions.append(button(doc, 'ft-diary-start', t.start, () => host.startSession(session, snap)),
-      button(doc, 'ft-diary-edit', t.edit, () => host.openSession(session, snap)));
+    // «Изменить» is gone: the stage cards above are edited in place (owner addendum).
+    actions.append(button(doc, 'ft-diary-start', t.start, () => host.startSession(session, snap)));
     card.append(stages, actions);
     return card;
   }
 
-  function menu(diary, session, name, t, rerender) {
+  function menu(diary, session, snap, name, t, rerender) {
     const box = el(doc, 'details', 'ft-diary-menu');
     const summary = el(doc, 'summary', 'ft-diary-menu-button', '⋮'); summary.setAttribute('aria-label', t.menu + ': ' + name);
     const items = el(doc, 'div', 'ft-diary-menu-list');
@@ -222,6 +235,7 @@ export function createDiaryView(doc, host, { now = () => new Date() } = {}) {
     const label = name + ' · ' + session.date.split('-').reverse().join('.');
     if (session.status === 'planned') items.append(button(doc, 'ft-diary-menu-item', t.move, choose('move')));
     items.append(button(doc, 'ft-diary-menu-item', t.repeat, choose('repeat')), button(doc, 'ft-diary-menu-item', t.assignDates, choose('assign')));
+    if (host.saveAs) items.append(button(doc, 'ft-diary-menu-item', t.saveAs, () => { box.open = false; host.saveAs(session, snap); }));
     if (session.status === 'planned') items.append(button(doc, 'ft-diary-menu-item', t.remove, () => {
       box.open = false;
       host.confirmRemove({ name: label, trigger: summary, onConfirm: () => change(diary, d => {

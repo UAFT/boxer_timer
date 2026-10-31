@@ -49,7 +49,9 @@ test('the editor refuses to start or save a program above the limit and edits on
  const app=readFileSync(new URL('../app/js/app.js',import.meta.url),'utf8');
  assert.ok(app.includes('isPlaybackProtected(timer,programRunning) || refuseTooLong(programEntries,programOptions)) return;'));
  // Start + the single «Сохранить» button (diary STAGE 2 merged «Обновить» and «Сохранить как новую»).
- assert.equal(app.match(/refuseTooLong\(programEntries,programOptions\)/g).length,2);
+ assert.equal(app.match(/refuseTooLong\(programEntries,programOptions\)/g).length,1);
+ // STAGE 4: the one «Сохранить» button checks whatever it saves (the editor's program or a diary appointment).
+ assert.ok(app.includes('if(saving || refuseTooLong(src.entries,src.options))return;'));
  assert.ok(app.includes('for(let j=0;j<Math.min(rounds,200);j++)'));
  // No plan preview either: drawing a too-long plan would only freeze the screen.
  assert.ok(app.includes('return rounds.length > MAX_PROGRAM_ROUNDS ? null : rounds;'));

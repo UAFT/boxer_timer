@@ -88,3 +88,13 @@ test('every dialog the handler knows exists in the page with its close button',(
  const pkg=JSON.parse(readFileSync(new URL('../package.json',import.meta.url),'utf8'));
  assert.equal(pkg.dependencies['@capacitor/app'],'7.1.2');
 });
+
+test('an open diary ⋮ menu closes on Back before the library window, choosing nothing',()=>{
+ const clicks=[];let handler=null;const menu={open:true};
+ const library={hidden:false,click(){clicks.push('library');}};
+ const doc={getElementById:id=>id==='programLibraryModal'?library:id==='programLibraryClose'?{hidden:false,click(){clicks.push('programLibraryClose');}}:null,
+  querySelector:sel=>sel.includes('ft-diary-menu[open]') && menu.open ? menu : null,documentElement:{lang:'ru'}};
+ installBackButton({win:{Capacitor:{Plugins:{App:{addListener:(n,fn)=>{handler=fn;},minimizeApp:()=>Promise.resolve()}}}},doc,timers:{setTimeout:()=>1,clearTimeout:()=>{}}});
+ assert.equal(handler(),'closed');assert.equal(menu.open,false);assert.deepEqual(clicks,[]);
+ assert.equal(handler(),'closed');assert.deepEqual(clicks,['programLibraryClose']);
+});

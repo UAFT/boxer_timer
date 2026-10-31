@@ -31,6 +31,9 @@ export function installBackButton({win = globalThis.window, doc = globalThis.doc
   const hint = doc.getElementById('ftBackHint');
   const hideHint = () => { if (hint) hint.hidden = true; };
   function closeTop() {
+    // An open ⋮ menu or dropdown (Diary, Save) closes first, without choosing anything.
+    const menu = doc.querySelector?.('details.ft-diary-menu[open],details.ft-dropdown[open]');
+    if (menu) { menu.open = false; return true; }
     for (const [id, ...buttons] of CLOSERS) {
       const overlay = doc.getElementById(id);
       if (!overlay || overlay.hidden) continue;

@@ -276,6 +276,16 @@
             <label>Отдых между блоками (сек.)<input id="stageSettingsBlockRest" type="number" min="0" max="3600" step="5" required></label>
           </div>
         </div>
+        <div id="stageSettingsMetronome" class="ft-stage-metronome">
+          <label class="stage-settings-checkbox"><input type="checkbox" id="stageSettingsMetroOn"> Метроном этапа</label>
+          <div id="stageSettingsMetroFields" hidden>
+            <div class="ft-stage-metro-modes" role="group" aria-label="Режим метронома"><button type="button" data-stage-metro="direct">Прямой</button><button type="button" data-stage-metro="subdivided">Дробный</button></div>
+            <label class="stage-settings-field">Темп, уд/мин<input id="stageSettingsMetroBpm" type="number" inputmode="numeric" min="1" max="300" step="1"></label>
+            <p id="stageSettingsMetroInterval" class="ft-stage-metro-interval" aria-live="polite"></p>
+            <label class="stage-settings-checkbox"><input type="checkbox" id="stageSettingsMetroPerRound"> Свой темп для каждого раунда</label>
+            <div id="stageSettingsMetroRounds" class="ft-stage-metro-rounds" hidden></div>
+          </div>
+        </div>
         <div class="stage-settings-actions"><button type="button" id="stageSettingsCancel">Отмена</button><button type="button" id="stageSettingsSave">Сохранить</button></div>
       </section>
     </div>

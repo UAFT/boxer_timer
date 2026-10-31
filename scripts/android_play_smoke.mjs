@@ -193,6 +193,39 @@ if (!METHODOLOGY) {
   const final = await js(`(async()=>{const fs=Capacitor.Plugins.Filesystem;const all=[];for(const s of ['a','b']){try{all.push(JSON.parse((await fs.readFile({path:'fighttech-diary-'+s+'.json',directory:'DATA',encoding:'utf8'})).data))}catch{}}const d=all.sort((x,y)=>y.seq-x.seq)[0];return {sessions:d.sessions.length,pending:JSON.parse(localStorage.getItem('fighttech.diary.pending.v1')||'[]').length}})()`);
   step('diary_back_on_question', { asked, afterBack, again, final });
   if (!(asked && !afterBack.open && afterBack.pending === 1 && again && final.sessions === 3 && final.pending === 0)) fail('Back on «Записать?» lost or declined the run: ' + JSON.stringify({ asked, afterBack, again, final }));
+  // STAGE 4: a planned appointment edited in place (stage ✎ → stage metronome 30/min, round 2 at 60/min), started from
+  // its card. Metronome sounds are told apart by buffer length; intervals are measured in the WebView in real time
+  // (JS scheduling — the speaker's own latency and Android audio focus need a real phone).
+  await js(`(()=>{document.getElementById('programLibraryDiary').click();document.querySelector('.ft-diary-day.is-today').click();return true})()`); await sleep(800);
+  const edited = await js(`(async()=>{const set=(id,v)=>{const e=document.getElementById(id);e.value=String(v);e.dispatchEvent(new Event('input',{bubbles:true}));};
+    const card=[...document.querySelectorAll('.ft-diary-session')].find(c=>c.querySelector('.ft-diary-program'));if(!card)return {card:false};
+    card.querySelector('.program-stage-timing').click();await new Promise(r=>setTimeout(r,300));
+    card.querySelector('.program-stage-edit').click();await new Promise(r=>setTimeout(r,300));
+    const dialog=!document.getElementById('stageSettingsModal').hidden;
+    for(const [id,v] of [['stageSettingsRounds',2],['stageSettingsWorkMin',0],['stageSettingsWorkSec',20],['stageSettingsRestMin',0],['stageSettingsRestSec',10]])set(id,v);
+    document.getElementById('stageSettingsMetroOn').click();set('stageSettingsMetroBpm',30);document.getElementById('stageSettingsMetroPerRound').click();
+    const rows=document.querySelectorAll('#stageSettingsMetroRounds input');rows[1].value='60';rows[1].dispatchEvent(new Event('input',{bubbles:true}));
+    const hint=document.getElementById('stageSettingsMetroInterval').textContent;
+    document.getElementById('stageSettingsSave').click();await new Promise(r=>setTimeout(r,1500));
+    const fs=Capacitor.Plugins.Filesystem;const all=[];for(const s of ['a','b']){try{all.push(JSON.parse((await fs.readFile({path:'fighttech-diary-'+s+'.json',directory:'DATA',encoding:'utf8'})).data))}catch{}}
+    const d=all.sort((x,y)=>y.seq-x.seq)[0];const metro=d.sessions.filter(x=>x.status==='planned').map(x=>d.snapshots[x.planRef].entries[0].metronome).filter(Boolean);
+    return {card:true,dialog,hint,metro,rows:[...document.querySelectorAll('.ft-diary-program .program-round-metronome')].map(x=>x.textContent).slice(0,2)}})()`);
+  shot('10_diary_stage_metronome');
+  // Durations of the two metronome sounds as this device decodes them, then a log of every sound start.
+  await js(`(async()=>{const ctx=new AudioContext();const dur=async u=>(await ctx.decodeAudioData(await (await fetch(u)).arrayBuffer())).duration;
+    window.__metro=[await dur('./assets/audio/metronome/metronome_single_runtime.wav'),await dur('./assets/audio/metronome/metronome_split_upbeat_runtime.wav')];ctx.close();
+    window.__snd=[];const st=AudioBufferSourceNode.prototype.start;AudioBufferSourceNode.prototype.start=function(...a){if(this.buffer)window.__snd.push([Date.now(),this.buffer.duration]);return st.apply(this,a);};return true})()`);
+  await js(`(()=>{[...document.querySelectorAll('.ft-diary-session')].find(c=>c.querySelector('.ft-diary-program')).querySelector('.ft-diary-start').click();return true})()`);
+  await sleep(4000); shot('11_stage_metronome_running'); await sleep(50000);
+  await js(`document.getElementById('resetBtn').click()`); await sleep(1500);
+  const audio = await js(`(()=>{const m=window.__metro;const beats=window.__snd.filter(([,d])=>m.some(x=>Math.abs(x-d)<0.002)).map(([t])=>t);
+    const gaps=beats.slice(1).map((t,i)=>t-beats[i]);return {beats:beats.length,gaps}})()`);
+  const quick = audio?.gaps?.filter(g => g < 1500) || [], slow = audio?.gaps?.filter(g => g >= 1500 && g < 2500) || [];
+  const jitter = Math.max(0, ...slow.map(g => Math.abs(g - 2000)), ...quick.map(g => Math.abs(g - 1000)));
+  step('stage4_metronome', { edited, audio: { beats: audio?.beats, slow: slow.length, quick: quick.length, maxJitterMs: jitter, longGaps: audio?.gaps?.filter(g => g >= 2500) } });
+  if (!(edited?.dialog && edited.metro?.some(m => m.enabled && m.bpm === 30 && m.roundBpm?.[1] === 60) && /каждые 2 с|every 2 sec/.test(edited.hint))) fail('STAGE 4: stage metronome not saved to the appointment: ' + JSON.stringify(edited));
+  if (!(slow.length >= 5 && quick.length >= 5 && jitter <= 120)) fail('STAGE 4: stage metronome tempo/round switch not heard as configured: ' + JSON.stringify(audio));
+  adb('shell', 'input', 'keyevent', '4'); await sleep(800);
 }
 
 report.crashes = crashes();
