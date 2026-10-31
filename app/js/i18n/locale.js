@@ -53,7 +53,7 @@ const pairs = [
 ['Названия, описания и время задаются для первых 200 раундов','Names, descriptions and times can be set for the first 200 rounds'],
 ['Оба шага равны нулю: все раунды будут одинаковыми.','Both steps are zero: all rounds will be equal.'],
 ['без шага','no step'],['мин','min'],['сек','sec'],['из','of'],['блоков','blocks'],['блока','blocks'],['блок','block'],['раундов','rounds'],['раунда','rounds'],['раунд','round'],
-['Скоростной','Speed'],['Язык интерфейса','Interface language'],['Развернуть лестницу','Expand ladder'],['Свернуть лестницу','Collapse ladder'],
+['Скоростной','Speed'],['Язык интерфейса','Interface language'],['Язык','Language'],['Развернуть лестницу','Expand ladder'],['Свернуть лестницу','Collapse ladder'],
 ['Увеличить длину раунда','Increase round duration'],['Уменьшить длину раунда','Decrease round duration'],
 ['Увеличить время отдыха','Increase rest duration'],['Уменьшить время отдыха','Decrease rest duration'],
 ['Увеличить количество раундов','Increase rounds'],['Уменьшить количество раундов','Decrease rounds'],
