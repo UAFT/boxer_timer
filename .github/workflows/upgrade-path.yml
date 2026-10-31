@@ -1,4 +1,4 @@
-name: Upgrade path (methodology → Play MVP → methodology)
+name: Upgrade path (methodology 0.2.190 → Play MVP 1.0.12 → methodology 0.2.192)
 # Release APKs only, each taken from the CI run that built and signed it.
 on:
   push:
@@ -11,12 +11,12 @@ permissions:
   contents: read
   actions: read
 env:
-  OLD_RUN: '41042999242'
-  OLD_SHA256: 8d44dcb38e18d43871b587aa101abbbcf3c23c8e249984fbd0acc24dac828611
-  MVP_RUN: '41086947998'
-  MVP_SHA256: dae0abbaf7e4f005e2409f2db14302ccf1dfa53d4b8a3abd1f28d0d74bca6650
-  NEW_RUN: '41099793317'
-  NEW_SHA256: b9796026713dd5c922af8158efa8968d05715d2acf6f2e1c9fc36f9a68df32c7
+  OLD_RUN: '41099793317'
+  OLD_SHA256: b9796026713dd5c922af8158efa8968d05715d2acf6f2e1c9fc36f9a68df32c7
+  MVP_RUN: '41114385900'
+  MVP_SHA256: 865cee987c58ca088f63547ca2492a7b1be76b88c323bf022c4859a70843f72e
+  NEW_RUN: '41164516523'
+  NEW_SHA256: 38c21374e0c21c1ca0fdf17f3bbf7161311fbecb72777db88ffe6e3801df023b
 jobs:
   upgrade:
     runs-on: ubuntu-latest
