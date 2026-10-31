@@ -8,11 +8,11 @@ const read=p=>readFileSync(new URL(p,import.meta.url),'utf8');
 test('two work phases have one compact timing line followed by a separate total',()=>{
  const rows=stageTimingRows({intervalMode:'two_phase',workSec:60,phaseTwoSec:40,restSec:60},{total:740,rounds:new Array(5).fill({})});
  assert.deepEqual(rows,[
-  ['program-stage-two-phase-meta','5 раундов · фаза 1 01:00 · фаза 2 00:40 · отдых 01:00'],
+  ['program-stage-two-phase-meta','5 раундов · фаза 1 — 01:00 · фаза 2 — 00:40 · отдых — 01:00'],
   ['program-stage-sum','Всего: 12:20']
  ]);
  assert.deepEqual(stageTimingRows({intervalMode:'two_phase',workSec:60,phaseTwoSec:40,restSec:60},{total:740,rounds:new Array(5).fill({})},true),[
-  ['program-stage-two-phase-meta','5 rounds · phase 1 01:00 · phase 2 00:40 · rest 01:00'],
+  ['program-stage-two-phase-meta','5 rounds · phase 1 — 01:00 · phase 2 — 00:40 · rest — 01:00'],
   ['program-stage-sum','Total: 12:20']
  ]);
 });

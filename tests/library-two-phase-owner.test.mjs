@@ -49,7 +49,7 @@ for(const item of cases){
   if(item.id==='TP03'){
    assert.ok(plan.includes('Фаза 1 · Медицинбол'));
    const labels=stageTimingRows(stage.settings,{total:item.total,rounds:rows});
-   assert.match(labels[0][1],/фаза 1 00:30–01:00/);
+   assert.match(labels[0][1],/фаза 1 — 00:30–01:00/);
   }
  });
 }

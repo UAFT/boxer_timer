@@ -466,8 +466,10 @@ function addProgramStage(presetId) {
   timerDisclosure.keepExpandedOnPresetAdd();
   persistProgram();
 }
-function removeProgramStage(index,t=mainTarget) {
-  if (t.locked() || t.entries.length<=t.minStages) return;
+function removeProgramStage(index,t=mainTarget,trigger=null) {
+  if (t.locked()) return;
+  if (t.removeStage) return t.removeStage(index,trigger);
+  if (t.entries.length<=t.minStages) return;
   t.entries.splice(index,1);
   t.save();
 }
@@ -780,10 +782,11 @@ function renderStageCards(list,entries,opts) {
       detail.addEventListener('click',toggle);
       detail.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();toggle();}});
     }
-    if (editable && open) {
-      const edit=document.createElement('button');edit.type='button';edit.textContent='✎';edit.className='program-stage-edit';edit.setAttribute('aria-label','Настройки этапа '+(i+1));edit.addEventListener('click',()=>openStageSettings(i,target));stage.append(edit);
-      for (const [label,fn] of [['↑',()=>moveProgramStage(i,-1,target)],['↓',()=>moveProgramStage(i,1,target)],['×',()=>removeProgramStage(i,target)]]) {
-        const b=document.createElement('button');b.type='button';b.textContent=label;b.setAttribute('aria-label',label==='×'?'Удалить этап':label==='↑'?'Поднять этап':'Опустить этап');b.addEventListener('click',fn);stage.append(b);
+    // STAGE 4.1: the stage toolbar is there open or closed (Diary too), on the heading's first row.
+    if (editable) {
+      const edit=document.createElement('button');edit.type='button';edit.textContent='✎';edit.className='program-stage-edit';edit.setAttribute('aria-label','Настройки этапа '+(i+1));edit.addEventListener('click',e=>{e.stopPropagation();openStageSettings(i,target);});stage.append(edit);
+      for (const [label,fn,off] of [['↑',()=>moveProgramStage(i,-1,target),i===0],['↓',()=>moveProgramStage(i,1,target),i===entries.length-1],['×',b=>removeProgramStage(i,target,b),false]]) {
+        const b=document.createElement('button');b.type='button';b.textContent=label;b.disabled=off;b.setAttribute('aria-label',label==='×'?'Удалить этап':label==='↑'?'Поднять этап':'Опустить этап');b.addEventListener('click',e=>{e.stopPropagation();fn(b);});stage.append(b);
       }
     }
     card.append(stage,detail);
@@ -855,17 +858,19 @@ function bindProgramLibrary() {
   // shows that date in «Дневник». With nothing collected it goes back to the date as well. A failed write keeps the draft.
   async function closeLibrary() {
     if (!libraryDraft) return close();
-    if (libraryDraft.entries.length && !(await saveLibraryDraft())) return;
+    if (libraryDraft.entries.length>(libraryDraft.base||0) && !(await saveLibraryDraft())) return;
     const date=libraryDraft.date;
     libraryDraft=null;libraryTab='diary';libraryPath={};diary.show(date);renderLibrary();
   }
   // One draft = one appointment: the first block creates it, every next block updates the same one (same id).
   async function saveLibraryDraft() {
     const draft=libraryDraft;
-    const snap=diarySnap('',draft.entries,{});
+    const snap=diarySnap(draft.name||'',draft.entries,draft.options||{});
     const ok=await diaryStore?.commit(d=>{
       const own=draft.sessionId && d.sessions.find(x=>x.id===draft.sessionId && x.status==='planned');
       if(own){own.planRef=putSnapshot(d.snapshots,snap);own.updatedAt=Date.now();dropUnused(d);return;}
+      // Adding stages never creates a second workout: the appointment is gone (moved away, removed) → nothing written.
+      if(draft.insert)return false;
       const session=newSession(d.snapshots,{date:draft.date,snap,programId:null,origin:'diary'});
       d.sessions.push(session);draft.sessionId=session.id;
     });
@@ -920,14 +925,24 @@ function bindProgramLibrary() {
     openProgram:(program,date)=>openEntry(program,false,{date,sessionId:null}),
     // STAGE 4: a planned appointment shows the editor's stage cards. Their pencils, arrows and rest steppers edit this
     // appointment's own copy (a new snapshot for this session only): the library, «Мои» and other dates are untouched.
-    renderStages:(session,snap,{expanded,commit})=>{
+    renderStages:(session,snap,{expanded,commit,removeWorkout})=>{
       const entries=normalizeProgram(snap.entries);
       const box=document.createElement('div');box.className='program-panel ft-diary-program';
       const list=document.createElement('div');list.className='program-list';box.append(list);
       const target={entries,locked:()=>false,minStages:1,save:()=>commit(d=>{
         const own=d.sessions.find(x=>x.id===session.id && x.status==='planned');if(!own)return false;
         own.planRef=putSnapshot(d.snapshots,diarySnap(snap.name||'',entries,snap.options));own.updatedAt=Date.now();dropUnused(d);
-      })};
+      }),
+      // STAGE 4.1: × of the only stage never leaves an empty workout — it is ⋮ «Удалить из календаря» (same dialog and
+      // handler). With 2+ stages it removes just that stage of this appointment, after a confirmation.
+      removeStage:(i,trigger)=>{
+        if(entries.length<=1)return removeWorkout(trigger);
+        const name=(document.documentElement.lang==='en'?'Stage ':'Этап ')+(i+1)+(entries[i].title?' · '+entries[i].title:'');
+        confirmDeletion({name,trigger,labels:{
+          ru:{title:'Удалить этап?',message:'Этап уйдёт только из этой тренировки на эту дату. Библиотека, «Мои» и другие даты не изменятся.',delete:'Удалить'},
+          en:{title:'Remove the stage?',message:'The stage leaves only this workout on this date. The library, «Mine» and other dates stay unchanged.',delete:'Remove'}},
+          onConfirm:()=>{expanded.drop?.(i,entries.length);entries.splice(i,1);target.save();}});
+      }};
       renderStageCards(list,entries,{target,collapsible:true,expanded,roundTimes:true});
       return box;
     },
@@ -936,6 +951,10 @@ function bindProgramLibrary() {
       name:sessionTitle(session,snap,document.documentElement.lang),programId:null,
       diary:session.status==='planned'?{date:session.date,sessionId:session.id}:null}),
     assign:(snapshots,program,date)=>newSession(snapshots,{date,snap:diarySnap(program.name,program.entries,program.options),programId:program.id,origin:'diary'}),
+    // STAGE 4.1 «Добавить этап»: the library picker collects stages for THIS appointment (same id, same day). Picks are
+    // appended in tap order, each an independent copy (a block picked twice gives two stages); × writes them, «Отмена» drops them.
+    addStages:(session,snap)=>{const entries=normalizeProgram(snap.entries);libraryDraft={date:session.date,entries,base:entries.length,sessionId:session.id,insert:true,
+      name:snap.name||'',options:snap.options||{},failed:false};libraryTab='templates';libraryPath={};renderLibrary();byId('programLibraryModal').querySelector('section').scrollTop=0;},
     startLibrary:date=>{libraryDraft={date,entries:[],sessionId:null,failed:false};libraryTab='templates';libraryPath={};renderLibrary();byId('programLibraryModal').querySelector('section').scrollTop=0;},
     confirmRemove:opts=>confirmDeletion({...opts,labels:{
       ru:{title:'Удалить из календаря?',message:'Тренировка исчезнет из календаря. Программа в «Мои» останется.',delete:'Удалить'},
@@ -961,7 +980,17 @@ function bindProgramLibrary() {
     byId('programLibraryBack').hidden=libraryTab!=='templates' || !level.back;
     byId('programLibraryTitle').textContent=libraryTab==='mine'?'Мои программы':level.title;
     if(libraryTab==='templates') {
-      if(libraryDraft) {
+      if(libraryDraft?.insert) {
+        const en=document.documentElement.lang==='en',[y,m,d]=libraryDraft.date.split('-'),n=libraryDraft.entries.length-libraryDraft.base,name=libraryDraft.name||diaryText(en?'en':'ru').untitled;
+        const hint=Object.assign(document.createElement('div'),{className:'ft-diary-hint ft-library-draft ft-library-insert'});
+        hint.append(Object.assign(document.createElement('span'),{textContent:en
+          ?'Add stages to «'+name+'» on '+d+'.'+m+'.'+y+(n?': picked — '+n+'. × adds them to the workout.':'. Tap + on a block; each + is one more stage.')
+          :'Этапы в «'+name+'» на '+d+'.'+m+'.'+y+(n?': выбрано — '+n+'. × добавит их в тренировку.':'. Нажмите + у блока; каждый + — ещё один этап.')}));
+        const cancel=Object.assign(document.createElement('button'),{type:'button',className:'ft-library-insert-cancel',textContent:en?'Cancel':'Отмена'});
+        cancel.addEventListener('click',()=>{const date=libraryDraft.date;libraryDraft=null;libraryTab='diary';libraryPath={};diary.show(date);renderLibrary();});
+        hint.append(cancel);list.append(hint);
+        if(libraryDraft.failed)list.append(Object.assign(document.createElement('p'),{className:'ft-diary-alert',role:'alert',textContent:diaryText(en?'en':'ru').failed}));
+      } else if(libraryDraft) {
         const en=document.documentElement.lang==='en',[y,m,d]=libraryDraft.date.split('-'),n=libraryDraft.entries.length;
         list.append(Object.assign(document.createElement('p'),{className:'ft-diary-hint ft-library-draft',textContent:en
           ?'New workout for '+d+'.'+m+'.'+y+(n?': stages added — '+n+'. Each + adds one more stage; × returns to the diary.':'. Tap + on a block: it becomes stage 1.')
@@ -990,7 +1019,8 @@ function bindProgramLibrary() {
             // A diary draft collects its own stages; the timer screen's workout is not touched.
             if(libraryDraft){
               if(libraryDraft.entries.length>=24)return false;
-              libraryDraft.entries.push(stage);saveLibraryDraft();
+              libraryDraft.entries.push(stage);
+              if(libraryDraft.insert)renderLibrary();else saveLibraryDraft();
               return true;
             }
             if(programRunning||programEntries.length>=24)return false;

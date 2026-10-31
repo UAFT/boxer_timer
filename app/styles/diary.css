@@ -141,8 +141,20 @@
 .ft-stage-metro-round{display:grid;grid-template-columns:minmax(0,1fr) 88px;gap:2px 8px;align-items:center}
 .ft-stage-metro-round input{min-height:40px;width:100%;box-sizing:border-box}
 .ft-stage-metro-round small{grid-column:1/-1;color:var(--ft-secondary,#5d6b73);font-variant-numeric:tabular-nums}
-/* Diary cards are narrower than the editor: the title takes the full width (as V70 long titles do); closed, there are no buttons. */
-.ft-diary .ft-diary-program .program-stage-card>.program-stage>.program-stage-main{grid-column:1/-1;grid-row:2}
-.ft-diary .ft-diary-program .program-stage-card.is-collapsed>.program-stage{grid-template-columns:minmax(0,1fr)}
-.ft-diary .ft-diary-program .program-stage-card.is-collapsed>.program-stage>.program-stage-main{grid-row:1}
-.ft-diary .ft-diary-program .program-stage-card>.program-stage .program-stage-workout{overflow-wrap:break-word}
+/* STAGE 4.1: the editor's grid, open or closed — «Этап N — режим» and ✎ ↑ ↓ × on row 1; the stage's category and name
+   below across the whole card (Diary cards are narrower than the editor), so the title never squeezes the buttons. */
+.ft-diary .ft-diary-program .program-stage-card>.program-stage>.program-stage-main,
+.ft-diary .ft-diary-program .program-stage-card>.program-stage>.program-stage-main>.program-stage-title-stack{display:contents!important}
+/* Nested diary frames leave a 320 px phone ~210 px; slimmer side padding keeps «Этап N —» / «Обычный» whole words. */
+.ft-diary .ft-diary-program .program-stage-card{padding-left:4px!important;padding-right:4px!important}
+.ft-diary .ft-diary-program .program-stage-card>.program-stage{padding-left:6px!important;padding-right:2px!important}
+.ft-diary .ft-diary-program .program-stage-card>.program-stage .program-stage-number{grid-column:1;grid-row:1;align-self:center;overflow-wrap:normal!important;word-break:normal;hyphens:none}
+.ft-diary .ft-diary-program .program-stage-card>.program-stage .program-stage-category,
+.ft-diary .ft-diary-program .program-stage-card>.program-stage .program-stage-workout{grid-column:1/-1;overflow-wrap:break-word}
+/* ↑ of the first stage and ↓ of the last are disabled (editor and Diary alike) and look it. */
+.program-stage-card>.program-stage>button:disabled{opacity:.3;cursor:default}
+/* «Добавить этап»: inside the workout card, after its last stage; same thin solid green outline as «Добавить тренировку». */
+.ft-diary .ft-diary-add-stage{width:100%;min-height:44px;margin-top:2px;background:transparent;border:1px solid var(--d-green);border-radius:12px;color:var(--d-green);font:inherit;font-weight:650;box-shadow:none}
+.ft-diary .ft-diary-add-stage:focus-visible{outline:3px solid var(--ft-steel,#365f60);outline-offset:2px}
+.ft-library-insert{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.ft-library-insert-cancel{flex:0 0 auto;min-height:40px;padding:0 12px;border-radius:10px;border:1px solid var(--ft-line,#c7d0d2);background:transparent;color:var(--ft-ink,#1b2229);font:inherit}

@@ -18,7 +18,7 @@ const TEXT = {
     pickMove: name => 'Выберите дату, чтобы перенести «' + name + '»', pickRepeat: name => 'Выберите дату, чтобы повторить «' + name + '»',
     cancelPick: 'Не переносить', loading: 'Загрузка дневника…',
     assignDates: 'Назначить на даты', pickAssign: name => 'Отметьте даты для «' + name + '»', pickDates: 'Выберите даты в календаре',
-    start: 'Начать тренировку', saveAs: 'Сохранить как…', stage: 'Этап ', between: 'Отдых между этапами: ', betweenCycles: 'Пауза между циклами: ',
+    start: 'Начать тренировку', addStage: 'Добавить этап', saveAs: 'Сохранить как…', stage: 'Этап ', between: 'Отдых между этапами: ', betweenCycles: 'Пауза между циклами: ',
     cycles: n => 'Циклы: ' + n, roundsCount: n => russianCount(n), total: 'Всего: ', noLimit: 'Без ограничения времени',
     deleteForever: 'Удалить тренировку', draftFailed: 'Не удалось записать тренировку в дневник. Добавленные блоки сохранены здесь — нажмите × ещё раз.',
     untitled: 'Новая программа', timer: 'Таймер', modes: { standard: 'обычный', ladder: 'лестница', two_phase: 'две фазы', count_up: 'прямой отсчёт', blocks: 'блоки', speed: 'Скоростной' },
@@ -36,7 +36,7 @@ const TEXT = {
     pickMove: name => 'Pick a date to move «' + name + '»', pickRepeat: name => 'Pick a date to repeat «' + name + '»',
     cancelPick: 'Cancel', loading: 'Loading diary…',
     assignDates: 'Assign to dates', pickAssign: name => 'Tick the dates for «' + name + '»', pickDates: 'Pick dates in the calendar',
-    start: 'Start workout', saveAs: 'Save as…', stage: 'Stage ', between: 'Rest between stages: ', betweenCycles: 'Rest between cycles: ',
+    start: 'Start workout', addStage: 'Add stage', saveAs: 'Save as…', stage: 'Stage ', between: 'Rest between stages: ', betweenCycles: 'Rest between cycles: ',
     cycles: n => 'Cycles: ' + n, roundsCount: n => n + (n === 1 ? ' round' : ' rounds'), total: 'Total: ', noLimit: 'No time limit',
     deleteForever: 'Delete workout', draftFailed: 'Could not write the workout to the diary. The added blocks are kept here — tap × again.',
     untitled: 'New program', timer: 'Timer', modes: { standard: 'standard', ladder: 'ladder', two_phase: 'two phases', count_up: 'count up', blocks: 'blocks', speed: 'Speed' },
@@ -168,7 +168,7 @@ function libraryWorkout(stage) {
 const stageName = (stage, lang) => stage.title || timerLabel(stage, lang);
 
 // host: getDiary(), savedPrograms(), profiles(), startSession(session, snap), openProgram(program, date),
-// renderStages(session, snap, {expanded, commit}), saveAs(session, snap),
+// renderStages(session, snap, {expanded, commit, removeWorkout}), saveAs(session, snap), addStages(session, snap),
 // assign(snapshots, program, date), startLibrary(date), confirmRemove({name, trigger, onConfirm}), confirmDelete({...}).
 export function createDiaryView(doc, host, { now = () => new Date() } = {}) {
   const cal = createCalendar(doc, { now });
@@ -210,8 +210,10 @@ export function createDiaryView(doc, host, { now = () => new Date() } = {}) {
     // stays read-only history.
     if (session.status === 'planned' && host.renderStages) {
       const key = i => session.id + ':' + i;
-      stages.append(host.renderStages(session, snap, { expanded: { has: i => opened.has(key(i)), toggle: i => opened.has(key(i)) ? opened.delete(key(i)) : opened.add(key(i)) },
-        commit: mutate => change(diary, mutate, rerender) }));
+      // drop(i, n): stage i of n leaves; the stages after it keep their open/closed state at their new index.
+      const drop = (i, n) => { const open = Array.from({ length: n }, (_, j) => opened.delete(key(j))); open.splice(i, 1); open.forEach((o, j) => o && opened.add(key(j))); };
+      stages.append(host.renderStages(session, snap, { expanded: { has: i => opened.has(key(i)), toggle: i => opened.has(key(i)) ? opened.delete(key(i)) : opened.add(key(i)), drop },
+        commit: mutate => change(diary, mutate, rerender), removeWorkout: trigger => removeAssignment(diary, session, name, trigger, rerender) }));
     } else entries.forEach((stage, i) => {
       const workout = libraryWorkout(stage);
       stages.append(renderCompactCard(doc, { className: 'ft-diary-stage', title: t.stage + (i + 1) + ' · ' + stageName(stage, lang),
@@ -220,6 +222,8 @@ export function createDiaryView(doc, host, { now = () => new Date() } = {}) {
       if (i < entries.length - 1) stages.append(el(doc, 'p', 'ft-diary-between', t.between + timeClock(stage.restAfterSec)));
     });
     if (options.cycles > 1) stages.append(el(doc, 'p', 'ft-diary-between', t.betweenCycles + timeClock(options.cycleRestSec)));
+    // STAGE 4.1: stages from the library go into THIS workout (no new workout); «Добавить тренировку» stays outside the card.
+    if (session.status === 'planned' && host.addStages) stages.append(button(doc, 'ft-diary-add-stage', t.addStage, () => host.addStages(session, snap)));
     const actions = el(doc, 'div', 'ft-diary-session-actions');
     // «Изменить» is gone: the stage cards above are edited in place (owner addendum).
     actions.append(button(doc, 'ft-diary-start', t.start, () => host.startSession(session, snap)));
@@ -236,14 +240,7 @@ export function createDiaryView(doc, host, { now = () => new Date() } = {}) {
     if (session.status === 'planned') items.append(button(doc, 'ft-diary-menu-item', t.move, choose('move')));
     items.append(button(doc, 'ft-diary-menu-item', t.repeat, choose('repeat')), button(doc, 'ft-diary-menu-item', t.assignDates, choose('assign')));
     if (host.saveAs) items.append(button(doc, 'ft-diary-menu-item', t.saveAs, () => { box.open = false; host.saveAs(session, snap); }));
-    if (session.status === 'planned') items.append(button(doc, 'ft-diary-menu-item', t.remove, () => {
-      box.open = false;
-      host.confirmRemove({ name: label, trigger: summary, onConfirm: () => change(diary, d => {
-        const s = d.sessions.find(x => x.id === session.id); if (!s) return false;
-        // Removing an assignment keeps the record (status canceled): it only leaves the calendar.
-        s.status = 'canceled'; s.canceledAt = Date.now(); s.updatedAt = s.canceledAt;
-      }, rerender) });
-    }));
+    if (session.status === 'planned') items.append(button(doc, 'ft-diary-menu-item', t.remove, () => { box.open = false; removeAssignment(diary, session, name, summary, rerender); }));
     else items.append(button(doc, 'ft-diary-menu-item', t.deleteForever, () => {
       box.open = false;
       // Owner 2026-10-31: a done or partial record may be deleted for good, after the stronger confirmation.
@@ -254,6 +251,15 @@ export function createDiaryView(doc, host, { now = () => new Date() } = {}) {
     }));
     box.append(summary, items);
     return box;
+  }
+
+  // ⋮ «Удалить из календаря» and × of a workout's only stage: one dialog, one handler.
+  function removeAssignment(diary, session, name, trigger, rerender) {
+    host.confirmRemove({ name: name + ' · ' + session.date.split('-').reverse().join('.'), trigger, onConfirm: () => change(diary, d => {
+      const s = d.sessions.find(x => x.id === session.id && x.status === 'planned'); if (!s) return false;
+      // Removing an assignment keeps the record (status canceled): it only leaves the calendar.
+      s.status = 'canceled'; s.canceledAt = Date.now(); s.updatedAt = s.canceledAt;
+    }, rerender) });
   }
 
   async function change(diary, mutate, rerender) {

@@ -12,7 +12,11 @@ export function stageTimingRows(config,{total,rounds},english=false){
  if(config.intervalMode==='two_phase'){
   const extra=(config.ladderEnabled?(english?' · ladder':' · лестница'):'')+(rounds.some(r=>r.timingOverridden)?(english?' · custom':' · индивидуально'):'');
   return [
-   ['program-stage-two-phase-meta',(english?rounds.length+' rounds · phase 1 ':countRu(rounds.length,'раунд','раунда','раундов')+' · фаза 1 ')+rangeClock(rounds.map(r=>r.workSec),config.workSec)+(english?' · phase 2 ':' · фаза 2 ')+rangeClock(rounds.map(r=>r.phaseTwoSec),config.phaseTwoSec||40)+(english?' · rest ':' · отдых ')+rangeClock(rounds.slice(0,-1).map(r=>r.restSec),config.restSec)+extra],
+   // STAGE 4.1: «label — time» pairs, so «фаза 1 01:00» never reads as one token (owner screenshots).
+   ['program-stage-two-phase-meta',[english?rounds.length+' rounds':countRu(rounds.length,'раунд','раунда','раундов'),
+    (english?'phase 1':'фаза 1')+' — '+rangeClock(rounds.map(r=>r.workSec),config.workSec),
+    (english?'phase 2':'фаза 2')+' — '+rangeClock(rounds.map(r=>r.phaseTwoSec),config.phaseTwoSec||40),
+    (english?'rest':'отдых')+' — '+rangeClock(rounds.slice(0,-1).map(r=>r.restSec),config.restSec)].join(' · ')+extra],
    ['program-stage-sum',(english?'Total: ':'Всего: ')+clock(total)]
   ];
  }

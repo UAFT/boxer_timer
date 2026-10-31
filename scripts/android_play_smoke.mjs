@@ -225,6 +225,34 @@ if (!METHODOLOGY) {
   step('stage4_metronome', { edited, audio: { beats: audio?.beats, slow: slow.length, quick: quick.length, maxJitterMs: jitter, longGaps: audio?.gaps?.filter(g => g >= 2500) } });
   if (!(edited?.dialog && edited.metro?.some(m => m.enabled && m.bpm === 30 && m.roundBpm?.[1] === 60) && /каждые 2 с|every 2 sec/.test(edited.hint))) fail('STAGE 4: stage metronome not saved to the appointment: ' + JSON.stringify(edited));
   if (!(slow.length >= 5 && quick.length >= 5 && jitter <= 120)) fail('STAGE 4: stage metronome tempo/round switch not heard as configured: ' + JSON.stringify(audio));
+  // STAGE 4.1: «Добавить этап» puts library blocks into THIS appointment (same id, no new workout); the stage toolbar sits
+  // on the heading row; × asks first, hardware Back on that question deletes nothing, «Удалить» removes just that stage.
+  const diaryFile = `(async()=>{const fs=Capacitor.Plugins.Filesystem;const all=[];for(const s of ['a','b']){try{all.push(JSON.parse((await fs.readFile({path:'fighttech-diary-'+s+'.json',directory:'DATA',encoding:'utf8'})).data))}catch{}}const d=all.sort((x,y)=>y.seq-x.seq)[0];const p=d.sessions.filter(x=>x.status==='planned');return {sessions:d.sessions.length,planned:p.map(x=>({id:x.id,n:d.snapshots[x.planRef].entries.length}))}})()`;
+  await js(`(()=>{document.getElementById('programLibraryOpen').click();document.getElementById('programLibraryDiary').click();document.querySelector('.ft-diary-day.is-today').click();return true})()`); await sleep(1000);
+  const before41 = await js(diaryFile);
+  const row41 = await js(`(()=>{const c=[...document.querySelectorAll('.ft-diary-session')].find(c=>c.querySelector('.ft-diary-program'));if(!c)return null;
+    return [...c.querySelectorAll('.program-stage')].map(st=>{const n=st.querySelector('.program-stage-number').getBoundingClientRect(),b=[...st.querySelectorAll(':scope>button')].map(x=>x.getBoundingClientRect());const mid=x=>(x.top+x.bottom)/2;
+      return {buttons:b.length,sameRow:b.every(x=>Math.abs(mid(x)-mid(n))<14)}})})()`);
+  await js(`(()=>{[...document.querySelectorAll('.ft-diary-session')].find(c=>c.querySelector('.ft-diary-program')).querySelector('.ft-diary-add-stage').click();return true})()`); await sleep(800);
+  const picker = await js(`(async()=>{for(let i=0;i<4&&!document.querySelector('.ft-library-add:not([disabled])');i++){document.querySelector('.ft-library-folder').click();await new Promise(r=>setTimeout(r,300));}
+    const hint=!!document.querySelector('.ft-library-insert');for(let i=0;i<2;i++){document.querySelector('.ft-library-add:not([disabled])').click();await new Promise(r=>setTimeout(r,300));}return {hint}})()`);
+  shot('12_stage41_picker');
+  await click('programLibraryClose'); await sleep(1500);
+  const inserted = await js(diaryFile);
+  shot('13_stage41_inserted');
+  await js(`(()=>{const c=[...document.querySelectorAll('.ft-diary-session')].find(c=>c.querySelector('.ft-diary-program'));const st=[...c.querySelectorAll('.program-stage')].pop();st.querySelectorAll(':scope>button')[3].click();return true})()`); await sleep(600);
+  const ask41 = await js(`document.getElementById('programDeleteConfirmModal').hidden?null:document.getElementById('programDeleteConfirmTitle').textContent`);
+  adb('shell', 'input', 'keyevent', '4'); await sleep(800);
+  const afterBack41 = await js(diaryFile);
+  await js(`(()=>{const c=[...document.querySelectorAll('.ft-diary-session')].find(c=>c.querySelector('.ft-diary-program'));const st=[...c.querySelectorAll('.program-stage')].pop();st.querySelectorAll(':scope>button')[3].click();return true})()`); await sleep(600);
+  await click('programDeleteConfirmAccept'); await sleep(1500);
+  const removed41 = await js(diaryFile);
+  step('stage41_diary', { before41, row41, picker, inserted, ask41, afterBack41, removed41 });
+  // Stage count over all planned workouts (the card's own id is not on the page); the workout count must not change.
+  const own = d => ({ n: (d?.planned || []).reduce((a, x) => a + x.n, 0) });
+  if (!(row41?.length && row41.every(r => r.buttons === 4 && r.sameRow))) fail('STAGE 4.1: stage toolbar not on the heading row: ' + JSON.stringify(row41));
+  if (!(picker?.hint && inserted.sessions === before41.sessions && inserted.planned.length === before41.planned.length && own(inserted)?.n === own(before41)?.n + 2)) fail('STAGE 4.1: library stages not inserted into the same workout: ' + JSON.stringify({ before41, picker, inserted }));
+  if (!(/Удалить этап\?|Remove the stage\?/.test(ask41 || '') && JSON.stringify(afterBack41) === JSON.stringify(inserted) && own(removed41)?.n === own(inserted)?.n - 1)) fail('STAGE 4.1: stage × confirm/Back/remove wrong: ' + JSON.stringify({ ask41, afterBack41, removed41 }));
   adb('shell', 'input', 'keyevent', '4'); await sleep(800);
 }
 
