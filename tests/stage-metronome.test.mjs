@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { beatInterval, metronomeLine, normalizeStageMetronome, roundBpm } from '../app/js/core/metronome-plan.js';
+import { beatInterval, metronomeLine, normalizeStageMetronome, programMetronomeConfig, roundBpm } from '../app/js/core/metronome-plan.js';
 import { compileProgram, normalizeProgram } from '../app/js/core/program.js';
 import { parseWorkoutFile, serializeWorkoutFile } from '../app/js/sharing/workout-file.js';
 import { newSession, putSnapshot } from '../app/js/diary/store.js';
@@ -115,7 +115,9 @@ test('engine: beats only in work, every 60/BPM ms; a tempo change restarts the c
 
 test('app wiring: the stage tempo follows the running round and the editor and diary share one stage dialog', () => {
   const app = readFileSync(new URL('../app/js/app.js', import.meta.url), 'utf8');
-  assert.ok(app.includes("const stage = programRunning ? programSnapshot?.[Math.max(1, timer.state?.roundIndex || 1) - 1]?.metronome : null;"));
+  assert.ok(app.includes("if (programRunning) return programMetronomeConfig(programSnapshot?.[Math.max(1, timer.state?.roundIndex || 1) - 1], settings, isMetronomeLocked(settings));"));
+  // A new stage opens with the metronome off.
+  assert.ok(app.includes("normalizeStageMetronome(saved)||{enabled:false,"));
   assert.equal(app.match(/followStageMetronome\(\);\n    metronome\.syncPhase\(state\);/g).length, 2);
   assert.ok(app.includes('openStageSettings(i,target)') && app.includes('renameProgramRound(i,j,false,edit,target)'));
   assert.equal(app.match(/function openStageSettings\(/g).length, 1);
@@ -123,4 +125,35 @@ test('app wiring: the stage tempo follows the running round and the editor and d
   assert.equal(view.includes('ft-diary-edit'), false);
   const html = readFileSync(new URL('../app/index.html', import.meta.url), 'utf8');
   assert.equal(html.match(/id="stageSettingsModal"/g).length, 1);
+});
+
+// Owner contract: a stage's metronome is off unless switched on in its pencil; the timer screen's metronome is never inherited.
+const timerMetronomeOn = { metronomeEnabled: true, metronomeBpm: 120, metronomeMode: 'subdivided' };
+test('old programs (no stage metronome) are silent even with the timer screen metronome on', () => {
+  const library = LIBRARY.map(w => stageForWorkout(w)).filter(Boolean).slice(0, 5);
+  const stored = [stage(null, 2), ...library];
+  for (const round of compileProgram(normalizeProgram(stored), {})) {
+    assert.equal(programMetronomeConfig(round, timerMetronomeOn, false).enabled, false);
+  }
+  // A round index past the program, or no snapshot at all, is silent too.
+  assert.equal(programMetronomeConfig(undefined, timerMetronomeOn, false).enabled, false);
+});
+
+test('new stages: missing or switched-off metronome is silent; only an explicitly enabled stage beats', () => {
+  assert.equal(normalizeStageMetronome({}).enabled, false);
+  assert.equal(normalizeStageMetronome({ enabled: 'true', bpm: 30 }).enabled, false);
+  const rounds = compileProgram([
+    stage(normalizeStageMetronome({}), 1),
+    stage({ enabled: false, bpm: 40 }, 1),
+    stage({ enabled: true, bpm: 8, mode: 'subdivided' }, 1),
+    stage(null, 1)
+  ], {});
+  assert.deepEqual(rounds.map(r => programMetronomeConfig(r, timerMetronomeOn, false)), [
+    { enabled: false, bpm: 120, mode: 'subdivided' },
+    { enabled: false, bpm: 120, mode: 'subdivided' },
+    { enabled: true, bpm: 8, mode: 'subdivided' },
+    { enabled: false, bpm: 120, mode: 'subdivided' }
+  ]);
+  // The 10 s warning lock still mutes an enabled stage, as before.
+  assert.equal(programMetronomeConfig(rounds[2], timerMetronomeOn, true).enabled, false);
 });

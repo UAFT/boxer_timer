@@ -35,7 +35,7 @@ import { compileProgram, normalizeProgram, normalizeOptions, normalizeLibrary, s
 import { loadProfileState, saveProfileState, normalizeSettings } from './state/settings-store.js';
 import { writeJson, STORAGE_FULL_MESSAGE } from './state/storage.js';
 import { AudioEngine } from './audio/audio-engine.js';
-import { normalizeStageMetronome, roundBpm, metronomeLine, DEFAULT_BPM, BPM_MIN, BPM_MAX } from './core/metronome-plan.js';
+import { normalizeStageMetronome, roundBpm, metronomeLine, DEFAULT_BPM, BPM_MIN, BPM_MAX, programMetronomeConfig } from './core/metronome-plan.js';
 import { MetronomeEngine } from './audio/metronome-engine.js';
 import { TimerEngine } from './timer/timer-engine.js';
 import { getDomRefs } from './ui/dom.js';
@@ -226,12 +226,11 @@ timer = new TimerEngine({
 });
 
 // STAGE 4: in a program, a round of a stage with its own metronome plays that stage's tempo (per round when set);
-// other rounds and the plain timer keep the timer screen's metronome exactly as before.
+// rounds of a stage without one (or with it off) are silent; only the plain timer, outside a program, uses the timer screen's metronome.
 let metronomeKey = null;
 function metronomeConfig() {
   const settings = liveTimerSettings();
-  const stage = programRunning ? programSnapshot?.[Math.max(1, timer.state?.roundIndex || 1) - 1]?.metronome : null;
-  if (stage) return { enabled: !isMetronomeLocked(settings), bpm: stage.bpm, mode: stage.mode };
+  if (programRunning) return programMetronomeConfig(programSnapshot?.[Math.max(1, timer.state?.roundIndex || 1) - 1], settings, isMetronomeLocked(settings));
   return {
     enabled: settings.metronomeEnabled && isMetronomePanelOpen() && !isMetronomeLocked(settings),
     bpm: settings.metronomeBpm,
