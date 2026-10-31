@@ -49,7 +49,7 @@ import {
 } from './ui/render.js';
 import { bindControls, bindPresetTabs } from './ui/bindings.js';
 import { createDiaryView, createCalendar, assignLabel } from './diary/calendar-view.js';
-import { openDiary, newSession, putSnapshot } from './diary/store.js';
+import { openDiary, newSession, putSnapshot, localDate } from './diary/store.js';
 import { createRecorder, applyRun, recordMode, RECORD_KEY } from './diary/recorder.js';
 
 const DEFAULT_PRESET_ID = 'classic3';
@@ -1067,15 +1067,18 @@ function bindProgramLibrary() {
     if(toDiary) {
       saving=true;renderSaveDialog();
       const snap=diarySnap(name || programHeading('',programEntries,profiles,programOptions,lang).name,programEntries,programOptions);
-      const ctx=editorDiary;
+      const ctx=editorDiary,today=localDate();
+      let todayId=null;
       const ok=await diaryStore.commit(d=>{
         const ref=putSnapshot(d.snapshots,snap),now=Date.now();
         for(const date of dates) {
           // Saving the assignment the editor was opened for edits it (it has not run yet); it is not copied.
           const own=ctx?.sessionId && d.sessions.find(s=>s.id===ctx.sessionId && s.status==='planned' && s.date===date);
-          if(own){own.planRef=ref;own.programId=programId;own.updatedAt=now;continue;}
-          if(d.sessions.some(s=>s.date===date && s.status==='planned' && s.planRef===ref && s.programId===programId))continue;
-          d.sessions.push(newSession(d.snapshots,{date,snap,programId,origin:'save'}));
+          if(own){own.planRef=ref;own.programId=programId;own.updatedAt=now;if(date===today)todayId=own.id;continue;}
+          const same=d.sessions.find(s=>s.date===date && s.status==='planned' && s.planRef===ref && s.programId===programId);
+          if(same){if(date===today)todayId=same.id;continue;}
+          const session=newSession(d.snapshots,{date,snap,programId,origin:'save'});
+          d.sessions.push(session);if(date===today)todayId=session.id;
         }
       });
       saving=false;
@@ -1086,7 +1089,8 @@ function bindProgramLibrary() {
         window.alert(en?'Could not write the diary. Nothing was changed.':'Не удалось записать дневник. Ничего не изменено.');
         return;
       }
-      editorDiary=null;
+      // Assigned for today: starting now fills that assignment instead of adding a second session.
+      editorDiary=todayId?{date:today,sessionId:todayId}:null;
     }
     if(toMine){openedProgramId=programId;openedProgramName=name;}
     close();renderCurrentState();

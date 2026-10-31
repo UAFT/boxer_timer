@@ -158,14 +158,14 @@ if (!METHODOLOGY) {
   step('billing', report.billing);
   if (!report.billing?.plugin || !report.billing.androidId) fail('FtBilling plugin is not registered or has no ANDROID_ID');
   // Diary STAGE 3: the workout above is still running; with «Автоматически» a stop records what was really done
-  // (status partial, rounds counted only once finished) into the data-folder file, next to the STAGE 2 assignment.
+  // (status partial, rounds counted only once finished) into the data-folder file, filling today's STAGE 2 assignment.
   await js(`(()=>{document.getElementById('settingsBtn').click();document.querySelector('[data-diary-record="auto"]').click();document.getElementById('closeSettingsBtn').click();return true})()`);
   const progress = await js(`JSON.parse(localStorage.getItem('fighttech.diary.run.v1')||'null')`);
   await js(`document.getElementById('resetBtn').click()`); await sleep(2000);
   const recorded = await js(`(async()=>{const fs=Capacitor.Plugins.Filesystem;const all=[];for(const s of ['a','b']){try{all.push(JSON.parse((await fs.readFile({path:'fighttech-diary-'+s+'.json',directory:'DATA',encoding:'utf8'})).data))}catch{}}const d=all.sort((x,y)=>y.seq-x.seq)[0];return {seq:d.seq,sessions:d.sessions.map(x=>({status:x.status,origin:x.origin,facts:x.facts})),runLeft:localStorage.getItem('fighttech.diary.run.v1')}})()`);
   step('diary_record', { progress: progress && { roundsDone: progress.roundsDone, activeMs: progress.activeMs }, recorded });
   const run = recorded?.sessions?.find(x => x.facts);
-  if (!(run?.status === 'partial' && run.facts.activeSec > 30 && recorded.runLeft === null && recorded.sessions.length === 2)) fail('diary run not recorded: ' + JSON.stringify(recorded));
+  if (!(run?.status === 'partial' && run.facts.activeSec > 30 && recorded.runLeft === null && recorded.sessions.length === 1)) fail('diary run not recorded: ' + JSON.stringify(recorded));
 }
 
 report.crashes = crashes();
