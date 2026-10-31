@@ -51,9 +51,11 @@ export function installDeleteConfirmation(doc = document) {
     onConfirm();
     get('programLibraryMine')?.focus();
   });
-  return function confirmDeletion({ name, trigger, onConfirm }) {
+  // labels: optional { ru, en } overrides, e.g. the diary's «Удалить из календаря?».
+  return function confirmDeletion({ name, trigger, onConfirm, labels: custom }) {
     if (pending || typeof onConfirm !== 'function') return;
-    const copy = deleteDialogLabels(doc.documentElement.lang);
+    const lang = doc.documentElement.lang === 'en' ? 'en' : 'ru';
+    const copy = { ...deleteDialogLabels(lang), ...custom?.[lang] };
     get('programDeleteConfirmTitle').textContent = copy.title;
     get('programDeleteConfirmMessage').textContent = copy.message;
     get('programDeleteConfirmName').textContent = name;

@@ -281,9 +281,14 @@
     <div class="modal-backdrop" id="programSaveModal" hidden>
       <section class="settings-modal panel program-library-modal" role="dialog" aria-modal="true" aria-labelledby="programSaveTitle">
         <div class="settings-head"><h2 id="programSaveTitle">Сохранить программу</h2><button type="button" id="programSaveClose" aria-label="Закрыть окно">×</button></div>
-        <div id="programSaveCurrent" hidden></div>
-        <div class="program-library-actions"><button type="button" id="programSaveOverwrite">Обновить программу</button><button type="button" id="programSaveCopy">Сохранить как новую</button></div>
-        <div id="programSaveNewFields" hidden><label for="programNameInput">Название новой программы</label><input id="programNameInput" type="text" maxlength="400" /><button type="button" id="programSaveCreate">Сохранить новую программу</button></div>
+        <div class="ft-save-fields">
+          <label for="programNameInput">Название</label><input id="programNameInput" type="text" maxlength="400" />
+          <label for="programSaveDest">Куда сохранить</label>
+          <select id="programSaveDest"><option value="mine">В мои программы</option><option value="diary">В дневник</option><option value="both">В мои программы и дневник</option></select>
+        </div>
+        <div id="programSaveCalendar" class="ft-diary ft-save-calendar" hidden></div>
+        <p id="programSaveWarning" class="ft-diary-alert" role="alert" hidden></p>
+        <button type="button" id="programSaveConfirm">Сохранить</button>
       </section>
     </div>
     <div class="modal-backdrop" id="settingsModal" hidden>

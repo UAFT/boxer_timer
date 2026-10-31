@@ -25,7 +25,7 @@ import { installWorkoutExchange } from './sharing/workout-exchange-ui.js';
 import { storeImportedWorkout, resolveSenderSettings } from './sharing/workout-file.js';
 import { renderSavedProgramCard, createActionIcon } from './ui/library-card-view.js';
 import { renderLibraryWorkoutCard, renderPlanList, planSummary } from './ui/workout-plan-view.js';
-import { syncEditorProgramHeader, editorProgramIdentity } from './ui/program-presentation.js';
+import { syncEditorProgramHeader, editorProgramIdentity, programHeading } from './ui/program-presentation.js';
 import { renderPresetOrders } from './ui/preset-order.js';
 import { editableRestField } from './core/ladder-blocks.js';
 import { installLocalization } from './i18n/locale.js';
@@ -48,7 +48,8 @@ import {
   setSettingsForm
 } from './ui/render.js';
 import { bindControls, bindPresetTabs } from './ui/bindings.js';
-import { createDiaryView } from './diary/calendar-view.js';
+import { createDiaryView, createCalendar, assignLabel } from './diary/calendar-view.js';
+import { openDiary, newSession, putSnapshot } from './diary/store.js';
 
 const DEFAULT_PRESET_ID = 'classic3';
 const STEP_RULES = {
@@ -128,6 +129,8 @@ try { programOptions=normalizeOptions(JSON.parse(localStorage.getItem(PROGRAM_OP
 try { savedPrograms=normalizeLibrary(JSON.parse(localStorage.getItem(LIBRARY_KEY) || '[]')); } catch {}
 let openedProgramId = null;
 let openedProgramName = '';
+// The calendar date (and assignment) the editor was opened for; «Сохранить» then offers the diary with that date.
+let editorDiary = null;
 let libraryTab = 'mine';
 let libraryPath = {};
 const builtInPrograms = [
@@ -682,7 +685,7 @@ function bindProgramLibrary() {
   const library=byId('programLibraryModal');
   const save=byId('programSaveModal');
   const confirmDeletion=installDeleteConfirmation();
-  const close=()=>{library.hidden=true;save.hidden=true;};
+  const close=()=>{library.hidden=true;save.hidden=true;libraryDraft=null;};
   // The library changes only once it is on disk; a full storage leaves it as it was.
   function persistLibrary(next) {if(!store(LIBRARY_KEY,next))return false;savedPrograms=next;return true;}
   const exchange=installWorkoutExchange({
@@ -699,8 +702,9 @@ function bindProgramLibrary() {
   function snapshot(name,id) {
     return {id,name,entries:normalizeProgram(programEntries.map(x=>({...x,settings:x.settings || structuredClone(profiles[x.presetId])}))),options:normalizeOptions(programOptions)};
   }
-  function openEntry(entry, builtIn=false) {
-    if (isPlaybackProtected(timer,programRunning)) return;
+  function openEntry(entry, builtIn=false, diaryContext=null) {
+    if (isPlaybackProtected(timer,programRunning)) return false;
+    editorDiary=diaryContext;
     programEntries=normalizeProgram(entry.entries);
     programOptions=normalizeOptions(entry.options);
     openedProgramId=builtIn?null:entry.id;
@@ -708,8 +712,32 @@ function bindProgramLibrary() {
     store(PROGRAM_KEY,programEntries) && store(PROGRAM_OPTIONS_KEY,programOptions);
     timer.applyConfig({...activeSettings,presetId:activePresetId});
     close();renderCurrentState();
+    return true;
   }
-  const diary=createDiaryView(document);
+  // Diary snapshot: the program as it is now, every stage with its own settings, so later edits never change it.
+  function diarySnap(name,entries,options) {
+    return {name,entries:normalizeProgram(entries.map(x=>({...x,settings:x.settings || structuredClone(profiles[x.presetId])}))),options:normalizeOptions(options)};
+  }
+  let diaryStore=null;
+  openDiary().catch(()=>({state:'damaged',sessions:[],snapshot:()=>null,commit:async()=>false})).then(d=>{
+    diaryStore=d;
+    if(!library.hidden && libraryTab==='diary')renderLibrary();
+  });
+  // A library block picked from «Дневник → Добавить тренировку» starts a new workout; further blocks join it.
+  let libraryDraft=null;
+  const diary=createDiaryView(document,{
+    getDiary:()=>diaryStore,
+    savedPrograms:()=>savedPrograms,
+    profiles:()=>profiles,
+    openSession:(session,snap)=>openEntry({id:session.programId,name:snap.name,entries:snap.entries,options:snap.options},
+      !savedPrograms.some(p=>p.id===session.programId),{date:session.date,sessionId:session.id}),
+    openProgram:(program,date)=>openEntry(program,false,{date,sessionId:null}),
+    assign:(snapshots,program,date)=>newSession(snapshots,{date,snap:diarySnap(program.name,program.entries,program.options),programId:program.id,origin:'diary'}),
+    startLibrary:date=>{libraryDraft={date,count:0};libraryTab='templates';libraryPath={};renderLibrary();},
+    confirmRemove:opts=>confirmDeletion({...opts,labels:{
+      ru:{title:'Удалить из календаря?',message:'Тренировка исчезнет из календаря. Программа в «Мои» останется.',delete:'Удалить'},
+      en:{title:'Remove from calendar?',message:'The workout leaves the calendar. The program in «Mine» stays.',delete:'Remove'}}})
+  });
   function renderLibrary() {
     const list=byId('programLibraryList');list.replaceChildren();
     byId('ftWorkoutExchangeToolbar').hidden=libraryTab!=='mine';
@@ -726,6 +754,12 @@ function bindProgramLibrary() {
     byId('programLibraryBack').hidden=libraryTab!=='templates' || !level.back;
     byId('programLibraryTitle').textContent=libraryTab==='mine'?'Мои программы':level.title;
     if(libraryTab==='templates') {
+      if(libraryDraft) {
+        const en=document.documentElement.lang==='en',[y,m,d]=libraryDraft.date.split('-');
+        list.append(Object.assign(document.createElement('p'),{className:'ft-diary-hint ft-library-draft',textContent:en
+          ?'New workout for '+d+'.'+m+'.'+y+(libraryDraft.count?': blocks added — '+libraryDraft.count+'. Close the window and tap «Save».':'. Tap + on a block: it becomes stage 1.')
+          :'Новая тренировка на '+d+'.'+m+'.'+y+(libraryDraft.count?': добавлено блоков — '+libraryDraft.count+'. Закройте окно и нажмите «Сохранить».':'. Нажмите + у блока: он станет этапом 1.')}));
+      }
       for(const item of level.items) {
         if(item.kind!=='workout') {
           const button=document.createElement('button');button.type='button';
@@ -741,11 +775,18 @@ function bindProgramLibrary() {
         list.append(renderLibraryWorkoutCard(document,workout,{
           rounds:preview?compileProgram([preview],profiles,{cycles:1}):[],
           lang:document.documentElement.lang,
-          addDisabled:!preview || programRunning || programEntries.length>=24,
+          addDisabled:!preview || programRunning || (programEntries.length>=24 && !(libraryDraft && !libraryDraft.count)),
           plusIcon:()=>createActionIcon(document,'plus'),
           onAdd:()=>{
-            const stage=stageForWorkout(workout);if(!stage||programRunning||programEntries.length>=24)return false;
-            programEntries.push(stage);persistProgram();return true;
+            const stage=stageForWorkout(workout);if(!stage||programRunning)return false;
+            if(libraryDraft&&!libraryDraft.count){
+              if(isPlaybackProtected(timer,programRunning))return false;
+              programEntries=[];openedProgramId=null;openedProgramName='';editorDiary={date:libraryDraft.date,sessionId:null};
+            }
+            if(programEntries.length>=24)return false;
+            programEntries.push(stage);persistProgram();
+            if(libraryDraft){libraryDraft.count++;renderLibrary();}
+            return true;
           }
         }));
       }
@@ -935,32 +976,83 @@ function bindProgramLibrary() {
   byId('programLibraryOpen').addEventListener('click',()=>{libraryTab='mine';libraryPath={};renderLibrary();library.hidden=false;});
   byId('programLibraryClose').addEventListener('click',close);
   byId('programLibraryBack').addEventListener('click',()=>{libraryPath=libraryUp(libraryPath);renderLibrary();});
-  byId('programLibraryMine').addEventListener('click',()=>{libraryTab='mine';libraryPath={};renderLibrary();});
-  byId('programLibraryTemplates').addEventListener('click',()=>{libraryTab='templates';libraryPath={};renderLibrary();});
-  byId('programLibraryDiary').addEventListener('click',()=>{libraryTab='diary';libraryPath={};renderLibrary();});
-  const current=byId('programSaveCurrent'),fields=byId('programSaveNewFields');
-  const overwrite=byId('programSaveOverwrite');
+  byId('programLibraryMine').addEventListener('click',()=>{libraryTab='mine';libraryDraft=null;libraryPath={};renderLibrary();});
+  byId('programLibraryTemplates').addEventListener('click',()=>{libraryTab='templates';libraryDraft=null;libraryPath={};renderLibrary();});
+  byId('programLibraryDiary').addEventListener('click',()=>{libraryTab='diary';libraryDraft=null;libraryPath={};renderLibrary();});
+  // «Сохранить»: one destination, one button. The diary part assigns dates on the inline calendar.
+  const saveCal=createCalendar(document,{multi:true});
+  const nameInput=byId('programNameInput'),dest=byId('programSaveDest'),confirmSave=byId('programSaveConfirm');
+  let saving=false,collisionAck=null;
+  function renderSaveDialog() {
+    const lang=document.documentElement.lang,en=lang==='en',withDiary=dest.value!=='mine';
+    const box=byId('programSaveCalendar');box.hidden=!withDiary;
+    if(withDiary)box.replaceChildren(saveCal.render(lang,diaryStore?.sessions||[],{onChange:renderSaveDialog}));
+    const n=saveCal.selected.size;
+    confirmSave.textContent=!withDiary?(en?'Save':'Сохранить'):n?assignLabel(n,lang,dest.value==='both'):(en?'Pick dates in the calendar':'Выберите даты в календаре');
+    confirmSave.disabled=saving || (withDiary && (!n || diaryStore?.state!=='ok'));
+    const warn=byId('programSaveWarning'),name=nameInput.value.trim();
+    warn.hidden=!(collisionAck && collisionAck===name && dest.value!=='diary');
+    warn.textContent=en?'«'+name+'» already exists in «Mine». Press again to save one more program with this name, or change the name.'
+      :'Программа «'+name+'» уже есть в «Мои». Нажмите ещё раз, чтобы сохранить ещё одну с этим названием, или измените название.';
+  }
   byId('programSaveOpen').addEventListener('click',()=>{
-    const existing=editorProgramIdentity(openedProgramId,savedPrograms);
-    current.hidden=!existing;current.textContent=existing?.name||'';
-    overwrite.hidden=!existing;fields.hidden=true;
-    byId('programNameInput').value='';save.hidden=false;
+    nameInput.value=openedProgramName||'';collisionAck=null;
+    dest.value=editorDiary?'diary':'mine';
+    saveCal.selected.clear();saveCal.picker=false;saveCal.month=null;
+    if(editorDiary){saveCal.selected.add(editorDiary.date);saveCal.show(editorDiary.date);}
+    save.hidden=false;renderSaveDialog();
   });
+  dest.addEventListener('change',renderSaveDialog);
+  nameInput.addEventListener('input',()=>{if(collisionAck){collisionAck=null;renderSaveDialog();}});
   byId('programSaveClose').addEventListener('click',close);
-  overwrite.addEventListener('click',()=>{
-    const existing=editorProgramIdentity(openedProgramId,savedPrograms);
-    if(!existing || refuseTooLong(programEntries,programOptions))return;
-    if(!persistLibrary(savedPrograms.map(x=>x.id===existing.id?snapshot(existing.name,existing.id):x)))return;
-    openedProgramName=existing.name;close();renderCurrentState();
-  });
-  byId('programSaveCopy').addEventListener('click',()=>{
-    fields.hidden=false;byId('programNameInput').focus();
-  });
-  byId('programSaveCreate').addEventListener('click',()=>{
-    const name=byId('programNameInput').value.trim();if(!name||savedPrograms.length>=100||refuseTooLong(programEntries,programOptions))return;
-    const id='p'+Date.now()+'-'+Math.random().toString(36).slice(2,8);
-    if(!persistLibrary([...savedPrograms,snapshot(name,id)]))return;
-    openedProgramId=id;openedProgramName=name;close();renderCurrentState();
+  confirmSave.addEventListener('click',async()=>{
+    if(saving || refuseTooLong(programEntries,programOptions))return;
+    const lang=document.documentElement.lang,en=lang==='en';
+    const name=nameInput.value.trim().slice(0,MAX_TITLE),toMine=dest.value!=='diary',toDiary=dest.value!=='mine';
+    const dates=[...saveCal.selected].sort();
+    if(toMine && !name){nameInput.focus();return;}
+    if(toDiary && (!dates.length || diaryStore?.state!=='ok'))return;
+    const before=savedPrograms,existing=editorProgramIdentity(openedProgramId,savedPrograms);
+    let programId=existing?.id||null;
+    if(toMine) {
+      // The open «Мои» program under its own name is updated in place; any other name makes a new program.
+      if(existing && existing.name===name) {
+        if(!persistLibrary(savedPrograms.map(x=>x.id===existing.id?snapshot(name,existing.id):x)))return;
+      } else {
+        if(savedPrograms.length>=100){window.alert(en?'«Mine» already holds 100 programs. Delete one you no longer need.':'В «Мои» уже 100 программ. Удалите ненужную.');return;}
+        // Same name as another «Мои» program: warned inline; the second press (same name) saves it as a new one.
+        if(savedPrograms.some(x=>x.name===name) && collisionAck!==name){collisionAck=name;renderSaveDialog();nameInput.focus();return;}
+        const id='p'+Date.now()+'-'+Math.random().toString(36).slice(2,8);
+        if(!persistLibrary([...savedPrograms,snapshot(name,id)]))return;
+        programId=id;
+      }
+    }
+    if(toDiary) {
+      saving=true;renderSaveDialog();
+      const snap=diarySnap(name || programHeading('',programEntries,profiles,programOptions,lang).name,programEntries,programOptions);
+      const ctx=editorDiary;
+      const ok=await diaryStore.commit(d=>{
+        const ref=putSnapshot(d.snapshots,snap),now=Date.now();
+        for(const date of dates) {
+          // Saving the assignment the editor was opened for edits it (it has not run yet); it is not copied.
+          const own=ctx?.sessionId && d.sessions.find(s=>s.id===ctx.sessionId && s.status==='planned' && s.date===date);
+          if(own){own.planRef=ref;own.programId=programId;own.updatedAt=now;continue;}
+          if(d.sessions.some(s=>s.date===date && s.status==='planned' && s.planRef===ref && s.programId===programId))continue;
+          d.sessions.push(newSession(d.snapshots,{date,snap,programId,origin:'save'}));
+        }
+      });
+      saving=false;
+      if(!ok) {
+        // Both destinations or none: a «Мои» program saved a moment ago is taken back.
+        if(toMine)persistLibrary(before);
+        renderSaveDialog();
+        window.alert(en?'Could not write the diary. Nothing was changed.':'Не удалось записать дневник. Ничего не изменено.');
+        return;
+      }
+      editorDiary=null;
+    }
+    if(toMine){openedProgramId=programId;openedProgramName=name;}
+    close();renderCurrentState();
   });
   for (const [id,key,delta] of [['programCycleMinus','cycles',-1],['programCyclePlus','cycles',1],['programCycleRestMinus','cycleRestSec',-5],['programCycleRestPlus','cycleRestSec',5]]) {
     byId(id).addEventListener('click',()=>{if(programRunning)return;const limit=key==='cycles'?20:3600;const min=key==='cycles'?1:0;programOptions=normalizeOptions({...programOptions,[key]:Math.max(min,Math.min(limit,programOptions[key]+delta))});persistOptions();});
@@ -985,7 +1077,7 @@ function bindProgram() {
   }
   document.getElementById('finishStageBtn').addEventListener('click',()=>{void timer.finishStage();});
   document.getElementById('ladderFinishStage').addEventListener('click',()=>{void timer.finishStage();});
-  document.getElementById('programClear').addEventListener('click',()=>{if(!programRunning){programEntries=[];openedProgramName='';openedProgramId=null;persistProgram();}});
+  document.getElementById('programClear').addEventListener('click',()=>{if(!programRunning){programEntries=[];openedProgramName='';openedProgramId=null;editorDiary=null;persistProgram();}});
   document.getElementById('programStart').addEventListener('click',async()=>{await audio.unlock();startProgram();});
   document.getElementById('programExit').addEventListener('click',()=>{if(programRunning)exitProgram();});
   bindProgramLibrary();

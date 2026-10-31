@@ -69,7 +69,8 @@ export function createActionIcon(doc, kind) {
 }
 // «Мои»: the compact card shared with the library. Body = round plan, ☰ = stage overview
 // (saved programs keep no goal or notes), then + (open), share and delete.
-export function renderSavedProgramCard(doc, program, profiles, {lang='ru',onOpen,onShareButton,onDelete}={}) {
+// The diary passes its own actions (calendar menu) and a status badge; the card itself is unchanged.
+export function renderSavedProgramCard(doc, program, profiles, {lang='ru',onOpen,onShareButton,onDelete,actions,badge=''}={}) {
   const ru=lang!=='en',timing=programCardTimings(program,profiles);
   const rounds=compileProgram(normalizeProgram(program.entries),profiles,normalizeOptions(program.options));
   const describe=el=>{
@@ -112,9 +113,10 @@ export function renderSavedProgramCard(doc, program, profiles, {lang='ru',onOpen
   quickAdd.setAttribute('aria-label',(ru?'Открыть программу ':'Open workout ')+program.name);
   quickAdd.title=ru?'Открыть программу':'Open workout';quickAdd.append(createActionIcon(doc,'plus'));
   quickAdd.addEventListener('click',()=>onOpen?.());
+  if(actions)return renderCompactCard(doc,{title:program.name,rounds,lang,badge,plan,description:describe,actions});
   const remove=doc.createElement('button');remove.type='button';remove.className='program-library-entry-delete ft-trash-button';
   remove.setAttribute('aria-label',(ru?'Удалить программу ':'Delete program ')+program.name);
   remove.title=ru?'Удалить':'Delete';remove.append(createActionIcon(doc,'trash'));
   remove.addEventListener('click',()=>onDelete(remove));
-  return renderCompactCard(doc,{title:program.name,rounds,lang,plan,description:describe,actions:[quickAdd,onShareButton(),remove]});
+  return renderCompactCard(doc,{title:program.name,rounds,lang,badge,plan,description:describe,actions:[quickAdd,onShareButton(),remove]});
 }

@@ -53,7 +53,7 @@ test('navigation actions are guarded while running and stop is explicit',()=>{
  assert.ok(app.includes('isPlaybackProtected(timer,programRunning)'));
  assert.ok(app.includes('document.getElementById(\'programLibraryOpen\').disabled=false;'));
  assert.ok(app.includes('document.getElementById(\'programStart\').disabled=isPlaybackProtected(timer,programRunning)'));
- assert.ok(app.includes('if (isPlaybackProtected(timer,programRunning)) return;'));
+ assert.ok(app.includes('if (isPlaybackProtected(timer,programRunning)) return false;'),'opening a program never replaces a running workout');
  assert.ok(html.includes('id="programExit" hidden>Остановить программу</button>'));
  assert.ok(!app.includes('window.confirm('));
 });

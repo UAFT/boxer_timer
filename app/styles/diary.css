@@ -7,7 +7,8 @@
  display:grid;grid-template-columns:minmax(0,1fr);gap:10px;padding:10px;border-radius:14px;background:var(--d-bg);color:var(--d-ink);min-width:0}
 .ft-diary-calendar,.ft-diary-detail{background:var(--d-surface);border-radius:14px;padding:12px 10px}
 .ft-diary-month{display:grid;grid-template-columns:36px minmax(0,1fr) 36px;align-items:center;gap:4px;margin-bottom:8px}
-.ft-diary-month-title{margin:0;text-align:center;font-size:16px;font-weight:650;color:var(--d-ink);white-space:nowrap}
+.ft-diary .ft-diary-month-title{margin:0;min-height:36px;padding:0 4px;border:0;border-radius:10px;background:transparent;box-shadow:none;text-align:center;font-size:16px;font-weight:650;color:var(--d-ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ft-diary .ft-diary-month-title[aria-expanded="true"]{background:var(--d-planned)}
 .ft-diary .ft-diary-step,.ft-diary .ft-diary-today{min-height:36px;padding:0 10px;border:1px solid #d0d7dc;border-radius:10px;background:#f4f6f8;color:var(--d-ink);font-size:14px;box-shadow:none}
 .ft-diary .ft-diary-step{padding:0;font-size:20px;line-height:1}
 
@@ -20,9 +21,12 @@
 .ft-diary .ft-diary-day.is-done .ft-diary-num{color:var(--d-green);font-weight:700}
 .ft-diary .ft-diary-day.is-partial{background:linear-gradient(to bottom,var(--d-done) 50%,var(--d-partial-low) 50%)}
 .ft-diary .ft-diary-day.is-partial .ft-diary-num{color:var(--d-green)}
-/* Planned but the date has passed with nothing run: light chip, thin strike through the number. */
+/* Planned but the date has passed with nothing run: light chip, thin diagonal slash through the number. */
 .ft-diary .ft-diary-day.is-missed{background:var(--d-planned)}
-.ft-diary .ft-diary-day.is-missed .ft-diary-num{text-decoration:line-through;text-decoration-thickness:1.5px;text-decoration-color:var(--d-muted)}
+.ft-diary .ft-diary-day.is-missed .ft-diary-num::before{content:"";position:absolute;width:20px;height:1.5px;background:var(--d-muted);transform:rotate(-55deg)}
+/* Today (proposal, not locked): dark-green heavy numeral and a thin inner ring; never the bottom bar of the selection. */
+.ft-diary .ft-diary-day.is-today{box-shadow:inset 0 0 0 1.5px var(--d-green)}
+.ft-diary .ft-diary-day.is-today .ft-diary-num{color:var(--d-green);font-weight:800}
 /* Selected: bar along the bottom edge; viewBox 100x100, M18 94 L82 94, stroke 9, round caps. */
 .ft-diary .ft-diary-day.is-selected::after{content:"";position:absolute;left:13.5%;right:13.5%;bottom:1.5%;height:9%;border-radius:999px;background:var(--d-green)}
 .ft-diary .ft-diary-day:focus-visible{outline:2px solid var(--d-muted);outline-offset:1px}
@@ -37,6 +41,14 @@
 .ft-diary-swatch.is-done{background:var(--d-done)}
 .ft-diary-swatch.is-partial{background:linear-gradient(to bottom,var(--d-done) 50%,var(--d-partial-low) 50%)}
 .ft-diary-swatch.is-planned{background:var(--d-planned)}
+.ft-diary-swatch.is-missed{background:linear-gradient(to bottom right,transparent calc(50% - .75px),var(--d-muted) calc(50% - .75px),var(--d-muted) calc(50% + .75px),transparent calc(50% + .75px)),var(--d-planned)}
+
+.ft-diary-picker{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:6px;margin:-2px 0 8px}
+.ft-diary .ft-diary-select{min-width:0;width:100%;min-height:36px;padding:0 8px;border:1px solid #d0d7dc;border-radius:10px;background:#f4f6f8;color:var(--d-ink);font:inherit;font-size:14px}
+.ft-diary-hint{display:flex;align-items:center;gap:8px;margin:0 0 8px;padding:8px 10px;border-radius:10px;background:var(--d-planned,#eaf0ee);color:var(--d-green,#365f60);font-size:13px}
+.ft-diary-hint>span{flex:1;min-width:0;overflow-wrap:anywhere}
+.ft-diary .ft-diary-hint-cancel{min-width:32px;min-height:32px;padding:0;border:0;border-radius:8px;background:transparent;color:inherit;font-size:20px;box-shadow:none}
+.ft-diary-alert{margin:0 0 8px;padding:8px 10px;border-radius:10px;background:#f6ece4;color:#7a3b16;font-size:13px}
 
 .ft-diary-detail-date{margin:0 0 4px;font-size:15px;font-weight:650}
 .ft-diary-detail-status{margin:0 0 8px;font-size:13px;color:var(--d-muted)}
@@ -45,3 +57,24 @@
 .ft-diary-session-head::-webkit-details-marker{display:none}
 .ft-diary-session-name{font-size:14px}
 .ft-diary-session-state,.ft-diary-session-time{font-size:12px;color:var(--d-muted)}
+
+.ft-diary .ft-diary-session{position:relative}
+.ft-diary-menu{position:relative}
+.ft-diary .ft-diary-menu-button{display:grid;place-items:center;width:40px;height:40px;border-radius:10px;cursor:pointer;list-style:none;font-size:20px;color:var(--d-ink)}
+.ft-diary-menu-button::-webkit-details-marker{display:none}
+.ft-diary-menu-list{position:absolute;right:0;top:42px;z-index:5;display:grid;min-width:200px;padding:4px;border:1px solid #d0d7dc;border-radius:12px;background:var(--d-surface);box-shadow:0 6px 18px rgba(27,34,41,.16)}
+.ft-diary .ft-diary-menu-item{min-height:40px;padding:0 12px;border:0;border-radius:8px;background:transparent;color:var(--d-ink);text-align:left;font-size:14px;box-shadow:none}
+.ft-diary .ft-diary-menu-item:last-child{color:#8a3a1c}
+.ft-diary .ft-diary-add-toggle{width:100%;min-height:42px;margin-top:8px;border:1px dashed var(--d-green);border-radius:12px;background:transparent;color:var(--d-green);font-weight:650;box-shadow:none}
+.ft-diary-add{display:grid;gap:8px;margin-top:8px}
+.ft-diary-source{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:8px;font-size:13px;color:var(--d-muted)}
+
+/* «Сохранить»: name, destination, inline calendar, one button. */
+.ft-save-fields{display:grid;gap:6px;margin-bottom:10px}
+.ft-save-fields input,.ft-save-fields select{min-width:0;width:100%;box-sizing:border-box;min-height:42px;padding:0 10px;border:1px solid #d0d7dc;border-radius:10px;background:#f9fafb;color:#1b2229;font:inherit}
+#programSaveCalendar{margin-bottom:10px}
+#programSaveCalendar[hidden]{display:none}
+#programSaveConfirm{width:100%;min-height:46px;height:auto;padding:10px 12px;line-height:1.25;white-space:normal;border-radius:12px;font-weight:700;background:var(--ft-steel-gradient,#365f60);border:1px solid #577c7a;color:#fff}
+#programSaveConfirm:disabled{opacity:.55}
+#programSaveWarning[hidden]{display:none}
+.ft-diary .ft-diary-session .ft-program-badge{color:var(--d-green);background:none;font-weight:600}

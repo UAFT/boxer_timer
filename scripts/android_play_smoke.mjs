@@ -102,6 +102,23 @@ const libClosed = await js(`document.getElementById('programLibraryModal').hidde
 step('back_in_library', { upLevel, libClosed, foreground: foreground() });
 if (!upLevel.open || upLevel.folders < 5 || !libClosed || !foreground()) fail('Back in the library: expected folder → sections → closed');
 
+// Diary STAGE 2 (Play): «Сохранить» → «В дневник» → today → the assignment lands in the app's data folder (Filesystem plugin),
+// not in localStorage, and the calendar shows it.
+if (!METHODOLOGY) {
+  await click('programSaveOpen'); await sleep(600);
+  await js(`(()=>{const d=document.getElementById('programSaveDest');d.value='diary';d.dispatchEvent(new Event('change'));return true})()`); await sleep(600);
+  await js(`document.querySelector('#programSaveCalendar .ft-diary-day.is-today').click()`); await sleep(400);
+  const label = await js(`document.getElementById('programSaveConfirm').textContent`);
+  shot('04a_save_diary');
+  await click('programSaveConfirm'); await sleep(1500);
+  const file = await js(`(async()=>{const fs=Capacitor.Plugins.Filesystem;const out={};for(const s of ['a','b']){try{const t=(await fs.readFile({path:'fighttech-diary-'+s+'.json',directory:'DATA',encoding:'utf8'})).data;const j=JSON.parse(t);out[s]={seq:j.seq,sessions:j.sessions.length,snapshots:Object.keys(j.snapshots).length,bytes:t.length}}catch(e){out[s]=String(e.message||e)}}out.localStorageDiary=Object.keys(localStorage).filter(k=>k.startsWith('fighttech.diary'));return out})()`);
+  await click('programLibraryOpen'); await sleep(600); await click('programLibraryDiary'); await sleep(800);
+  const chip = await js(`document.querySelector('.ft-diary-day.is-today').className`);
+  shot('04b_diary_assigned'); step('diary_assign', { label, file, chip });
+  if (!(file?.a?.sessions === 1 && file.localStorageDiary?.length === 0 && /is-planned/.test(chip))) fail('diary assignment not stored in the data folder: ' + JSON.stringify({ file, chip }));
+  await click('programLibraryClose'); await sleep(400);
+}
+
 // Workout with a JS heartbeat.
 await js(`window.__beats=[];setInterval(()=>window.__beats.push(Date.now()),1000);true`);
 await click('startBtn'); await sleep(8000);

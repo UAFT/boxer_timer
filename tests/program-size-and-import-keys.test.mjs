@@ -48,7 +48,8 @@ test('compiling a pathological editor program stays bounded; one stage stays exa
 test('the editor refuses to start or save a program above the limit and edits only 200 rounds',()=>{
  const app=readFileSync(new URL('../app/js/app.js',import.meta.url),'utf8');
  assert.ok(app.includes('isPlaybackProtected(timer,programRunning) || refuseTooLong(programEntries,programOptions)) return;'));
- assert.equal(app.match(/refuseTooLong\(programEntries,programOptions\)/g).length,3);
+ // Start + the single «Сохранить» button (diary STAGE 2 merged «Обновить» and «Сохранить как новую»).
+ assert.equal(app.match(/refuseTooLong\(programEntries,programOptions\)/g).length,2);
  assert.ok(app.includes('for(let j=0;j<Math.min(rounds,200);j++)'));
  // No plan preview either: drawing a too-long plan would only freeze the screen.
  assert.ok(app.includes('return rounds.length > MAX_PROGRAM_ROUNDS ? null : rounds;'));

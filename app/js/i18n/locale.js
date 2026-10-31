@@ -69,7 +69,7 @@ const pairs = [
 ['Вернуть по лестнице','Reset to ladder'],
 ['Отмена','Cancel'],
 ['Мои','Mine'],
-['Библиотека','Library'],['Дневник','Diary'],
+['Библиотека','Library'],['Дневник','Diary'],['Куда сохранить','Save to'],['Название','Name'],['В мои программы и дневник','To my programs and diary'],['В мои программы','To my programs'],['В дневник','To the diary'],
 ['Импорт программы','Import program'],
 ['Сохранить в «Мои»','Save to Mine'],
 ['Программа будет удалена без возможности восстановления.','The program will be deleted permanently.'],

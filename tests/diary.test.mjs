@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {DIARY_KEY,readDiary,dayStatus,dayDots,monthCells,localDate} from '../app/js/diary/store.js';
+import {openDiary,newSession,putSnapshot,dayStatus,dayDots,monthCells,localDate} from '../app/js/diary/store.js';
+import {assignLabel} from '../app/js/diary/calendar-view.js';
 
 const TODAY='2026-11-15';
 const s=(date,status,id=date+status+Math.random())=>({id,date,status});
@@ -38,15 +39,70 @@ test('month grid is Monday-first with local dates', () => {
   assert.equal(localDate(new Date(2026,10,1,23,59)),'2026-11-01','local date, not UTC');
 });
 
-test('reader is tolerant and never writes', () => {
-  const writes=[];
-  const store=v=>({getItem:k=>k===DIARY_KEY?v:null,setItem:(...a)=>writes.push(a),removeItem:(...a)=>writes.push(a)});
-  assert.deepEqual(readDiary(store(null)),[]);
-  assert.deepEqual(readDiary(store('{broken')),[]);
-  assert.deepEqual(readDiary(store(JSON.stringify({schema:2,sessions:[s(TODAY,'done')]}))),[],'unknown schema is not read');
-  const ok=readDiary(store(JSON.stringify({schema:1,sessions:[{id:'a',date:TODAY,status:'done'},{id:'b',date:'15.11.2026',status:'done'},{id:'c',date:TODAY,status:'lost'},null]})));
-  assert.deepEqual(ok.map(x=>x.id),['a']);
-  assert.equal(writes.length,0);
+const memory=(init={})=>{const files={...init},writes=[];return {files,writes,
+  read:async slot=>files[slot]??null,write:async(slot,text)=>{writes.push(slot);files[slot]=text;}};};
+const snap=(name,rounds=3)=>({name,entries:[{presetId:'classic3',title:'',settings:{rounds,workSec:180,restSec:60}}],options:{cycles:1,cycleRestSec:60}});
+
+test('diary writes the two slots in turn; a spoiled newest slot falls back to the last good one', async () => {
+  const back=memory();
+  const d=await openDiary(back);
+  assert.equal(d.state,'ok');
+  assert.equal(await d.commit(x=>{x.sessions.push(newSession(x.snapshots,{date:TODAY,snap:snap('A'),origin:'test'}));}),true);
+  assert.equal(await d.commit(x=>{x.sessions.push(newSession(x.snapshots,{date:TODAY,snap:snap('B'),origin:'test'}));}),true);
+  assert.deepEqual(back.writes,['a','b']);
+  assert.equal(JSON.parse(back.files.b).seq,2);
+  back.files.b=back.files.b.slice(0,40); // crash in the middle of writing slot b
+  const again=await openDiary(back);
+  assert.equal(again.state,'ok');
+  assert.deepEqual(again.sessions.map(s=>again.snapshot(s.planRef).name),['A'],'last good copy');
+  await again.commit(x=>{x.sessions[0].date='2026-11-16';});
+  assert.equal(back.writes.at(-1),'b','next write never touches the good slot');
+  assert.equal((await openDiary(back)).sessions[0].date,'2026-11-16');
+});
+
+test('newer schema and unreadable files are never written', async () => {
+  const newer=memory({a:JSON.stringify({schema:2,seq:9,sessions:[]})});
+  const d=await openDiary(newer);
+  assert.equal(d.state,'newer');
+  assert.equal(await d.commit(()=>{}),false);
+  const broken=memory({a:'{broken',b:'nope'});
+  const e=await openDiary(broken);
+  assert.equal(e.state,'damaged');
+  assert.equal(await e.commit(()=>{}),false);
+  assert.deepEqual([...newer.writes,...broken.writes],[]);
+  assert.equal(broken.files.a,'{broken','left exactly as it was');
+  const failing={read:async()=>{throw new Error('EACCES');},write:async()=>{throw new Error('must not write');}};
+  assert.equal((await openDiary(failing)).state,'damaged','a read error is not taken for an empty diary');
+});
+
+test('a failed write leaves the diary as it was', async () => {
+  let fail=false;
+  const back=memory(),real=back.write;back.write=async(...a)=>{if(fail)throw new Error('disk full');return real(...a);};
+  const d=await openDiary(back);
+  await d.commit(x=>{x.sessions.push(newSession(x.snapshots,{date:TODAY,snap:snap('A'),origin:'test'}));});
+  fail=true;
+  assert.equal(await d.commit(x=>{x.sessions.length=0;}),false);
+  assert.equal(d.sessions.length,1);
+});
+
+test('snapshots are stored once by content; sessions keep their own ids and dates', () => {
+  const snapshots={};
+  const a=newSession(snapshots,{date:'2026-11-01',snap:snap('A'),programId:'p1',origin:'test'});
+  const b=newSession(snapshots,{date:'2026-11-08',snap:snap('A'),programId:'p1',origin:'test'});
+  const c=newSession(snapshots,{date:'2026-11-08',snap:snap('A',4),programId:'p1',origin:'test'});
+  assert.equal(a.planRef,b.planRef);
+  assert.notEqual(a.planRef,c.planRef);
+  assert.notEqual(a.id,b.id);
+  assert.equal(Object.keys(snapshots).length,2);
+  assert.equal(putSnapshot(snapshots,snap('A')),a.planRef);
+});
+
+test('assign button counts dates in Russian and English', () => {
+  assert.equal(assignLabel(1,'ru'),'Назначить на 1 дату');
+  assert.equal(assignLabel(3,'ru'),'Назначить на 3 даты');
+  assert.equal(assignLabel(5,'ru'),'Назначить на 5 дат');
+  assert.equal(assignLabel(21,'ru',true),'Сохранить и назначить на 21 дату');
+  assert.equal(assignLabel(2,'en'),'Assign to 2 dates');
 });
 
 test('Play tab row: Мои | Библиотека | Дневник | import; Tree and Methodology stay hidden', () => {
@@ -55,4 +111,16 @@ test('Play tab row: Мои | Библиотека | Дневник | import; Tre
   const ids=[...nav.matchAll(/<button[^>]*id="([^"]+)"([^>]*)>/g)].map(m=>[m[1],/\shidden\b/.test(m[2])]);
   assert.deepEqual(ids,[['programLibraryMine',false],['programLibraryTemplates',false],['ftTreePreviewTab',true],['ftMethodV42Tab',true],['programLibraryDiary',false],['ftWorkoutImportBtn',false]]);
   assert.match(html,/styles\/methodology-v42\.css" \/>\s*<link rel="stylesheet" href=".\/styles\/diary\.css"/);
+});
+
+test('capacity: 3500 records over ten years stay readable and nothing is dropped', async () => {
+  const back=memory(),d=await openDiary(back);
+  const programs=Array.from({length:40},(_,i)=>snap('P'+i,2+i%9));
+  await d.commit(x=>{for(let i=0;i<3500;i++){const day=new Date(2017,0,1+Math.floor(i*3650/3500));
+    x.sessions.push(newSession(x.snapshots,{date:localDate(day),snap:programs[i%40],programId:'p'+(i%40),origin:'test'}));}});
+  const again=await openDiary(back);
+  assert.equal(again.sessions.length,3500);
+  assert.equal(again.sessions[0].date,'2017-01-01','oldest record still there');
+  assert.equal(Object.keys(JSON.parse(back.files.a).snapshots).length,40,'repeats share snapshots');
+  assert.ok(back.files.a.length<1.2e6,'about 300 bytes per record: '+back.files.a.length);
 });
