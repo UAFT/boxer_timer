@@ -65,7 +65,7 @@
 .ft-diary-menu-list{position:absolute;right:0;top:42px;z-index:5;display:grid;min-width:200px;padding:4px;border:1px solid #d0d7dc;border-radius:12px;background:var(--d-surface);box-shadow:0 6px 18px rgba(27,34,41,.16)}
 .ft-diary .ft-diary-menu-item{min-height:40px;padding:0 12px;border:0;border-radius:8px;background:transparent;color:var(--d-ink);text-align:left;font-size:14px;box-shadow:none}
 .ft-diary .ft-diary-menu-item:last-child{color:#8a3a1c}
-.ft-diary .ft-diary-add-toggle{width:100%;min-height:42px;margin-top:8px;border:1px dashed var(--d-green);border-radius:12px;background:transparent;color:var(--d-green);font-weight:650;box-shadow:none}
+.ft-diary .ft-diary-add-toggle{width:100%;min-height:42px;margin-top:8px;border:1px solid var(--d-green);border-radius:12px;background:transparent;color:var(--d-green);font-weight:650;box-shadow:none}
 .ft-diary-add{display:grid;gap:8px;margin-top:8px}
 .ft-diary-source{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:8px;font-size:13px;color:var(--d-muted)}
 
@@ -108,3 +108,6 @@
 .ft-delete-dialog h2{padding-right:36px}
 /* Neutral question («Записать?»): white text on green; the UI kit's red delete text loads later and won otherwise. */
 .ft-delete-overlay.is-neutral #programDeleteConfirmAccept{background:#365f60;border-color:#577c7a;color:#fff}
+/* STAGE 3.2: destination options open inside the dialog flow, so the dialog grows or scrolls instead of clipping them. */
+#programSaveDest .ft-route-filter-options{position:static;margin-top:4px;max-height:none}
+#programSaveModal .settings-modal{max-height:min(92dvh,760px)}

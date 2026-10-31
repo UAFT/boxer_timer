@@ -812,7 +812,7 @@ function bindProgramLibrary() {
     },
     openProgram:(program,date)=>openEntry(program,false,{date,sessionId:null}),
     assign:(snapshots,program,date)=>newSession(snapshots,{date,snap:diarySnap(program.name,program.entries,program.options),programId:program.id,origin:'diary'}),
-    startLibrary:date=>{libraryDraft={date,entries:[],sessionId:null,failed:false};libraryTab='templates';libraryPath={};renderLibrary();},
+    startLibrary:date=>{libraryDraft={date,entries:[],sessionId:null,failed:false};libraryTab='templates';libraryPath={};renderLibrary();byId('programLibraryModal').querySelector('section').scrollTop=0;},
     confirmRemove:opts=>confirmDeletion({...opts,labels:{
       ru:{title:'Удалить из календаря?',message:'Тренировка исчезнет из календаря. Программа в «Мои» останется.',delete:'Удалить'},
       en:{title:'Remove from calendar?',message:'The workout leaves the calendar. The program in «Mine» stays.',delete:'Remove'}}}),

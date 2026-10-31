@@ -690,3 +690,27 @@ body.ft-unbounded-program:not(.ft-count-up-standalone) .timer-card .summary-grid
   max-height:60dvh!important;resize:vertical!important;overflow-y:auto;
 }
 .ft-card-section-text{white-space:pre-line}
+
+/* STAGE 3.2: action icons float on the card surface — no chip outline, fill or
+   shadow; the button box (tap target) keeps its size. Delete is the only red one.
+   Card containers keep their own borders. */
+.program-library-modal .ft-program-actions>button,
+.program-library-modal .ft-saved-program-entry .ft-program-actions>button,
+.program-library-modal .ft-saved-program-entry .ft-program-actions .ft-share-button,
+.program-library-modal .ft-saved-program-entry .ft-program-actions .ft-saved-program-add,
+.program-library-modal .ft-saved-program-entry .ft-program-actions .ft-trash-button,
+.program-panel .program-stage-card .program-stage>button,
+.program-panel .program-stage-card .program-round-edit-row button,
+.program-panel .program-rest button{
+  background:transparent!important;
+  border-color:transparent!important;
+  box-shadow:none!important;
+}
+.program-library-modal .ft-program-actions{gap:2px!important}
+.program-library-modal .ft-saved-program-entry .ft-program-actions>button{height:44px!important;min-height:44px!important}
+.program-library-modal .ft-program-actions>button .ft-action-icon{width:19px!important;height:19px!important;flex-basis:19px!important}
+.program-library-modal .ft-saved-program-entry .ft-program-actions .ft-trash-button{color:#b3261e!important}
+.program-library-modal .ft-program-actions>button:active,
+.program-panel .program-stage-card .program-stage>button:active,
+.program-panel .program-stage-card .program-round-edit-row button:active,
+.program-panel .program-rest button:active{background:rgba(54,95,96,.1)!important}
