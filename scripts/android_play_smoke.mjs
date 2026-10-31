@@ -229,6 +229,8 @@ if (!METHODOLOGY) {
   // on the heading row; × asks first, hardware Back on that question deletes nothing, «Удалить» removes just that stage.
   const diaryFile = `(async()=>{const fs=Capacitor.Plugins.Filesystem;const all=[];for(const s of ['a','b']){try{all.push(JSON.parse((await fs.readFile({path:'fighttech-diary-'+s+'.json',directory:'DATA',encoding:'utf8'})).data))}catch{}}const d=all.sort((x,y)=>y.seq-x.seq)[0];const p=d.sessions.filter(x=>x.status==='planned');return {sessions:d.sessions.length,planned:p.map(x=>({id:x.id,n:d.snapshots[x.planRef].entries.length}))}})()`;
   await js(`(()=>{document.getElementById('programLibraryOpen').click();document.getElementById('programLibraryDiary').click();document.querySelector('.ft-diary-day.is-today').click();return true})()`); await sleep(1000);
+  // The stopped metronome run above is offered as «Записать?» when the diary opens; decline it so the next dialog is ours.
+  const declined41 = await js(`(()=>{const m=document.getElementById('programDeleteConfirmModal');if(m.hidden)return null;const t=document.getElementById('programDeleteConfirmTitle').textContent;document.getElementById('programDeleteConfirmCancel').click();return t})()`); await sleep(800);
   const before41 = await js(diaryFile);
   const row41 = await js(`(()=>{const c=[...document.querySelectorAll('.ft-diary-session')].find(c=>c.querySelector('.ft-diary-program'));if(!c)return null;
     return [...c.querySelectorAll('.program-stage')].map(st=>{const n=st.querySelector('.program-stage-number').getBoundingClientRect(),b=[...st.querySelectorAll(':scope>button')].map(x=>x.getBoundingClientRect());const mid=x=>(x.top+x.bottom)/2;
@@ -247,7 +249,7 @@ if (!METHODOLOGY) {
   await js(`(()=>{const c=[...document.querySelectorAll('.ft-diary-session')].find(c=>c.querySelector('.ft-diary-program'));const st=[...c.querySelectorAll('.program-stage')].pop();st.querySelectorAll(':scope>button')[3].click();return true})()`); await sleep(600);
   await click('programDeleteConfirmAccept'); await sleep(1500);
   const removed41 = await js(diaryFile);
-  step('stage41_diary', { before41, row41, picker, inserted, ask41, afterBack41, removed41 });
+  step('stage41_diary', { declined41, before41, row41, picker, inserted, ask41, afterBack41, removed41 });
   // Stage count over all planned workouts (the card's own id is not on the page); the workout count must not change.
   const own = d => ({ n: (d?.planned || []).reduce((a, x) => a + x.n, 0) });
   if (!(row41?.length && row41.every(r => r.buttons === 4 && r.sameRow))) fail('STAGE 4.1: stage toolbar not on the heading row: ' + JSON.stringify(row41));
