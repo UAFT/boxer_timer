@@ -48,6 +48,7 @@ import {
   setSettingsForm
 } from './ui/render.js';
 import { bindControls, bindPresetTabs } from './ui/bindings.js';
+import { createDiaryView } from './diary/calendar-view.js';
 
 const DEFAULT_PRESET_ID = 'classic3';
 const STEP_RULES = {
@@ -708,6 +709,7 @@ function bindProgramLibrary() {
     timer.applyConfig({...activeSettings,presetId:activePresetId});
     close();renderCurrentState();
   }
+  const diary=createDiaryView(document);
   function renderLibrary() {
     const list=byId('programLibraryList');list.replaceChildren();
     byId('ftWorkoutExchangeToolbar').hidden=libraryTab!=='mine';
@@ -716,6 +718,8 @@ function bindProgramLibrary() {
     byId('programLibraryTemplates').classList.toggle('is-active',libraryTab==='templates');
     byId('ftTreePreviewTab').classList.toggle('is-active',libraryTab==='tree');
     byId('ftMethodV42Tab').classList.toggle('is-active',libraryTab==='method');
+    byId('programLibraryDiary').classList.toggle('is-active',libraryTab==='diary');
+    if(libraryTab==='diary') { byId('programLibraryBack').hidden=true; byId('programLibraryTitle').textContent='Мои программы'; diary.render(list,document.documentElement.lang); return; }
     if(libraryTab==='tree') { renderTreePreview(list); return; }
     if(libraryTab==='method') { renderMethodV42(list); return; }
     const level=libraryLevel(LIBRARY,CATEGORIES,libraryPath);
@@ -933,6 +937,7 @@ function bindProgramLibrary() {
   byId('programLibraryBack').addEventListener('click',()=>{libraryPath=libraryUp(libraryPath);renderLibrary();});
   byId('programLibraryMine').addEventListener('click',()=>{libraryTab='mine';libraryPath={};renderLibrary();});
   byId('programLibraryTemplates').addEventListener('click',()=>{libraryTab='templates';libraryPath={};renderLibrary();});
+  byId('programLibraryDiary').addEventListener('click',()=>{libraryTab='diary';libraryPath={};renderLibrary();});
   const current=byId('programSaveCurrent'),fields=byId('programSaveNewFields');
   const overwrite=byId('programSaveOverwrite');
   byId('programSaveOpen').addEventListener('click',()=>{
