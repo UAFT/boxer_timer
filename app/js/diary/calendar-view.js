@@ -1,4 +1,5 @@
 // «Дневник» tab: month calendar and, under it, the selected day's workouts. The same calendar picks dates in «Сохранить».
+import { compileProgram } from '../core/program.js';
 import { createActionIcon, renderSavedProgramCard, russianCount, timeWords } from '../ui/library-card-view.js';
 import { dayDots, dayStatus, localDate, monthCells, newId } from './store.js';
 
@@ -8,7 +9,7 @@ const TEXT = {
     legend: [['done', 'Выполнено'], ['partial', 'Частично'], ['planned', 'Запланировано'], ['missed', 'Пропущено']],
     done: 'Выполнена', planned: 'Запланирована', missed: 'Тренировка не запускалась', running: 'Не завершена',
     rounds: (n, total) => 'Выполнено раундов: ' + n + (total ? ' из ' + total : ''),
-    plan: 'План: ', actual: 'Фактически: ', program: 'Программа', add: 'Добавить тренировку', source: 'Откуда',
+    plan: 'План: ', actual: 'Фактически: ', started: 'Начало ', stages: (n, total) => 'этапов: ' + n + ' из ' + total, program: 'Программа', add: 'Добавить тренировку', source: 'Откуда',
     mine: 'Мои программы', library: 'Библиотека', noMine: 'В «Мои» пока нет программ.', assign: 'Назначить на дату',
     menu: 'Действия', move: 'Перенести на дату', repeat: 'Повторить на дату', remove: 'Удалить из календаря',
     pickMove: name => 'Выберите дату, чтобы перенести «' + name + '»', pickRepeat: name => 'Выберите дату, чтобы повторить «' + name + '»',
@@ -21,7 +22,7 @@ const TEXT = {
     legend: [['done', 'Completed'], ['partial', 'Partial'], ['planned', 'Planned'], ['missed', 'Missed']],
     done: 'Completed', planned: 'Planned', missed: 'Workout was not started', running: 'Not finished',
     rounds: (n, total) => 'Rounds completed: ' + n + (total ? ' of ' + total : ''),
-    plan: 'Plan: ', actual: 'Actual: ', program: 'Program', add: 'Add workout', source: 'From',
+    plan: 'Plan: ', actual: 'Actual: ', started: 'Started ', stages: (n, total) => 'stages: ' + n + ' of ' + total, program: 'Program', add: 'Add workout', source: 'From',
     mine: 'My programs', library: 'Library', noMine: 'No programs in «Mine» yet.', assign: 'Assign to date',
     menu: 'Actions', move: 'Move to date', repeat: 'Repeat on date', remove: 'Remove from calendar',
     pickMove: name => 'Pick a date to move «' + name + '»', pickRepeat: name => 'Pick a date to repeat «' + name + '»',
@@ -120,16 +121,21 @@ export function createDiaryView(doc, host, { now = () => new Date() } = {}) {
   const cal = createCalendar(doc, { now });
   let pick = null, adding = false, source = 'mine', note = '';
 
-  function stateText(session, today, t) {
+  // Only what was recorded: never-started and partly done are told apart; partial shows the rounds and stages really finished.
+  function stateText(session, today, t, snap) {
     if (session.status === 'done') return t.done;
     if (session.status === 'planned') return session.date < today ? t.missed : t.planned;
-    return t.running + ' · ' + t.rounds(session.facts?.roundsDone || 0, session.facts?.roundsTotal);
+    const done = session.facts?.roundsDone || 0;
+    const ends = compileProgram(snap.entries, {}, snap.options).map(r => r.stageRound === r.stageRounds);
+    const stages = ends.length > 1 && ends.filter(Boolean).length > 1 ? ' · ' + t.stages(ends.slice(0, done).filter(Boolean).length, ends.filter(Boolean).length) : '';
+    return t.running + ' · ' + t.rounds(done, session.facts?.roundsTotal) + stages;
   }
 
   function sessionCard(diary, session, today, t, lang, rerender) {
     const snap = diary.snapshot(session.execRef || session.planRef) || { name: t.program, entries: [], options: {} };
     const program = { id: session.id, name: snap.name || t.program, entries: snap.entries, options: snap.options };
-    const times = [stateText(session, today, t)];
+    const times = [stateText(session, today, t, snap)];
+    if (session.startedAt) times.push(t.started + new Intl.DateTimeFormat(lang === 'en' ? 'en' : 'ru', { hour: '2-digit', minute: '2-digit' }).format(new Date(session.startedAt)));
     if (session.facts?.activeSec > 0) times.push(t.actual + timeWords(session.facts.activeSec, lang));
     const menu = el(doc, 'details', 'ft-diary-menu');
     const summary = el(doc, 'summary', 'ft-diary-menu-button', '⋮'); summary.setAttribute('aria-label', t.menu + ': ' + program.name);

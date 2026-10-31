@@ -50,6 +50,7 @@ import {
 import { bindControls, bindPresetTabs } from './ui/bindings.js';
 import { createDiaryView, createCalendar, assignLabel } from './diary/calendar-view.js';
 import { openDiary, newSession, putSnapshot } from './diary/store.js';
+import { createRecorder, applyRun, recordMode, RECORD_KEY } from './diary/recorder.js';
 
 const DEFAULT_PRESET_ID = 'classic3';
 const STEP_RULES = {
@@ -131,6 +132,10 @@ let openedProgramId = null;
 let openedProgramName = '';
 // The calendar date (and assignment) the editor was opened for; «Сохранить» then offers the diary with that date.
 let editorDiary = null;
+let diaryStore = null;
+const diaryReady = openDiary().catch(()=>({state:'damaged',sessions:[],snapshot:()=>null,commit:async()=>false})).then(d=>{diaryStore=d;return d;});
+const recorder = createRecorder();
+const confirmDeletion = installDeleteConfirmation();
 let libraryTab = 'mine';
 let libraryPath = {};
 const builtInPrograms = [
@@ -176,6 +181,7 @@ function renderCurrentState() {
 let timer;
 timer = new TimerEngine({
   onTick: (state) => {
+    recorder.observe(state, timer?.isPaused);
     renderTimer(els, state, { metronomePanelOpen: isMetronomePanelOpen(), ladderExpanded: uiState.ladderExpanded, programName:openedProgramName, previewRounds: !programRunning && programEntries.length ? previewProgram() : null, editablePhase:phaseToggle.selected() });
     phaseToggle.render(liveTimerSettings(),state);
     renderProgram();
@@ -183,6 +189,8 @@ timer = new TimerEngine({
     metronome.syncPhase(state);
   },
   onStateChange: (state) => {
+    recorder.observe(state, timer?.isPaused);
+    if (state.phase === 'finished' && recorder.active) endRun(true);
     renderTimer(els, state, { metronomePanelOpen: isMetronomePanelOpen(), ladderExpanded: uiState.ladderExpanded, programName:openedProgramName, previewRounds: !programRunning && programEntries.length ? previewProgram() : null, editablePhase:phaseToggle.selected() });
     phaseToggle.render(liveTimerSettings(),state);
     renderProgram();
@@ -260,10 +268,12 @@ async function handleToggleRun() {
   // Start after «Готово» runs the same workout (or program) again from the beginning.
   if (timer.state.phase === 'finished') handleReset();
   if (programEntries.length && !programRunning) { startProgram(); return; }
+  beginRun(null);
   timer.start();
 }
 
 function handleReset() {
+  if (recorder.active) endRun(false);
   stopVoice();
   if (programRunning) { exitProgram(); }
   audio.stopAll();
@@ -368,6 +378,40 @@ function handleOpenMetronomeCard(event) {
   applySettings(draft,{liveMetronome:true});
 }
 
+
+// Diary snapshot: the program as it is now, every stage with its own settings, so later edits never change it.
+function diarySnap(name,entries,options) {
+  return {name,entries:normalizeProgram(entries.map(x=>({...x,settings:x.settings || structuredClone(profiles[x.presetId])}))),options:normalizeOptions(options)};
+}
+// STAGE 3: a run starts recording with what is actually started (a program from the editor, or the plain timer).
+function beginRun(rounds) {
+  const lang=document.documentElement.lang;
+  const snap=rounds ? diarySnap(openedProgramName || programHeading('',programEntries,profiles,programOptions,lang).name,programEntries,programOptions)
+    : diarySnap((lang==='en'?'Timer ':'Таймер ')+PRESET_NAMES[activePresetId],[{presetId:activePresetId,title:'',settings:structuredClone(activeSettings)}],{});
+  recorder.begin({snap,roundsTotal:rounds ? rounds.length : compileProgram(snap.entries,{},snap.options).length,
+    sessionId:rounds ? editorDiary?.sessionId ?? null : null,programId:rounds ? openedProgramId : null,origin:rounds ? 'program' : 'timer'});
+}
+// Finished (completed) or stopped early. Pause never comes here. Nothing is offered when nothing was done.
+function endRun(completed) {
+  const run=recorder.finish(completed);
+  if (run) offerRun(run);
+}
+async function offerRun(run) {
+  const diary=await diaryReady;
+  // A read-only diary keeps the run waiting (it stays in RUN_KEY) instead of losing it.
+  if (diary.state!=='ok') return;
+  if (diary.sessions.some(s=>s.runId===run.runId)) { recorder.settle(run.runId); return; }
+  if (recordMode()==='auto') { recordRun(run); return; }
+  const en=document.documentElement.lang==='en',done=run.status==='done';
+  const facts=(en?'Rounds completed: ':'Выполнено раундов: ')+run.roundsDone+(en?' of ':' из ')+run.roundsTotal;
+  confirmDeletion({name:run.snap.name+' · '+run.date.split('-').reverse().join('.'),trigger:null,tone:'neutral',
+    labels:{ru:{title:done?'Записать тренировку в дневник?':'Тренировка не завершена. Записать в дневник?',message:facts,cancel:'Не записывать',delete:'Записать'},
+      en:{title:done?'Save the workout to the diary?':'The workout was not finished. Save it to the diary?',message:facts,cancel:'Do not save',delete:'Save'}},
+    onConfirm:()=>recordRun(run),onCancel:()=>recorder.settle(run.runId)});
+}
+async function recordRun(run) {
+  if (await diaryStore.commit(d=>applyRun(d,run))) recorder.settle(run.runId);
+}
 
 function store(key, value) {
   if (writeJson(key, value)) return true;
@@ -591,9 +635,11 @@ function startProgram() {
   timer.applyConfig({ ...activeSettings, presetId: activePresetId, programRounds: programSnapshot, intervalMode:'standard' });
   syncMetronome();
   renderCurrentState();
+  beginRun(programSnapshot);
   timer.start();
 }
 function exitProgram() {
+  if (recorder.active) endRun(false);
   stopVoice();
   programRunning=false;
   programSnapshot=null;
@@ -684,7 +730,6 @@ function bindProgramLibrary() {
   const byId=id=>document.getElementById(id);
   const library=byId('programLibraryModal');
   const save=byId('programSaveModal');
-  const confirmDeletion=installDeleteConfirmation();
   const close=()=>{library.hidden=true;save.hidden=true;libraryDraft=null;};
   // The library changes only once it is on disk; a full storage leaves it as it was.
   function persistLibrary(next) {if(!store(LIBRARY_KEY,next))return false;savedPrograms=next;return true;}
@@ -714,15 +759,7 @@ function bindProgramLibrary() {
     close();renderCurrentState();
     return true;
   }
-  // Diary snapshot: the program as it is now, every stage with its own settings, so later edits never change it.
-  function diarySnap(name,entries,options) {
-    return {name,entries:normalizeProgram(entries.map(x=>({...x,settings:x.settings || structuredClone(profiles[x.presetId])}))),options:normalizeOptions(options)};
-  }
-  let diaryStore=null;
-  openDiary().catch(()=>({state:'damaged',sessions:[],snapshot:()=>null,commit:async()=>false})).then(d=>{
-    diaryStore=d;
-    if(!library.hidden && libraryTab==='diary')renderLibrary();
-  });
+  diaryReady.then(()=>{if(!library.hidden && libraryTab==='diary')renderLibrary();});
   // A library block picked from «Дневник → Добавить тренировку» starts a new workout; further blocks join it.
   let libraryDraft=null;
   const diary=createDiaryView(document,{
@@ -1115,8 +1152,19 @@ function bootstrap() {
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') audio.wake(); });
   installBackButton({ isWorkoutActive: () => playbackState(timer.state) !== 'off' });
   installBilling();
+  bindDiaryRecordSetting();
+  // A run cut short by a crash or kill: offered (or recorded) once, with the progress it really had.
+  const leftover=recorder.leftover();
+  if (leftover) offerRun(leftover);
   renderCurrentState();
   installLocalization(document.querySelectorAll('[data-language]'));
+}
+
+function bindDiaryRecordSetting() {
+  const buttons=[...document.querySelectorAll('[data-diary-record]')];
+  const sync=()=>{const mode=recordMode();for(const b of buttons){const on=b.dataset.diaryRecord===mode;b.classList.toggle('is-active',on);b.setAttribute('aria-pressed',String(on));}};
+  for (const b of buttons) b.addEventListener('click',()=>{store(RECORD_KEY,b.dataset.diaryRecord);sync();});
+  sync();
 }
 
 async function installBilling() {

@@ -14,10 +14,11 @@ export function installDeleteConfirmation(doc = document) {
   const acceptButton = get('programDeleteConfirmAccept');
   let pending = null;
 
-  function close(restoreFocus = true) {
+  function close(restoreFocus = true, accepted = false) {
     const previous = pending;
     pending = null;
     overlay.hidden = true;
+    if (!accepted) previous?.onCancel?.();
     doc.removeEventListener('keydown', onKeyDown);
     if (restoreFocus && previous) {
       const target = previous.trigger?.isConnected ? previous.trigger : get('programLibraryMine');
@@ -47,12 +48,13 @@ export function installDeleteConfirmation(doc = document) {
   acceptButton.addEventListener('click', () => {
     if (!pending) return;
     const { onConfirm } = pending;
-    close(false);
+    close(false, true);
     onConfirm();
     get('programLibraryMine')?.focus();
   });
   // labels: optional { ru, en } overrides, e.g. the diary's «Удалить из календаря?».
-  return function confirmDeletion({ name, trigger, onConfirm, labels: custom }) {
+  // tone 'neutral': the same dialog for a non-destructive question (diary «Записать тренировку?»).
+  return function confirmDeletion({ name, trigger, onConfirm, onCancel, labels: custom, tone }) {
     if (pending || typeof onConfirm !== 'function') return;
     const lang = doc.documentElement.lang === 'en' ? 'en' : 'ru';
     const copy = { ...deleteDialogLabels(lang), ...custom?.[lang] };
@@ -61,7 +63,8 @@ export function installDeleteConfirmation(doc = document) {
     get('programDeleteConfirmName').textContent = name;
     cancelButton.textContent = copy.cancel;
     acceptButton.textContent = copy.delete;
-    pending = { trigger, onConfirm };
+    overlay.classList?.toggle('is-neutral', tone === 'neutral');
+    pending = { trigger, onConfirm, onCancel };
     overlay.hidden = false;
     doc.addEventListener('keydown', onKeyDown);
     cancelButton.focus();

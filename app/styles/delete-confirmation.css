@@ -19,3 +19,4 @@
 #programDeleteConfirmAccept { border-color: #c66c72; background: #91353f; color: #fff; }
 .ft-delete-actions button:focus-visible { outline: 3px solid #ebbf63; outline-offset: 3px; }
 @media(max-width:360px) { .ft-delete-dialog {padding: 20px 14px;} .ft-delete-actions {gap: 7px;} }
+.is-neutral #programDeleteConfirmAccept { border-color: #577c7a; background: #365f60; }
