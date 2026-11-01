@@ -298,10 +298,19 @@ if (!METHODOLOGY) {
   // whole total and the start position; the plan holds only the rounds from that position on.
   await js(`(()=>{document.getElementById('programLibraryOpen').click();document.getElementById('programLibraryDiary').click();document.querySelector('.ft-diary-day.is-today').click();return true})()`); await sleep(1000);
   const declinedFrom = await js(`(()=>{const m=document.getElementById('programDeleteConfirmModal');if(m.hidden)return null;const t=document.getElementById('programDeleteConfirmTitle').textContent;document.getElementById('programDeleteConfirmCancel').click();return t})()`); await sleep(800);
-  const picked = await js(`(()=>{const c=[...document.querySelectorAll('.ft-diary-session')].find(c=>c.querySelector('.ft-diary-program .program-stage'));const b=c?.querySelector('.ft-start-from');if(!b)return null;
-    const [st,rd]=b.querySelectorAll('select'),R=e=>e.getBoundingClientRect(),[x,y]=[st,rd].map(R),go=R(b.querySelector('button'));b.scrollIntoView({block:'center'});
-    st.value=st.options[st.options.length-1].value;st.dispatchEvent(new Event('change'));
-    return {stages:st.options.length,stage:+st.value+1,rounds:rd.options.length,round:+rd.value,sameRow:Math.abs(x.top-y.top)<1,equal:Math.abs(x.width-y.width)<1,below:go.top>=x.bottom,label:b.querySelector('button').textContent}})()`);
+  // Collapsed by default: one row; expanded: two Fight Tech dropdowns (no native select); the stage list is the in-app dialog.
+  const collapsedFrom = await js(`(()=>{const c=[...document.querySelectorAll('.ft-diary-session')].find(c=>c.querySelector('.ft-diary-program .program-stage'));const b=c?.querySelector('.ft-start-from');if(!b)return null;b.scrollIntoView({block:'center'});
+    const t=b.querySelector('.ft-start-from-toggle');return {toggle:!!t.offsetParent,panelHidden:b.querySelector('.ft-start-from-panel').hidden,natives:b.querySelectorAll('select').length,text:t.textContent}})()`);
+  shot('14a_start_from_collapsed');
+  await js(`(()=>{const c=[...document.querySelectorAll('.ft-diary-session')].find(c=>c.querySelector('.ft-diary-program .program-stage'));c.querySelector('.ft-start-from-toggle').click();c.querySelector('.ft-start-from-select').click();return true})()`); await sleep(800);
+  const dialogFrom = await js(`(()=>{const d=document.querySelector('#ftChoiceDialog .ft-choice-dialog');if(!d)return null;const r=d.getBoundingClientRect();return {role:d.getAttribute('role'),options:d.querySelectorAll('[role=option]').length,selected:d.querySelector('[aria-selected=true]')?.textContent,inside:r.left>=0&&r.top>=0&&r.right<=innerWidth&&r.bottom<=innerHeight}})()`);
+  shot('14b_start_from_stage_dialog');
+  adb('shell', 'input', 'keyevent', '4'); await sleep(800);
+  const backClosed = await js(`(()=>({dialog:!!document.getElementById('ftChoiceDialog'),library:!document.getElementById('programLibraryModal').hidden}))()`);
+  const picked = await js(`(async()=>{const c=[...document.querySelectorAll('.ft-diary-session')].find(c=>c.querySelector('.ft-diary-program .program-stage'));const b=c.querySelector('.ft-start-from');
+    const [st,rd]=b.querySelectorAll('.ft-choice-trigger');st.click();await new Promise(r=>setTimeout(r,400));const opts=[...document.querySelectorAll('#ftChoiceDialog [role=option]')];opts[opts.length-1].click();await new Promise(r=>setTimeout(r,300));
+    const R=e=>e.getBoundingClientRect(),[x,y]=[st,rd].map(R),go=R(b.querySelector('.ft-start-from-go'));const stacked=b.querySelector('.ft-start-from-panel').classList.contains('is-stacked');
+    return {stages:opts.length,stage:opts.length,round:+rd.querySelector('.ft-choice-value').textContent.replace(/\D+/g,' ').trim().split(' ')[0],sameRow:stacked?y.top>x.bottom:Math.abs(x.top-y.top)<1,equal:Math.abs(x.width-y.width)<1,below:go.top>=Math.max(x.bottom,y.bottom),stacked,label:b.querySelector('.ft-start-from-go').textContent}})()`);
   shot('14_start_from_controls');
   await js(`(()=>{const c=[...document.querySelectorAll('.ft-diary-session')].find(c=>c.querySelector('.ft-diary-program .program-stage'));c.querySelector('.ft-start-from-go').click();return true})()`); await sleep(7000);
   const fromRun = await js(`(()=>({run:JSON.parse(localStorage.getItem('fighttech.diary.run.v1')||'null'),rows:document.querySelectorAll('#ladderLiveList .ladder-live-row').length,caption:document.getElementById('ladderCurrentLabel').textContent,phase:document.getElementById('phaseLabel').textContent}))()`);
@@ -311,10 +320,12 @@ if (!METHODOLOGY) {
   await js(`document.getElementById('resetBtn').click()`); await sleep(1500);
   // The stopped run is offered «Записать?»; decline it so the screens below are not covered.
   await js(`(()=>{const m=document.getElementById('programDeleteConfirmModal');if(!m.hidden)document.getElementById('programDeleteConfirmCancel').click();return true})()`); await sleep(800);
-  step('start_from_position', { declinedFrom, picked, run: fromRun?.run && { startFrom: fromRun.run.startFrom, roundsTotal: fromRun.run.roundsTotal, sessionId: !!fromRun.run.sessionId }, rows: fromRun?.rows, caption: fromRun?.caption, phase: fromRun?.phase });
+  step('start_from_position', { declinedFrom, collapsedFrom, dialogFrom, backClosed, picked, run: fromRun?.run && { startFrom: fromRun.run.startFrom, roundsTotal: fromRun.run.roundsTotal, sessionId: !!fromRun.run.sessionId }, rows: fromRun?.rows, caption: fromRun?.caption, phase: fromRun?.phase });
   const fr = fromRun?.run;
   if (!(picked?.sameRow && picked.equal && picked.below && fr?.startFrom?.stage === picked.stage && fr.startFrom.round === 1 && fr.startFrom.skipped > 0 && fr.sessionId && fromRun.rows === fr.roundsTotal - fr.startFrom.skipped))
     fail('start from a stage/round did not start there: ' + JSON.stringify({ picked, fromRun }));
+  if (!(collapsedFrom?.toggle && collapsedFrom.panelHidden && !collapsedFrom.natives && dialogFrom?.role === 'dialog' && dialogFrom.options >= 2 && dialogFrom.inside && !backClosed?.dialog && backClosed.library))
+    fail('start-from not collapsed by default, or its stage list is not the in-app dialog closed by Back: ' + JSON.stringify({ collapsedFrom, dialogFrom, backClosed }));
   // Settings «Подписка» with Google Play present (Manage shown): one row 1fr 1fr or stacked; no word broken; hidden stays hidden.
   await click('settingsBtn'); await sleep(800);
   const subs = await js(`(()=>{const a=document.getElementById('ftSubscriptionRestore'),m=document.getElementById('ftSubscriptionManage'),card=document.getElementById('ftSubscriptionCard');card.scrollIntoView({block:'center'});
@@ -333,6 +344,30 @@ if (!METHODOLOGY) {
   step('subscription_and_metronome_button', { subs, metroBtn });
   if (!(subs?.manage && subs.layout !== 'bad' && !subs.split && subs.hiddenStay && subs.last)) fail('Settings subscription buttons layout wrong: ' + JSON.stringify(subs));
   if (!(metroBtn && metroBtn.h >= 40 && Math.abs(metroBtn.dx) <= 1 && Math.abs(metroBtn.dy) <= 1 && metroBtn.bg === 'rgb(244, 246, 248)')) fail('metronome button not centred or wrong surface: ' + JSON.stringify(metroBtn));
+  // Metronome sound profile. After the update over the previous APK nothing is stored → «Щелчки». Choose «Электронные» B in
+  // the in-app dialog, run the diary workout with its stage metronome (30/60 BPM from STAGE 4): every metronome and tick
+  // sound must be the bundled B pair (140 / 95 ms), no click (240 / 180 ms), in a running AudioContext.
+  await click('settingsBtn'); await sleep(800);
+  const soundDefault = await js(`(()=>{const g=document.getElementById('ftMetronomeSound');g.scrollIntoView({block:'center'});return {stored:localStorage.getItem('fighttech.metronome.sound.v1'),checked:[...g.querySelectorAll('input[type=radio]')].find(r=>r.checked)?.value,toneHidden:document.getElementById('ftMetronomeTone').hidden,texts:[...g.querySelectorAll('.ft-radio-row span')].map(s=>s.textContent)}})()`);
+  shot('18_sound_default');
+  await js(`(()=>{document.getElementById('ftMetronomeSoundElectronic').click();document.querySelector('#ftMetronomeTone .ft-choice-trigger').click();return true})()`); await sleep(800);
+  const toneDialog = await js(`(()=>[...document.querySelectorAll('#ftChoiceDialog [role=option]')].map(o=>o.textContent))()`);
+  shot('19_sound_tone_dialog');
+  await js(`(()=>{document.querySelectorAll('#ftChoiceDialog [role=option]')[1].click();return true})()`); await sleep(500);
+  const soundChosen = await js(`(()=>({stored:localStorage.getItem('fighttech.metronome.sound.v1'),tone:document.querySelector('#ftMetronomeTone .ft-choice-value').textContent}))()`);
+  shot('20_sound_electronic_b');
+  await click('closeSettingsBtn'); await sleep(500);
+  await js(`(()=>{window.__snd=[];window.__ctx=[];const st=AudioBufferSourceNode.prototype.start;AudioBufferSourceNode.prototype.start=function(...a){if(this.buffer){window.__snd.push(Math.round(this.buffer.duration*1000));window.__ctx.push(this.context.state)}return st.apply(this,a);};
+    document.getElementById('programLibraryOpen').click();document.getElementById('programLibraryDiary').click();document.querySelector('.ft-diary-day.is-today').click();return true})()`); await sleep(1000);
+  await js(`(()=>{const m=document.getElementById('programDeleteConfirmModal');if(!m.hidden)document.getElementById('programDeleteConfirmCancel').click();return true})()`); await sleep(600);
+  await js(`(()=>{[...document.querySelectorAll('.ft-diary-session')].find(c=>c.querySelector('.ft-diary-program .program-stage')).querySelector('.ft-diary-start').click();return true})()`);
+  await sleep(25000);
+  await js(`document.getElementById('resetBtn').click()`); await sleep(1500);
+  await js(`(()=>{const m=document.getElementById('programDeleteConfirmModal');if(!m.hidden)document.getElementById('programDeleteConfirmCancel').click();return true})()`); await sleep(500);
+  const heard = await js(`(()=>{const d=window.__snd,c=x=>d.filter(v=>v===x).length;return {strong:c(140),weak:c(95),click:c(240)+c(180),all:d.length,running:window.__ctx.every(s=>s==='running')}})()`);
+  step('metronome_sound_profile', { soundDefault, toneDialog, soundChosen, heard });
+  if (!(soundDefault?.stored === null && soundDefault.checked === 'click' && soundDefault.toneHidden)) fail('after the update the metronome sound is not the original clicks: ' + JSON.stringify(soundDefault));
+  if (!(toneDialog?.length === 3 && /"tone":"B"/.test(soundChosen?.stored || '') && heard?.strong >= 6 && heard.click === 0 && heard.running)) fail('electronic tone B not chosen or not played on the device: ' + JSON.stringify({ toneDialog, soundChosen, heard }));
 }
 
 report.crashes = crashes();
