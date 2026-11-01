@@ -9,13 +9,15 @@ const app = read('../app/js/app.js');
 const paywall = read('../app/js/billing/paywall.js');
 const locale = read('../app/js/i18n/locale.js');
 
-test('subscription card follows General inside the existing Settings modal', () => {
+test('subscription card is the last section of the Settings modal', () => {
   const settings = html.indexOf('id="settingsModal"');
   const general = html.indexOf('>Общее<', settings);
   const subscription = html.indexOf('id="ftSubscriptionCard"', settings);
-  const intervalMode = html.indexOf('>Режим интервалов<', settings);
+  const warning = html.indexOf('>Предупреждение до конца этапа<', settings);
+  const modalEnd = html.indexOf('</section>\n    </div>', subscription);
   assert.ok(settings >= 0, 'Settings modal exists');
-  assert.ok(general > settings && subscription > general && intervalMode > subscription);
+  assert.ok(general > settings && warning > general && subscription > warning);
+  assert.equal(html.indexOf('settings-card', html.indexOf('</section>', subscription)) > modalEnd || html.indexOf('settings-card', html.indexOf('</section>', subscription)) < 0, true, 'no Settings section after Subscription');
   for (const id of [
     'ftSubscriptionStatus',
     'ftSubscriptionOffers',

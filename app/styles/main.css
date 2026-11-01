@@ -1604,3 +1604,15 @@ input,textarea,[contenteditable="true"]{user-select:text;-webkit-user-select:tex
 .ft-route-lesson-controls{align-self:end!important;gap:5px!important;margin-bottom:-2px!important}
 .ft-route-lesson-controls .ft-route-lesson-action{background:transparent!important;border:0!important;box-shadow:none!important;border-radius:0!important;width:27px!important;height:27px!important;min-height:27px!important;flex:0 0 27px!important;font-size:20px!important;color:#253537!important;padding:0!important}
 .ft-route-lesson-controls .ft-route-lesson-action:focus-visible{outline:2px solid #47766e!important;outline-offset:2px!important;border-radius:5px!important}
+
+/* Diary record switch: two equal halves; long words wrap whole, never clip. */
+.settings-modal .choice-row.ft-diary-record-row {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.settings-modal .ft-diary-record-row .choice-chip {
+  padding: 8px 4px;
+  font-size: clamp(11px, 3.4vw, 13px);
+  line-height: 1.2;
+  overflow-wrap: normal;
+  hyphens: none;
+}
