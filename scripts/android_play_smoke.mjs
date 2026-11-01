@@ -305,8 +305,12 @@ if (!METHODOLOGY) {
   shot('14_start_from_controls');
   await js(`(()=>{const c=[...document.querySelectorAll('.ft-diary-session')].find(c=>c.querySelector('.ft-diary-program .program-stage'));c.querySelector('.ft-start-from-go').click();return true})()`); await sleep(7000);
   const fromRun = await js(`(()=>({run:JSON.parse(localStorage.getItem('fighttech.diary.run.v1')||'null'),rows:document.querySelectorAll('#ladderLiveList .ladder-live-row').length,caption:document.getElementById('ladderCurrentLabel').textContent,phase:document.getElementById('phaseLabel').textContent}))()`);
+  await js(`(()=>{document.getElementById('ladderExpand').click();return true})()`); await sleep(800);
   shot('15_start_from_running');
+  await js(`(()=>{document.getElementById('ladderExpand').click();return true})()`); await sleep(500);
   await js(`document.getElementById('resetBtn').click()`); await sleep(1500);
+  // The stopped run is offered «Записать?»; decline it so the screens below are not covered.
+  await js(`(()=>{const m=document.getElementById('programDeleteConfirmModal');if(!m.hidden)document.getElementById('programDeleteConfirmCancel').click();return true})()`); await sleep(800);
   step('start_from_position', { declinedFrom, picked, run: fromRun?.run && { startFrom: fromRun.run.startFrom, roundsTotal: fromRun.run.roundsTotal, sessionId: !!fromRun.run.sessionId }, rows: fromRun?.rows, caption: fromRun?.caption, phase: fromRun?.phase });
   const fr = fromRun?.run;
   if (!(picked?.sameRow && picked.equal && picked.below && fr?.startFrom?.stage === picked.stage && fr.startFrom.round === 1 && fr.startFrom.skipped > 0 && fr.sessionId && fromRun.rows === fr.roundsTotal - fr.startFrom.skipped))
@@ -320,13 +324,15 @@ if (!METHODOLOGY) {
       last:[...document.querySelectorAll('#settingsModal .settings-card')].pop()===card}})()`);
   shot('16_subscription');
   await click('closeSettingsBtn'); await sleep(500);
-  // Metronome button: --ft-raised surface, black outline, label centred (it sat 5 px high in 0.2.205).
+  // Metronome button: --ft-raised surface, black outline, label centred (it sat 5 px high in 0.2.205). With a program open
+  // the timer card is folded: unfold it first.
+  await js(`(()=>{const t=document.querySelector('.timer-reveal-toggle');if(t&&document.body.classList.contains('program-timer-collapsed'))t.click();return true})()`); await sleep(800);
   const metroBtn = await js(`(()=>{const m=document.getElementById('metronomeCardToggleBtn'),t=m.querySelector('.metro-mask-title');m.scrollIntoView({block:'center'});const r=document.createRange();r.selectNodeContents(t);const q=r.getBoundingClientRect(),b=m.getBoundingClientRect(),cs=getComputedStyle(m);
     return {h:Math.round(b.height),dx:Math.round((q.left+q.right)/2-(b.left+b.right)/2),dy:Math.round((q.top+q.bottom)/2-(b.top+b.bottom)/2),bg:cs.backgroundColor,border:cs.borderTopWidth+' '+cs.borderTopColor,font:getComputedStyle(t).fontSize}})()`);
   shot('17_metronome_button');
   step('subscription_and_metronome_button', { subs, metroBtn });
   if (!(subs?.manage && subs.layout !== 'bad' && !subs.split && subs.hiddenStay && subs.last)) fail('Settings subscription buttons layout wrong: ' + JSON.stringify(subs));
-  if (!(metroBtn && Math.abs(metroBtn.dx) <= 1 && Math.abs(metroBtn.dy) <= 1 && metroBtn.bg === 'rgb(244, 246, 248)')) fail('metronome button not centred or wrong surface: ' + JSON.stringify(metroBtn));
+  if (!(metroBtn && metroBtn.h >= 40 && Math.abs(metroBtn.dx) <= 1 && Math.abs(metroBtn.dy) <= 1 && metroBtn.bg === 'rgb(244, 246, 248)')) fail('metronome button not centred or wrong surface: ' + JSON.stringify(metroBtn));
 }
 
 report.crashes = crashes();
