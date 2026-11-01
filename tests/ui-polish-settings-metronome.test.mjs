@@ -22,7 +22,10 @@ test('preview labels never shrink below a word and keep numbers with their word'
   assert.equal(translateText('Фаза 2', 'en'), 'Phase 2');
 });
 
-test('metronome button: white surface, thin solid black outline, bold black label', () => {
-  assert.match(kit, /\.metro-mask\{background:#fff;color:#111;border:1\.5px solid #111;[^}]*border-radius:12px\}/);
-  assert.match(kit, /\.metro-mask-title\{color:#111;font-weight:800\}/);
+test('metronome button: neighbouring --ft-raised surface, thin solid black outline, bold black label centred by flex', () => {
+  assert.match(kit, /\.metro-mask\{background:var\(--ft-raised\);color:#111;border:1\.5px solid #111;[^}]*border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center\}/);
+  assert.match(kit, /\.metro-mask-title\{color:#111;font-weight:800;line-height:1\}/);
+  // An empty note took 6 px under the label and raised it (owner screenshot 2026-11-01).
+  assert.match(kit, /\.metro-mask-note:empty\{display:none\}/);
+  assert.doesNotMatch(kit, /\.metro-mask\{background:#fff/);
 });

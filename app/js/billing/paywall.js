@@ -64,6 +64,20 @@ export function createBillingPaywall({ access, plugin, document, openSettings } 
   const required = [card, status, offers, message, purchaseButton, restoreButton, manageButton, testNote];
   if (required.some((node) => !node)) throw new Error('Subscription card markup is incomplete');
 
+  // Layout only: Restore | Manage side by side at equal width; when a word cannot fit half the row (narrow screen, large
+  // system font) or Manage is hidden, one per line. Words never break (owner 2026-11-01).
+  const actions = restoreButton.parentElement;
+  let layoutKey = '';
+  const fitActions = () => {
+    const key = actions.clientWidth + '|' + getComputedStyle(restoreButton).fontSize + '|' + manageButton.hidden;
+    if (!actions.clientWidth || key === layoutKey) return;
+    layoutKey = key;
+    actions.classList.remove('is-stacked');
+    if (manageButton.hidden || [restoreButton, manageButton].some((b) => b.scrollWidth > b.clientWidth + 1)) actions.classList.add('is-stacked');
+  };
+  // The row and each button: Manage shown or hidden changes the button's own size even when the row keeps its own.
+  if (typeof ResizeObserver === 'function') { const watch = new ResizeObserver(fitActions); for (const node of [actions, restoreButton, manageButton]) watch.observe(node); }
+
   let disposed = false;
   let pendingPurchase = false;
   let products = [];
