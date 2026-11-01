@@ -29,3 +29,13 @@ test('a refresh pass compiles no patterns and keeps the original translations',(
   finally{globalThis.RegExp=Native;}
   assert.equal(built,0);
 });
+test('stage editor captions and hints switch fully to English in every mode',()=>{
+  assert.equal(translateText('Время фазы 1','en'),'Phase 1 duration');
+  assert.equal(translateText('Время фазы 2','en'),'Phase 2 duration');
+  const app=readFileSync(new URL('../app/js/app.js',import.meta.url),'utf8');
+  const modeSync=app.slice(app.indexOf('function syncStageSettingsMode'),app.indexOf('const metroField'));
+  const combo=readFileSync(new URL('../app/js/ui/interval-mode-combo.js',import.meta.url),'utf8');
+  const literals=[...(modeSync+combo).matchAll(/'([^'\n]*[А-Яа-яЁё][^'\n]*)'/g)].map(m=>m[1]);
+  assert.ok(literals.includes('Время фазы 1'),'the two-phase caption is still a literal here');
+  for (const ru of literals) assert.doesNotMatch(translateText(ru,'en'),/[А-Яа-яЁё]/,ru);
+});

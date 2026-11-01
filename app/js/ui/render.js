@@ -208,10 +208,10 @@ export function renderLadderPreview(els, settings) {
   for (let i = 1; i <= count; i += 1) {
     if(blockCount(config)>1 && localRoundFor(config,i)===1)rows.push(`<div class="settings-inline-note">Блок ${blockForRound(config,i)} из ${blockCount(config)}</div>`);
     if(config.intervalMode==='two_phase') {
-      rows.push('<div class="ladder-preview-row"><span>Раунд '+i+' · Фаза 1</span><strong>'+formatTime(workSecForRound(config,i))+'</strong><span>Фаза 2</span><strong>'+formatTime(phaseTwoSecForRound(config,i))+'</strong></div>');
+      rows.push('<div class="ladder-preview-row"><span>Раунд\u00a0'+i+'\u00a0· Фаза\u00a01</span><strong>'+formatTime(workSecForRound(config,i))+'</strong><span>Фаза\u00a02</span><strong>'+formatTime(phaseTwoSecForRound(config,i))+'</strong></div>');
       if(i<rounds)rows.push('<div class="settings-inline-note">Отдых: '+formatTime(restSecAfterRound(config,i))+'</div>');
     } else {
-      rows.push('<div class="ladder-preview-row"><span>Раунд '+localRoundFor(config,i)+'</span><strong>'+formatTime(workSecForRound(config,i))+'</strong><span>Отдых</span><strong>'+(i<rounds?formatTime(restSecAfterRound(config,i)):'—')+'</strong></div>');
+      rows.push('<div class="ladder-preview-row"><span>Раунд\u00a0'+localRoundFor(config,i)+'</span><strong>'+formatTime(workSecForRound(config,i))+'</strong><span>Отдых</span><strong>'+(i<rounds?formatTime(restSecAfterRound(config,i)):'—')+'</strong></div>');
     }
     const pause=blockRestSecAfterRound(config,i);
     if(pause>0)rows.push(`<div class="settings-inline-note">Отдых между блоками: ${formatTime(pause)}</div>`);

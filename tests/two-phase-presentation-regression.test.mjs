@@ -42,5 +42,5 @@ test('two-phase editor has direct names and phase-specific time, ladder controls
  assert.ok(bindings.includes("installIntervalModeCombo"));
  assert.ok(bindings.includes("document.getElementById('ladderStepsFields').hidden=!ladder"));
  assert.ok(render.includes("document.getElementById('ladderStepsFields').hidden=!ladder"));
- assert.ok(render.includes("'<div class=\"ladder-preview-row\"><span>Раунд '+i+' · Фаза 1"));
+ assert.ok(render.includes("'<div class=\"ladder-preview-row\"><span>Раунд\\u00a0'+i+'\\u00a0· Фаза\\u00a01"));
 });

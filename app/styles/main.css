@@ -1616,3 +1616,21 @@ input,textarea,[contenteditable="true"]{user-select:text;-webkit-user-select:tex
   overflow-wrap: normal;
   hyphens: none;
 }
+
+/* Warning choice: three equal columns; «10 сек» / «10 sec» stays on one line. */
+.settings-modal .choice-row.ft-warning-row {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.settings-modal .ft-warning-row .choice-chip {
+  white-space: nowrap;
+}
+
+/* Preview labels never shrink below their longest word («Round», «Phase»). */
+.settings-modal .ladder-preview-row {
+  grid-template-columns: minmax(min-content, 1fr) minmax(52px, 58px) minmax(min-content, auto) minmax(52px, 58px);
+}
+.settings-modal .ladder-preview-row span {
+  overflow-wrap: normal;
+  word-break: normal;
+  hyphens: none;
+}
