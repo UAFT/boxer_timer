@@ -8,7 +8,14 @@ export const AUDIO_FILE_MAP = {
   cue_workout_end_v1: './assets/audio/cues/end_workout_cue.wav',
   cue_workout_end_v2: './assets/audio/cues/end_workout_cue_2.wav',
   metronome_direct: './assets/audio/metronome/metronome_single_runtime.wav',
-  metronome_subdivided: './assets/audio/metronome/metronome_split_upbeat_runtime.wav'
+  metronome_subdivided: './assets/audio/metronome/metronome_split_upbeat_runtime.wav',
+  // Electronic metronome profiles (audio/sound-profile.js): files as delivered, bundled offline.
+  metronome_strong_A: './assets/audio/metronome/electronic/A_soft_1400_strong.wav',
+  metronome_weak_A: './assets/audio/metronome/electronic/A_soft_1400_weak.wav',
+  metronome_strong_B: './assets/audio/metronome/electronic/B_clear_1600_strong.wav',
+  metronome_weak_B: './assets/audio/metronome/electronic/B_clear_1600_weak.wav',
+  metronome_strong_C: './assets/audio/metronome/electronic/C_bright_1800_strong.wav',
+  metronome_weak_C: './assets/audio/metronome/electronic/C_bright_1800_weak.wav'
 };
 
 export const CUE_VARIANT_OPTIONS = {

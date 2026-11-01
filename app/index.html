@@ -329,6 +329,14 @@
               <input type="checkbox" id="audioEnabledInput" />
               <span>Сигналы таймера</span>
             </label>
+            <div class="ft-metronome-sound" id="ftMetronomeSound">
+              <div class="ft-metronome-sound-title" id="ftMetronomeSoundTitle">Сигналы метронома</div>
+              <div class="ft-radio-group" role="radiogroup" aria-labelledby="ftMetronomeSoundTitle">
+                <label class="settings-toggle-row ft-radio-row"><input type="radio" name="ftMetronomeSoundKind" value="click" id="ftMetronomeSoundClick" /><span>Щелчки</span></label>
+                <label class="settings-toggle-row ft-radio-row"><input type="radio" name="ftMetronomeSoundKind" value="electronic" id="ftMetronomeSoundElectronic" /><span>Электронные</span></label>
+              </div>
+              <div class="ft-metronome-tone" id="ftMetronomeTone" hidden></div>
+            </div>
           </section>
           <section class="settings-card">
             <div class="settings-card-title">Запись тренировок в дневник</div>

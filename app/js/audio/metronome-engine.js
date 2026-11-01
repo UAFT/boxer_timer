@@ -1,4 +1,5 @@
 import { PHASES } from '../core/constants.js';
+import { soundKeys } from './sound-profile.js';
 
 export class MetronomeEngine {
   constructor(audioEngine) {
@@ -13,6 +14,12 @@ export class MetronomeEngine {
     this.runToken = 0;
     this.lastState = null;
     this.skipStrongOnNextStart = false;
+    this.sound = soundKeys(null);
+  }
+
+  // Sound profile change applies from the next beat; the rhythm is not restarted.
+  setSoundProfile(profile) {
+    this.sound = soundKeys(profile);
   }
 
   setConfig({ enabled, bpm, mode }) {
@@ -65,11 +72,11 @@ export class MetronomeEngine {
   }
 
   async playDirectBeat() {
-    await this.playStepKey('metronome_direct', 1.5);
+    await this.playStepKey(this.sound.strong, this.sound.gain ?? 1.5);
   }
 
   async playSubdivisionBeat() {
-    await this.playStepKey('metronome_subdivided', 1.35);
+    await this.playStepKey(this.sound.weak, this.sound.gain ?? 1.35);
   }
 
   shouldMuteForWarning(state = this.lastState) {

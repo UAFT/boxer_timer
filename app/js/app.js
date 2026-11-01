@@ -29,10 +29,11 @@ import { syncEditorProgramHeader, editorProgramIdentity } from './ui/program-pre
 import { renderPresetOrders } from './ui/preset-order.js';
 import { editableRestField } from './core/ladder-blocks.js';
 import { installLocalization } from './i18n/locale.js';
-import { AUDIO_KEYS } from './core/constants.js';
 import { clonePreset } from './state/presets.js';
 import { compileProgram, startIndex, normalizeProgram, normalizeOptions, normalizeLibrary, syncStagesWithPreset, MAX_PROGRAM_ROUNDS, MAX_TITLE, tooLongMessage, LIBRARY_KEY, PROGRAM_OPTIONS_KEY, PRESET_NAMES, PROGRAM_KEY } from './core/program.js';
 import { renderStartFrom } from './ui/start-from.js';
+import { loadSoundProfile, saveSoundProfile, soundKeys } from './audio/sound-profile.js';
+import { installSoundProfileSettings } from './ui/sound-profile-settings.js';
 import { loadProfileState, saveProfileState, normalizeSettings } from './state/settings-store.js';
 import { writeJson, STORAGE_FULL_MESSAGE } from './state/storage.js';
 import { AudioEngine } from './audio/audio-engine.js';
@@ -77,6 +78,9 @@ let billing = { canStart: () => !BILLING_CONFIG.enforce, showCard() { openSettin
 const screenWake = installScreenWake();
 const audio = new AudioEngine();
 const metronome = new MetronomeEngine(audio);
+let soundProfile = loadSoundProfile();
+metronome.setSoundProfile(soundProfile);
+installSoundProfileSettings(document, { get: () => soundProfile, set: next => { soundProfile = next; saveSoundProfile(next); metronome.setSoundProfile(next); } });
 
 function isMetronomeLocked(settings) {
   return Number(settings?.warningSeconds ?? 0) === 10;
@@ -88,12 +92,14 @@ function coerceMetronomeForWarning(settings) {
 }
 
 function resolveEventAudioSpec(event, settings) {
+  // The countdown/warning tick is the metronome click file, so it follows the metronome sound profile; gongs stay.
+  const sound = soundKeys(soundProfile);
   if (PRESTART_COUNTDOWN_EVENTS.has(event.type)) {
-    return { key: AUDIO_KEYS.WARNING_TICK, tag: 'countdown', volume: 1.25 };
+    return { key: sound.tick, tag: 'countdown', volume: sound.gain ?? 1.25 };
   }
 
   if (event.type === 'warning-tick') {
-    return { key: AUDIO_KEYS.WARNING_TICK, tag: 'warning', volume: 1.2 };
+    return { key: sound.tick, tag: 'warning', volume: sound.gain ?? 1.2 };
   }
 
   if (event.type === 'round-start-zero') {
