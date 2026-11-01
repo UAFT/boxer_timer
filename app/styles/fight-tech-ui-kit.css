@@ -718,14 +718,53 @@ body.ft-unbounded-program:not(.ft-count-up-standalone) .timer-card .summary-grid
 .program-panel .program-stage-card .program-stage>button:active,
 .program-panel .program-stage-card .program-round-edit-row button:active,
 .program-panel .program-rest button:active{background:rgba(54,95,96,.1)!important}
-/* «Начать тренировку с»: two equal dropdowns and one outlined action (the Diary «Начать тренировку» outline). */
+/* «Начать тренировку с»: collapsed one row; expanded labels «Этап | Раунд» with ˄ on the labels' line, two equal dropdowns
+   at full width, the outlined action. The action keeps each screen's own start-button size: 37 px under «Запустить программу»,
+   46 px in the plan and the Diary (the Diary «Начать тренировку» outline). */
 .ft-start-from-host[hidden]{display:none}
-.ft-start-from{display:grid;gap:8px;margin-top:8px;min-width:0}
-.ft-start-from-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-.ft-start-from-field{display:grid;gap:3px;min-width:0;font-size:12px;font-weight:650;color:var(--ft-secondary)}
-.ft-start-from-select{width:100%;min-width:0;min-height:42px;padding:6px 8px;border:1px solid var(--ft-line);border-radius:12px;background:var(--ft-raised);color:var(--ft-ink);font:inherit;font-size:14px;font-weight:600;text-overflow:ellipsis}
+.ft-start-from{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;margin-top:8px;min-width:0}
+.ft-start-from-panel{display:grid;grid-template-columns:minmax(0,1fr);gap:6px;min-width:0}
+.ft-start-from-panel[hidden],.ft-start-from-toggle[hidden]{display:none!important}
+.ft-start-from .ft-start-from-toggle{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;min-height:40px;padding:6px 12px;
+ background:var(--ft-raised)!important;color:var(--ft-ink)!important;border:1px solid var(--ft-line)!important;border-radius:12px;box-shadow:none!important;
+ font:inherit;font-size:15px;font-weight:650;line-height:1.2;text-align:left}
+.ft-start-from-labels{position:relative;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;min-height:24px;align-items:center;
+ font-size:12px;font-weight:650;color:var(--ft-secondary)}
+.ft-start-from .ft-start-from-collapse{position:absolute;top:50%;right:0;transform:translateY(-50%);width:44px;height:36px;margin-right:-6px;padding:0;
+ display:flex;align-items:center;justify-content:center;background:transparent!important;border:0!important;box-shadow:none!important;color:var(--ft-ink)!important}
+.ft-start-from-collapse .ft-choice-chevron{transform:rotate(225deg);margin:5px 0 0}
+.ft-start-from-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;align-items:stretch}
+/* A word wider than half the row (narrow screen, large font, long name): both dropdowns full width, one under the other. */
+.ft-start-from-panel.is-stacked .ft-start-from-row{grid-template-columns:minmax(0,1fr);gap:6px}
+.ft-start-from-stacked-label{display:none;font-size:12px;font-weight:650;color:var(--ft-secondary)}
+.ft-start-from-panel.is-stacked .ft-start-from-stacked-label{display:block}
+.ft-start-from-panel.is-stacked .ft-start-from-labels>span:nth-child(2){visibility:hidden}
 .ft-start-from .ft-start-from-go{width:100%;min-height:46px;height:auto;padding:8px 10px;line-height:1.2;white-space:normal;background:transparent!important;border:1px solid #1f5a45!important;color:#1f5a45!important;font-weight:750;box-shadow:none!important;border-radius:12px}
-.ft-start-from .ft-start-from-go:disabled,.ft-start-from-select:disabled{opacity:.5}
+#programStartFrom .ft-start-from-go{min-height:37px;padding:6px 10px;border-radius:11px}
+.ft-start-from button:disabled{opacity:.5}
+/* Fight Tech choice field + dialog (js/ui/choice-dialog.js): the in-app replacement for a native <select>.
+   button.ft-choice-trigger outranks screen button rules such as .ladder-full-controls button (main.css).
+   Trigger = Settings language trigger surface; list = light card, selected row #dce9e6 / #244c4b with ✓.
+   Text wraps at spaces only, never inside a word, never clipped. */
+button.ft-choice-trigger{box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;gap:6px;width:100%;min-width:0;min-height:42px;
+ padding:7px 8px;background:var(--ft-raised)!important;color:var(--ft-ink)!important;border:1px solid var(--ft-line)!important;border-radius:12px;
+ box-shadow:none!important;font:inherit;font-size:13px;font-weight:600;line-height:1.25;text-align:left}
+.ft-choice-trigger:focus-visible,.ft-choice-option:focus-visible,.ft-choice-close:focus-visible,.ft-start-from-toggle:focus-visible,.ft-start-from-collapse:focus-visible{outline:2px solid #1f5a45;outline-offset:2px}
+.ft-choice-value{min-width:0;white-space:normal;overflow-wrap:normal;word-break:normal;hyphens:none}
+.ft-choice-chevron{flex:0 0 auto;width:8px;height:8px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);margin:-4px 2px 0 0}
+.ft-choice-backdrop{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;padding:24px 16px;background:rgba(27,40,49,.42)}
+.ft-choice-dialog{box-sizing:border-box;display:flex;flex-direction:column;width:min(100%,420px);max-height:calc(100dvh - 48px);
+ background:var(--ft-surface);color:var(--ft-ink);border:1px solid var(--ft-line);border-radius:16px;box-shadow:0 12px 30px rgba(25,38,48,.22);overflow:hidden}
+.ft-choice-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 8px 6px 16px;border-bottom:1px solid var(--ft-line)}
+.ft-choice-title{margin:0;font-size:17px;font-weight:750;color:var(--ft-ink)}
+.ft-choice-dialog .ft-choice-close{width:44px;height:44px;padding:0;background:transparent!important;border:0!important;box-shadow:none!important;color:var(--ft-ink)!important;font-size:26px;line-height:1}
+.ft-choice-list{display:grid;gap:2px;padding:6px;overflow-y:auto;overscroll-behavior:contain}
+.ft-choice-dialog .ft-choice-option{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:48px;padding:10px 12px;text-align:left;
+ background:transparent!important;color:var(--ft-ink)!important;border:0!important;border-radius:10px;box-shadow:none!important;font:inherit;font-size:16px;font-weight:600;
+ line-height:1.25;white-space:normal;overflow-wrap:normal;word-break:normal;hyphens:none}
+.ft-choice-dialog .ft-choice-option[aria-selected=true]{background:#dce9e6!important;color:#244c4b!important;font-weight:750}
+.ft-choice-dialog .ft-choice-option[aria-selected=true]::after{content:"✓";flex:0 0 auto;font-weight:800}
+.ft-choice-trigger:disabled{opacity:.5}
 /* Settings «Подписка»: Restore and Manage side by side at equal width and height; paywall.js stacks them (is-stacked)
    when a word cannot fit. Words never break (owner 2026-11-01): lines break at spaces only. */
 .ft-subscription-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:stretch}
@@ -733,3 +772,12 @@ body.ft-unbounded-program:not(.ft-count-up-standalone) .timer-card .summary-grid
 .ft-subscription-actions #ftSubscriptionPurchase{grid-column:1/-1}
 .ft-subscription-actions button[hidden]{display:none}
 .ft-subscription-actions button{display:flex;align-items:center;justify-content:center;text-align:center;min-width:0;padding:8px 8px;font-size:clamp(13px,3.6vw,14px);line-height:1.2;white-space:normal;overflow-wrap:normal;word-break:normal;hyphens:none}
+/* Settings → Общее → «Сигналы метронома»: two radio rows (the «Сигналы таймера» row look) and, for «Электронные»,
+   the tone in a Fight Tech choice field. */
+.ft-metronome-sound{display:grid;gap:8px;margin-top:14px}
+.ft-metronome-sound-title{font-size:14px;font-weight:750;color:var(--ft-ink)}
+.ft-radio-group{display:grid;gap:8px}
+.settings-modal .ft-radio-row{margin-top:0;min-height:48px}
+.settings-modal .ft-radio-row input{width:20px;height:20px;accent-color:var(--ft-steel)}
+.ft-metronome-tone[hidden]{display:none}
+.settings-modal .ft-metronome-tone .ft-choice-trigger{min-height:48px;font-size:16px;padding:10px 14px}

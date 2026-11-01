@@ -7,6 +7,8 @@
 //     app to the background, as Home does (the workout is not reset);
 //  4. otherwise the app moves to the background, as Android 12+ does for a root screen.
 const CLOSERS = [
+  // A choice list (js/ui/choice-dialog.js) closes first, without choosing.
+  ['ftChoiceDialog', 'ftChoiceDialogClose'],
   ['ftLanguageList', 'ftLanguageTrigger'],
   // × first: Back closes a question without answering it (the diary's «Записать?» is asked again later).
   ['programDeleteConfirmModal', 'programDeleteConfirmDismiss', 'programDeleteConfirmCancel'],
