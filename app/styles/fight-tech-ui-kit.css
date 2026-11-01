@@ -57,8 +57,10 @@ html,body{background:linear-gradient(180deg,#f0f2f4 0%,#e5e9ed 100%);color:var(-
 .compact-param-title{color:var(--ft-ink);font-size:clamp(11px,3vw,15px)}
 .compact-stepper-col .stepper-btn{min-height:44px}
 .metronome-card{background:linear-gradient(160deg,#f4f7f8,#e8edef);border-color:var(--ft-line)}
-.metro-mask{background:var(--ft-steel-gradient);color:#fff;border:1px solid #719795;box-shadow:var(--ft-shadow-button);border-radius:12px}
-.metro-mask-title,.metro-mask-note{color:#fff}
+/* Owner-approved 2026-11-01: white card, thin solid black outline, bold black label. */
+.metro-mask{background:#fff;color:#111;border:1.5px solid #111;box-shadow:var(--ft-shadow-button);border-radius:12px}
+.metro-mask-title{color:#111;font-weight:800}
+.metro-mask-note{color:#4a4f55}
 .metro-bpm-box,.metro-grid-box{background:var(--ft-card);color:var(--ft-ink);border-color:var(--ft-line)}
 .power-btn.is-on{background:var(--ft-steel-gradient);color:#fff}
 .ft-phase-switch{background:#e0e5e9;border:1px solid var(--ft-line);border-radius:13px}
