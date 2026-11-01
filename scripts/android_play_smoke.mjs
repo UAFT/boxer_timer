@@ -24,6 +24,25 @@ const crashes = () => adb('logcat', '-d').split('\n').filter(l => l.includes('FA
 // 1. Release APK.
 // A cold emulator needs time before the WebView paints: wait until the screenshot is no longer a blank page
 // (a blank 320×640 capture is a few kB, the timer screen tens of kB).
+// 0. Upgrade over the previously published APK (FT_UPGRADE_FROM): same key, higher versionCode, app data kept.
+// google_apis images allow `adb root`, so the app's own data directory is listed before and after `install -r`.
+const UPGRADE_FROM = process.env.FT_UPGRADE_FROM;
+if (UPGRADE_FROM) {
+  const info = () => { const d = adb('shell', 'dumpsys', 'package', PKG); return { versionCode: +(d.match(/versionCode=(\d+)/) || [])[1], firstInstallTime: (d.match(/firstInstallTime=([^\n]+)/) || [])[1]?.trim(), lastUpdateTime: (d.match(/lastUpdateTime=([^\n]+)/) || [])[1]?.trim() }; };
+  const files = () => adb('shell', `find /data/data/${PKG} /data/user_de/0/${PKG} -type f ! -path '*/cache/*' ! -path '*/code_cache/*' ! -name '*-journal' ! -name 'LOCK' ! -name '*.log' 2>/dev/null`).split('\n').map(x => x.trim()).filter(Boolean).sort();
+  adb('root'); await sleep(3000); adb('wait-for-device');
+  adb('install', UPGRADE_FROM); launch();
+  for (let i = 0; i < 45; i++) { if (execFileSync('adb', ['exec-out', 'screencap', '-p'], { maxBuffer: 64 << 20 }).length > 20000) break; await sleep(2000); }
+  await sleep(8000); adb('shell', 'am', 'force-stop', PKG); await sleep(1000);
+  const before = { ...info(), files: files() };
+  const installed = adb('install', '-r', RELEASE).trim();
+  const after = { ...info(), files: files() };
+  const lost = before.files.filter(f => !after.files.includes(f));
+  report.upgrade = { from: before.versionCode, to: after.versionCode, install: installed.split('\n').pop(), firstInstallTime_kept: before.firstInstallTime === after.firstInstallTime, files_before: before.files.length, files_after: after.files.length, lost };
+  step('upgrade_over_previous', report.upgrade);
+  if (!/Success/.test(installed) || !(after.versionCode > before.versionCode) || before.firstInstallTime !== after.firstInstallTime || !before.files.length || lost.length) fail('upgrade over the previous APK lost data or did not install');
+}
+
 adb('install', '-r', RELEASE); adb('logcat', '-c'); launch();
 const t0 = Date.now(); let painted = 0;
 while (Date.now() - t0 < 120000) { const size = execFileSync('adb', ['exec-out', 'screencap', '-p'], { maxBuffer: 64 << 20 }).length; if (size > 20000) { painted = size; break; } await sleep(2000); }
