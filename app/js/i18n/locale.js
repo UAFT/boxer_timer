@@ -15,7 +15,7 @@ const pairs = [
 ['Вкл','On'],['Выкл','Off'],['Недоступно','Unavailable'],
 ['ЛЕСТНИЦА','LADDER'],['ПРОГРАММА','PROGRAM'],['Лестница','Ladder'],['Обычный','Standard'],
 ['Программа','Program'],['Этап','Stage'],['Блок','Block'],['Раунд','Round'],['отдых','rest'],
-['Очистить','Clear'],['Запустить программу','Start program'],['Выйти из программы','Exit program'],
+['Очистить','Clear'],['Запустить программу','Start program'],['Начать тренировку с','Start workout from'],['Выйти из программы','Exit program'],
 ['Отдых между этапами','Rest between stages'],['Удалить этап','Remove stage'],['Поднять этап','Move stage up'],['Опустить этап','Move stage down'],
 ['Удерживай пресет, чтобы добавить этап. Повторное удержание добавит его ещё раз.','Press and hold a preset to add a stage. Hold it again to repeat it.'],
 ['Звук и сигналы','Sound and signals'],
@@ -39,7 +39,7 @@ const pairs = [
 ['Статус подписки недоступен.','Subscription status is unavailable.'],
 ['Покупка через Google Play недоступна для этого аккаунта или региона.','Google Play purchase is unavailable for this account or region.'],
 ['Оформить подписку','Subscribe'],['Восстановить покупки','Restore purchases'],
-['Управлять в Google Play','Manage in Google Play'],
+['Управление в Google Play','Manage in Google Play'],
 ['Тестовая сборка: доступ не ограничивается.','Test build: access is not restricted.'],
 ['в месяц','per month'],['в год','per year'],
 ['Режим интервалов','Interval mode'],['Схема','Mode'],
@@ -212,6 +212,9 @@ export function installLocalization(buttons) {
   function visit(node) {
     if (node.nodeType === 3) {
       if (!node.nodeValue.trim()) return;
+      // Text built for both languages by its owner (start-from options): taken as is, never run through the dictionary.
+      const own = node.parentElement?.dataset;
+      if (own && 'ftRu' in own) { const desired = lang === 'en' ? own.ftEn : own.ftRu; if (node.nodeValue !== desired) node.nodeValue = desired; return; }
       const previous = originals.get(node);
       const source = previous && (node.nodeValue === previous.ru || node.nodeValue === previous.en) ? previous.ru : node.nodeValue;
       let en = translateText(source,'en');

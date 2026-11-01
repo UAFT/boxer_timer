@@ -31,7 +31,8 @@ import { editableRestField } from './core/ladder-blocks.js';
 import { installLocalization } from './i18n/locale.js';
 import { AUDIO_KEYS } from './core/constants.js';
 import { clonePreset } from './state/presets.js';
-import { compileProgram, normalizeProgram, normalizeOptions, normalizeLibrary, syncStagesWithPreset, MAX_PROGRAM_ROUNDS, MAX_TITLE, tooLongMessage, LIBRARY_KEY, PROGRAM_OPTIONS_KEY, PRESET_NAMES, PROGRAM_KEY } from './core/program.js';
+import { compileProgram, startIndex, normalizeProgram, normalizeOptions, normalizeLibrary, syncStagesWithPreset, MAX_PROGRAM_ROUNDS, MAX_TITLE, tooLongMessage, LIBRARY_KEY, PROGRAM_OPTIONS_KEY, PRESET_NAMES, PROGRAM_KEY } from './core/program.js';
+import { renderStartFrom } from './ui/start-from.js';
 import { loadProfileState, saveProfileState, normalizeSettings } from './state/settings-store.js';
 import { writeJson, STORAGE_FULL_MESSAGE } from './state/storage.js';
 import { AudioEngine } from './audio/audio-engine.js';
@@ -405,11 +406,12 @@ function diarySnap(name,entries,options) {
   return {name,entries:normalizeProgram(entries.map(x=>({...x,settings:x.settings || structuredClone(profiles[x.presetId])}))),options:normalizeOptions(options)};
 }
 // STAGE 3: a run starts recording with what is actually started (a program from the editor, or the plain timer).
-function beginRun(rounds) {
+// startFrom {stage, round, skipped}: the run began past the start; the skipped rounds count in the total, never as done.
+function beginRun(rounds, startFrom=null) {
   const lang=document.documentElement.lang;
   const snap=rounds ? diarySnap(openedProgramName,programEntries,programOptions)
     : diarySnap(timerLabel({presetId:activePresetId,settings:activeSettings},lang),[{presetId:activePresetId,title:'',settings:structuredClone(activeSettings)}],{});
-  recorder.begin({snap,roundsTotal:rounds ? rounds.length : compileProgram(snap.entries,{},snap.options).length,
+  recorder.begin({snap,startFrom,roundsTotal:rounds ? rounds.length+(startFrom?.skipped||0) : compileProgram(snap.entries,{},snap.options).length,
     sessionId:rounds ? editorDiary?.sessionId ?? null : null,programId:rounds ? openedProgramId : null,origin:rounds ? 'program' : 'timer'});
 }
 // Finished (completed) or stopped early. Pause never comes here. Nothing is offered when nothing was done.
@@ -430,7 +432,8 @@ async function offerPending() {
   if (diary.sessions.some(s=>s.runId===run.runId)) { recorder.settle(run.runId); return offerPending(); }
   if (recordMode()==='auto') { if (await recordRun(run)) offerPending(); return; }
   const en=document.documentElement.lang==='en',done=run.status==='done';
-  const facts=(en?'Rounds completed: ':'Выполнено раундов: ')+run.roundsDone+(en?' of ':' из ')+run.roundsTotal;
+  const from=run.startFrom,facts=(en?'Rounds completed: ':'Выполнено раундов: ')+run.roundsDone+(en?' of ':' из ')+run.roundsTotal
+    +(from?(en?' · started from stage '+from.stage+', round '+from.round:' · начато с этапа '+from.stage+', раунда '+from.round):'');
   const name=sessionTitle(run,run.snap,document.documentElement.lang);
   offering=confirmDeletion({name:name+' · '+run.date.split('-').reverse().join('.'),trigger:null,tone:'neutral',
     labels:{ru:{title:done?'Записать тренировку в дневник?':'Тренировка не завершена. Записать в дневник?',message:facts,cancel:'Не записывать',delete:'Записать'},
@@ -717,18 +720,22 @@ function refuseTooLong(entries, options) {
   window.alert(tooLongMessage(document.documentElement.lang));
   return true;
 }
-function startProgram() {
+// from = {stage, round}: «Начать тренировку с» — the same run, minus the rounds (and their rests) before that position.
+function startProgram(from=null) {
   if (!isPlaybackProtected(timer,programRunning) && !billing.canStart()) { billing.showCard(); return; }
   if (!programEntries.length || isPlaybackProtected(timer,programRunning) || refuseTooLong(programEntries,programOptions)) return;
+  const compiled = compileProgram(programEntries,profiles,programOptions);
+  const skipped = from ? startIndex(compiled,from.stage,from.round) : 0;
+  if (skipped<0) return;
   audio.stopAll();
   metronome.stop();
-  programSnapshot = compileProgram(programEntries,profiles,programOptions);
+  programSnapshot = compiled.slice(skipped);
   if (!programSnapshot.length) return;
   programRunning = true;
   timer.applyConfig({ ...activeSettings, presetId: activePresetId, programRounds: programSnapshot, intervalMode:'standard' });
   syncMetronome();
   renderCurrentState();
-  beginRun(programSnapshot);
+  beginRun(programSnapshot, skipped ? {stage:from.stage+1, round:from.round, skipped} : null);
   timer.start();
 }
 function exitProgram() {
@@ -748,7 +755,8 @@ function stageTiming(entry) {
 }
 // Stage cards of the «ПРОГРАММА» editor. STAGE 4: the same cards serve a diary appointment (target = its copy,
 // collapsible with expanded = {has(i), toggle(i)}, roundTimes = each round's time under its name).
-const smallLine=(className,text)=>{const line=document.createElement('small');line.className=className;line.textContent=text;return line;};
+// A declaration, not a const: the first render runs before this line, and a stage with a metronome crashed the start-up there.
+function smallLine(className,text) {const line=document.createElement('small');line.className=className;line.textContent=text;return line;}
 function roundTimeText(round,withRest) {
   const work=formatProgramTime(round.workSec)+(round.phaseTwoSec?' + '+formatProgramTime(round.phaseTwoSec):'');
   return withRest && round.restSec ? work+' · отдых '+formatProgramTime(round.restSec) : work;
@@ -846,6 +854,14 @@ function renderProgram() {
   if (list.dataset.signature!==signature) {
     renderStageCards(list,programEntries,{editable:!programRunning});
     list.dataset.signature=signature;
+    // «Начать тренировку с» under «Запустить программу» and under the plan's top panel: one control, one engine.
+    const first=programEntries.length ? compileProgram(programEntries,profiles,{cycles:1}) : [];
+    for (const id of ['programStartFrom','ladderStartFrom']) document.getElementById(id).replaceChildren(...(first.length ? [renderStartFrom(document,{rounds:first,
+      onStart:async from=>{await audio.unlock();startProgram(from);}})] : []));
+  }
+  for (const id of ['programStartFrom','ladderStartFrom']) {
+    const box=document.getElementById(id);box.hidden=programRunning || !programEntries.length;
+    box.querySelectorAll('select,button').forEach(c=>c.disabled=isPlaybackProtected(timer,programRunning));
   }
   for (const card of list.querySelectorAll('.program-stage-card')) card.classList.toggle('is-current',Number(card.dataset.stage)===activeIndex);
 }
@@ -918,9 +934,9 @@ function bindProgramLibrary() {
     profiles:()=>profiles,
     // «Начать тренировку»: the existing timer, linked to this appointment. Started on another day, the run is recorded
     // on its own start date and the appointment's date keeps its status (moving it is «Перенести на дату»).
-    startSession:async(session,snap)=>{
+    startSession:async(session,snap,from=null)=>{
       if(!openSession(session,snap))return;
-      await audio.unlock();startProgram();
+      await audio.unlock();startProgram(from);
     },
     openProgram:(program,date)=>openEntry(program,false,{date,sessionId:null}),
     // STAGE 4: a planned appointment shows the editor's stage cards. Their pencils, arrows and rest steppers edit this

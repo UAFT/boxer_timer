@@ -44,11 +44,12 @@ export function createRecorder({ storage = globalThis.localStorage, now = () => 
   return {
     get active() { return run; },
     // snap: the program exactly as started (edits made before Start included). link: {sessionId, programId}.
-    begin({ snap, roundsTotal, sessionId = null, programId = null, origin }) {
+    // startFrom {stage, round, skipped}: «Начать тренировку с» — the skipped rounds stay in roundsTotal, never in roundsDone.
+    begin({ snap, roundsTotal, sessionId = null, programId = null, origin, startFrom = null }) {
       adopt();
       const t = now();
       run = { runId: newId('r'), date: localDate(new Date(t)), startedAt: t, updatedAt: t, snap, roundsTotal, sessionId, programId, origin,
-        roundsDone: 0, activeMs: 0 };
+        roundsDone: 0, activeMs: 0, ...(startFrom ? { startFrom } : {}) };
       lastPhase = 'idle'; lastPaused = false;
       save();
     },
@@ -69,8 +70,10 @@ export function createRecorder({ storage = globalThis.localStorage, now = () => 
       const ended = run;
       run = null;
       ended.endedAt = now();
-      ended.status = completed ? 'done' : 'partial';
-      if (completed) ended.roundsDone = ended.roundsTotal || ended.roundsDone;
+      // Reaching the end after a start past round 1 is not the whole workout: partial, with only the rounds really run.
+      const skipped = ended.startFrom?.skipped || 0;
+      ended.status = completed && !skipped ? 'done' : 'partial';
+      if (completed) ended.roundsDone = (ended.roundsTotal - skipped) || ended.roundsDone;
       if (!completed && !ended.roundsDone && ended.activeMs < 1000) { storage.removeItem(RUN_KEY); return null; }
       // Queued first, then the active copy goes; a full storage keeps it in RUN_KEY, where adopt() finds it later.
       if (writeJson(PENDING_KEY, [...queue().filter(r => r.runId !== ended.runId), ended], storage)) storage.removeItem(RUN_KEY);
@@ -99,6 +102,7 @@ export function applyRun(draft, run) {
     || (run.programId ? draft.sessions.find(s => open(s) && s.programId === run.programId) : null);
   const session = target || newSession(draft.snapshots, { date: run.date, snap: run.snap, programId: run.programId, origin: run.origin });
   Object.assign(session, { status: run.status, execRef, runId: run.runId, startedAt: run.startedAt, endedAt: run.endedAt, updatedAt: run.endedAt,
-    facts: { roundsDone: run.roundsDone, roundsTotal: run.roundsTotal, activeSec: Math.round(run.activeMs / 1000) } });
+    facts: { roundsDone: run.roundsDone, roundsTotal: run.roundsTotal, activeSec: Math.round(run.activeMs / 1000),
+    ...(run.startFrom ? { startFrom: run.startFrom } : {}) } });
   if (!target) draft.sessions.push(session);
 }

@@ -6,7 +6,8 @@ import {PHASES} from '../core/constants.js';
 const escapeHtml=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 // Stage count comes from the compiled program, not total rounds or block count.
 // Repeated cycles reuse stageIndex and must not inflate the total stage count.
-const programStageCount=config=>new Set((config?.programRounds||[]).map(row=>row.stageIndex).filter(Number.isInteger)).size;
+// A run started from a later stage («Начать тренировку с») still has all stages: the last one is always in it.
+const programStageCount=config=>Math.max(0,...(config?.programRounds||[]).map(row=>row.stageIndex).filter(Number.isInteger))+(config?.programRounds?.length?1:0);
 const stagePosition=(index,total)=>'Этап '+(index+1)+' из '+total;
 
 export function ladderPlanPhaseCaption(state,{preview=false}={}){
@@ -38,13 +39,14 @@ export function buildLadderPlanRows(config){
  const closeStage=()=>{closeBlock();if(stageOpen){rows.push('</div>');stageOpen=false;}};
  for(let i=1;i<=totalRoundsForConfig(config);i++){
   const pr=config.programRounds?.[i-1];
-  if(pr&&pr.stageRound===1){
+  const first=i===1;
+  if(pr&&(pr.stageRound===1||first)){
    closeStage();
-   if(pr.stageIndex===0&&pr.cycles>1)rows.push('<div class="ladder-cycle-label">Цикл '+(pr.cycleIndex+1)+' из '+pr.cycles+'</div>');
+   if((pr.stageIndex===0&&pr.stageRound===1||first)&&pr.cycles>1)rows.push('<div class="ladder-cycle-label">Цикл '+(pr.cycleIndex+1)+' из '+pr.cycles+'</div>');
    rows.push('<div class="ladder-stage-outline">');stageOpen=true;
   }
-  if(pr&&pr.blockCount>1&&pr.localRound===1){closeBlock();rows.push('<div class="ladder-block-outline">');blockOpen=true;}
-  if(pr&&pr.stageRound===1){
+  if(pr&&pr.blockCount>1&&(pr.localRound===1||first)){closeBlock();rows.push('<div class="ladder-block-outline">');blockOpen=true;}
+  if(pr&&(pr.stageRound===1||first)){
    const stageRounds=config.programRounds.filter(r=>r.stageIndex===pr.stageIndex&&r.cycleIndex===pr.cycleIndex);
    const seconds=stageRounds.reduce((sum,r,index)=>sum+r.workSec+(r.phaseTwoSec||0)+(index<stageRounds.length-1?r.restSec+(r.blockRestSec||0):0),0);
    const title=pr.stageTitle?escapeHtml(pr.stageTitle):'';
@@ -54,7 +56,7 @@ export function buildLadderPlanRows(config){
   }
   const block=pr?.block??blockForRound(config,i);
   const blocks=pr?.blockCount??blockCount(config);
-  if(blocks>1&&(pr?pr.localRound:localRoundFor(config,i))===1){
+  if(blocks>1&&((pr?pr.localRound:localRoundFor(config,i))===1||pr&&first)){
    rows.push('<div class="ladder-block-label" data-block="'+block+'"'+(pr?' data-stage="'+pr.stageIndex+'"':'')+'>Блок '+block+' из '+blocks+'</div>');
   }
   const rest=i<totalRoundsForConfig(config)?formatTime(restSecAfterRound(config,i)):'—';

@@ -104,3 +104,9 @@ export function compileProgram(entries, profiles, options = {}) {
   }
   return programRounds;
 }
+
+// «Начать тренировку с»: where a run that starts at stage `stage` (0-based), round `round` (1-based) begins in the compiled
+// program — the first cycle; the cycles after it run whole. -1: no such position (the caller starts nothing).
+export function startIndex(rounds, stage, round) {
+  return rounds.findIndex(r => r.cycleIndex === 0 && r.stageIndex === stage && r.stageRound === round);
+}

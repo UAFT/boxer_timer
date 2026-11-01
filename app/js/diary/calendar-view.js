@@ -4,6 +4,7 @@ import { hasLadder } from '../core/ladder-blocks.js';
 import { LIBRARY, stageForWorkout } from '../library/native-adapter.js';
 import { createActionIcon, renderSavedProgramCard, russianCount, timeClock, timeWords } from '../ui/library-card-view.js';
 import { libraryDescription, renderCompactCard, renderDescription } from '../ui/workout-plan-view.js';
+import { renderStartFrom } from '../ui/start-from.js';
 import { dayDots, dayStatus, dropUnused, localDate, monthCells, newId } from './store.js';
 
 const TEXT = {
@@ -11,7 +12,7 @@ const TEXT = {
     day: { empty: 'Тренировок нет', planned: 'Запланировано', done: 'Выполнено', partial: 'Выполнено не полностью', missed: 'Пропущено' },
     legend: [['done', 'Выполнено'], ['partial', 'Частично'], ['planned', 'Запланировано'], ['missed', 'Пропущено']],
     done: 'Выполнена', planned: 'Запланирована', missed: 'Тренировка не запускалась', running: 'Не завершена',
-    rounds: (n, total) => 'Выполнено раундов: ' + n + (total ? ' из ' + total : ''),
+    rounds: (n, total) => 'Выполнено раундов: ' + n + (total ? ' из ' + total : ''), startedFrom: (s, r) => 'начато с этапа ' + s + ', раунда ' + r,
     plan: 'План: ', actual: 'Фактически: ', started: 'Начало ', stages: (n, total) => 'этапов: ' + n + ' из ' + total, program: 'Программа', add: 'Добавить тренировку', source: 'Откуда',
     mine: 'Мои программы', library: 'Библиотека', noMine: 'В «Мои» пока нет программ.', assign: 'Назначить на дату',
     menu: 'Действия', move: 'Перенести на дату', repeat: 'Повторить на дату', remove: 'Удалить из календаря',
@@ -29,7 +30,7 @@ const TEXT = {
     day: { empty: 'No workouts', planned: 'Planned', done: 'Completed', partial: 'Not fully completed', missed: 'Missed' },
     legend: [['done', 'Completed'], ['partial', 'Partial'], ['planned', 'Planned'], ['missed', 'Missed']],
     done: 'Completed', planned: 'Planned', missed: 'Workout was not started', running: 'Not finished',
-    rounds: (n, total) => 'Rounds completed: ' + n + (total ? ' of ' + total : ''),
+    rounds: (n, total) => 'Rounds completed: ' + n + (total ? ' of ' + total : ''), startedFrom: (s, r) => 'started from stage ' + s + ', round ' + r,
     plan: 'Plan: ', actual: 'Actual: ', started: 'Started ', stages: (n, total) => 'stages: ' + n + ' of ' + total, program: 'Program', add: 'Add workout', source: 'From',
     mine: 'My programs', library: 'Library', noMine: 'No programs in «Mine» yet.', assign: 'Assign to date',
     menu: 'Actions', move: 'Move to date', repeat: 'Repeat on date', remove: 'Remove from calendar',
@@ -184,8 +185,9 @@ export function createDiaryView(doc, host, { now = () => new Date() } = {}) {
     if (session.status === 'planned') return session.date < today ? t.missed : t.planned;
     const done = session.facts?.roundsDone || 0;
     const ends = compileProgram(snap.entries, {}, snap.options).map(r => r.stageRound === r.stageRounds);
-    const stages = ends.length > 1 && ends.filter(Boolean).length > 1 ? ' · ' + t.stages(ends.slice(0, done).filter(Boolean).length, ends.filter(Boolean).length) : '';
-    return t.running + ' · ' + t.rounds(done, session.facts?.roundsTotal) + stages;
+    const from = session.facts?.startFrom, skipped = from?.skipped || 0;
+    const stages = ends.length > 1 && ends.filter(Boolean).length > 1 ? ' · ' + t.stages(ends.slice(skipped, skipped + done).filter(Boolean).length, ends.filter(Boolean).length) : '';
+    return t.running + ' · ' + t.rounds(done, session.facts?.roundsTotal) + stages + (from ? ' · ' + t.startedFrom(from.stage, from.round) : '');
   }
 
   // One workout = one card: title, status, rounds and total time (work, rests, between stages), then each stage as the
@@ -226,7 +228,8 @@ export function createDiaryView(doc, host, { now = () => new Date() } = {}) {
     if (session.status === 'planned' && host.addStages) stages.append(button(doc, 'ft-diary-add-stage', t.addStage, () => host.addStages(session, snap)));
     const actions = el(doc, 'div', 'ft-diary-session-actions');
     // «Изменить» is gone: the stage cards above are edited in place (owner addendum).
-    actions.append(button(doc, 'ft-diary-start', t.start, () => host.startSession(session, snap)));
+    actions.append(button(doc, 'ft-diary-start', t.start, () => host.startSession(session, snap)),
+      renderStartFrom(doc, { rounds: compileProgram(entries, {}, { cycles: 1 }), onStart: from => host.startSession(session, snap, from) }));
     card.append(stages, actions);
     return card;
   }
