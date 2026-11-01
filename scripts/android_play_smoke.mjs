@@ -31,16 +31,34 @@ if (UPGRADE_FROM) {
   const info = () => { const d = adb('shell', 'dumpsys', 'package', PKG); return { versionCode: +(d.match(/versionCode=(\d+)/) || [])[1], firstInstallTime: (d.match(/firstInstallTime=([^\n]+)/) || [])[1]?.trim(), lastUpdateTime: (d.match(/lastUpdateTime=([^\n]+)/) || [])[1]?.trim() }; };
   const files = () => adb('shell', `find /data/data/${PKG} /data/user_de/0/${PKG} -type f ! -path '*/cache/*' ! -path '*/code_cache/*' ! -name '*-journal' ! -name 'LOCK' ! -name '*.log' 2>/dev/null`).split('\n').map(x => x.trim()).filter(Boolean).sort();
   adb('root'); await sleep(3000); adb('wait-for-device');
-  adb('install', UPGRADE_FROM); launch();
-  for (let i = 0; i < 45; i++) { if (execFileSync('adb', ['exec-out', 'screencap', '-p'], { maxBuffer: 64 << 20 }).length > 20000) break; await sleep(2000); }
-  await sleep(8000); adb('shell', 'am', 'force-stop', PKG); await sleep(1000);
-  const before = { ...info(), files: files() };
+  // A real diary (a planned and a done workout) is put in the previous app's own data folder before it first starts:
+  // the previous version reads it, and its bytes must be the same after the update and after the new version has run.
+  const DIARY_FILE = `/data/data/${PKG}/files/fighttech-diary-a.json`;
+  const seed = JSON.stringify({ schema: 1, seq: 7, sessions: [
+    { id: 'dseed1', date: '2026-11-03', status: 'planned', programId: null, planRef: 'sseed', origin: 'diary', createdAt: 1, updatedAt: 1 },
+    { id: 'dseed2', date: '2026-10-30', status: 'done', programId: null, planRef: 'sseed', execRef: 'sseed', origin: 'program', runId: 'rseed', createdAt: 1, updatedAt: 2,
+      facts: { roundsDone: 3, roundsTotal: 3, activeSec: 300 } }],
+    snapshots: { sseed: { name: 'Upgrade check', entries: [{ presetId: 'classic3', title: 'Seed', settings: { intervalMode: 'standard', rounds: 3, workSec: 60, restSec: 30 } }], options: { cycles: 1, cycleRestSec: 60 } } } });
+  const sum = path => adb('shell', `sha256sum ${path} 2>/dev/null`).trim().split(/\s+/)[0] || null;
+  const runFor = async ms => { launch(); for (let i = 0; i < 45; i++) { if (execFileSync('adb', ['exec-out', 'screencap', '-p'], { maxBuffer: 64 << 20 }).length > 20000) break; await sleep(2000); } await sleep(ms); adb('shell', 'am', 'force-stop', PKG); await sleep(1000); };
+  adb('install', UPGRADE_FROM);
+  writeFileSync('/tmp/fighttech-diary-a.json', seed);
+  const uid = adb('shell', 'stat', '-c', '%u', `/data/data/${PKG}`).trim();
+  adb('shell', 'mkdir', '-p', `/data/data/${PKG}/files`); adb('push', '/tmp/fighttech-diary-a.json', DIARY_FILE);
+  adb('shell', 'chown', '-R', `${uid}:${uid}`, `/data/data/${PKG}/files`); adb('shell', 'restorecon', '-R', `/data/data/${PKG}/files`);
+  const seeded = sum(DIARY_FILE);
+  await runFor(8000);
+  const before = { ...info(), files: files(), diary: sum(DIARY_FILE) };
   const installed = adb('install', '-r', RELEASE).trim();
-  const after = { ...info(), files: files() };
-  const lost = before.files.filter(f => !after.files.includes(f));
-  report.upgrade = { from: before.versionCode, to: after.versionCode, install: installed.split('\n').pop(), firstInstallTime_kept: before.firstInstallTime === after.firstInstallTime, files_before: before.files.length, files_after: after.files.length, lost };
+  const after = { ...info(), files: files(), diary: sum(DIARY_FILE) };
+  await runFor(8000);
+  const afterRun = { files: files(), diary: sum(DIARY_FILE), crashes: crashes() };
+  const lost = before.files.filter(f => !after.files.includes(f) || !afterRun.files.includes(f));
+  report.upgrade = { from: before.versionCode, to: after.versionCode, install: installed.split('\n').pop(), firstInstallTime_kept: before.firstInstallTime === after.firstInstallTime, files_before: before.files.length, files_after: after.files.length, files_after_run: afterRun.files.length, lost,
+    diary_seeded: seeded, diary_same_after_previous_run: before.diary === seeded, diary_same_after_update: after.diary === seeded, diary_same_after_new_run: afterRun.diary === seeded, crashes: afterRun.crashes.length };
   step('upgrade_over_previous', report.upgrade);
-  if (!/Success/.test(installed) || !(after.versionCode > before.versionCode) || before.firstInstallTime !== after.firstInstallTime || !before.files.length || lost.length) fail('upgrade over the previous APK lost data or did not install');
+  if (!/Success/.test(installed) || !(after.versionCode > before.versionCode) || before.firstInstallTime !== after.firstInstallTime || !before.files.length || lost.length
+    || !seeded || before.diary !== seeded || after.diary !== seeded || afterRun.diary !== seeded || afterRun.crashes.length) fail('upgrade over the previous APK lost data or did not install');
 }
 
 adb('install', '-r', RELEASE); adb('logcat', '-c'); launch();
@@ -275,6 +293,40 @@ if (!METHODOLOGY) {
   if (!(picker?.hint && inserted.sessions === before41.sessions && inserted.planned.length === before41.planned.length && own(inserted)?.n === own(before41)?.n + 2)) fail('STAGE 4.1: library stages not inserted into the same workout: ' + JSON.stringify({ before41, picker, inserted }));
   if (!(/Удалить этап\?|Remove the stage\?/.test(ask41 || '') && JSON.stringify(afterBack41) === JSON.stringify(inserted) && own(removed41)?.n === own(inserted)?.n - 1)) fail('STAGE 4.1: stage × confirm/Back/remove wrong: ' + JSON.stringify({ ask41, afterBack41, removed41 }));
   adb('shell', 'input', 'keyevent', '4'); await sleep(800);
+
+  // «Начать тренировку с» in a diary workout: the last stage, round 1 → the timer runs from there, the run keeps the
+  // whole total and the start position; the plan holds only the rounds from that position on.
+  await js(`(()=>{document.getElementById('programLibraryOpen').click();document.getElementById('programLibraryDiary').click();document.querySelector('.ft-diary-day.is-today').click();return true})()`); await sleep(1000);
+  const declinedFrom = await js(`(()=>{const m=document.getElementById('programDeleteConfirmModal');if(m.hidden)return null;const t=document.getElementById('programDeleteConfirmTitle').textContent;document.getElementById('programDeleteConfirmCancel').click();return t})()`); await sleep(800);
+  const picked = await js(`(()=>{const c=[...document.querySelectorAll('.ft-diary-session')].find(c=>c.querySelector('.ft-diary-program .program-stage'));const b=c?.querySelector('.ft-start-from');if(!b)return null;
+    const [st,rd]=b.querySelectorAll('select'),R=e=>e.getBoundingClientRect(),[x,y]=[st,rd].map(R),go=R(b.querySelector('button'));b.scrollIntoView({block:'center'});
+    st.value=st.options[st.options.length-1].value;st.dispatchEvent(new Event('change'));
+    return {stages:st.options.length,stage:+st.value+1,rounds:rd.options.length,round:+rd.value,sameRow:Math.abs(x.top-y.top)<1,equal:Math.abs(x.width-y.width)<1,below:go.top>=x.bottom,label:b.querySelector('button').textContent}})()`);
+  shot('14_start_from_controls');
+  await js(`(()=>{const c=[...document.querySelectorAll('.ft-diary-session')].find(c=>c.querySelector('.ft-diary-program .program-stage'));c.querySelector('.ft-start-from-go').click();return true})()`); await sleep(7000);
+  const fromRun = await js(`(()=>({run:JSON.parse(localStorage.getItem('fighttech.diary.run.v1')||'null'),rows:document.querySelectorAll('#ladderLiveList .ladder-live-row').length,caption:document.getElementById('ladderCurrentLabel').textContent,phase:document.getElementById('phaseLabel').textContent}))()`);
+  shot('15_start_from_running');
+  await js(`document.getElementById('resetBtn').click()`); await sleep(1500);
+  step('start_from_position', { declinedFrom, picked, run: fromRun?.run && { startFrom: fromRun.run.startFrom, roundsTotal: fromRun.run.roundsTotal, sessionId: !!fromRun.run.sessionId }, rows: fromRun?.rows, caption: fromRun?.caption, phase: fromRun?.phase });
+  const fr = fromRun?.run;
+  if (!(picked?.sameRow && picked.equal && picked.below && fr?.startFrom?.stage === picked.stage && fr.startFrom.round === 1 && fr.startFrom.skipped > 0 && fr.sessionId && fromRun.rows === fr.roundsTotal - fr.startFrom.skipped))
+    fail('start from a stage/round did not start there: ' + JSON.stringify({ picked, fromRun }));
+  // Settings «Подписка» with Google Play present (Manage shown): one row 1fr 1fr or stacked; no word broken; hidden stays hidden.
+  await click('settingsBtn'); await sleep(800);
+  const subs = await js(`(()=>{const a=document.getElementById('ftSubscriptionRestore'),m=document.getElementById('ftSubscriptionManage'),card=document.getElementById('ftSubscriptionCard');card.scrollIntoView({block:'center'});
+    const R=e=>e.getBoundingClientRect(),x=R(a),y=R(m);const split=[a,m].some(e=>{const t=e.firstChild,re=/\\S+/g;let w;while((w=re.exec(t.textContent))){const r=document.createRange();r.setStart(t,w.index);r.setEnd(t,w.index+w[0].length);if(r.getClientRects().length>1)return true}return false});
+    const row=Math.abs(x.top-y.top)<1&&Math.abs(x.width-y.width)<1&&Math.abs(x.height-y.height)<1,stacked=y.top>=x.bottom&&Math.abs(x.width-y.width)<1;
+    return {manage:!m.hidden,layout:row?'row':stacked?'stacked':'bad',split,texts:[a.textContent,m.textContent],font:getComputedStyle(a).fontSize,hiddenStay:[...card.querySelectorAll('[hidden]')].every(e=>getComputedStyle(e).display==='none'),
+      last:[...document.querySelectorAll('#settingsModal .settings-card')].pop()===card}})()`);
+  shot('16_subscription');
+  await click('closeSettingsBtn'); await sleep(500);
+  // Metronome button: --ft-raised surface, black outline, label centred (it sat 5 px high in 0.2.205).
+  const metroBtn = await js(`(()=>{const m=document.getElementById('metronomeCardToggleBtn'),t=m.querySelector('.metro-mask-title');m.scrollIntoView({block:'center'});const r=document.createRange();r.selectNodeContents(t);const q=r.getBoundingClientRect(),b=m.getBoundingClientRect(),cs=getComputedStyle(m);
+    return {h:Math.round(b.height),dx:Math.round((q.left+q.right)/2-(b.left+b.right)/2),dy:Math.round((q.top+q.bottom)/2-(b.top+b.bottom)/2),bg:cs.backgroundColor,border:cs.borderTopWidth+' '+cs.borderTopColor,font:getComputedStyle(t).fontSize}})()`);
+  shot('17_metronome_button');
+  step('subscription_and_metronome_button', { subs, metroBtn });
+  if (!(subs?.manage && subs.layout !== 'bad' && !subs.split && subs.hiddenStay && subs.last)) fail('Settings subscription buttons layout wrong: ' + JSON.stringify(subs));
+  if (!(metroBtn && Math.abs(metroBtn.dx) <= 1 && Math.abs(metroBtn.dy) <= 1 && metroBtn.bg === 'rgb(244, 246, 248)')) fail('metronome button not centred or wrong surface: ' + JSON.stringify(metroBtn));
 }
 
 report.crashes = crashes();

@@ -113,8 +113,8 @@ jobs:
       - name: Previously published Play APK for the upgrade check
         if: startsWith(github.ref_name, 'release/play-mvp')
         run: |
-          curl -fsSL -o previous.apk https://andarfighttech.com/downloads/fight-tech-20261031/fight-tech-play-diary-stage4-1-0.2.203.apk
-          echo "7fc557a6787050d10f7ebed12943b9b74ff8bb88066162ab6456ce8e4b62252f  previous.apk" | sha256sum -c
+          curl -fsSL -o previous.apk https://andarfighttech.com/downloads/fight-tech-20261031/fight-tech-play-ui-polish-0.2.205.apk
+          echo "7e43e0de3ca525e2b9a70ab88d1b69cad02a09583bdbd0014b50aee7e74ccd2b  previous.apk" | sha256sum -c
       - name: Smoke test on Android 16 (API 36) emulator
         uses: reactivecircus/android-emulator-runner@v2
         env:
