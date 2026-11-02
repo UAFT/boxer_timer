@@ -348,13 +348,13 @@ if (!METHODOLOGY) {
   // the in-app dialog, run the diary workout with its stage metronome (30/60 BPM from STAGE 4): every metronome and tick
   // sound must be the bundled B pair (140 / 95 ms), no click (240 / 180 ms), in a running AudioContext.
   await click('settingsBtn'); await sleep(800);
-  const soundDefault = await js(`(()=>{const g=document.getElementById('ftMetronomeSound');g.scrollIntoView({block:'center'});return {stored:localStorage.getItem('fighttech.metronome.sound.v1'),checked:[...g.querySelectorAll('input[type=radio]')].find(r=>r.checked)?.value,toneHidden:document.getElementById('ftMetronomeTone').hidden,texts:[...g.querySelectorAll('.ft-radio-row span')].map(s=>s.textContent)}})()`);
+  const soundDefault = await js(`(()=>{const g=document.getElementById('ftMetronomeSound');g.scrollIntoView({block:'center'});return {stored:localStorage.getItem('fighttech.metronome.sound.v1'),checked:[...g.querySelectorAll('input[type=radio]')].find(r=>r.checked)?.value,toneHidden:document.getElementById('ftMetronomeSoundTone').hidden,texts:[...g.querySelectorAll('.ft-radio-row span')].map(s=>s.textContent)}})()`);
   shot('18_sound_default');
-  await js(`(()=>{document.getElementById('ftMetronomeSoundElectronic').click();document.querySelector('#ftMetronomeTone .ft-choice-trigger').click();return true})()`); await sleep(800);
+  await js(`(()=>{document.getElementById('ftMetronomeSoundElectronic').click();document.querySelector('#ftMetronomeSoundTone .ft-choice-trigger').click();return true})()`); await sleep(800);
   const toneDialog = await js(`(()=>[...document.querySelectorAll('#ftChoiceDialog [role=option]')].map(o=>o.textContent))()`);
   shot('19_sound_tone_dialog');
   await js(`(()=>{document.querySelectorAll('#ftChoiceDialog [role=option]')[1].click();return true})()`); await sleep(500);
-  const soundChosen = await js(`(()=>({stored:localStorage.getItem('fighttech.metronome.sound.v1'),tone:document.querySelector('#ftMetronomeTone .ft-choice-value').textContent}))()`);
+  const soundChosen = await js(`(()=>({stored:localStorage.getItem('fighttech.metronome.sound.v1'),tone:document.querySelector('#ftMetronomeSoundTone .ft-choice-value').textContent}))()`);
   shot('20_sound_electronic_b');
   await click('closeSettingsBtn'); await sleep(500);
   await js(`(()=>{window.__snd=[];window.__ctx=[];const st=AudioBufferSourceNode.prototype.start;AudioBufferSourceNode.prototype.start=function(...a){if(this.buffer){window.__snd.push(Math.round(this.buffer.duration*1000));window.__ctx.push(this.context.state)}return st.apply(this,a);};
@@ -368,6 +368,44 @@ if (!METHODOLOGY) {
   step('metronome_sound_profile', { soundDefault, toneDialog, soundChosen, heard });
   if (!(soundDefault?.stored === null && soundDefault.checked === 'click' && soundDefault.toneHidden)) fail('after the update the metronome sound is not the original clicks: ' + JSON.stringify(soundDefault));
   if (!(toneDialog?.length === 3 && /"tone":"B"/.test(soundChosen?.stored || '') && heard?.strong >= 6 && heard.click === 0 && heard.running)) fail('electronic tone B not chosen or not played on the device: ' + JSON.stringify({ toneDialog, soundChosen, heard }));
+  // G (2026-11-02): several diaries. ⋮ opens the regular dialog; a new diary gets its own files and becomes active;
+  // «Сохранить дневник в файл» writes Documents/Fight Tech/*.ftdiary (no permission); «Отправить» opens the Android
+  // Sharesheet (closed with Back = cancelled, nothing changes); deleting the new diary removes its files; «Мой дневник»
+  // files are byte for byte the same before and after (loading a file needs the system picker: browser-checked).
+  const mainFiles = `(async()=>{const fs=Capacitor.Plugins.Filesystem;const o={};for(const s of ['a','b']){try{o[s]=(await fs.readFile({path:'fighttech-diary-'+s+'.json',directory:'DATA',encoding:'utf8'})).data}catch{o[s]=null}}return JSON.stringify(o)})()`;
+  const dataFiles = `(async()=>(await Capacitor.Plugins.Filesystem.readdir({path:'',directory:'DATA'})).files.map(f=>f.name).filter(n=>n.startsWith('fighttech-diary')).sort())()`;
+  const actG = i => js(`(()=>{const b=document.querySelectorAll('#ftDiariesDialog .ft-diaries-action');const x=b[${i < 0 ? 'b.length' + i : i}];x.click();return x.textContent})()`);
+  const mainBefore = await js(mainFiles);
+  await js(`(()=>{document.getElementById('programLibraryOpen').click();document.getElementById('programLibraryDiary').click();return true})()`); await sleep(1000);
+  await js(`(()=>{const m=document.getElementById('programDeleteConfirmModal');if(!m.hidden)document.getElementById('programDeleteConfirmCancel').click();return true})()`); await sleep(500);
+  const menuG = await js(`(()=>({menu:!!document.querySelector('.ft-diary-legend #ftDiariesOpen'),today:!!document.querySelector('.ft-diary-calendar .ft-diary-today'),name:document.querySelector('.ft-diary-current')?.textContent}))()`);
+  await click('ftDiariesOpen'); await sleep(600);
+  const dlgG = await js(`(()=>{const d=document.querySelector('.ft-diaries-dialog');const r=d.getBoundingClientRect();return {role:d.getAttribute('role'),centred:Math.abs((r.top+r.bottom)/2-innerHeight/2)<innerHeight*0.15&&innerHeight-r.bottom>20,items:document.querySelectorAll('.ft-diaries-item').length}})()`);
+  shot('21_diaries_dialog');
+  await actG(0); await sleep(300);
+  await js(`(()=>{const i=document.getElementById('ftDiaryNameInput');i.value='Smoke';document.getElementById('ftDiaryNameOk').click();return true})()`); await sleep(1000);
+  const createdG = await js(`(()=>({active:JSON.parse(localStorage.getItem('fighttech.diaries.v1')).active,items:[...document.querySelectorAll('.ft-diaries-item')].map(b=>b.textContent),current:document.querySelector('.ft-diary-current').textContent}))()`);
+  await actG(2); await sleep(2500);
+  const savedG = await js(`(async()=>{const status=document.getElementById('ftDiariesStatus').textContent;let file=null;try{const d=await Capacitor.Plugins.Filesystem.readdir({path:'Fight Tech',directory:'DOCUMENTS'});const n=d.files.map(f=>f.name).filter(n=>n.endsWith('.ftdiary')).pop();const t=(await Capacitor.Plugins.Filesystem.readFile({path:'Fight Tech/'+n,directory:'DOCUMENTS',encoding:'utf8'})).data;const j=JSON.parse(t);file={name:n,format:j.format,version:j.version,diary:j.diary.name,sessions:j.sessions.length}}catch(e){file=String(e.message||e)}return {status,file}})()`);
+  shot('22_diary_saved');
+  await actG(1); await sleep(3000);
+  const sheetG = /ChooserActivity|chooser|ResolverActivity|intentresolver/i.test(adb('shell', 'dumpsys', 'activity', 'activities').split('\n').filter(l => /ResumedActivity/.test(l)).join(' '));
+  shot('23_diary_sharesheet');
+  adb('shell', 'input', 'keyevent', '4'); await sleep(1500);
+  const afterSheetG = await js(`(()=>({dialog:!!document.getElementById('ftDiariesDialog'),status:document.getElementById('ftDiariesStatus')?.textContent}))()`);
+  const filesWithSmoke = await js(dataFiles);
+  await actG(-1); await sleep(600);
+  const delAskG = await js(`document.getElementById('programDeleteConfirmModal').hidden?null:document.getElementById('programDeleteConfirmTitle').textContent`);
+  await click('programDeleteConfirmAccept'); await sleep(1200);
+  const afterDelG = await js(`(()=>({active:JSON.parse(localStorage.getItem('fighttech.diaries.v1')).active,items:document.querySelectorAll('.ft-diaries-item').length,mainDisabled:[...document.querySelectorAll('#ftDiariesDialog .ft-diaries-action')].pop().disabled}))()`);
+  const filesAfterDel = await js(dataFiles);
+  const mainAfter = await js(mainFiles);
+  await click('ftDiariesDialogClose'); await sleep(400);
+  step('diaries', { menuG, dlgG, createdG, savedG, sheetG, afterSheetG, filesWithSmoke, delAskG, afterDelG, filesAfterDel, mainSame: mainBefore === mainAfter });
+  if (!(menuG?.menu && !menuG.today && dlgG?.role === 'dialog' && dlgG.centred && createdG?.current === 'Smoke' && createdG.active !== 'main')) fail('diaries: ⋮/dialog/create wrong: ' + JSON.stringify({ menuG, dlgG, createdG }));
+  if (!(savedG?.file?.format === 'fighttech.diary' && savedG.file.diary === 'Smoke' && /Documents\/Fight Tech/.test(savedG.status))) fail('diaries: save to Documents failed: ' + JSON.stringify(savedG));
+  if (!(sheetG && afterSheetG?.dialog)) fail('diaries: Sharesheet not shown or dialog lost after Back: ' + JSON.stringify({ sheetG, afterSheetG }));
+  if (!(delAskG && afterDelG?.active === 'main' && afterDelG.mainDisabled && !filesAfterDel?.some(f => f.includes(createdG.active)) && mainBefore === mainAfter)) fail('diaries: delete or «Мой дневник» integrity wrong: ' + JSON.stringify({ delAskG, afterDelG, filesWithSmoke, filesAfterDel }));
 }
 
 report.crashes = crashes();

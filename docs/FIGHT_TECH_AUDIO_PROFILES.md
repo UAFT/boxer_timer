@@ -1,5 +1,11 @@
 # Fight Tech — metronome sound profiles (2026-11-01)
 
+> **2026-11-02:** «Общее» is compact (circle markers, no frame per option) and has three rows:
+> «Сигналы отсчёта» (own clicks / electronic A·B·C choice, `fighttech.countdown.sound.v1`) — the prestart 4-3-2-1 and
+> the `warning-tick`; «Сигналы метронома» (this document) — metronome accent/subdivision only; «Гонг» · «Стандартный»
+> (static, the `cue_*` files). Nothing stored for the countdown = it follows the metronome profile, exactly what 0.2.208
+> played, so an update changes nothing. Samples are still bundled and played as delivered (no equalising, no boost).
+
 Settings → «Звук и сигналы» → «Общее», under «Сигналы таймера»: **«Сигналы метронома»**
 - «Щелчки» — the original click samples (unchanged files, unchanged gains). **Default.**
 - «Электронные» — tone A · 1400 Гц / B · 1600 Гц / C · 1800 Гц, chosen in the Fight Tech choice dialog.
@@ -16,8 +22,8 @@ metronome click `metronome_single_runtime.wav` (SHA-256 `cffb0c62…c83c`).
 |---|---|---|---|
 | metronome accent (screen metronome and stage metronome; direct = every beat, subdivided = beat 1 of 4) | work / phase 2 | `metronome_single_runtime.wav` · 1.5 | `X_*_strong.wav` · 1 |
 | metronome subdivision (subdivided beats 2–4) | work / phase 2 | `metronome_split_upbeat_runtime.wav` · 1.35 | `X_*_weak.wav` · 1 |
-| `prestart-count-4…1` | 4-3-2-1 before the first round | `warning_tick_runtime.wav` · 1.25 | `X_*_strong.wav` · 1 |
-| `warning-tick` | last N s of work/phase 2/rest/block rest; N = «Предупреждение до конца этапа»: «5 сек» stores 4 → ticks at 4…1, «10 сек» → 10…1, «Нет» → none | `warning_tick_runtime.wav` · 1.2 | `X_*_strong.wav` · 1 |
+| `prestart-count-4…1` (countdown profile since 2026-11-02) | 4-3-2-1 before the first round | `warning_tick_runtime.wav` · 1.25 | `X_*_strong.wav` · 1 |
+| `warning-tick` (countdown profile since 2026-11-02) | last N s of work/phase 2/rest/block rest; N = «Предупреждение до конца этапа»: «5 сек» stores 4 → ticks at 4…1, «10 сек» → 10…1, «Нет» → none | `warning_tick_runtime.wav` · 1.2 | `X_*_strong.wav` · 1 |
 
 Not changed: round start / rest start / block rest / phase 2 / workout end gongs (`cue_*`), the voice announcements,
 warning timing, the metronome mute in the last 4 s of a phase and the existing «10 сек → метроном недоступен» lock.
