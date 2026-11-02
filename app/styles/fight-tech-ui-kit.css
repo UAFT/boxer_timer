@@ -778,7 +778,8 @@ button.ft-choice-trigger{box-sizing:border-box;display:flex;align-items:center;j
 .ft-general-card .settings-toggle-row{margin-top:4px;min-height:44px;padding:0;border:0;border-radius:0;background:none;gap:10px}
 .ft-general-card :is(input[type=checkbox],input[type=radio]){appearance:none;-webkit-appearance:none;flex:none;width:22px;height:22px;margin:0;
  border:2px solid var(--ft-steel);border-radius:50%;background:#fff;accent-color:var(--ft-steel)}
-.ft-general-card :is(input[type=checkbox],input[type=radio]):checked{background:radial-gradient(circle,var(--ft-steel) 0 5px,#fff 5.5px)}
+/* The dot is a fill inside a white inset ring, not a gradient: hard-stop gradients on tiny boxes are a GPU edge case. */
+.ft-general-card :is(input[type=checkbox],input[type=radio]):checked{background:var(--ft-steel);box-shadow:inset 0 0 0 4px #fff}
 .ft-sound-choice{display:grid;gap:2px;margin-top:8px;padding-top:8px;border-top:1px solid var(--ft-line)}
 .ft-sound-choice-title{font-size:14px;font-weight:750;color:var(--ft-ink)}
 .ft-general-card .ft-radio-group{display:flex;flex-wrap:wrap;gap:0 22px}
