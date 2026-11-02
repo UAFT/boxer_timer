@@ -16,7 +16,27 @@ test('Android 6–10 «Сохранить в файл»: storage permissions onl
   assert.doesNotMatch(manifest, /MANAGE_EXTERNAL_STORAGE|READ_MEDIA_/, 'no broad or media storage access');
   assert.match(manifest, /android:requestLegacyExternalStorage="true"/);
   // The app writes exactly here (Documents/Fight Tech), the path the permissions are for.
-  assert.match(read('app/js/sharing/file-transfer.js'), /path:'Fight Tech\/'\+name,data:utf8Base64\(data\),directory:'DOCUMENTS'/);
+  assert.match(read('app/js/sharing/file-transfer.js'), /path:'Fight Tech\/'\+file,data:utf8Base64\(data\),directory:'DOCUMENTS'/);
+});
+
+// CI storage check (Android 11/13, 2026-11-02): after a reinstall the same-named file in Documents/Fight Tech belongs to
+// the earlier installation, and writing it again failed with EACCES («Не удалось сохранить файл»).
+test('«Сохранить в файл»: a same-named file the app cannot overwrite (EACCES) → saved beside it under a new name', async () => {
+  const { saveFile } = await import('../app/js/sharing/file-transfer.js');
+  const run = async error => {
+    const paths = [];
+    const Filesystem = { writeFile: async o => { paths.push(o.path); if (paths.length === 1 && error) throw new Error(error); } };
+    const win = { Capacitor: { isNativePlatform: () => true, Plugins: { Filesystem } } };
+    try { return { paths, result: await saveFile({ data: '{}', name: 'Fight_Tech_Мой_2026-11-02.ftdiary' }, { win, doc: {} }) }; }
+    catch (e) { return { paths, error: e.message }; }
+  };
+  assert.deepEqual(await run(null), { paths: ['Fight Tech/Fight_Tech_Мой_2026-11-02.ftdiary'], result: 'Documents/Fight Tech/Fight_Tech_Мой_2026-11-02.ftdiary' });
+  const taken = await run("'writeFile' failed with: /storage/emulated/0/Documents/Fight Tech/Fight_Tech_Мой_2026-11-02.ftdiary: open failed: EACCES (Permission denied)");
+  assert.equal(taken.paths.length, 2);
+  assert.match(taken.paths[1], /^Fight Tech\/Fight_Tech_Мой_2026-11-02_\d{6}\.ftdiary$/);
+  assert.equal(taken.result, 'Documents/' + taken.paths[1]);
+  // Anything else (Android 6–10: the user refused the storage permission) is not retried: one system dialog, one error.
+  assert.deepEqual(await run('User denied storage permission'), { paths: ['Fight Tech/Fight_Tech_Мой_2026-11-02.ftdiary'], error: 'User denied storage permission' });
 });
 
 test('Auto Backup stays on with explicit rules: the diaries and localStorage only, the same for Android ≤11 and 12+', () => {

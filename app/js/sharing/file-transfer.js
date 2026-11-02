@@ -44,8 +44,13 @@ function download(file,name,doc) {
 export async function saveFile({data, name}, {win = window, doc = document} = {}) {
   const fs=win.Capacitor?.isNativePlatform?.() && win.Capacitor?.Plugins?.Filesystem;
   if (fs) {
-    await fs.writeFile({path:'Fight Tech/'+name,data:utf8Base64(data),directory:'DOCUMENTS',recursive:true});
-    return 'Documents/Fight Tech/'+name;
+    const write=file=>fs.writeFile({path:'Fight Tech/'+file,data:utf8Base64(data),directory:'DOCUMENTS',recursive:true}).then(()=>'Documents/Fight Tech/'+file);
+    // Android 11+: a same-named file left by an earlier installation of the app (after a reinstall) is not the app's
+    // own and cannot be overwritten (EACCES); the copy is then saved beside it under a new name.
+    return write(name).catch(e=>{
+      if (!/EACCES/.test(e?.message)) throw e;
+      return write(name.replace(/(\.\w+)?$/,'_'+new Date().toTimeString().slice(0,8).replace(/:/g,'')+'$1'));
+    });
   }
   return download(new File([data],name,{type:'application/json'}),name,doc);
 }

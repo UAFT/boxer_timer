@@ -95,14 +95,20 @@ if (report.api <= 29 && !allow) fail('Android ≤ 10: no storage permission dial
 const seeded = await app.js(`(async()=>{localStorage.setItem('fighttech.storage-check',${JSON.stringify(TOKEN)});
   const w=await ${call('writeFile', { path: 'fighttech-diary-a.json', data: DIARY, directory: 'DATA', encoding: 'utf8' })};return {w,ls:localStorage.getItem('fighttech.storage-check')}})()`);
 app.close();
-await sleep(8000); // WebView commits localStorage to disk a few seconds after a write
-adb('shell', 'am', 'force-stop', PKG); await sleep(1000);
+// WebView commits localStorage to disk (LevelDB) a few seconds after a write: wait for the token itself, then leave the
+// app in the background. No force-stop: Android does not back up a stopped app («Backup is not allowed»).
+let lsOnDisk = false;
+for (let i = 0; i < 20 && !lsOnDisk; i++) { await sleep(1500); lsOnDisk = adb('shell', `grep -rl '${TOKEN}' /data/data/${PKG}/app_webview 2>/dev/null`).trim() !== ''; }
+adb('shell', 'input', 'keyevent', 'KEYCODE_HOME'); await sleep(1000);
 const dataFiles = adb('shell', `find /data/data/${PKG} -type f 2>/dev/null`).split('\n').map(s => s.trim().replace(`/data/data/${PKG}/`, '')).filter(Boolean).sort();
 writeFileSync(`${OUT}/data_files_before_backup.txt`, dataFiles.join('\n') + '\n');
 adb('shell', 'bmgr', 'enable', 'true');
 const transport = adb('shell', 'bmgr', 'transport', 'com.android.localtransport/.LocalTransport').trim();
-adb('shell', 'bmgr', 'run'); await sleep(2000);
-const backup = adb('shell', 'bmgr', 'backupnow', PKG).trim();
+// One backup at a time: while Android's own pass runs (it starts once backup is enabled), a requested one is skipped
+// («Skipping backup since one is already in progress» → «Transport error»): try again.
+const backedUp = new RegExp(`Package ${PKG.replace(/\./g, '\\.')} with result: Success`);
+let backup = '', attempts = 0;
+while (attempts < 8 && !backedUp.test(backup)) { if (attempts++) await sleep(10000); backup = adb('shell', 'bmgr', 'backupnow', PKG).trim(); }
 // The local transport keeps the archive in /data/cache/backup (older Android) or in its own app folder (newer).
 const findFull = roots => adb('shell', `find ${roots} -path '*_full*' -name '${PKG}' 2>/dev/null`).trim().split('\n')[0];
 const fullPath = findFull('/data/cache/backup /data/data/com.android.localtransport /data/user_de/0/com.android.localtransport') || findFull('/data -xdev');
@@ -117,8 +123,8 @@ const appEntries = entries.filter(e => !/^apps\/[^/]+\/_(manifest|meta)$/.test(e
 // Everything under files/ and the two localStorage folders, plus the folders leading to them; nothing else.
 const allowed = ['f/', 'r/app_webview/Default/Local Storage/', 'r/app_webview/Local Storage/'].map(x => `apps/${PKG}/` + x);
 const outside = appEntries.filter(e => !allowed.some(a => e.startsWith(a) || a.startsWith(e.replace(/\/?$/, '/'))));
-step('backup', { seeded, transport, backup, fullPath, entries: entries.length, diary: entries.some(e => e.endsWith('/f/fighttech-diary-a.json')), localStorage: entries.some(e => /\/r\/app_webview\/(Default\/)?Local Storage\//.test(e)), outside });
-if (!/Success/.test(backup) || !fullPath) fail('backupnow did not succeed: ' + backup);
+step('backup', { seeded, lsOnDisk, transport, attempts, backup, fullPath, entries: entries.length, diary: entries.some(e => e.endsWith('/f/fighttech-diary-a.json')), localStorage: entries.some(e => /\/r\/app_webview\/(Default\/)?Local Storage\//.test(e)), outside });
+if (!backedUp.test(backup) || !fullPath) fail('backupnow did not succeed: ' + backup);
 if (!entries.some(e => e.endsWith('/f/fighttech-diary-a.json')) || !entries.some(e => /\/r\/app_webview\/(Default\/)?Local Storage\//.test(e))) fail('backup misses the diary file or localStorage');
 if (outside.length) fail('backup holds more than the diaries and localStorage: ' + outside.slice(0, 10).join(', '));
 
@@ -132,9 +138,15 @@ const restored = await again.js(`(async()=>({ls:localStorage.getItem('fighttech.
 step('restore', { gone, reinstalled, restored: { ls: restored?.ls, diarySame: restored?.diary?.r?.data === DIARY } });
 if (!(restored?.ls === TOKEN && restored?.diary?.r?.data === DIARY)) fail('restore after reinstall lost data: ' + JSON.stringify(restored));
 
-// After a reinstall the earlier file in Documents belongs to the previous installation: recorded, not asserted.
+// After a reinstall the earlier file in Documents belongs to the previous installation (Android 11+): the plugin may not
+// overwrite it (recorded), and the app's own «Сохранить в файл» then saves the copy under a new name. Asserted where the
+// app's code loads (Android 13+); the API 29/30 images' WebView 74/83 cannot run it.
 const resave = await withPermission(again.js, call('writeFile', { path: FILE, data: b64, directory: 'DOCUMENTS', recursive: true }));
-step('resave_after_reinstall', resave);
+const appSave = await again.js(`import('/js/sharing/file-transfer.js').then(m=>m.saveFile({data:${JSON.stringify(text)},name:'storage-check.ftdiary'}))
+  .then(path=>({ok:true,path}),e=>({ok:false,error:String(e&&e.message||e)}))`);
+const appSaveSha = appSave?.ok ? adb('shell', `sha256sum '/sdcard/${appSave.path}' 2>/dev/null`).trim().split(/\s+/)[0] || null : null;
+step('resave_after_reinstall', { plugin: resave, app: appSave, appSaveSame: appSaveSha === sha(text) });
+if (report.api >= 33 && !(appSave?.ok && appSaveSha === sha(text))) fail('«Сохранить в файл» after a reinstall failed: ' + JSON.stringify(appSave));
 again.close();
 
 writeFileSync(`${OUT}/report.json`, JSON.stringify(report, null, 1));
