@@ -1503,8 +1503,11 @@ function bindDiaryRecordSetting() {
 
 async function installBilling() {
   const plugin = window.Capacitor?.Plugins?.FtBilling || null;
+  // Outside the Android app (a desktop browser: tests, previews) there is no Google Play to check, and a request would
+  // only leave a fake device record on the entitlement server (audit 0.2.213: 934 of them): the check fails as offline.
+  const offline = () => Promise.reject(new TypeError('no billing outside the Android app'));
   try {
-    const access = await createBillingAccess({ plugin, appVersion: 'play-mvp' });
+    const access = await createBillingAccess({ plugin, appVersion: 'play-mvp', fetch: plugin ? undefined : offline });
     const paywall = createBillingPaywall({ access, plugin, document, openSettings: () => openSettings(els) });
     billing = { canStart: access.canStart, showCard: paywall.showCard };
     plugin?.addListener?.('purchasesUpdated', paywall.handlePurchasesUpdated);

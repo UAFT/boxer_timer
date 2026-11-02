@@ -52,3 +52,9 @@ test('diary import: a date must be a real calendar day of 1970–2199 (2026-13-4
   for (const bad of ['2026-13-45', '2026-02-30', '2025-02-29', '2026-00-10', '1969-12-31', '2200-01-01', '0000-01-01', '9999-12-31'])
     assert.equal(code(bad), 'invalid', bad);
 });
+
+test('outside the Android app (no Play billing plugin) the entitlement server is never contacted', () => {
+  const app = read('app/js/app.js');
+  assert.match(app, /const offline = \(\) => Promise\.reject\(new TypeError\('no billing outside the Android app'\)\);/);
+  assert.match(app, /createBillingAccess\(\{ plugin, appVersion: 'play-mvp', fetch: plugin \? undefined : offline \}\)/);
+});
