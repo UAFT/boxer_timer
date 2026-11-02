@@ -26,6 +26,13 @@ const crashes = () => adb('logcat', '-d').split('\n').filter(l => l.includes('FA
 // (a blank 320×640 capture is a few kB, the timer screen tens of kB).
 // 0. Upgrade over the previously published APK (FT_UPGRADE_FROM): same key, higher versionCode, app data kept.
 // google_apis images allow `adb root`, so the app's own data directory is listed before and after `install -r`.
+// Host side (the emulator runs here): qemu RSS, free memory and the app's own memory every 15 s, so a dying emulator
+// leaves a trail. execFileSync errors are swallowed: monitoring never fails the smoke.
+const sh = cmd => { try { return execFileSync('sh', ['-c', cmd], { encoding: 'utf8', timeout: 10000 }); } catch (e) { return String(e.stdout || e.message); } };
+const monitor = () => appendFileSync(`${OUT}/host_monitor.txt`, new Date().toISOString() + ' qemuRSSkB=' + sh("ps -C qemu-system-x86_64 -o rss= | head -1").trim()
+  + ' avail=' + sh("free -m | awk '/Mem:/{print $7}'").trim() + 'MB app=' + sh(`timeout 8 adb shell dumpsys meminfo ${PKG} | grep -E 'TOTAL PSS|TOTAL:' | head -1`).trim().replace(/\s+/g, ' ') + '\n');
+setInterval(monitor, 15000).unref();
+process.on('exit', () => appendFileSync(`${OUT}/host_monitor.txt`, sh('sudo -n dmesg 2>/dev/null | tail -25')));
 const UPGRADE_FROM = process.env.FT_UPGRADE_FROM;
 if (UPGRADE_FROM) {
   const info = () => { const d = adb('shell', 'dumpsys', 'package', PKG); return { versionCode: +(d.match(/versionCode=(\d+)/) || [])[1], firstInstallTime: (d.match(/firstInstallTime=([^\n]+)/) || [])[1]?.trim(), lastUpdateTime: (d.match(/lastUpdateTime=([^\n]+)/) || [])[1]?.trim() }; };
