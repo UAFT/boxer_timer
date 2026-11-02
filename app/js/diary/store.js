@@ -15,25 +15,35 @@ export const newId = prefix => prefix + Date.now().toString(36) + '-' + Math.ran
 
 // Two slots written in turn, each carrying a sequence number: a crash mid-write can only spoil the slot being
 // written, never the last good copy. No rename is needed, so it does not depend on how the platform replaces files.
-export function fileBackend(fs) {
-  const path = slot => 'fighttech-diary-' + slot + '.json';
+// 2026-11-02: one backend per diary. «Мой дневник» (id 'main') keeps exactly the files and keys of every earlier
+// version; another diary <id> lives in its own 'fighttech-diary-<id>-{a,b}.json'. Slot 'backup' is the copy kept
+// before a diary is replaced from a file (openDiary never reads it).
+const MISSING = /not exist|not found|no such|does not exist/i;
+export function fileBackend(fs, id = 'main') {
+  const path = slot => 'fighttech-diary-' + (id === 'main' ? '' : id + '-') + slot + '.json';
   return {
     async read(slot) {
       try { return (await fs.readFile({ path: path(slot), directory: 'DATA', encoding: 'utf8' })).data; }
-      catch (error) { if (/not exist|not found|no such/i.test(String(error?.message || error))) return null; throw error; }
+      catch (error) { if (MISSING.test(String(error?.message || error))) return null; throw error; }
     },
-    write: (slot, text) => fs.writeFile({ path: path(slot), directory: 'DATA', encoding: 'utf8', data: text })
+    write: (slot, text) => fs.writeFile({ path: path(slot), directory: 'DATA', encoding: 'utf8', data: text }),
+    async remove(slot) {
+      try { await fs.deleteFile({ path: path(slot), directory: 'DATA' }); }
+      catch (error) { if (!MISSING.test(String(error?.message || error))) throw error; }
+    }
   };
 }
-export function storageBackend(storage = globalThis.localStorage) {
+export function storageBackend(storage = globalThis.localStorage, id = 'main') {
+  const key = slot => DIARY_KEY + '.' + (id === 'main' ? '' : id + '.') + slot;
   return {
-    async read(slot) { return storage.getItem(DIARY_KEY + '.' + slot); },
-    async write(slot, text) { storage.setItem(DIARY_KEY + '.' + slot, text); }
+    async read(slot) { return storage.getItem(key(slot)); },
+    async write(slot, text) { storage.setItem(key(slot), text); },
+    async remove(slot) { storage.removeItem(key(slot)); }
   };
 }
-export function defaultBackend(win = globalThis) {
+export function defaultBackend(win = globalThis, id = 'main') {
   const fs = win.Capacitor?.isNativePlatform?.() && win.Capacitor?.Plugins?.Filesystem;
-  return fs ? fileBackend(fs) : storageBackend(win.localStorage);
+  return fs ? fileBackend(fs, id) : storageBackend(win.localStorage, id);
 }
 
 function validSessions(list) {
@@ -86,6 +96,7 @@ export async function openDiary(backend = defaultBackend()) {
   return {
     state,
     get sessions() { return data.sessions; },
+    get snapshots() { return data.snapshots; },
     snapshot: ref => data.snapshots[ref] || null,
     // mutate(draft) edits a copy; the copy replaces the diary only once it is written. Resolves true when written,
     // null when mutate declined (returned false: nothing to change), false when the diary is read-only or the write failed.

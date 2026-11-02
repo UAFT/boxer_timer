@@ -98,6 +98,7 @@ export function installWorkoutExchange({doc = document, getSavedPrograms, onImpo
     return button;
   }
   return {
+    message,
     shareButton,
     shareSaved,
     shareLabel:()=>copy(doc).share,

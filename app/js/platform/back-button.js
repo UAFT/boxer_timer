@@ -12,6 +12,8 @@ const CLOSERS = [
   ['ftLanguageList', 'ftLanguageTrigger'],
   // × first: Back closes a question without answering it (the diary's «Записать?» is asked again later).
   ['programDeleteConfirmModal', 'programDeleteConfirmDismiss', 'programDeleteConfirmCancel'],
+  // The diary's «Дневники» dialog (diary/diaries-dialog.js): × closes its name form first, then the dialog.
+  ['ftDiariesDialog', 'ftDiariesDialogClose'],
   ['ftWorkoutImportModal', 'ftWorkoutImportCancel'],
   ['roundEditModal', 'roundEditCancel'],
   ['stageSettingsModal', 'stageSettingsCancel'],

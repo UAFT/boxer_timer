@@ -14,7 +14,7 @@ function mockDoc(){
  const create=(tag)=>({tag,className:'',textContent:'',title:'',attributes:{},children:[],classList:{
   add(name){this.owner.className=[this.owner.className,name].filter(Boolean).join(' ');},
   toggle(name,flag){const classes=this.owner.className.split(' ').filter(Boolean).filter(x=>x!==name);if(flag)classes.push(name);this.owner.className=classes.join(' ');}
- },setAttribute(name,value){this.attributes[name]=value;},addEventListener(event,handler){this['on'+event]=handler;},append(...children){this.children.push(...children);}});
+ },setAttribute(name,value){this.attributes[name]=value;},addEventListener(event,handler){this['on'+event]=handler;},append(...children){this.children.push(...children);},replaceChildren(...children){this.children=children;}});
  const element=tag=>{const el=create(tag);el.classList.owner=el;return el;};
  return {createElement:element,createElementNS:(_namespace,tag)=>element(tag)};
 }
@@ -34,10 +34,10 @@ test('saved library program shows accurate 45-minute total including 3-minute be
 });
 
 test('saved-program card: compact summary, lazy plan and description, four independent actions',()=>{
- let opened=0,deleted=0,shared=0;
+ let opened=0,deleted=0,shared=0,added=0;
  const doc=mockDoc();
  const card=renderSavedProgramCard(doc,program,profiles,{
-  lang:'ru',onOpen:()=>opened++,onDelete:()=>deleted++,onShareButton:()=>{const btn=doc.createElement('button');btn.className='ft-share-button';btn.addEventListener('click',()=>shared++);return btn;}
+  lang:'ru',onOpen:()=>opened++,onAdd:()=>{added++;return true;},onDelete:()=>deleted++,onShareButton:()=>{const btn=doc.createElement('button');btn.className='ft-share-button';btn.addEventListener('click',()=>shared++);return btn;}
  });
  assert.equal(card.className,'program-library-entry ft-saved-program-entry ft-compact-card');
  assert.equal(findAll(card,'ft-program-title')[0].textContent,'Программа 1');
@@ -67,10 +67,12 @@ test('saved-program card: compact summary, lazy plan and description, four indep
  body.onclick();
  assert.equal(findAll(card,'ft-plan-round').length,4,'plan is built once');
  findAll(card,'ft-saved-program-load')[0].onclick();
- actions.children[1].onclick(); // Quick + loads without expanding first.
+ // 2026-11-02 (E): + appends the program's stages to the workout; it never opens (replaces) it.
+ assert.equal(actions.children[1].attributes['aria-label'],'Добавить в тренировку Программа 1');
+ actions.children[1].onclick();
  actions.children[2].onclick();
  actions.children[3].onclick();
- assert.deepEqual([opened,shared,deleted],[2,1,1]);
+ assert.deepEqual([opened,added,shared,deleted],[1,1,1,1]);
 });
 
 test('saved AFAP program presents unbounded time rather than misleading zero',()=>{

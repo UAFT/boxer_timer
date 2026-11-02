@@ -32,7 +32,7 @@ import { installLocalization } from './i18n/locale.js';
 import { clonePreset } from './state/presets.js';
 import { compileProgram, startIndex, normalizeProgram, normalizeOptions, normalizeLibrary, syncStagesWithPreset, MAX_PROGRAM_ROUNDS, MAX_TITLE, tooLongMessage, LIBRARY_KEY, PROGRAM_OPTIONS_KEY, PRESET_NAMES, PROGRAM_KEY } from './core/program.js';
 import { renderStartFrom } from './ui/start-from.js';
-import { loadSoundProfile, saveSoundProfile, soundKeys } from './audio/sound-profile.js';
+import { loadSoundProfile, saveSoundProfile, soundKeys, loadCountdownProfile, COUNTDOWN_SOUND_KEY } from './audio/sound-profile.js';
 import { installSoundProfileSettings } from './ui/sound-profile-settings.js';
 import { loadProfileState, saveProfileState, normalizeSettings } from './state/settings-store.js';
 import { writeJson, STORAGE_FULL_MESSAGE } from './state/storage.js';
@@ -52,8 +52,11 @@ import {
 } from './ui/render.js';
 import { bindControls, bindPresetTabs } from './ui/bindings.js';
 import { createDiaryView, createCalendar, assignLabel, timerLabel, sessionTitle, dropdown, diaryText } from './diary/calendar-view.js';
-import { openDiary, newSession, putSnapshot, localDate, dropUnused } from './diary/store.js';
+import { newSession, putSnapshot, localDate, dropUnused, newId } from './diary/store.js';
 import { createRecorder, applyRun, recordMode, RECORD_KEY } from './diary/recorder.js';
+import { createDiaries } from './diary/diaries.js';
+import { createDiariesDialog } from './diary/diaries-dialog.js';
+import { shareFile, saveFile } from './sharing/file-transfer.js';
 
 const DEFAULT_PRESET_ID = 'classic3';
 const STEP_RULES = {
@@ -66,7 +69,7 @@ const STEP_RULES = {
   restStepSec: { step: 5, min: -600, max: 600 },
   phaseTwoStepSec: { step: 5, min: -600, max: 600 }
 };
-const DEFAULT_METRONOME_BPM = 20;
+const DEFAULT_METRONOME_BPM = 10;
 const PRESTART_COUNTDOWN_EVENTS = new Set(['prestart-count-4', 'prestart-count-3', 'prestart-count-2', 'prestart-count-1']);
 const METRONOME_SUPPRESS_EVENTS = new Set(['round-end-zero', 'block-rest-start-zero', 'workout-end-zero']);
 const ROUND_START_SYNC_EVENTS = new Set(['round-start-zero', 'rest-end-zero', 'block-rest-end-zero', 'phase-two-start-zero']);
@@ -80,7 +83,11 @@ const audio = new AudioEngine();
 const metronome = new MetronomeEngine(audio);
 let soundProfile = loadSoundProfile();
 metronome.setSoundProfile(soundProfile);
-installSoundProfileSettings(document, { get: () => soundProfile, set: next => { soundProfile = next; saveSoundProfile(next); metronome.setSoundProfile(next); } });
+installSoundProfileSettings(document, { name: 'ftMetronomeSound', get: () => soundProfile, set: next => { soundProfile = next; saveSoundProfile(next); metronome.setSoundProfile(next); } });
+// «Сигналы отсчёта»: the prestart 4-3-2-1 and the end-of-phase warning, independent of the metronome.
+let countdownProfile = loadCountdownProfile();
+installSoundProfileSettings(document, { name: 'ftCountdownSound', label: { ru: 'Электронный отсчёт', en: 'Electronic countdown' },
+  get: () => countdownProfile, set: next => { countdownProfile = next; saveSoundProfile(next, localStorage, COUNTDOWN_SOUND_KEY); } });
 
 function isMetronomeLocked(settings) {
   return Number(settings?.warningSeconds ?? 0) === 10;
@@ -92,8 +99,8 @@ function coerceMetronomeForWarning(settings) {
 }
 
 function resolveEventAudioSpec(event, settings) {
-  // The countdown/warning tick is the metronome click file, so it follows the metronome sound profile; gongs stay.
-  const sound = soundKeys(soundProfile);
+  // The countdown/warning tick has its own choice («Сигналы отсчёта»); gongs stay.
+  const sound = soundKeys(countdownProfile);
   if (PRESTART_COUNTDOWN_EVENTS.has(event.type)) {
     return { key: sound.tick, tag: 'countdown', volume: sound.gain ?? 1.25 };
   }
@@ -139,9 +146,18 @@ try { savedPrograms=normalizeLibrary(JSON.parse(localStorage.getItem(LIBRARY_KEY
 let openedProgramId = null;
 let openedProgramName = '';
 // The calendar date (and assignment) the editor was opened for; «Сохранить» then offers the diary with that date.
+// {date, sessionId, diaryId}: diaryId is the diary the editor was opened from (G2: a run started from it is recorded there).
 let editorDiary = null;
+// G1: several local diaries; diaryStore is the active one (the calendar and, by default, «Сохранить → В дневник»).
+const diaries = createDiaries();
 let diaryStore = null;
-const diaryReady = openDiary().catch(()=>({state:'damaged',sessions:[],snapshot:()=>null,commit:async()=>false})).then(d=>{diaryStore=d;return d;});
+let diaryReady = null;
+function useActiveDiary() {
+  const id = diaries.active;
+  diaryReady = diaries.open(id).then(d=>{if(diaries.active===id)diaryStore=d;return d;});
+  return diaryReady;
+}
+useActiveDiary();
 const recorder = createRecorder();
 const confirmDeletion = installDeleteConfirmation();
 let libraryTab = 'mine';
@@ -203,6 +219,7 @@ timer = new TimerEngine({
   onStateChange: (state) => {
     recorder.observe(state, timer?.isPaused);
     if (state.phase === 'finished' && recorder.active) endRun(true);
+    restartBeatGrid(state);
     renderTimer(els, state, { metronomePanelOpen: isMetronomePanelOpen(), ladderExpanded: uiState.ladderExpanded, programName:openedProgramName, previewRounds: !programRunning && programEntries.length ? previewProgram() : null, editablePhase:phaseToggle.selected() });
     phaseToggle.render(liveTimerSettings(),state);
     renderProgram();
@@ -237,7 +254,7 @@ timer = new TimerEngine({
 let metronomeKey = null;
 function metronomeConfig() {
   const settings = liveTimerSettings();
-  if (programRunning) return programMetronomeConfig(programSnapshot?.[Math.max(1, timer.state?.roundIndex || 1) - 1], settings, isMetronomeLocked(settings));
+  if (programRunning) return programMetronomeConfig(programSnapshot?.[Math.max(1, timer.state?.roundIndex || 1) - 1], settings, isMetronomeLocked(settings), timer.state?.phase);
   return {
     enabled: settings.metronomeEnabled && isMetronomePanelOpen() && !isMetronomeLocked(settings),
     bpm: settings.metronomeBpm,
@@ -250,6 +267,15 @@ function syncMetronome() {
   if (programRunning && key === metronomeKey) return;
   metronomeKey = key;
   metronome.setConfig(config);
+}
+// Every work phase (a round, and phase 2 of a two-phase round) starts its own beat grid from its first count:
+// nothing of the previous phase's last beat carries over. Pause/continue inside a phase is not a new phase.
+// var, not let: the timer emits its first state while it is being constructed, above this line.
+var gridMark = null;
+function restartBeatGrid(state) {
+  const mark = state.phase === 'work' || state.phase === 'work_two' ? state.phase + ':' + state.roundIndex : null;
+  if (mark && mark !== gridMark) metronome.stop();
+  gridMark = mark;
 }
 // Called on every tick of a program: a new round with another tempo restarts the beat from its first count; same tempo, nothing changes.
 function followStageMetronome() {
@@ -418,7 +444,9 @@ function beginRun(rounds, startFrom=null) {
   const snap=rounds ? diarySnap(openedProgramName,programEntries,programOptions)
     : diarySnap(timerLabel({presetId:activePresetId,settings:activeSettings},lang),[{presetId:activePresetId,title:'',settings:structuredClone(activeSettings)}],{});
   recorder.begin({snap,startFrom,roundsTotal:rounds ? rounds.length+(startFrom?.skipped||0) : compileProgram(snap.entries,{},snap.options).length,
-    sessionId:rounds ? editorDiary?.sessionId ?? null : null,programId:rounds ? openedProgramId : null,origin:rounds ? 'program' : 'timer'});
+    sessionId:rounds ? editorDiary?.sessionId ?? null : null,programId:rounds ? openedProgramId : null,origin:rounds ? 'program' : 'timer',
+    // G2: bound when the run starts. From a diary: that diary; anything else (timer, preset, editor) — «Мой дневник».
+    diaryId:rounds && editorDiary?.diaryId || 'main'});
 }
 // Finished (completed) or stopped early. Pause never comes here. Nothing is offered when nothing was done.
 function endRun(completed) {
@@ -430,16 +458,19 @@ function endRun(completed) {
 let offering=false;
 async function offerPending() {
   if (offering) return;
-  const diary=await diaryReady;
-  // A read-only diary keeps the runs waiting instead of losing them.
-  if (diary.state!=='ok') return;
   const run=recorder.pending()[0];
   if (!run) return;
+  // A run goes to the diary it was started from (runs of earlier versions, without one: «Мой дневник»).
+  const diary=await diaries.open(run.diaryId||'main');
+  // A read-only diary keeps the runs waiting instead of losing them.
+  if (diary.state!=='ok') return;
   if (diary.sessions.some(s=>s.runId===run.runId)) { recorder.settle(run.runId); return offerPending(); }
   if (recordMode()==='auto') { if (await recordRun(run)) offerPending(); return; }
   const en=document.documentElement.lang==='en',done=run.status==='done';
   const from=run.startFrom,facts=(en?'Rounds completed: ':'Выполнено раундов: ')+run.roundsDone+(en?' of ':' из ')+run.roundsTotal
-    +(from?(en?' · started from stage '+from.stage+', round '+from.round:' · начато с этапа '+from.stage+', раунда '+from.round):'');
+    +(from?(en?' · started from stage '+from.stage+', round '+from.round:' · начато с этапа '+from.stage+', раунда '+from.round):'')
+    // With several diaries the question names the one the run is bound to (it is not a choice).
+    +(diaries.list.length>1?(en?' · Diary: ':' · Дневник: ')+diaries.name(diaries.has(run.diaryId)?run.diaryId:'main',en?'en':'ru'):'');
   const name=sessionTitle(run,run.snap,document.documentElement.lang);
   offering=confirmDeletion({name:name+' · '+run.date.split('-').reverse().join('.'),trigger:null,tone:'neutral',
     labels:{ru:{title:done?'Записать тренировку в дневник?':'Тренировка не завершена. Записать в дневник?',message:facts,cancel:'Не записывать',delete:'Записать'},
@@ -449,7 +480,7 @@ async function offerPending() {
     onDismiss:()=>{offering=false;}});
 }
 async function recordRun(run) {
-  const ok=await diaryStore.commit(d=>applyRun(d,run));
+  const ok=await (await diaries.open(run.diaryId||'main')).commit(d=>applyRun(d,run));
   // null: this run is already in the diary.
   if (ok!==false) recorder.settle(run.runId);
   return ok!==false;
@@ -471,7 +502,7 @@ function persistProgram() {
 }
 function addProgramStage(presetId) {
   if (!PRESET_NAMES[presetId] || programRunning || programEntries.length >= 24) return;
-  programEntries.push({ presetId, title:'', restAfterSec: 60, ...(presetId===activePresetId && ['two_phase','count_up'].includes(activeSettings.intervalMode)?{settings:structuredClone(activeSettings)}:{}) });
+  programEntries.push({ presetId, title:'', restAfterSec: 60, uid:newId('st'), ...(presetId===activePresetId && ['two_phase','count_up'].includes(activeSettings.intervalMode)?{settings:structuredClone(activeSettings)}:{}) });
   timerDisclosure.keepExpandedOnPresetAdd();
   persistProgram();
 }
@@ -623,7 +654,8 @@ const validBpm=v=>{const n=Number(v);return v!=='' && Number.isInteger(n) && n>=
 const bpmHint=lang=>lang==='en'?'Enter a tempo from 1 to 300 beats/min':'Введите темп от 1 до 300 уд/мин';
 function stageMetronomeLoad(saved) {
   const m=normalizeStageMetronome(saved)||{enabled:false,mode:'direct',bpm:DEFAULT_BPM,perRound:false,roundBpm:[]};
-  stageMetroDraft={mode:m.mode,roundBpm:[...m.roundBpm]};
+  stageMetroDraft={mode:m.mode,roundBpm:[...m.roundBpm],phases:m.phases?[...m.phases]:[true,true]};
+  metroField('PhaseHint').hidden=true;
   metroField('On').checked=m.enabled;metroField('Bpm').value=m.bpm;metroField('PerRound').checked=m.perRound;
   renderStageMetronome();
 }
@@ -638,6 +670,10 @@ function renderStageMetronome() {
   const lang=document.documentElement.lang,en=lang==='en',on=metroField('On').checked,bpm=validBpm(metroField('Bpm').value);
   metroField('Fields').hidden=!on;
   document.querySelectorAll('[data-stage-metro]').forEach(b=>{const selected=b.dataset.stageMetro===stageMetroDraft.mode;b.classList.toggle('selected',selected);b.setAttribute('aria-pressed',String(selected));});
+  // Two-phase stage: «Фаза 1» / «Фаза 2» inside the stage metronome; at least one stays on.
+  metroField('Phases').hidden=!on || document.getElementById('stageSettingsMode').value!=='two_phase';
+  if(metroField('Phases').hidden)metroField('PhaseHint').hidden=true;
+  document.querySelectorAll('[data-stage-metro-phase]').forEach(b=>{const selected=stageMetroDraft.phases[b.dataset.stageMetroPhase];b.classList.toggle('selected',selected);b.setAttribute('aria-pressed',String(selected));});
   metroField('Interval').textContent=bpm?metronomeLine(bpm,lang):bpmHint(lang);
   const box=metroField('Rounds');
   box.hidden=!on || !metroField('PerRound').checked;
@@ -663,7 +699,7 @@ function stageMetronomeRead(saved) {
   const bad=on && perRound && [...metroField('Rounds').querySelectorAll('input')].find(x=>x.value!=='' && !validBpm(x.value));
   if(bad){bad.focus();bad.reportValidity();return null;}
   if(!on && !saved)return undefined;
-  return normalizeStageMetronome({enabled:on,mode:stageMetroDraft.mode,bpm:bpm??saved?.bpm??DEFAULT_BPM,perRound,roundBpm:stageMetroDraft.roundBpm});
+  return normalizeStageMetronome({enabled:on,mode:stageMetroDraft.mode,bpm:bpm??saved?.bpm??DEFAULT_BPM,perRound,roundBpm:stageMetroDraft.roundBpm,phases:stageMetroDraft.phases});
 }
 function closeStageSettings(){
   document.getElementById('stageSettingsModal').hidden=true;stageSettingsIndex=null;stageSettingsTarget=mainTarget;
@@ -682,6 +718,12 @@ function bindStageSettings(){
   for(const name of ['MetroOn','MetroPerRound'])id(name).addEventListener('change',renderStageMetronome);
   for(const name of ['MetroBpm','Rounds','Blocks'])id(name).addEventListener('input',renderStageMetronome);
   document.querySelectorAll('[data-stage-metro]').forEach(b=>b.addEventListener('click',()=>{stageMetroDraft.mode=b.dataset.stageMetro;renderStageMetronome();}));
+  document.querySelectorAll('[data-stage-metro-phase]').forEach(b=>b.addEventListener('click',()=>{
+    const p=stageMetroDraft.phases,i=Number(b.dataset.stageMetroPhase);
+    // [off, off] is not a state: the last phase on stays on (the master switch turns the metronome off).
+    if(p[i] && !p[1-i]){metroField('PhaseHint').hidden=false;return;}
+    p[i]=!p[i];metroField('PhaseHint').hidden=true;renderStageMetronome();
+  }));
   installStageTimeSteppers({lookup:id});
   id('Cancel').addEventListener('click',closeStageSettings);
   document.getElementById('stageSettingsModal').addEventListener('click',event=>{
@@ -888,7 +930,7 @@ function bindProgramLibrary() {
   async function saveLibraryDraft() {
     const draft=libraryDraft;
     const snap=diarySnap(draft.name||'',draft.entries,draft.options||{});
-    const ok=await diaryStore?.commit(d=>{
+    const ok=await (await diaries.open(draft.diaryId)).commit(d=>{
       const own=draft.sessionId && d.sessions.find(x=>x.id===draft.sessionId && x.status==='planned');
       if(own){own.planRef=putSnapshot(d.snapshots,snap);own.updatedAt=Date.now();dropUnused(d);return;}
       // Adding stages never creates a second workout: the appointment is gone (moved away, removed) → nothing written.
@@ -913,6 +955,24 @@ function bindProgramLibrary() {
       renderLibrary();
     }
   });
+  const addedText=n=>document.documentElement.lang==='en'
+    ?'Added to the workout: '+n+(n===1?' stage':' stages')+'. Stages in the workout: '+programEntries.length+'.'
+    :'Добавлено в тренировку: этапов — '+n+'. Всего этапов: '+programEntries.length+'.';
+  // E: «+» of a «Мои» program appends ALL its stages, as new independent copies, after the stages already there
+  // (one flat list: no nested program, its cycles are not copied). Never a replacement; repeatable; the library stays open.
+  function appendProgram(program) {
+    if(programRunning)return false;
+    const stages=normalizeProgram(program.entries).map(st=>({...structuredClone(st),settings:structuredClone(st.settings||profiles[st.presetId]),uid:newId('st')}));
+    if(!stages.length)return false;
+    if(programEntries.length+stages.length>24){
+      exchange.message(document.documentElement.lang==='en'?'A workout holds up to 24 stages: '+programEntries.length+' + '+stages.length+' is too many. Nothing was added.'
+        :'В тренировке до 24 этапов: '+programEntries.length+' + '+stages.length+' — слишком много. Ничего не добавлено.');
+      return false;
+    }
+    programEntries.push(...stages);persistProgram();
+    exchange.message(addedText(stages.length));
+    return true;
+  }
   function snapshot(name,id,src) {
     return {id,name,entries:normalizeProgram(src.entries.map(x=>({...x,settings:x.settings || structuredClone(profiles[x.presetId])}))),options:normalizeOptions(src.options)};
   }
@@ -933,9 +993,14 @@ function bindProgramLibrary() {
   let libraryDraft=null;
   // An appointment opens in the existing editor as a copy of its snapshot; «Мои» and other dates are not touched.
   const openSession=(session,snap)=>openEntry({id:session.programId,name:sessionTitle(session,snap,document.documentElement.lang),entries:snap.entries,options:snap.options},
-    !savedPrograms.some(p=>p.id===session.programId),{date:session.date,sessionId:session.id});
+    !savedPrograms.some(p=>p.id===session.programId),{date:session.date,sessionId:session.id,diaryId:diaries.active});
+  // G1: ⋮ of the calendar. Switching the diary redraws the calendar behind the dialog at once.
+  const diariesDialog=createDiariesDialog(document,{diaries,confirm:confirmDeletion,files:{share:shareFile,save:saveFile},
+    onSwitch:async()=>{await useActiveDiary();diary.show(diary.calendar.selected);if(!library.hidden&&libraryTab==='diary')renderLibrary();}});
   const diary=createDiaryView(document,{
     getDiary:()=>diaryStore,
+    diaryName:lang=>diaries.name(diaries.active,lang),
+    openDiaries:trigger=>diariesDialog.show(trigger),
     savedPrograms:()=>savedPrograms,
     profiles:()=>profiles,
     // «Начать тренировку»: the existing timer, linked to this appointment. Started on another day, the run is recorded
@@ -944,7 +1009,7 @@ function bindProgramLibrary() {
       if(!openSession(session,snap))return;
       await audio.unlock();startProgram(from);
     },
-    openProgram:(program,date)=>openEntry(program,false,{date,sessionId:null}),
+    openProgram:(program,date)=>openEntry(program,false,{date,sessionId:null,diaryId:diaries.active}),
     // STAGE 4: a planned appointment shows the editor's stage cards. Their pencils, arrows and rest steppers edit this
     // appointment's own copy (a new snapshot for this session only): the library, «Мои» and other dates are untouched.
     renderStages:(session,snap,{expanded,commit,removeWorkout})=>{
@@ -975,9 +1040,9 @@ function bindProgramLibrary() {
     assign:(snapshots,program,date)=>newSession(snapshots,{date,snap:diarySnap(program.name,program.entries,program.options),programId:program.id,origin:'diary'}),
     // STAGE 4.1 «Добавить этап»: the library picker collects stages for THIS appointment (same id, same day). Picks are
     // appended in tap order, each an independent copy (a block picked twice gives two stages); × writes them, «Отмена» drops them.
-    addStages:(session,snap)=>{const entries=normalizeProgram(snap.entries);libraryDraft={date:session.date,entries,base:entries.length,sessionId:session.id,insert:true,
+    addStages:(session,snap)=>{const entries=normalizeProgram(snap.entries);libraryDraft={date:session.date,entries,base:entries.length,sessionId:session.id,insert:true,diaryId:diaries.active,
       name:snap.name||'',options:snap.options||{},failed:false};libraryTab='templates';libraryPath={};renderLibrary();byId('programLibraryModal').querySelector('section').scrollTop=0;},
-    startLibrary:date=>{libraryDraft={date,entries:[],sessionId:null,failed:false};libraryTab='templates';libraryPath={};renderLibrary();byId('programLibraryModal').querySelector('section').scrollTop=0;},
+    startLibrary:date=>{libraryDraft={date,entries:[],sessionId:null,failed:false,diaryId:diaries.active};libraryTab='templates';libraryPath={};renderLibrary();byId('programLibraryModal').querySelector('section').scrollTop=0;},
     confirmRemove:opts=>confirmDeletion({...opts,labels:{
       ru:{title:'Удалить из календаря?',message:'Тренировка исчезнет из календаря. Программа в «Мои» останется.',delete:'Удалить'},
       en:{title:'Remove from calendar?',message:'The workout leaves the calendar. The program in «Mine» stays.',delete:'Remove'}}}),
@@ -988,8 +1053,8 @@ function bindProgramLibrary() {
 
   function renderLibrary() {
     const list=byId('programLibraryList');list.replaceChildren();
-    byId('ftWorkoutExchangeToolbar').hidden=libraryTab!=='mine';
-    exchange.refresh();
+    byId('ftWorkoutExchangeToolbar').hidden=libraryTab!=='mine' && libraryTab!=='templates';
+    exchange.message('');exchange.refresh();
     byId('programLibraryMine').classList.toggle('is-active',libraryTab==='mine');
     byId('programLibraryTemplates').classList.toggle('is-active',libraryTab==='templates');
     byId('ftTreePreviewTab').classList.toggle('is-active',libraryTab==='tree');
@@ -1002,6 +1067,8 @@ function bindProgramLibrary() {
     byId('programLibraryBack').hidden=libraryTab!=='templates' || !level.back;
     byId('programLibraryTitle').textContent=libraryTab==='mine'?'Мои программы':level.title;
     if(libraryTab==='templates') {
+      // B2: the library cards with a copy in the workout being edited (a diary draft or the timer screen's program).
+      const inWorkout=new Set((libraryDraft?libraryDraft.entries:programEntries).map(e=>e.sourceId).filter(Boolean));
       if(libraryDraft?.insert) {
         const en=document.documentElement.lang==='en',[y,m,d]=libraryDraft.date.split('-'),n=libraryDraft.entries.length-libraryDraft.base,name=libraryDraft.name||diaryText(en?'en':'ru').untitled;
         const hint=Object.assign(document.createElement('div'),{className:'ft-diary-hint ft-library-draft ft-library-insert'});
@@ -1032,12 +1099,14 @@ function bindProgramLibrary() {
         }
         const workout=item.workout,preview=stageForWorkout(workout);
         list.append(renderLibraryWorkoutCard(document,workout,{
+          inWorkout:!!preview && inWorkout.has(preview.sourceId),
           rounds:preview?compileProgram([preview],profiles,{cycles:1}):[],
           lang:document.documentElement.lang,
           addDisabled:!preview || (libraryDraft ? libraryDraft.entries.length>=24 : programRunning || programEntries.length>=24),
           plusIcon:()=>createActionIcon(document,'plus'),
           onAdd:()=>{
             const stage=stageForWorkout(workout);if(!stage)return false;
+            stage.uid=newId('st');
             // A diary draft collects its own stages; the timer screen's workout is not touched.
             if(libraryDraft){
               if(libraryDraft.entries.length>=24)return false;
@@ -1046,7 +1115,9 @@ function bindProgramLibrary() {
               return true;
             }
             if(programRunning||programEntries.length>=24)return false;
+            // The library stays open on the same place: more stages can be added; leaving it is the user's ×.
             programEntries.push(stage);persistProgram();
+            exchange.message(addedText(1));
             return true;
           }
         }));
@@ -1058,6 +1129,7 @@ function bindProgramLibrary() {
       list.append(renderSavedProgramCard(document,entry,profiles,{
         lang:document.documentElement.lang,
         onOpen:()=>openEntry(entry,false),
+        onAdd:()=>appendProgram(entry),
         onShareButton:()=>exchange.shareButton(entry),
         onDelete:del=>confirmDeletion({name:entry.name,trigger:del,onConfirm:()=>{
           if(!persistLibrary(savedPrograms.filter(x=>x.id!==entry.id)))return;
@@ -1152,7 +1224,7 @@ function bindProgramLibrary() {
     },'Описание урока: '+workout.name);
     const plus=makeButton('+','ft-route-lesson-action',()=>{
       if(programRunning||programEntries.length>=24)return;
-      programEntries.push(stage);persistProgram();plus.textContent='✓';
+      programEntries.push({...structuredClone(stage),uid:newId('st')});persistProgram();plus.textContent='✓';
     },'Добавить в таймер: '+workout.name);
     const meta=document.createElement('div');meta.className='ft-route-lesson-meta';
     meta.append(makeText('div','ft-route-lesson-facts',facts.line),makeText('div','ft-route-lesson-total',facts.total));
@@ -1245,17 +1317,22 @@ function bindProgramLibrary() {
   const nameInput=byId('programNameInput'),confirmSave=byId('programSaveConfirm');
   const dest={value:'mine'};
   let saving=false,collisionAck=null;
+  // The diary «В дневник» writes to: the one the editor was opened from, else the active one (G1).
+  let saveDiaryId='main',saveDiary=null;
   function renderSaveDialog() {
     const lang=document.documentElement.lang,en=lang==='en',withDiary=dest.value!=='mine';
     byId('programSaveDest').replaceChildren(dropdown(document,{label:en?'Save to':'Куда сохранить',className:'ft-save-dest',value:dest.value,
       options:en?[['mine','To my programs'],['diary','To the diary'],['both','To my programs and diary']]:[['mine','В мои программы'],['diary','В дневник'],['both','В мои программы и дневник']],
       onChange:v=>{dest.value=v;renderSaveDialog();}}));
     const box=byId('programSaveCalendar');box.hidden=!withDiary;
-    if(withDiary)box.replaceChildren(saveCal.render(lang,diaryStore?.sessions||[],{onChange:renderSaveDialog}));
+    if(withDiary){
+      box.replaceChildren(saveCal.render(lang,saveDiary?.sessions||[],{onChange:renderSaveDialog}));
+      if(diaries.list.length>1)box.prepend(Object.assign(document.createElement('p'),{className:'ft-diary-current ft-save-diary',textContent:(en?'Diary: ':'Дневник: ')+diaries.name(saveDiaryId,lang)}));
+    }
     const n=saveCal.selected.size;
     const asNew=collisionAck && collisionAck===nameInput.value.trim() && dest.value!=='diary';
     confirmSave.textContent=asNew&&!withDiary?(en?'Save as new':'Сохранить как новую'):!withDiary?(en?'Save':'Сохранить'):n?assignLabel(n,lang,dest.value==='both'):(en?'Pick dates in the calendar':'Выберите даты в календаре');
-    confirmSave.disabled=saving || (withDiary && (!n || diaryStore?.state!=='ok'));
+    confirmSave.disabled=saving || (withDiary && (!n || saveDiary?.state!=='ok'));
     const warn=byId('programSaveWarning'),name=nameInput.value.trim();
     warn.hidden=!asNew;
     warn.textContent=en?'«'+name+'» already exists in «Mine». Change the name, or press the button again to save it as a new program with the same name.'
@@ -1271,6 +1348,9 @@ function bindProgramLibrary() {
     dest.value=source?'mine':src.diary?'diary':'mine';
     saveCal.selected.clear();saveCal.picker=false;saveCal.month=null;
     if(src.diary){saveCal.selected.add(src.diary.date);saveCal.show(src.diary.date);}
+    saveDiaryId=diaries.has(src.diary?.diaryId)?src.diary.diaryId:diaries.active;saveDiary=null;
+    const id=saveDiaryId;
+    diaries.open(id).then(d=>{if(saveDiaryId===id){saveDiary=d;if(!save.hidden)renderSaveDialog();}});
     save.hidden=false;renderSaveDialog();
   }
   // Closing a dialog opened from «Дневник» goes back to the diary on the same date.
@@ -1295,7 +1375,7 @@ function bindProgramLibrary() {
     const name=nameInput.value.trim().slice(0,MAX_TITLE),toMine=dest.value!=='diary',toDiary=dest.value!=='mine';
     const dates=[...saveCal.selected].sort();
     if(toMine && !name){nameInput.focus();return;}
-    if(toDiary && (!dates.length || diaryStore?.state!=='ok'))return;
+    if(toDiary && (!dates.length || saveDiary?.state!=='ok'))return;
     const before=savedPrograms,existing=editorProgramIdentity(src.programId,savedPrograms);
     let programId=existing?.id||null;
     if(toMine) {
@@ -1317,7 +1397,7 @@ function bindProgramLibrary() {
       const snap=diarySnap(name,src.entries,src.options);
       const ctx=src.diary,today=localDate();
       let todayId=null;
-      const ok=await diaryStore.commit(d=>{
+      const ok=await saveDiary.commit(d=>{
         const ref=putSnapshot(d.snapshots,snap),now=Date.now();
         for(const date of dates) {
           // Saving the assignment the editor was opened for edits it (it has not run yet); it is not copied.
@@ -1338,7 +1418,7 @@ function bindProgramLibrary() {
         return;
       }
       // Assigned for today: starting now fills that assignment instead of adding a second session.
-      if(!saveSource)editorDiary=todayId?{date:today,sessionId:todayId}:null;
+      if(!saveSource)editorDiary=todayId?{date:today,sessionId:todayId,diaryId:saveDiaryId}:null;
     }
     if(saveSource)return closeSave();
     if(toMine){openedProgramId=programId;openedProgramName=name;}

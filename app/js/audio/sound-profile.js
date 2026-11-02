@@ -5,14 +5,22 @@ export const SOUND_PROFILE_KEY = 'fighttech.metronome.sound.v1';
 export const TONES = { A: 1400, B: 1600, C: 1800 };
 const DEFAULT = { kind: 'click', tone: 'A' };
 
-export function loadSoundProfile(storage = globalThis.localStorage) {
+export function loadSoundProfile(storage = globalThis.localStorage, key = SOUND_PROFILE_KEY) {
   try {
-    const v = JSON.parse(storage?.getItem(SOUND_PROFILE_KEY) || 'null');
+    const v = JSON.parse(storage?.getItem(key) || 'null');
     return { kind: v?.kind === 'electronic' ? 'electronic' : 'click', tone: v?.tone in TONES ? v.tone : 'A' };
   } catch { return { ...DEFAULT }; }
 }
-export function saveSoundProfile(profile, storage = globalThis.localStorage) {
-  try { storage?.setItem(SOUND_PROFILE_KEY, JSON.stringify({ kind: profile.kind, tone: profile.tone })); return true; } catch { return false; }
+export function saveSoundProfile(profile, storage = globalThis.localStorage, key = SOUND_PROFILE_KEY) {
+  try { storage?.setItem(key, JSON.stringify({ kind: profile.kind, tone: profile.tone })); return true; } catch { return false; }
+}
+// «Сигналы отсчёта» (2026-11-02): the 4-3-2-1 before the start and the end-of-phase warning ticks, chosen apart from the
+// metronome. Nothing stored yet = what 0.2.208 played: the tick followed the metronome profile, so an update keeps it.
+export const COUNTDOWN_SOUND_KEY = 'fighttech.countdown.sound.v1';
+export function loadCountdownProfile(storage = globalThis.localStorage) {
+  let own = null;
+  try { own = storage?.getItem(COUNTDOWN_SOUND_KEY); } catch {}
+  return loadSoundProfile(storage, own ? COUNTDOWN_SOUND_KEY : SOUND_PROFILE_KEY);
 }
 // The click family: the metronome accent, its subdivision and the countdown/warning tick (the same click file).
 // Electronic files play at their own level (gain 1, no boost): their RMS is already ~5 dB above the click at its gain 1.5,

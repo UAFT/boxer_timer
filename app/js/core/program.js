@@ -42,6 +42,7 @@ export function normalizeRoundTimingOverrides(raw) {
 export function normalizeOptions(raw) { return { cycles: bounded(raw?.cycles,1,20,1), cycleRestSec: bounded(raw?.cycleRestSec,0,3600,60) }; }
 export function normalizeLibrary(raw) { return (Array.isArray(raw)?raw:[]).slice(0,100).filter(x=>x && typeof x.id==='string' && typeof x.name==='string').map(x=>({id:x.id,name:x.name.slice(0,MAX_TITLE),entries:normalizeProgram(x.entries),options:normalizeOptions(x.options)})); }
 
+const idOf = v => typeof v === 'string' && v && v.length <= 120 ? v : null;
 export function normalizeProgram(raw) {
   const entries = Array.isArray(raw) ? raw : [];
   return entries.slice(0, 24).filter(x => PRESET_NAMES[x?.presetId]).map(x => ({
@@ -55,7 +56,11 @@ export function normalizeProgram(raw) {
     settings: stageSettings(x.settings),
     restAfterSec: Math.max(0, Math.min(3600, Math.round((Number(x.restAfterSec) || 0) / 5) * 5)),
     // Absent on stages that never had one, so their stored shape (and snapshot hashes) stay as they were.
-    ...(normalizeStageMetronome(x.metronome) ? { metronome: normalizeStageMetronome(x.metronome) } : {})
+    ...(normalizeStageMetronome(x.metronome) ? { metronome: normalizeStageMetronome(x.metronome) } : {}),
+    // 2026-11-02: where a stage came from (a library workout: 'lib:<id>') and which copy it is. Both optional: older
+    // stages have neither; a copy keeps its source and gets its own uid, so editing it never touches another copy.
+    ...(idOf(x.sourceId) ? { sourceId: idOf(x.sourceId) } : {}),
+    ...(idOf(x.uid) ? { uid: idOf(x.uid) } : {})
   }));
 }
 // A stage with its own settings follows its preset tab only in the fields just changed in Settings.
@@ -98,7 +103,8 @@ export function compileProgram(entries, profiles, options = {}) {
         blockCount: (config.intervalMode==='ladder'||(config.intervalMode==='two_phase'&&config.ladderEnabled)) && config.blockEnabled ? config.blockCount : 1,
         localRound: (i-1)%config.rounds+1,
         localRounds: config.rounds,
-        ...(stage.metronome?.enabled ? { metronome: { bpm: roundBpm(stage.metronome, i), mode: stage.metronome.mode } } : {})
+        ...(stage.metronome?.enabled ? { metronome: { bpm: roundBpm(stage.metronome, i), mode: stage.metronome.mode,
+          ...(config.intervalMode === 'two_phase' && stage.metronome.phases ? { phases: stage.metronome.phases } : {}) } } : {})
       });
     }
   }

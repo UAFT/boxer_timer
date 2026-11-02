@@ -76,7 +76,8 @@ test('no native <select> in the start-from control or the sound settings; the ch
   assert.deepEqual([...html.matchAll(/<select id="(\w+)"/g)].map(m => m[1]), ['languageSelect']);
   for (const f of ['js/ui/start-from.js', 'js/ui/sound-profile-settings.js', 'js/ui/choice-dialog.js']) assert.doesNotMatch(read(f).toString(), /createElement\('select'\)/, f);
   assert.match(read('js/platform/back-button.js').toString(), /const CLOSERS = \[\n[^\n]*\n\s*\['ftChoiceDialog', 'ftChoiceDialogClose'\],/);
-  assert.match(html, /id="audioEnabledInput"[\s\S]*<span>Сигналы таймера<\/span>[\s\S]*id="ftMetronomeSound"[\s\S]*id="ftMetronomeSoundClick"[\s\S]*id="ftMetronomeSoundElectronic"[\s\S]*id="ftMetronomeTone" hidden/);
+  // 2026-11-02: «Сигналы отсчёта» (own choice) before «Сигналы метронома», then the static «Гонг · Стандартный».
+  assert.match(html, /id="audioEnabledInput"[\s\S]*<span>Сигналы таймера<\/span>[\s\S]*id="ftCountdownSound"[\s\S]*id="ftCountdownSoundClick"[\s\S]*id="ftCountdownSoundElectronic"[\s\S]*id="ftCountdownSoundTone" hidden[\s\S]*id="ftMetronomeSound"[\s\S]*id="ftMetronomeSoundClick"[\s\S]*id="ftMetronomeSoundElectronic"[\s\S]*id="ftMetronomeSoundTone" hidden[\s\S]*id="ftGongSound"[\s\S]*Стандартный/);
 });
 
 test('every new UI string has its English', () => {

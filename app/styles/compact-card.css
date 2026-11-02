@@ -20,3 +20,4 @@
 .program-library-modal .program-library-list .ft-library-folder{flex-direction:row!important;justify-content:space-between!important;align-items:center!important;gap:10px}
 .ft-library-folder-label{flex:1;min-width:0;text-align:left;overflow-wrap:anywhere}
 .ft-library-count{margin-left:auto;font-weight:800;font-variant-numeric:tabular-nums}
+.program-library-modal .program-library-list .ft-saved-program-entry.is-in-workout{border-color:#3d9a5f!important;box-shadow:inset 0 0 0 .5px #3d9a5f!important}

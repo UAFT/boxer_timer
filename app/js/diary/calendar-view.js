@@ -17,7 +17,7 @@ const TEXT = {
     mine: 'Мои программы', library: 'Библиотека', noMine: 'В «Мои» пока нет программ.', assign: 'Назначить на дату',
     menu: 'Действия', move: 'Перенести на дату', repeat: 'Повторить на дату', remove: 'Удалить из календаря',
     pickMove: name => 'Выберите дату, чтобы перенести «' + name + '»', pickRepeat: name => 'Выберите дату, чтобы повторить «' + name + '»',
-    cancelPick: 'Не переносить', loading: 'Загрузка дневника…',
+    cancelPick: 'Не переносить', loading: 'Загрузка дневника…', diaries: 'Дневники и действия',
     assignDates: 'Назначить на даты', pickAssign: name => 'Отметьте даты для «' + name + '»', pickDates: 'Выберите даты в календаре',
     start: 'Начать тренировку', addStage: 'Добавить этап', saveAs: 'Сохранить как…', stage: 'Этап ', between: 'Отдых между этапами: ', betweenCycles: 'Пауза между циклами: ',
     cycles: n => 'Циклы: ' + n, roundsCount: n => russianCount(n), total: 'Всего: ', noLimit: 'Без ограничения времени',
@@ -35,7 +35,7 @@ const TEXT = {
     mine: 'My programs', library: 'Library', noMine: 'No programs in «Mine» yet.', assign: 'Assign to date',
     menu: 'Actions', move: 'Move to date', repeat: 'Repeat on date', remove: 'Remove from calendar',
     pickMove: name => 'Pick a date to move «' + name + '»', pickRepeat: name => 'Pick a date to repeat «' + name + '»',
-    cancelPick: 'Cancel', loading: 'Loading diary…',
+    cancelPick: 'Cancel', loading: 'Loading diary…', diaries: 'Diaries and actions',
     assignDates: 'Assign to dates', pickAssign: name => 'Tick the dates for «' + name + '»', pickDates: 'Pick dates in the calendar',
     start: 'Start workout', addStage: 'Add stage', saveAs: 'Save as…', stage: 'Stage ', between: 'Rest between stages: ', betweenCycles: 'Rest between cycles: ',
     cycles: n => 'Cycles: ' + n, roundsCount: n => n + (n === 1 ? ' round' : ' rounds'), total: 'Total: ', noLimit: 'No time limit',
@@ -105,7 +105,8 @@ export function dropdown(doc, { label, options, value, onChange, className = '' 
 export function createCalendar(doc, { now = () => new Date(), multi = false } = {}) {
   const cal = { month: null, selected: multi ? new Set() : null, picker: false };
   cal.show = key => { const d = fromKey(key); cal.month = { y: d.getFullYear(), m: d.getMonth() }; };
-  cal.render = (lang, sessions, { onTap, onChange, hint } = {}) => {
+  // menu: the diary's ⋮ button (G1), in the place «Сегодня» has in the other calendars (the save dialog keeps «Сегодня»).
+  cal.render = (lang, sessions, { onTap, onChange, hint, menu } = {}) => {
     const t = diaryText(lang), locale = lang === 'en' ? 'en' : 'ru';
     const today = localDate(now());
     if (!cal.month) cal.show(multi ? today : cal.selected || today);
@@ -153,7 +154,7 @@ export function createCalendar(doc, { now = () => new Date(), multi = false } = 
     }
     const legend = el(doc, 'div', 'ft-diary-legend');
     for (const [status, label] of t.legend) { const item = el(doc, 'span', 'ft-diary-legend-item'); item.append(el(doc, 'i', 'ft-diary-swatch is-' + status), label); legend.append(item); }
-    legend.append(button(doc, 'ft-diary-today', t.today, () => { if (!multi) cal.selected = today; cal.show(today); onChange(); }));
+    legend.append(menu || button(doc, 'ft-diary-today', t.today, () => { if (!multi) cal.selected = today; cal.show(today); onChange(); }));
     surface.append(grid, legend);
     return surface;
   };
@@ -168,7 +169,7 @@ function libraryWorkout(stage) {
 }
 const stageName = (stage, lang) => stage.title || timerLabel(stage, lang);
 
-// host: getDiary(), savedPrograms(), profiles(), startSession(session, snap), openProgram(program, date),
+// host: getDiary(), diaryName(lang), openDiaries(trigger), savedPrograms(), profiles(), startSession(session, snap), openProgram(program, date),
 // renderStages(session, snap, {expanded, commit, removeWorkout}), saveAs(session, snap), addStages(session, snap),
 // assign(snapshots, program, date), startLibrary(date), confirmRemove({name, trigger, onConfirm}), confirmDelete({...}).
 export function createDiaryView(doc, host, { now = () => new Date() } = {}) {
@@ -314,6 +315,8 @@ export function createDiaryView(doc, host, { now = () => new Date() } = {}) {
     const today = localDate(now());
     const sessions = diary.sessions;
     const root = el(doc, 'div', 'ft-diary');
+    // G1: the active diary's name is always on the calendar screen.
+    if (host.diaryName) root.append(el(doc, 'h3', 'ft-diary-current', host.diaryName(lang)));
     if (diary.state !== 'ok') root.append(el(doc, 'p', 'ft-diary-alert', t[diary.state]));
     let hint = null;
     if (pick) {
@@ -341,7 +344,12 @@ export function createDiaryView(doc, host, { now = () => new Date() } = {}) {
             planRef: s.execRef || s.planRef, origin: 'repeat', repeatOf: s.id, createdAt: at, updatedAt: at });
         }, rerender);
       };
-      root.append(cal.render(lang, sessions, { onTap, onChange: rerender, hint }));
+      let menu = null;
+      if (host.openDiaries) {
+        menu = button(doc, 'ft-diary-diaries', '⋮', () => host.openDiaries(menu));
+        menu.id = 'ftDiariesOpen'; menu.setAttribute('aria-label', t.diaries); menu.title = t.diaries; menu.setAttribute('aria-haspopup', 'dialog');
+      }
+      root.append(cal.render(lang, sessions, { onTap, onChange: rerender, hint, menu }));
     }
 
     const detail = el(doc, 'section', 'ft-diary-detail');

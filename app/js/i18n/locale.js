@@ -20,7 +20,7 @@ const pairs = [
 ['Удерживай пресет, чтобы добавить этап. Повторное удержание добавит его ещё раз.','Press and hold a preset to add a stage. Hold it again to repeat it.'],
 ['Звук и сигналы','Sound and signals'],
 ['Работа, отдых, раунды и метроном управляются с главной панели.','Work, rest, rounds and metronome are controlled on the main screen.'],
-['Закрыть','Close'],['Общее','General'],['Сигналы таймера','Timer sounds'],['Сигналы метронома','Metronome sounds'],['Щелчки','Clicks'],['Электронные','Electronic'],['Электронный сигнал','Electronic sound'],
+['Закрыть','Close'],['Общее','General'],['Сигналы таймера','Timer sounds'],['Сигналы метронома','Metronome sounds'],['Щелчки','Clicks'],['Электронные','Electronic'],['Электронный сигнал','Electronic sound'],['Сигналы отсчёта','Countdown sounds'],['Электронный отсчёт','Electronic countdown'],['Гонг','Gong'],['Фазы метронома','Metronome phases'],['Звучит в фазах','Sounds in phases'],['Хотя бы одна фаза звучит. Чтобы выключить метроном, снимите «Метроном этапа».','At least one phase sounds. To turn the metronome off, untick «Stage metronome».'],['Стандартный','Standard'],
 ['Подписка','Subscription'],
 ['Пробный период действует до','Trial access is available until'],
 ['Подключитесь к интернету, чтобы проверить доступ.','Connect to the internet to verify access.'],

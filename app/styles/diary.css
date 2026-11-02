@@ -158,3 +158,28 @@
 .ft-diary .ft-diary-add-stage:focus-visible{outline:3px solid var(--ft-steel,#365f60);outline-offset:2px}
 .ft-library-insert{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .ft-library-insert-cancel{flex:0 0 auto;min-height:40px;padding:0 12px;border-radius:10px;border:1px solid var(--ft-line,#c7d0d2);background:transparent;color:var(--ft-ink,#1b2229);font:inherit}
+.ft-stage-metro-phases[hidden]{display:none}
+/* G1 (owner 2026-11-02): ⋮ in the place of «Сегодня»; the active diary's name over the calendar; the «Дневники» dialog —
+   a regular centred dialog (the Fight Tech choice dialog look), below the app's confirmation (z 50). */
+.ft-diary .ft-diary-diaries{margin-left:auto;min-width:44px;min-height:40px;padding:0 10px;border:1px solid #d0d7dc;border-radius:10px;background:#f4f6f8;color:var(--d-ink,#1b2229);font-size:22px;font-weight:800;line-height:1;box-shadow:none}
+.ft-diary-current{margin:0 0 8px;font-size:17px;font-weight:750;color:var(--d-ink,#1b2229);overflow-wrap:anywhere}
+.ft-diaries-backdrop{position:fixed;inset:0;z-index:45;display:grid;place-items:center;padding:24px 16px;background:rgba(27,40,49,.42)}
+.ft-diaries-body{display:grid;gap:10px;padding:8px 10px 12px;overflow-y:auto;overscroll-behavior:contain}
+.ft-diaries-list{display:grid;gap:2px}
+.ft-diaries-dialog .ft-diaries-item{display:flex;align-items:center;gap:10px;min-height:48px;padding:8px 12px;text-align:left;background:transparent;color:var(--ft-ink,#1b2229);border:0;border-radius:10px;box-shadow:none;font:inherit;font-size:16px;font-weight:600}
+.ft-diaries-dialog .ft-diaries-item.is-active{background:#dce9e6;color:#244c4b;font-weight:750}
+.ft-diaries-check{flex:0 0 18px;font-weight:800}
+.ft-diaries-name{min-width:0;overflow-wrap:anywhere}
+.ft-diaries-actions{display:grid;gap:6px;padding-top:10px;border-top:1px solid var(--ft-line,#d0d7dc)}
+.ft-diaries-dialog .ft-diaries-action{min-height:46px;padding:8px 12px;text-align:left;border:1px solid var(--ft-line,#d0d7dc);border-radius:11px;background:var(--ft-raised,#f4f6f8);color:var(--ft-ink,#1b2229);box-shadow:none;font:inherit;font-size:15px;font-weight:650}
+.ft-diaries-dialog .ft-diaries-action.is-danger{color:#923a39;border-color:#d3a6a0;background:var(--ft-red-soft,#f9e8e6)}
+.ft-diaries-dialog .ft-diaries-action:disabled{opacity:.45}
+.ft-diaries-field{display:grid;gap:6px;font-size:14px;font-weight:650}
+.ft-diaries-field input{min-height:46px;padding:8px 12px;border:1px solid var(--ft-line,#d0d7dc);border-radius:11px;background:#fff;color:var(--ft-ink,#1b2229);font:inherit;font-size:16px}
+.ft-diaries-form-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ft-diaries-form-actions button{min-height:46px;border-radius:11px;border:1px solid var(--ft-line,#d0d7dc);background:var(--ft-raised,#f4f6f8);color:var(--ft-ink,#1b2229);font:inherit;font-weight:700}
+.ft-diaries-form-actions .ft-diaries-ok{background:var(--ft-steel-gradient,#365f60);border-color:#577c7a;color:#fff}
+.ft-diaries-status{margin:0;font-size:14px;color:var(--ft-secondary,#687580)}
+.ft-diaries-status:empty{display:none}
+.ft-diaries-dialog :is(button,input):focus-visible{outline:2px solid #1f5a45;outline-offset:2px}
+.ft-stage-metro-caption{grid-column:1/-1;font-size:13px;color:var(--ft-secondary,#687580);margin-top:4px}

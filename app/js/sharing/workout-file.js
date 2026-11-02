@@ -36,7 +36,8 @@ function checkSettings(settings, presetId) {
   if (settings.countdownEnabled != null && typeof settings.countdownEnabled !== 'boolean') invalid();
   return settings;
 }
-function checkEntries(entries, options) {
+// Also the check of every workout snapshot inside a diary file (diary/diary-file.js).
+export function checkEntries(entries, options) {
   if (!Array.isArray(entries) || entries.length < 1 || entries.length > 24) invalid();
   let total = 0;
   for (const entry of entries) {
@@ -56,7 +57,8 @@ function checkEntries(entries, options) {
       }
     }
     // STAGE 4 stage metronome: a small object; normalizeProgram keeps only valid tempos.
-    if (entry.metronome != null && (!plain(entry.metronome) || Object.keys(entry.metronome).length > 5
+    for (const key of ['sourceId','uid']) if (entry[key] != null && !string(entry[key],120)) invalid();
+    if (entry.metronome != null && (!plain(entry.metronome) || Object.keys(entry.metronome).length > 6
       || (entry.metronome.roundBpm != null && (!Array.isArray(entry.metronome.roundBpm) || entry.metronome.roundBpm.length > 200)))) invalid();
     if (!plain(entry.settings)) invalid(); // v1 files always carry sender settings
     const cfg = checkSettings(entry.settings,entry.presetId);

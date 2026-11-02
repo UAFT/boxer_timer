@@ -67,10 +67,10 @@ export function createActionIcon(doc, kind) {
   }
   return svg;
 }
-// «Мои»: the compact card shared with the library. Body = round plan, ☰ = stage overview
-// (saved programs keep no goal or notes), then + (open), share and delete.
+// «Мои»: the compact card shared with the library. Body = round plan with «Открыть программу», ☰ = stage overview
+// (saved programs keep no goal or notes), then + (add all its stages to the workout being edited), share and delete.
 // The diary passes its own actions (calendar menu) and a status badge; the card itself is unchanged.
-export function renderSavedProgramCard(doc, program, profiles, {lang='ru',onOpen,onShareButton,onDelete,actions,badge=''}={}) {
+export function renderSavedProgramCard(doc, program, profiles, {lang='ru',onOpen,onAdd,onShareButton,onDelete,actions,badge=''}={}) {
   const ru=lang!=='en',timing=programCardTimings(program,profiles);
   const rounds=compileProgram(normalizeProgram(program.entries),profiles,normalizeOptions(program.options));
   const describe=el=>{
@@ -109,10 +109,11 @@ export function renderSavedProgramCard(doc, program, profiles, {lang='ru',onOpen
    load.addEventListener('click',()=>onOpen?.());
    el.append(load);
   };
+  // + appends (never replaces): ✓ for a moment, then + again for one more copy.
   const quickAdd=doc.createElement('button');quickAdd.type='button';quickAdd.className='ft-saved-program-add';
-  quickAdd.setAttribute('aria-label',(ru?'Открыть программу ':'Open workout ')+program.name);
-  quickAdd.title=ru?'Открыть программу':'Open workout';quickAdd.append(createActionIcon(doc,'plus'));
-  quickAdd.addEventListener('click',()=>onOpen?.());
+  quickAdd.setAttribute('aria-label',(ru?'Добавить в тренировку ':'Add to workout ')+program.name);
+  quickAdd.title=ru?'Добавить в тренировку':'Add to workout';quickAdd.append(createActionIcon(doc,'plus'));
+  quickAdd.addEventListener('click',()=>{if(onAdd?.()){quickAdd.replaceChildren('✓');setTimeout(()=>quickAdd.replaceChildren(createActionIcon(doc,'plus')),800);}});
   if(actions)return renderCompactCard(doc,{title:program.name,rounds,lang,badge,plan,description:describe,actions});
   const remove=doc.createElement('button');remove.type='button';remove.className='program-library-entry-delete ft-trash-button';
   remove.setAttribute('aria-label',(ru?'Удалить программу ':'Delete program ')+program.name);

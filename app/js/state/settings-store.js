@@ -38,7 +38,7 @@ export function normalizeSettings(raw, fallback) {
     warningSeconds: normalizeWarningSeconds(raw?.warningSeconds, fallback.warningSeconds ?? 10),
     audioEnabled: raw?.audioEnabled !== false,
     metronomeEnabled: Boolean(raw?.metronomeEnabled),
-    metronomeBpm: clampInt(raw?.metronomeBpm, 0, 300, fallback.metronomeBpm ?? 20),
+    metronomeBpm: clampInt(raw?.metronomeBpm, 0, 300, fallback.metronomeBpm ?? 10),
     metronomeMode: normalizeMetronomeMode(raw?.metronomeMode, fallback.metronomeMode),
     intervalMode: normalizeIntervalMode(raw?.intervalMode, fallback.intervalMode),
     ladderEnabled: Boolean(raw?.ladderEnabled) && normalizeIntervalMode(raw?.intervalMode, fallback.intervalMode) === 'two_phase',

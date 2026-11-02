@@ -772,12 +772,18 @@ button.ft-choice-trigger{box-sizing:border-box;display:flex;align-items:center;j
 .ft-subscription-actions #ftSubscriptionPurchase{grid-column:1/-1}
 .ft-subscription-actions button[hidden]{display:none}
 .ft-subscription-actions button{display:flex;align-items:center;justify-content:center;text-align:center;min-width:0;padding:8px 8px;font-size:clamp(13px,3.6vw,14px);line-height:1.2;white-space:normal;overflow-wrap:normal;word-break:normal;hyphens:none}
-/* Settings → Общее → «Сигналы метронома»: two radio rows (the «Сигналы таймера» row look) and, for «Электронные»,
-   the tone in a Fight Tech choice field. */
-.ft-metronome-sound{display:grid;gap:8px;margin-top:14px}
-.ft-metronome-sound-title{font-size:14px;font-weight:750;color:var(--ft-ink)}
-.ft-radio-group{display:grid;gap:8px}
-.settings-modal .ft-radio-row{margin-top:0;min-height:48px}
-.settings-modal .ft-radio-row input{width:20px;height:20px;accent-color:var(--ft-steel)}
-.ft-metronome-tone[hidden]{display:none}
-.settings-modal .ft-metronome-tone .ft-choice-trigger{min-height:48px;font-size:16px;padding:10px 14px}
+/* Settings → Общее (owner 2026-11-02): compact rows without a frame per option; groups split by a hairline.
+   Every marker is one circle with a centre dot — the on/off «Сигналы таймера» checkbox and the radios alike
+   (the semantics stay checkbox / radio). */
+.ft-general-card .settings-toggle-row{margin-top:4px;min-height:44px;padding:0;border:0;border-radius:0;background:none;gap:10px}
+.ft-general-card :is(input[type=checkbox],input[type=radio]){appearance:none;-webkit-appearance:none;flex:none;width:22px;height:22px;margin:0;
+ border:2px solid var(--ft-steel);border-radius:50%;background:#fff;accent-color:var(--ft-steel)}
+.ft-general-card :is(input[type=checkbox],input[type=radio]):checked{background:radial-gradient(circle,var(--ft-steel) 0 5px,#fff 5.5px)}
+.ft-sound-choice{display:grid;gap:2px;margin-top:8px;padding-top:8px;border-top:1px solid var(--ft-line)}
+.ft-sound-choice-title{font-size:14px;font-weight:750;color:var(--ft-ink)}
+.ft-general-card .ft-radio-group{display:flex;flex-wrap:wrap;gap:0 22px}
+.ft-sound-tone{margin:2px 0 4px}
+.ft-sound-tone[hidden]{display:none}
+.settings-modal .ft-sound-tone .ft-choice-trigger{min-height:44px;font-size:15px;padding:8px 12px}
+.ft-gong-row{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:44px;padding-bottom:0}
+.ft-gong-value{color:var(--ft-secondary);font-size:15px}

@@ -45,10 +45,11 @@ export function createRecorder({ storage = globalThis.localStorage, now = () => 
     get active() { return run; },
     // snap: the program exactly as started (edits made before Start included). link: {sessionId, programId}.
     // startFrom {stage, round, skipped}: «Начать тренировку с» — the skipped rounds stay in roundsTotal, never in roundsDone.
-    begin({ snap, roundsTotal, sessionId = null, programId = null, origin, startFrom = null }) {
+    // diaryId (G2): the diary this run is recorded into, bound at the start.
+    begin({ snap, roundsTotal, sessionId = null, programId = null, origin, startFrom = null, diaryId = 'main' }) {
       adopt();
       const t = now();
-      run = { runId: newId('r'), date: localDate(new Date(t)), startedAt: t, updatedAt: t, snap, roundsTotal, sessionId, programId, origin,
+      run = { runId: newId('r'), date: localDate(new Date(t)), startedAt: t, updatedAt: t, snap, roundsTotal, sessionId, programId, origin, diaryId,
         roundsDone: 0, activeMs: 0, ...(startFrom ? { startFrom } : {}) };
       lastPhase = 'idle'; lastPaused = false;
       save();

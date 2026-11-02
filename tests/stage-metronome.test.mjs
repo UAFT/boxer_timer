@@ -27,9 +27,11 @@ test('stage metronome is normalized; invalid tempos fall back, rounds without a 
   assert.equal(normalizeStageMetronome(null), null);
   assert.equal(normalizeStageMetronome([1]), null);
   const m = normalizeStageMetronome({ enabled: true, mode: 'subdivided', bpm: 0, perRound: true, roundBpm: [8, '6', 5.5, 301, null] });
-  assert.deepEqual(m, { enabled: true, mode: 'subdivided', bpm: 20, perRound: true, roundBpm: [8, 6] });
-  assert.deepEqual([1, 2, 3, 4, 9].map(n => roundBpm(m, n)), [8, 6, 20, 20, 20]);
-  assert.equal(roundBpm({ ...m, perRound: false }, 1), 20);
+  // 2026-11-02 (D): an invalid/missing tempo falls back to the new default 10 (was 20); a valid saved tempo is kept.
+  assert.deepEqual(m, { enabled: true, mode: 'subdivided', bpm: 10, perRound: true, roundBpm: [8, 6] });
+  assert.deepEqual([1, 2, 3, 4, 9].map(n => roundBpm(m, n)), [8, 6, 10, 10, 10]);
+  assert.equal(roundBpm({ ...m, perRound: false }, 1), 10);
+  assert.equal(normalizeStageMetronome({ enabled: true, bpm: 20 }).bpm, 20);
   assert.equal(normalizeStageMetronome({ mode: 'x', bpm: 15 }).mode, 'direct');
 });
 
@@ -115,7 +117,7 @@ test('engine: beats only in work, every 60/BPM ms; a tempo change restarts the c
 
 test('app wiring: the stage tempo follows the running round and the editor and diary share one stage dialog', () => {
   const app = readFileSync(new URL('../app/js/app.js', import.meta.url), 'utf8');
-  assert.ok(app.includes("if (programRunning) return programMetronomeConfig(programSnapshot?.[Math.max(1, timer.state?.roundIndex || 1) - 1], settings, isMetronomeLocked(settings));"));
+  assert.ok(app.includes("if (programRunning) return programMetronomeConfig(programSnapshot?.[Math.max(1, timer.state?.roundIndex || 1) - 1], settings, isMetronomeLocked(settings), timer.state?.phase);"));
   // A new stage opens with the metronome off.
   assert.ok(app.includes("normalizeStageMetronome(saved)||{enabled:false,"));
   assert.equal(app.match(/followStageMetronome\(\);\n    metronome\.syncPhase\(state\);/g).length, 2);

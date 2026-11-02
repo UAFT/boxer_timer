@@ -124,7 +124,7 @@
               <button class="mode-chip metro-grid-btn is-active" type="button" data-metronome-mode="direct">Прямой</button>
               <button class="mode-chip metro-grid-btn" type="button" data-metronome-mode="subdivided">Дробный</button>
               <div class="metro-bpm-box metro-grid-box compact-metro-bpm-box">
-                <div class="metro-bpm-value" id="metricMetronome">20</div>
+                <div class="metro-bpm-value" id="metricMetronome">10</div>
                 <div class="metro-bpm-unit">уд/мин</div>
               </div>
               <button class="metro-grid-btn metro-action-btn" type="button" data-adjust-target="metronomeBpm" data-adjust-direction="up" aria-label="Увеличить удары в минуту">＋</button>
@@ -281,6 +281,8 @@
           <label class="stage-settings-checkbox"><input type="checkbox" id="stageSettingsMetroOn"> Метроном этапа</label>
           <div id="stageSettingsMetroFields" hidden>
             <div class="ft-stage-metro-modes" role="group" aria-label="Режим метронома"><button type="button" data-stage-metro="direct">Прямой</button><button type="button" data-stage-metro="subdivided">Дробный</button></div>
+            <div id="stageSettingsMetroPhases" class="ft-stage-metro-modes ft-stage-metro-phases" role="group" aria-label="Фазы метронома" hidden><span class="ft-stage-metro-caption">Звучит в фазах</span><button type="button" data-stage-metro-phase="0">Фаза 1</button><button type="button" data-stage-metro-phase="1">Фаза 2</button></div>
+            <p id="stageSettingsMetroPhaseHint" class="ft-stage-metro-interval" role="status" hidden>Хотя бы одна фаза звучит. Чтобы выключить метроном, снимите «Метроном этапа».</p>
             <label class="stage-settings-field">Темп, уд/мин<input id="stageSettingsMetroBpm" type="number" inputmode="numeric" min="1" max="300" step="1"></label>
             <p id="stageSettingsMetroInterval" class="ft-stage-metro-interval" aria-live="polite"></p>
             <label class="stage-settings-checkbox"><input type="checkbox" id="stageSettingsMetroPerRound"> Свой темп для каждого раунда</label>
@@ -323,20 +325,30 @@
                 <button type="button" role="option" data-ft-lang="en" aria-selected="false">English</button>
               </div>
             </div></div></section>
-          <section class="settings-card">
+          <section class="settings-card ft-general-card">
             <div class="settings-card-title">Общее</div>
             <label class="settings-toggle-row">
               <input type="checkbox" id="audioEnabledInput" />
               <span>Сигналы таймера</span>
             </label>
-            <div class="ft-metronome-sound" id="ftMetronomeSound">
-              <div class="ft-metronome-sound-title" id="ftMetronomeSoundTitle">Сигналы метронома</div>
+            <div class="ft-sound-choice" id="ftCountdownSound">
+              <div class="ft-sound-choice-title" id="ftCountdownSoundTitle">Сигналы отсчёта</div>
+              <div class="ft-radio-group" role="radiogroup" aria-labelledby="ftCountdownSoundTitle">
+                <label class="settings-toggle-row ft-radio-row"><input type="radio" name="ftCountdownSoundKind" value="click" id="ftCountdownSoundClick" /><span>Щелчки</span></label>
+                <label class="settings-toggle-row ft-radio-row"><input type="radio" name="ftCountdownSoundKind" value="electronic" id="ftCountdownSoundElectronic" /><span>Электронные</span></label>
+              </div>
+              <div class="ft-sound-tone" id="ftCountdownSoundTone" hidden></div>
+            </div>
+            <div class="ft-sound-choice" id="ftMetronomeSound">
+              <div class="ft-sound-choice-title" id="ftMetronomeSoundTitle">Сигналы метронома</div>
               <div class="ft-radio-group" role="radiogroup" aria-labelledby="ftMetronomeSoundTitle">
                 <label class="settings-toggle-row ft-radio-row"><input type="radio" name="ftMetronomeSoundKind" value="click" id="ftMetronomeSoundClick" /><span>Щелчки</span></label>
                 <label class="settings-toggle-row ft-radio-row"><input type="radio" name="ftMetronomeSoundKind" value="electronic" id="ftMetronomeSoundElectronic" /><span>Электронные</span></label>
               </div>
-              <div class="ft-metronome-tone" id="ftMetronomeTone" hidden></div>
+              <div class="ft-sound-tone" id="ftMetronomeSoundTone" hidden></div>
             </div>
+            <!-- Room for gong variants later; today one standard set (round start, rest start, end of rest, workout end). -->
+            <div class="ft-sound-choice ft-gong-row" id="ftGongSound"><span class="ft-sound-choice-title">Гонг</span><span class="ft-gong-value">Стандартный</span></div>
           </section>
           <section class="settings-card">
             <div class="settings-card-title">Запись тренировок в дневник</div>

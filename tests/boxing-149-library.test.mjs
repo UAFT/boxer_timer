@@ -170,6 +170,10 @@ test('the 40 workouts that existed before the boxing library build exactly the s
  // Play MVP changed exactly two public texts: C03 has a Russian name, B01/B02 lost an internal provenance note.
  const note='Черновая копия заданий со скриншота; оригинальная личная программа не меняется.';
  const before=w=>w.id==='C03'?{...w,name:'Battle ropes'}:['B01','B02'].includes(w.id)?{...w,note}:w;
- assert.equal(createHash('sha256').update(JSON.stringify(legacy.map(before).map(w=>[w.id,stageForWorkout(w)]))).digest('hex'),
+ // 2026-11-02: a stage also names its source (sourceId 'lib:<id>') and the preset default tempo is 10 (was 20);
+ // nothing else of any stage changed.
+ const asBefore=w=>{const st=stageForWorkout(w);if(!st)return st;const {sourceId,...rest}=st;assert.equal(sourceId,'lib:'+w.id);
+   return rest.settings?.metronomeBpm===10?{...rest,settings:{...rest.settings,metronomeBpm:20}}:rest;};
+ assert.equal(createHash('sha256').update(JSON.stringify(legacy.map(before).map(w=>[w.id,asBefore(w)]))).digest('hex'),
   '72b52a10ec15ee0e000681bda4cc873636b46668f7a1f7431bef203b164affa7');
 });

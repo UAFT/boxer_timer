@@ -84,7 +84,8 @@ test('every dialog the handler knows exists in the page with its close button',(
  const source=readFileSync(new URL('../app/js/platform/back-button.js',import.meta.url),'utf8');
  const ids=[...source.matchAll(/'([A-Za-z]+)'/g)].map(m=>m[1]).filter(id=>/Modal|List|Cancel|Close|Back|Trigger|Btn|ladder/.test(id));
  // The choice dialog is built on demand by js/ui/choice-dialog.js; its ids live there.
- const choice=readFileSync(new URL('../app/js/ui/choice-dialog.js',import.meta.url),'utf8');
+ // So is the diary's «Дневники» dialog (js/diary/diaries-dialog.js).
+ const choice=readFileSync(new URL('../app/js/ui/choice-dialog.js',import.meta.url),'utf8')+readFileSync(new URL('../app/js/diary/diaries-dialog.js',import.meta.url),'utf8');
  for(const id of ids)assert.ok(html.includes('id="'+id+'"')||choice.includes(".id = '"+id+"'"),id);
  assert.ok(html.includes('id="ftBackHint"'));
  const pkg=JSON.parse(readFileSync(new URL('../package.json',import.meta.url),'utf8'));

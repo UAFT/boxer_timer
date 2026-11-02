@@ -141,16 +141,19 @@ export function libraryDescription(doc, el, workout, lang = 'ru') {
 
 const DRAFT = /ПРОЕКТ|НЕ ГОТОВ|DRAFT|NOT READY/i;
 // Library workout: same compact card; + adds the stage exactly as before.
-export function renderLibraryWorkoutCard(doc, workout, { rounds = [], lang = 'ru', addDisabled = false, onAdd, plusIcon } = {}) {
+// inWorkout: a copy of this workout is in the workout being edited (thin green outline, nothing else changes).
+export function renderLibraryWorkoutCard(doc, workout, { rounds = [], lang = 'ru', addDisabled = false, onAdd, plusIcon, inWorkout = false } = {}) {
   const ru = lang !== 'en';
   const plus = doc.createElement('button'); plus.type = 'button'; plus.className = 'native-library-add ft-library-add';
   plus.disabled = addDisabled; plus.title = ru ? 'Добавить' : 'Add';
   plus.setAttribute('aria-label', (ru ? 'Добавить ' : 'Add ') + workout.name);
   const icon = () => plus.replaceChildren(plusIcon ? plusIcon() : '+');
   icon();
-  plus.addEventListener('click', () => { if (onAdd?.()) { plus.replaceChildren('✓'); setTimeout(icon, 800); } });
+  // ✓ for a moment, then + again: the same workout may be added any number of times.
+  plus.addEventListener('click', () => { if (onAdd?.()) { row.classList.add('is-in-workout'); plus.replaceChildren('✓'); setTimeout(icon, 800); } });
   const description = el => libraryDescription(doc, el, workout, lang);
-  return renderCompactCard(doc, { className: 'ft-library-workout', title: workout.name, rounds, lang, description, actions: [plus],
+  const row = renderCompactCard(doc, { className: 'ft-library-workout' + (inWorkout ? ' is-in-workout' : ''), title: workout.name, rounds, lang, description, actions: [plus],
     badge: DRAFT.test(workout.note || '') ? (ru ? 'Черновик — см. описание' : 'Draft — see description') : '',
     plan: rounds.length ? undefined : el => add(doc, el, 'p', 'ft-card-empty', ru ? 'План недоступен: требуется отдельный режим таймера.' : 'No plan: needs a separate timer mode.') });
+  return row;
 }

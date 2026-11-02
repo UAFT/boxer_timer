@@ -4,7 +4,13 @@ import { boxingStage } from './boxing-stage.js';
 
 // Adapter: catalog entries become ordinary legacy program stages. No second timer.
 export { CATEGORIES, LIBRARY };
+// Every stage made from a library workout carries its source (B2: the library card of a workout in the current
+// workout is outlined); the stage itself stays an ordinary independent copy.
 export function stageForWorkout(workout) {
+  const stage = libraryStage(workout);
+  return stage && workout.id ? { ...stage, sourceId: 'lib:' + workout.id } : stage;
+}
+function libraryStage(workout) {
   if (!workout) return null;
   if (workout.mode === 'boxing_sequence') return boxingStage(workout);
   if (workout.mode === 'afap') {
