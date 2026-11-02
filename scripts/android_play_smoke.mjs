@@ -48,7 +48,9 @@ report.upgrades = [];
 for (const UPGRADE_FROM of (process.env.FT_UPGRADE_FROM || '').split(/\s+/).filter(Boolean)) {
   adb('uninstall', PKG);
   const info = () => { const d = adb('shell', 'dumpsys', 'package', PKG); return { versionCode: +(d.match(/versionCode=(\d+)/) || [])[1], firstInstallTime: (d.match(/firstInstallTime=([^\n]+)/) || [])[1]?.trim(), lastUpdateTime: (d.match(/lastUpdateTime=([^\n]+)/) || [])[1]?.trim() }; };
-  const files = () => adb('shell', `find /data/data/${PKG} /data/user_de/0/${PKG} -type f ! -path '*/cache/*' ! -path '*/code_cache/*' ! -name '*-journal' ! -name 'LOCK' ! -name '*.log' 2>/dev/null`).split('\n').map(x => x.trim()).filter(Boolean).sort();
+  // WebView's own field-trial seed (app_webview/variations_seed_new → variations_seed) is renamed by WebView itself on the next
+  // start: not app data, so its disappearance is not a loss.
+  const files = () => adb('shell', `find /data/data/${PKG} /data/user_de/0/${PKG} -type f ! -path '*/cache/*' ! -path '*/code_cache/*' ! -path '*/app_webview/variations_*' ! -name '*-journal' ! -name 'LOCK' ! -name '*.log' 2>/dev/null`).split('\n').map(x => x.trim()).filter(Boolean).sort();
   // A real diary (a planned and a done workout) is put in the previous app's own data folder before it first starts:
   // the previous version reads it, and its bytes must be the same after the update and after the new version has run.
   const DIARY_FILE = `/data/data/${PKG}/files/fighttech-diary-a.json`;
@@ -458,7 +460,7 @@ shot('24_en_round_editor'); await click('roundEditCancel'); await sleep(400);
 await js(`document.querySelector('#programList [data-stage="0"] .program-stage-edit').click()`); await sleep(600);
 const enStage = await js(`document.getElementById('stageSettingsName').value`);
 shot('25_en_stage_editor'); await click('stageSettingsCancel'); await sleep(400);
-const enStored = await js(`(()=>{const p=JSON.parse(localStorage.getItem('andar.fight.timer.program.v1')||'null');const e=(p?.entries||p||[])[0];return e&&{title:e.title,round:e.roundNames?.[0]}})()`);
+const enStored = await js(`(()=>{const p=JSON.parse(localStorage.getItem('andar.fight.timer.program.v1')||'null');const e=(Array.isArray(p)?p:p?.entries||[])[0];return e&&{title:e.title,round:e.roundNames?.[0]}})()`);
 step('en_library_editors', { enAdded, enCard, enRound, enStage, enStored });
 if (!(enAdded && enCard?.name === 'Jab' && enRound?.value === 'Jab' && enRound.label === 'Exercise name' && enStage === 'Boxing — Single straights'
   && enStored?.title === 'Бокс — Одиночные прямые' && enStored.round === 'Джеб')) fail('English editors: library text not shown in English, or stored text changed: ' + JSON.stringify({ enCard, enRound, enStage, enStored }));

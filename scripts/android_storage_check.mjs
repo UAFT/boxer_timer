@@ -104,7 +104,8 @@ const transport = adb('shell', 'bmgr', 'transport', 'com.android.localtransport/
 adb('shell', 'bmgr', 'run'); await sleep(2000);
 const backup = adb('shell', 'bmgr', 'backupnow', PKG).trim();
 // The local transport keeps the archive in /data/cache/backup (older Android) or in its own app folder (newer).
-const fullPath = adb('shell', `find /data/cache/backup /data/data/com.android.localtransport -path '*_full*' -name '${PKG}' 2>/dev/null`).trim().split('\n')[0];
+const findFull = roots => adb('shell', `find ${roots} -path '*_full*' -name '${PKG}' 2>/dev/null`).trim().split('\n')[0];
+const fullPath = findFull('/data/cache/backup /data/data/com.android.localtransport /data/user_de/0/com.android.localtransport') || findFull('/data -xdev');
 let entries = [];
 if (fullPath) {
   execFileSync('adb', ['pull', fullPath, `${OUT}/backup_full.tar`]);

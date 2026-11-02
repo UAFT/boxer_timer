@@ -160,6 +160,8 @@ jobs:
   # (backup → uninstall → install → restore) with the app's own rules. scripts/android_storage_check.mjs.
   storage:
     needs: signed-apk
+    # Independent evidence: runs even when the smoke test failed, as long as the debug APK was built.
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     timeout-minutes: 40
     strategy:
