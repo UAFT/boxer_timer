@@ -42,3 +42,13 @@ test('Auto Backup stays on with explicit rules: the diaries and localStorage onl
 test('WebView usage statistics are not sent to Google', () => {
   assert.match(read(PLUGIN + 'AndroidManifest.xml'), /<meta-data android:name="android\.webkit\.WebView\.MetricsOptOut" android:value="true" \/>/);
 });
+
+test('diary import: a date must be a real calendar day of 1970–2199 (2026-13-45, 2026-02-30, 0000, 9999 refused)', () => {
+  const settings = { intervalMode: 'standard', rounds: 2, workSec: 30, restSec: 10 };
+  const snap = { name: 'План', entries: normalizeProgram([{ presetId: 'classic1', title: 'Этап', settings, restAfterSec: 0 }]), options: { cycles: 1, cycleRestSec: 60 } };
+  const file = date => serializeDiaryFile({ name: 'Т', snapshots: { p: snap }, sessions: [{ id: 's', date, status: 'planned', planRef: 'p', createdAt: 1, updatedAt: 1 }] });
+  const code = date => { try { parseDiaryFile(file(date)); return 'ok'; } catch (e) { return e.code ?? e.message; } };
+  for (const ok of ['2026-11-02', '2024-02-29', '1970-01-01', '2199-12-31']) assert.equal(code(ok), 'ok', ok);
+  for (const bad of ['2026-13-45', '2026-02-30', '2025-02-29', '2026-00-10', '1969-12-31', '2200-01-01', '0000-01-01', '9999-12-31'])
+    assert.equal(code(bad), 'invalid', bad);
+});

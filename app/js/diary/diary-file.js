@@ -10,6 +10,13 @@ export const DIARY_FILE_MAX_BYTES = 16 * 1024 * 1024;
 export const DIARY_NAME_MAX = 60;
 const MAX_SESSIONS = 50000;
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
+// A real day of a plausible year: «2026-13-45» would never show in the calendar, «0000»/«9999» would stretch its
+// year list to thousands of entries (release audit 0.2.213, R8).
+const calendarDay = v => {
+  if (typeof v !== 'string' || !DATE.test(v)) return false;
+  const [y, m, d] = v.split('-').map(Number), day = new Date(Date.UTC(y, m - 1, d));
+  return y >= 1970 && y <= 2199 && day.getUTCMonth() === m - 1 && day.getUTCDate() === d;
+};
 const STATUSES = new Set(['planned', 'in_progress', 'partial', 'done', 'canceled']);
 const invalid = () => { throw new WorkoutFileError('invalid'); };
 const plain = v => v !== null && typeof v === 'object' && !Array.isArray(v) && Object.getPrototypeOf(v) === Object.prototype;
@@ -19,7 +26,7 @@ const time = v => Number.isFinite(v) && v >= 0 && v < 1e14;
 
 // Exactly the fields a diary session has (store.js, recorder.js, calendar-view.js); anything else is not carried over.
 function checkSession(s, snapshots) {
-  if (!plain(s) || !str(s.id, 80) || !s.id || !DATE.test(s.date) || !STATUSES.has(s.status)) invalid();
+  if (!plain(s) || !str(s.id, 80) || !s.id || !calendarDay(s.date) || !STATUSES.has(s.status)) invalid();
   if (!str(s.planRef, 80) || !Object.hasOwn(snapshots, s.planRef)) invalid();
   if (s.execRef != null && (!str(s.execRef, 80) || !Object.hasOwn(snapshots, s.execRef))) invalid();
   if (s.programId != null && !str(s.programId, 120)) invalid();
