@@ -1,11 +1,9 @@
 // One «Начать тренировку с» control for the program editor, the workout plan and a diary workout.
 // It only picks a position; the run itself is the normal program start from that position (core/program.js startIndex).
 // Collapsed it is one row; expanded: «Этап | Раунд» labels with ˄, two equal dropdowns (Fight Tech choice dialog), the start button.
-import { translateText } from '../i18n/locale.js';
+import { wholeTranslation as name } from '../i18n/locale.js';
 import { bilingual, choiceField } from './choice-dialog.js';
 const TEXT = { ru: { stage: 'Этап ', block: 'Блок ', round: 'Раунд ' }, en: { stage: 'Stage ', block: 'Block ', round: 'Round ' } };
-// A name is put in English only when every word of it is known (library names); a user's own name stays as written.
-const name = (text, lang) => { const en = lang === 'en' ? translateText(text, 'en') : text; return /[А-Яа-яЁё]/.test(en) ? text : en; };
 const option = (value, parts) => {
   const text = lang => parts.map(p => typeof p === 'string' ? name(p, lang) : TEXT[lang][p.k] + p.n).join(' · ');
   return { value: String(value), ru: text('ru'), en: text('en') };

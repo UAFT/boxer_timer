@@ -205,6 +205,25 @@ export function translateText(text, lang) {
   translated.set(text,result);
   return result;
 }
+// Library wording is stored in Russian, its source form: English only when every word of it is known; text the user
+// typed stays as typed, never half-translated.
+export function wholeTranslation(text, lang) {
+  const en = lang === 'en' ? translateText(text, 'en') : text;
+  return /[А-Яа-яЁё]/.test(en) ? text : en;
+}
+// Editable names and descriptions (stage, round, phase, program): the field shows what the card shows, and a field
+// left as shown gives back the stored text, so saving in English never rewrites the library's Russian or the user's
+// own words (owner 2026-11-02: «Джеб» in the English round editor, «Бокс — Одиночные прямые» in the stage editor).
+const editable = new WeakMap();
+export function showEditable(input, stored, lang = globalThis.document?.documentElement.lang) {
+  const text = String(stored ?? '');
+  input.value = wholeTranslation(text, lang);
+  editable.set(input, { text, shown: input.value });
+}
+export function editedText(input) {
+  const field = editable.get(input);
+  return field && input.value === field.shown ? field.text : input.value;
+}
 export function installLocalization(buttons) {
   const originals = new WeakMap();
   let preference = ['ru','en','auto'].includes(localStorage.getItem(LANGUAGE_KEY)) ? localStorage.getItem(LANGUAGE_KEY) : 'auto';

@@ -75,3 +75,70 @@ test('privacy policy: a link in Settings (RU + EN) to the address given to Googl
   assert.equal(translateText('Конфиденциальность', 'en'), 'Privacy');
   assert.ok(existsSync(new URL('../app/styles/fight-tech-ui-kit.css', import.meta.url)) && /\.ft-privacy-link\{[^}]*min-height:var\(--ft-touch-target\)/.test(read('app/styles/fight-tech-ui-kit.css')));
 });
+
+// Owner 2026-11-02 (device screenshots): English «Single straights» → stage editor showed «Бокс — Одиночные прямые»,
+// round 1 «Jab» → pencil → «Exercise name» held «Джеб». Library text is stored in Russian; editors now show it as the
+// cards do and give the stored text back when left unchanged.
+const ui = async () => {
+  globalThis.localStorage ??= { getItem() { return null; }, setItem() {} };
+  return { ...(await import('../app/js/i18n/locale.js')), ...(await import('../app/js/library/native-adapter.js')),
+    ...(await import('../app/js/library/catalog.js')), ...(await import('../app/js/core/starter-programs.js')) };
+};
+const cyrillic = /[А-Яа-яЁё]/;
+
+test('EN inventory: every name, round, phase and description a library workout puts into a stage is English', async () => {
+  const { wholeTranslation, stageForWorkout, LIBRARY, RETIRED_LIBRARY, starterPrograms } = await ui();
+  const texts = new Set();
+  const add = s => { if (s) texts.add(s); };
+  // RETIRED_LIBRARY: «Ранее добавленные», gone from the Play library but still inside programs saved from it earlier.
+  for (const w of [...LIBRARY, ...RETIRED_LIBRARY]) {
+    const stage = stageForWorkout(w);
+    assert.ok(stage, w.id);
+    add(stage.title); add(stage.settings?.phaseOneName); add(stage.settings?.phaseTwoName);
+    for (const key of ['roundNames', 'roundDescriptions', 'phaseOneOverrides', 'phaseTwoOverrides']) (stage[key] || []).forEach(add);
+  }
+  // The 2026-10-20 starter programs are no longer put into «Мои», but copies of them stay on phones that had them.
+  for (const p of starterPrograms) { add(p.name); for (const e of p.entries) { add(e.title); (e.roundNames || []).forEach(add); (e.roundDescriptions || []).forEach(add); } }
+  assert.ok(texts.size > 1000, 'inventory size ' + texts.size);
+  assert.deepEqual([...texts].filter(s => cyrillic.test(wholeTranslation(s, 'en'))), []);
+  for (const s of texts) assert.equal(wholeTranslation(s, 'ru'), s);
+});
+
+test('EN editors: Single straights → stage name «Boxing — Single straights», round 1 «Jab»; unchanged save keeps the Russian', async () => {
+  const { showEditable, editedText, stageForWorkout, LIBRARY } = await ui();
+  const stage = stageForWorkout(LIBRARY.find(w => w.id === 'BOX-001'));
+  assert.equal(stage.title, 'Бокс — Одиночные прямые');
+  assert.equal(stage.roundNames[0], 'Джеб');
+  const field = () => ({ value: '' });
+  const title = field(), round = field(), description = field();
+  showEditable(title, stage.title, 'en'); showEditable(round, stage.roundNames[0], 'en'); showEditable(description, stage.roundDescriptions[0], 'en');
+  assert.equal(title.value, 'Boxing — Single straights');
+  assert.equal(round.value, 'Jab');
+  assert.ok(description.value && !cyrillic.test(description.value), description.value);
+  // Saved as shown: the stored library text stays Russian, so the Russian screen still shows «Джеб».
+  assert.equal(editedText(title), 'Бокс — Одиночные прямые');
+  assert.equal(editedText(round), 'Джеб');
+  assert.equal(editedText(description), stage.roundDescriptions[0]);
+  // The user's own edit is kept exactly as typed, in either language, and shown as typed afterwards.
+  round.value = 'Jab twice'; assert.equal(editedText(round), 'Jab twice');
+  showEditable(round, 'Jab twice', 'ru'); assert.equal(round.value, 'Jab twice');
+  showEditable(round, 'Джеб — мой вариант', 'en'); assert.equal(round.value, 'Джеб — мой вариант', 'never half-translated');
+  showEditable(round, 'Джеб', 'ru'); assert.equal(round.value, 'Джеб');
+  // A field never opened through showEditable reads as is.
+  assert.equal(editedText({ value: 'x' }), 'x');
+});
+
+test('EN editors: every name/description field opens through showEditable and saves through editedText', () => {
+  const app = read('app/js/app.js'), phases = read('app/js/ui/two-phase-editor.js');
+  assert.match(app, /showEditable\(input,stage\[field\]\?\.\[roundIndex\]\|\|''\);/);
+  assert.match(app, /values\[ctx\.roundIndex\]=editedText\(input\)\.trim\(\)/);
+  assert.match(app, /showEditable\(id\('Name'\),entry\.title\|\|''\);/);
+  assert.match(app, /entry\.title=editedText\(id\('Name'\)\)\.trim\(\)/);
+  assert.match(app, /showEditable\(nameInput,src\.name\|\|''\);/);
+  assert.match(app, /const name=editedText\(nameInput\)\.trim\(\)\.slice\(0,MAX_TITLE\)/);
+  assert.match(app, /collisionAck===editedText\(nameInput\)\.trim\(\)/);
+  for (const id of ['stageSettingsPhaseOne', 'stageSettingsPhaseTwo', 'roundEditPhaseOne', 'roundEditPhaseTwo']) assert.match(phases, new RegExp(`showEditable\\([^)]*'${id}'\\)`), id);
+  assert.equal((phases.match(/editedText\(/g) || []).length, 3);
+  // No other field is filled straight from stored names or descriptions.
+  assert.doesNotMatch(app + phases, /\.value=(stage|entry|src|cfg)\b[^;]*(title|name|Names|Descriptions|Overrides)/i);
+});

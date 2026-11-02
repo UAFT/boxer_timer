@@ -28,7 +28,7 @@ import { renderLibraryWorkoutCard, renderPlanList, planSummary } from './ui/work
 import { syncEditorProgramHeader, editorProgramIdentity } from './ui/program-presentation.js';
 import { renderPresetOrders } from './ui/preset-order.js';
 import { editableRestField } from './core/ladder-blocks.js';
-import { installLocalization } from './i18n/locale.js';
+import { installLocalization, showEditable, editedText } from './i18n/locale.js';
 import { clonePreset } from './state/presets.js';
 import { compileProgram, startIndex, normalizeProgram, normalizeOptions, normalizeLibrary, syncStagesWithPreset, MAX_PROGRAM_ROUNDS, MAX_TITLE, tooLongMessage, LIBRARY_KEY, PROGRAM_OPTIONS_KEY, PRESET_NAMES, PROGRAM_KEY } from './core/program.js';
 import { renderStartFrom } from './ui/start-from.js';
@@ -546,7 +546,7 @@ function renameProgramRound(stageIndex, roundIndex, description=false, trigger=n
   document.getElementById('roundEditSave').textContent=en?'Save':'Сохранить';
   input.maxLength=description?600:240;
   input.rows=description?12:2;
-  input.value=stage[field]?.[roundIndex]||'';
+  showEditable(input,stage[field]?.[roundIndex]||'');
   const roundConfig=stage.settings || profiles[stage.presetId];
   const usePhases=!description && roundConfig.intervalMode==='two_phase';
   document.getElementById('roundEditLabel').hidden=usePhases;
@@ -573,7 +573,7 @@ function bindRoundEditor() {
     if(timings===null)return;
     if(ctx.description || roundConfig.intervalMode!=='two_phase'){
       const values=Array.isArray(stage[ctx.field])?[...stage[ctx.field]]:[];
-      values[ctx.roundIndex]=input.value.trim().slice(0,ctx.description?600:100);
+      values[ctx.roundIndex]=editedText(input).trim().slice(0,ctx.description?600:100);
       stage[ctx.field]=values;
     }
     if(!ctx.description){
@@ -607,7 +607,7 @@ function openStageSettings(index, target=mainTarget) {
   stageSettingsIndex=index;stageSettingsTarget=target;
   const entry=target.entries[index], cfg=entry.settings || profiles[entry.presetId];
   const id=name=>document.getElementById('stageSettings'+name);
-  id('Name').value=entry.title||'';
+  showEditable(id('Name'),entry.title||'');
   for(const key of ['Work','Rest']){const v=Number(cfg[key==='Work'?'workSec':'restSec'])||0;id(key+'Min').value=Math.floor(v/60);id(key+'Sec').value=v%60;}
   for(const [key,value] of [['Rounds',cfg.rounds],
     ['WorkStep',cfg.workStepSec||0],['RestStep',cfg.restStepSec||0],['PhaseTwoStep',cfg.phaseTwoStepSec||0],
@@ -758,7 +758,7 @@ function bindStageSettings(){
     if(metro===null)return;
     // Keep the original library task labels where possible; extra rounds remain editable.
     entry.settings=cfg;
-    entry.title=id('Name').value.trim().slice(0,MAX_TITLE);
+    entry.title=editedText(id('Name')).trim().slice(0,MAX_TITLE);
     if(metro)entry.metronome=metro;
     closeStageSettings();target.save();
   });
@@ -1332,7 +1332,7 @@ function bindProgramLibrary() {
       if(diaries.list.length>1)box.prepend(Object.assign(document.createElement('p'),{className:'ft-diary-current ft-save-diary',textContent:(en?'Diary: ':'Дневник: ')+diaries.name(saveDiaryId,lang)}));
     }
     const n=saveCal.selected.size;
-    const asNew=collisionAck && collisionAck===nameInput.value.trim() && dest.value!=='diary';
+    const asNew=collisionAck && collisionAck===editedText(nameInput).trim() && dest.value!=='diary';
     confirmSave.textContent=asNew&&!withDiary?(en?'Save as new':'Сохранить как новую'):!withDiary?(en?'Save':'Сохранить'):n?assignLabel(n,lang,dest.value==='both'):(en?'Pick dates in the calendar':'Выберите даты в календаре');
     confirmSave.disabled=saving || (withDiary && (!n || saveDiary?.state!=='ok'));
     const warn=byId('programSaveWarning'),name=nameInput.value.trim();
@@ -1346,7 +1346,7 @@ function bindProgramLibrary() {
   function openSaveDialog(source) {
     saveSource=source;
     const src=sourceOf();
-    nameInput.value=src.name||'';collisionAck=null;
+    showEditable(nameInput,src.name||'');collisionAck=null;
     dest.value=source?'mine':src.diary?'diary':'mine';
     saveCal.selected.clear();saveCal.picker=false;saveCal.month=null;
     if(src.diary){saveCal.selected.add(src.diary.date);saveCal.show(src.diary.date);}
@@ -1374,7 +1374,7 @@ function bindProgramLibrary() {
     const src=sourceOf();
     if(saving || refuseTooLong(src.entries,src.options))return;
     const lang=document.documentElement.lang,en=lang==='en';
-    const name=nameInput.value.trim().slice(0,MAX_TITLE),toMine=dest.value!=='diary',toDiary=dest.value!=='mine';
+    const name=editedText(nameInput).trim().slice(0,MAX_TITLE),toMine=dest.value!=='diary',toDiary=dest.value!=='mine';
     const dates=[...saveCal.selected].sort();
     if(toMine && !name){nameInput.focus();return;}
     if(toDiary && (!dates.length || saveDiary?.state!=='ok'))return;
