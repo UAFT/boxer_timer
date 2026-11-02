@@ -95,6 +95,12 @@ jobs:
           rm -f "$RUNNER_TEMP/andar-timer.jks"
           "$SDK_TOOLS/aapt2" dump badging andar-fight-timer-signed.apk | grep -E "^package|targetSdkVersion|sdkVersion|uses-permission" | tee badging.txt
           grep -q "targetSdkVersion:'36'" badging.txt
+          # Release audit 0.2.213 (closeout 2026-11-02): storage permissions only up to Android 10 (R6), Auto Backup with the
+          # app's own rules (R7), WebView usage statistics not sent to Google.
+          for p in READ WRITE; do grep -q "uses-permission: name='android.permission.${p}_EXTERNAL_STORAGE' maxSdkVersion='29'" badging.txt; done
+          "$SDK_TOOLS/aapt2" dump xmltree --file AndroidManifest.xml andar-fight-timer-signed.apk > manifest.txt
+          for a in 'allowBackup\(0x[0-9a-f]+\)=true' 'requestLegacyExternalStorage\(0x[0-9a-f]+\)=true' 'fullBackupContent\(0x[0-9a-f]+\)=@' 'dataExtractionRules\(0x[0-9a-f]+\)=@'; do grep -Eq "$a" manifest.txt || { echo "manifest: no $a"; exit 1; }; done
+          grep -A2 '"android.webkit.WebView.MetricsOptOut"' manifest.txt | grep -Eq 'value\(0x[0-9a-f]+\)=true'
           sha256sum andar-fight-timer-signed.apk | tee SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         with:
@@ -102,7 +108,15 @@ jobs:
           path: |
             andar-fight-timer-signed.apk
             badging.txt
+            manifest.txt
             SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 30
+      # The storage check below installs the debug build of the same project on Android 10, 11, 13 and 16.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: andar-fight-timer-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 30
       - name: Enable KVM
@@ -110,15 +124,23 @@ jobs:
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
-      - name: Previously published Play APK for the upgrade check
-        if: startsWith(github.ref_name, 'release/play-mvp')
+      # Every build is installed over the published test APKs of both lines (one package ID, one key): methodology 0.2.192,
+      # Play 0.2.208 and 0.2.213. The app's data must survive each update.
+      - name: Previously published APKs for the upgrade check
         run: |
-          curl -fsSL -o previous.apk https://andarfighttech.com/downloads/fight-tech-20261031/fight-tech-play-ui-audio-0.2.208.apk
-          echo "4e097c6a69e8738a698ff153ee382372f3d4ff485390c9985ecef83784fbe0e6  previous.apk" | sha256sum -c
+          base=https://andarfighttech.com/downloads/fight-tech-20261031
+          curl -fsSL -o previous-0.2.192.apk $base/fight-tech-methodology-0.2.192.apk
+          curl -fsSL -o previous-0.2.208.apk $base/fight-tech-play-ui-audio-0.2.208.apk
+          curl -fsSL -o previous-0.2.213.apk $base/fight-tech-play-chief-ux-0.2.213.apk
+          sha256sum -c <<'SUMS'
+          38c21374e0c21c1ca0fdf17f3bbf7161311fbecb72777db88ffe6e3801df023b  previous-0.2.192.apk
+          4e097c6a69e8738a698ff153ee382372f3d4ff485390c9985ecef83784fbe0e6  previous-0.2.208.apk
+          7adb4d7349a8bbed760ce0946fbe4e080b9c52a3c338d96e3091ebc5c52505a2  previous-0.2.213.apk
+          SUMS
       - name: Smoke test on Android 16 (API 36) emulator
         uses: reactivecircus/android-emulator-runner@v2
         env:
-          FT_UPGRADE_FROM: ${{ startsWith(github.ref_name, 'release/play-mvp') && 'previous.apk' || '' }}
+          FT_UPGRADE_FROM: previous-0.2.192.apk previous-0.2.208.apk previous-0.2.213.apk
           # Shared by both branches: the Play MVP hides Tree and Methodology, the methodology build shows them.
           FT_VARIANT: ${{ startsWith(github.ref_name, 'release/play-mvp') && 'play' || 'methodology' }}
         with:
@@ -133,4 +155,42 @@ jobs:
         with:
           name: andar-fight-timer-smoke
           path: smoke/
+          retention-days: 30
+  # Release audit 0.2.213 R6/R7: «Сохранить в файл» on Android 10 (storage permission dialog) and later, and Auto Backup
+  # (backup → uninstall → install → restore) with the app's own rules. scripts/android_storage_check.mjs.
+  storage:
+    needs: signed-apk
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        api-level: [29, 30, 33, 36]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/download-artifact@v4
+        with:
+          name: andar-fight-timer-debug-apk
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Storage check on Android API ${{ matrix.api-level }}
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api-level }}
+          target: google_apis
+          arch: x86_64
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -no-boot-anim -camera-back none
+          script: node scripts/android_storage_check.mjs app-debug.apk storage
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: andar-fight-timer-storage-api${{ matrix.api-level }}
+          path: storage/
           retention-days: 30

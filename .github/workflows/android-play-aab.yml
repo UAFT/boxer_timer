@@ -97,6 +97,11 @@ jobs:
           SDK_TOOLS="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)"
           "$SDK_TOOLS/aapt2" dump badging out/fight-tech-play-mvp-universal.apk | grep -E "^package|targetSdkVersion|sdkVersion|uses-permission" | tee out/badging.txt
           grep -q "targetSdkVersion:'36'" out/badging.txt
+          # Release audit 0.2.213 (closeout 2026-11-02): storage permissions only up to Android 10, Auto Backup rules, no WebView metrics.
+          for p in READ WRITE; do grep -q "uses-permission: name='android.permission.${p}_EXTERNAL_STORAGE' maxSdkVersion='29'" out/badging.txt; done
+          "$SDK_TOOLS/aapt2" dump xmltree --file AndroidManifest.xml out/fight-tech-play-mvp-universal.apk > out/manifest.txt
+          for a in 'allowBackup\(0x[0-9a-f]+\)=true' 'requestLegacyExternalStorage\(0x[0-9a-f]+\)=true' 'fullBackupContent\(0x[0-9a-f]+\)=@' 'dataExtractionRules\(0x[0-9a-f]+\)=@'; do grep -Eq "$a" out/manifest.txt || { echo "manifest: no $a"; exit 1; }; done
+          grep -A2 '"android.webkit.WebView.MetricsOptOut"' out/manifest.txt | grep -Eq 'value\(0x[0-9a-f]+\)=true'
           "$SDK_TOOLS/apksigner" verify --print-certs out/fight-tech-play-mvp-universal.apk | grep -i "SHA-256" | tee -a out/badging.txt
           (cd out && sha256sum fight-tech-play-mvp.aab fight-tech-play-mvp-universal.apk > SHA256SUMS.txt && cat SHA256SUMS.txt)
       - uses: actions/upload-artifact@v4

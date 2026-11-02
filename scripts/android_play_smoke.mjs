@@ -20,11 +20,21 @@ const shot = name => writeFileSync(`${OUT}/${name}.png`, execFileSync('adb', ['e
 const foreground = () => /(?:mResumedActivity|topResumedActivity)[^\n]*com\.andarfighttech\.boxertimer/.test(adb('shell', 'dumpsys', 'activity', 'activities'));
 const launch = () => adb('shell', 'am', 'start', '-W', '-n', `${PKG}/.MainActivity`);
 const crashes = () => adb('logcat', '-d').split('\n').filter(l => l.includes('FATAL EXCEPTION') || (l.includes('AndroidRuntime') && l.includes(PKG)));
+// R13 (release audit 0.2.213): a test run must not write device records into the production entitlement server. The app's
+// own UID gets no network (iptables owner match; google_apis images allow `adb root`). The device and its browser keep
+// the network, so the privacy-policy link is opened for real. Every install goes through install() for that.
+adb('root'); await sleep(3000); adb('wait-for-device');
+let appUid = null;
+const isolate = () => {
+  appUid = (adb('shell', 'pm', 'list', 'packages', '-U', PKG).match(/uid:(\d+)/) || [])[1] || null;
+  if (appUid) for (const t of ['iptables', 'ip6tables']) { adb('shell', t, '-D', 'OUTPUT', '-m', 'owner', '--uid-owner', appUid, '-j', 'REJECT'); adb('shell', t, '-I', 'OUTPUT', '-m', 'owner', '--uid-owner', appUid, '-j', 'REJECT'); }
+};
+const install = (...args) => { const out = adb('install', ...args); isolate(); return out; };
 
 // 1. Release APK.
 // A cold emulator needs time before the WebView paints: wait until the screenshot is no longer a blank page
 // (a blank 320×640 capture is a few kB, the timer screen tens of kB).
-// 0. Upgrade over the previously published APK (FT_UPGRADE_FROM): same key, higher versionCode, app data kept.
+// 0. Upgrade over each previously published APK (FT_UPGRADE_FROM): same key, higher versionCode, app data kept.
 // google_apis images allow `adb root`, so the app's own data directory is listed before and after `install -r`.
 // Host side (the emulator runs here): qemu RSS, free memory and the app's own memory every 15 s, so a dying emulator
 // leaves a trail. execFileSync errors are swallowed: monitoring never fails the smoke.
@@ -33,11 +43,12 @@ const monitor = () => appendFileSync(`${OUT}/host_monitor.txt`, new Date().toISO
   + ' avail=' + sh("free -m | awk '/Mem:/{print $7}'").trim() + 'MB app=' + sh(`timeout 8 adb shell dumpsys meminfo ${PKG} | grep -E 'TOTAL PSS|TOTAL:' | head -1`).trim().replace(/\s+/g, ' ') + '\n');
 setInterval(monitor, 15000).unref();
 process.on('exit', () => appendFileSync(`${OUT}/host_monitor.txt`, sh('sudo -n dmesg 2>/dev/null | tail -25')));
-const UPGRADE_FROM = process.env.FT_UPGRADE_FROM;
-if (UPGRADE_FROM) {
+// FT_UPGRADE_FROM: space-separated APKs (published Play test builds and the methodology build: one package ID, one key).
+report.upgrades = [];
+for (const UPGRADE_FROM of (process.env.FT_UPGRADE_FROM || '').split(/\s+/).filter(Boolean)) {
+  adb('uninstall', PKG);
   const info = () => { const d = adb('shell', 'dumpsys', 'package', PKG); return { versionCode: +(d.match(/versionCode=(\d+)/) || [])[1], firstInstallTime: (d.match(/firstInstallTime=([^\n]+)/) || [])[1]?.trim(), lastUpdateTime: (d.match(/lastUpdateTime=([^\n]+)/) || [])[1]?.trim() }; };
   const files = () => adb('shell', `find /data/data/${PKG} /data/user_de/0/${PKG} -type f ! -path '*/cache/*' ! -path '*/code_cache/*' ! -name '*-journal' ! -name 'LOCK' ! -name '*.log' 2>/dev/null`).split('\n').map(x => x.trim()).filter(Boolean).sort();
-  adb('root'); await sleep(3000); adb('wait-for-device');
   // A real diary (a planned and a done workout) is put in the previous app's own data folder before it first starts:
   // the previous version reads it, and its bytes must be the same after the update and after the new version has run.
   const DIARY_FILE = `/data/data/${PKG}/files/fighttech-diary-a.json`;
@@ -48,7 +59,7 @@ if (UPGRADE_FROM) {
     snapshots: { sseed: { name: 'Upgrade check', entries: [{ presetId: 'classic3', title: 'Seed', settings: { intervalMode: 'standard', rounds: 3, workSec: 60, restSec: 30 } }], options: { cycles: 1, cycleRestSec: 60 } } } });
   const sum = path => adb('shell', `sha256sum ${path} 2>/dev/null`).trim().split(/\s+/)[0] || null;
   const runFor = async ms => { launch(); for (let i = 0; i < 45; i++) { if (execFileSync('adb', ['exec-out', 'screencap', '-p'], { maxBuffer: 64 << 20 }).length > 20000) break; await sleep(2000); } await sleep(ms); adb('shell', 'am', 'force-stop', PKG); await sleep(1000); };
-  adb('install', UPGRADE_FROM);
+  install(UPGRADE_FROM);
   writeFileSync('/tmp/fighttech-diary-a.json', seed);
   const uid = adb('shell', 'stat', '-c', '%u', `/data/data/${PKG}`).trim();
   adb('shell', 'mkdir', '-p', `/data/data/${PKG}/files`); adb('push', '/tmp/fighttech-diary-a.json', DIARY_FILE);
@@ -56,19 +67,20 @@ if (UPGRADE_FROM) {
   const seeded = sum(DIARY_FILE);
   await runFor(8000);
   const before = { ...info(), files: files(), diary: sum(DIARY_FILE) };
-  const installed = adb('install', '-r', RELEASE).trim();
+  const installed = install('-r', RELEASE).trim();
   const after = { ...info(), files: files(), diary: sum(DIARY_FILE) };
   await runFor(8000);
   const afterRun = { files: files(), diary: sum(DIARY_FILE), crashes: crashes() };
   const lost = before.files.filter(f => !after.files.includes(f) || !afterRun.files.includes(f));
-  report.upgrade = { from: before.versionCode, to: after.versionCode, install: installed.split('\n').pop(), firstInstallTime_kept: before.firstInstallTime === after.firstInstallTime, files_before: before.files.length, files_after: after.files.length, files_after_run: afterRun.files.length, lost,
+  const upgrade = { apk: UPGRADE_FROM, from: before.versionCode, to: after.versionCode, install: installed.split('\n').pop(), firstInstallTime_kept: before.firstInstallTime === after.firstInstallTime, files_before: before.files.length, files_after: after.files.length, files_after_run: afterRun.files.length, lost,
     diary_seeded: seeded, diary_same_after_previous_run: before.diary === seeded, diary_same_after_update: after.diary === seeded, diary_same_after_new_run: afterRun.diary === seeded, crashes: afterRun.crashes.length };
-  step('upgrade_over_previous', report.upgrade);
+  report.upgrades.push(upgrade);
+  step('upgrade_over_previous', upgrade);
   if (!/Success/.test(installed) || !(after.versionCode > before.versionCode) || before.firstInstallTime !== after.firstInstallTime || !before.files.length || lost.length
-    || !seeded || before.diary !== seeded || after.diary !== seeded || afterRun.diary !== seeded || afterRun.crashes.length) fail('upgrade over the previous APK lost data or did not install');
+    || !seeded || before.diary !== seeded || after.diary !== seeded || afterRun.diary !== seeded || afterRun.crashes.length) fail('upgrade over ' + UPGRADE_FROM + ' lost data or did not install');
 }
 
-adb('install', '-r', RELEASE); adb('logcat', '-c');
+install('-r', RELEASE); adb('logcat', '-c');
 // Streamed to disk as it happens: if the emulator dies mid-run, what led up to it is still in the artifact.
 { const fd = openSync(`${OUT}/logcat_stream.txt`, 'a'); spawn('adb', ['logcat', '-v', 'time'], { stdio: ['ignore', fd, fd], detached: true }).unref(); }
 launch();
@@ -81,7 +93,7 @@ if (!report.release.foreground || report.release.crashes.length || !painted) fai
 adb('uninstall', PKG);
 
 // 2. Debug build through DevTools.
-adb('install', '-r', DEBUG); adb('logcat', '-c'); launch(); await sleep(10);
+install('-r', DEBUG); adb('logcat', '-c'); launch(); await sleep(10);
 const pid = adb('shell', 'pidof', PKG).trim();
 adb('forward', 'tcp:9222', `localabstract:webview_devtools_remote_${pid}`);
 const target = (await (await fetch('http://127.0.0.1:9222/json')).json()).find(t => t.type === 'page');
@@ -90,7 +102,7 @@ await new Promise((ok, no) => { ws.onopen = ok; ws.onerror = no; });
 let seq = 0; const waiting = new Map();
 ws.onmessage = m => { const d = JSON.parse(m.data); waiting.get(d.id)?.(d); waiting.delete(d.id); };
 // A call that never answers (renderer hung, JS dialog) resolves null after 60 s, so the report is still written.
-const js = expr => new Promise(ok => { const id = ++seq; const t = setTimeout(() => { report.failures.push('no answer from the page: ' + expr.slice(0, 80)); appendFileSync(`${OUT}/hang.txt`, new Date().toISOString() + ' ' + expr.slice(0, 120) + '\n' + adb('shell', 'top', '-b', '-n', '1', '-m', '15') + adb('shell', 'cat', '/proc/meminfo').split('\n').slice(0, 5).join('\n') + '\n\n'); ok(null); }, 60000); waiting.set(id, d => { clearTimeout(t); ok(d.result?.result?.value); }); ws.send(JSON.stringify({ id, method: 'Runtime.evaluate', params: { expression: expr, returnByValue: true, awaitPromise: true } })); });
+const js = (expr, { gesture = false } = {}) => new Promise(ok => { const id = ++seq; const t = setTimeout(() => { report.failures.push('no answer from the page: ' + expr.slice(0, 80)); appendFileSync(`${OUT}/hang.txt`, new Date().toISOString() + ' ' + expr.slice(0, 120) + '\n' + adb('shell', 'top', '-b', '-n', '1', '-m', '15') + adb('shell', 'cat', '/proc/meminfo').split('\n').slice(0, 5).join('\n') + '\n\n'); ok(null); }, 60000); waiting.set(id, d => { clearTimeout(t); ok(d.result?.result?.value); }); ws.send(JSON.stringify({ id, method: 'Runtime.evaluate', params: { expression: expr, returnByValue: true, awaitPromise: true, userGesture: gesture } })); });
 const click = id => js(`document.getElementById(${JSON.stringify(id)}).click()`);
 for (let i = 0; i < 60 && !(await js(`document.visibilityState==='visible'&&!!document.getElementById('startBtn')&&document.readyState==='complete'`)); i++) { if (i % 10 === 9) launch(); await sleep(1000); }
 await sleep(2000);
@@ -421,6 +433,64 @@ if (!METHODOLOGY) {
   if (!(sheetG && afterSheetG?.dialog)) fail('diaries: Sharesheet not shown or dialog lost after Back: ' + JSON.stringify({ sheetG, afterSheetG }));
   if (!(delAskG && afterDelG?.active === 'main' && afterDelG.mainDisabled && !filesAfterDel?.some(f => f.includes(createdG.active)) && mainBefore === mainAfter)) fail('diaries: delete or «Мой дневник» integrity wrong: ' + JSON.stringify({ delAskG, afterDelG, filesWithSmoke, filesAfterDel }));
 }
+
+// The app's own UID has no network in this run (R13): a request from the page must fail.
+report.appNetwork = await js(`fetch('https://andarfighttech.com/fight-tech/privacy-policy.html',{mode:'no-cors',cache:'no-store'}).then(()=>'reached',e=>'blocked: '+e.message)`);
+step('app_network', { probe: report.appNetwork, uid: appUid });
+if (!/^blocked/.test(report.appNetwork || '')) fail('the app reached the network: test runs must not contact the production entitlement server');
+
+// Owner 2026-11-02 (device screenshots): in English «Single straights» → stage editor «Бокс — Одиночные прямые», round 1
+// «Jab» → ✎ «Джеб». The same path here: English, Library → Boxing → Heavy bag work → Long range → +, then both editors.
+// A workout still running (the methodology build has no diary steps that stop it) is stopped first; «Записать?» is declined.
+await js(`(()=>{const r=document.getElementById('resetBtn');if(r&&!r.disabled)r.click();return true})()`); await sleep(1500);
+await js(`(()=>{const m=document.getElementById('programDeleteConfirmModal');if(m&&!m.hidden)document.getElementById('programDeleteConfirmCancel').click();return true})()`); await sleep(600);
+await js(`(()=>{for(const id of ['ftDiariesDialogClose','programLibraryClose']){const b=document.getElementById(id);if(b&&b.offsetParent)b.click();}
+  const s=document.getElementById('languageSelect');s.value='en';s.dispatchEvent(new Event('change'));document.getElementById('programClear').click();return true})()`); await sleep(800);
+await click('programLibraryOpen'); await sleep(600); await click('programLibraryTemplates'); await sleep(600);
+for (const name of ['Boxing', 'Heavy bag work', 'Long range']) { await js(`[...document.querySelectorAll('#programLibraryList .ft-library-folder')].find(b=>(b.getAttribute('aria-label')||'').startsWith(${JSON.stringify(name + ',')}))?.click()`); await sleep(600); }
+const enAdded = await js(`(()=>{const b=document.querySelector('#programLibraryList button.ft-library-add[aria-label="Add Single straights"]');if(!b)return false;b.click();return true})()`); await sleep(800);
+await click('programLibraryClose'); await sleep(800);
+const roundRow = `document.querySelector('#programList [data-stage="0"] .program-round-edit-row')`;
+const enCard = await js(`({name:${roundRow}?.querySelector('.program-round-name')?.textContent,title:document.querySelector('#programList [data-stage="0"] .program-stage-title-stack')?.innerText})`);
+await js(`${roundRow}.querySelector('button').click()`); await sleep(600);
+const enRound = await js(`({value:document.getElementById('roundEditInput').value,label:document.getElementById('roundEditLabel').textContent})`);
+shot('24_en_round_editor'); await click('roundEditCancel'); await sleep(400);
+await js(`document.querySelector('#programList [data-stage="0"] .program-stage-edit').click()`); await sleep(600);
+const enStage = await js(`document.getElementById('stageSettingsName').value`);
+shot('25_en_stage_editor'); await click('stageSettingsCancel'); await sleep(400);
+const enStored = await js(`(()=>{const p=JSON.parse(localStorage.getItem('andar.fight.timer.program.v1')||'null');const e=(p?.entries||p||[])[0];return e&&{title:e.title,round:e.roundNames?.[0]}})()`);
+step('en_library_editors', { enAdded, enCard, enRound, enStage, enStored });
+if (!(enAdded && enCard?.name === 'Jab' && enRound?.value === 'Jab' && enRound.label === 'Exercise name' && enStage === 'Boxing — Single straights'
+  && enStored?.title === 'Бокс — Одиночные прямые' && enStored.round === 'Джеб')) fail('English editors: library text not shown in English, or stored text changed: ' + JSON.stringify({ enCard, enRound, enStage, enStored }));
+
+// Privacy Policy in Settings (Google Play: in the app as well as in the store listing): the link opens exactly the policy
+// URL in the system browser, and the page loads there; the app itself does not navigate away.
+const POLICY = 'https://andarfighttech.com/fight-tech/privacy-policy.html';
+await click('settingsBtn'); await sleep(800);
+const policy = await js(`(()=>{const a=document.getElementById('ftPrivacyLink');a.scrollIntoView({block:'center'});const r=a.getBoundingClientRect();
+  return {href:a.href,text:a.textContent,card:a.closest('.settings-card').querySelector('.settings-card-title').textContent,height:Math.round(r.height),inside:r.top>=0&&r.bottom<=innerHeight}})()`);
+await sleep(400); shot('26_privacy_link_en');
+for (const f of ['/data/local/tmp/chrome-command-line', '/data/local/chrome-command-line']) adb('shell', `echo '_ --disable-fre --no-default-browser-check --no-first-run' > ${f}`);
+adb('shell', 'am', 'set-debug-app', '--persistent', 'com.android.chrome');
+adb('logcat', '-c');
+await js(`document.getElementById('ftPrivacyLink').click()`, { gesture: true });
+let browser = null, browserTabs = null;
+for (let i = 0; i < 12; i++) {
+  await sleep(2500);
+  browser = (adb('shell', 'dumpsys', 'activity', 'activities').match(/(?:mResumedActivity|topResumedActivity)[^\n]*?\s([\w.]+)\/[\w.$]+/) || [])[1] || null;
+  adb('forward', 'tcp:9224', 'localabstract:chrome_devtools_remote');
+  try { browserTabs = (await (await fetch('http://127.0.0.1:9224/json')).json()).map(t => ({ url: t.url, title: t.title })); } catch { browserTabs = null; }
+  if (browserTabs?.some(t => t.url === POLICY && /Privacy Policy/.test(t.title))) break;
+}
+shot('27_privacy_policy_browser');
+const viewIntent = adb('logcat', '-d').split('\n').filter(l => /act=android\.intent\.action\.VIEW/.test(l) && l.includes('andarfighttech.com')).slice(0, 3);
+const appLocation = await js(`location.href`);
+const policyTab = browserTabs?.find(t => t.url === POLICY) || null;
+step('privacy_policy_link', { policy, browser, viewIntent, tabs: browserTabs, policyTab, appLocation });
+if (!(policy?.href === POLICY && policy.text === 'Privacy Policy' && policy.card === 'Privacy' && policy.height >= 44)) fail('Settings: privacy policy link missing or wrong: ' + JSON.stringify(policy));
+if (!(browser && browser !== PKG && /^https:\/\/localhost\//.test(appLocation || '') && policyTab && /Privacy Policy/.test(policyTab.title)))
+  fail('privacy policy link did not open the policy page in the browser: ' + JSON.stringify({ browser, viewIntent, tabs: browserTabs, appLocation }));
+adb('shell', 'am', 'force-stop', browser && browser !== PKG ? browser : 'com.android.chrome'); launch(); await sleep(1500);
 
 report.crashes = crashes();
 report.js_errors = adb('logcat', '-d').split('\n').filter(l => /Capacitor\/Console.*(ERROR|Uncaught)|chromium.*Uncaught/.test(l)).slice(0, 20);
