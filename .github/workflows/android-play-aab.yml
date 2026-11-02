@@ -16,6 +16,8 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
+      # The AAB is the Google Play build: it must be the Play MVP variant (the methodology build never goes to Play).
+      - run: grep -qx "export const BUILD_VARIANT = 'play';" app/js/build-variant.js || { echo "::error::the Play AAB must be built from the Play variant (app/js/build-variant.js)"; exit 1; }
       - uses: actions/setup-node@v4
         with:
           node-version: '22'

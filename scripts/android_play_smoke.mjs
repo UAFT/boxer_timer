@@ -1,14 +1,16 @@
-// Smoke test on an Android emulator, shared by the Play MVP and the methodology build (FT_VARIANT=methodology).
+// Smoke test on an Android emulator, shared by the Play MVP and the methodology build: which one is read from the built
+// code (app/js/build-variant.js), never from the branch name.
 // 1. The signed release APK (from the AAB) installs, launches and does not crash.
 // 2. A debug build of the same project is driven through the WebView DevTools protocol: library tabs,
 //    Library → add a workout, start, screen lock, Home, Back. Timer time is compared with wall time,
 //    and a 1 s JS heartbeat shows whether the page kept running while locked / in the background.
 // Usage: node scripts/android_play_smoke.mjs <release.apk> <debug.apk> <out_dir>
 import { execFileSync, spawn } from 'node:child_process';
-import { mkdirSync, writeFileSync, openSync, appendFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync, openSync, appendFileSync, readFileSync } from 'node:fs';
 
 const PKG = 'com.andarfighttech.boxertimer';
-const METHODOLOGY = process.env.FT_VARIANT === 'methodology';
+const VARIANT = readFileSync(new URL('../app/js/build-variant.js', import.meta.url), 'utf8').match(/^export const BUILD_VARIANT = '(play|methodology)';$/m)[1];
+const METHODOLOGY = VARIANT === 'methodology';
 const [RELEASE, DEBUG, OUT] = process.argv.slice(2);
 mkdirSync(OUT, { recursive: true });
 const adb = (...a) => { try { return execFileSync('adb', a, { encoding: 'utf8', maxBuffer: 64 << 20 }); } catch (e) { return String(e.stdout || ''); } };
@@ -112,20 +114,22 @@ const secs = t => { const m = /^(\d+):(\d\d)$/.exec((t || '').trim()); return m 
 const state = () => js(`({main:document.getElementById('mainTime').textContent,rem:document.getElementById('metricRemaining').textContent,phase:document.getElementById('phaseLabel').textContent,round:document.getElementById('roundLabel').textContent,
   btn:document.getElementById('startBtn').textContent.trim(),hint:!document.getElementById('ftBackHint')?.hidden,visible:document.visibilityState,now:Date.now()})`);
 
-// Library tabs: the Play MVP shows Mine / Library / import only, the methodology build adds Tree and Methodology.
+// Library tabs: Mine / Library / Diary / import in both builds; the methodology build adds Tree | Methodology in a second row.
 await click('programLibraryOpen'); await sleep(800);
 const nav = await js(`[...document.querySelector('.ft-library-nav').children].filter(b=>b.offsetParent!==null).map(b=>b.id)`);
 const navFills = await js(`(()=>{const n=document.querySelector('.ft-library-nav'),v=[...n.children].filter(b=>b.offsetParent!==null),r=e=>e.getBoundingClientRect();return Math.abs(r(v[v.length-1]).right-r(n).right)<=1&&v.every(b=>r(b).right<=r(n).right+0.5)})()`);
 const methodText = await js(`/Методик|Methodolog|Дерево|Tree/.test(document.body.innerText)`);
-shot('02_library_mine'); step('library_tabs', { nav, navFills, methodText });
-const tabs = METHODOLOGY ? ['programLibraryMine', 'programLibraryTemplates', 'ftTreePreviewTab', 'ftMethodV42Tab', 'ftWorkoutImportBtn'] : ['programLibraryMine', 'programLibraryTemplates', 'programLibraryDiary', 'ftWorkoutImportBtn'];
-if (JSON.stringify([...nav].sort()) !== JSON.stringify([...tabs].sort()) || methodText !== METHODOLOGY || !navFills) fail('library tabs: ' + JSON.stringify(nav));
+const pageVariant = await js(`document.documentElement.dataset.variant`);
+const secondRow = METHODOLOGY ? await js(`(()=>{const r=id=>document.getElementById(id).getBoundingClientRect();return r('ftTreePreviewTab').top>=r('programLibraryMine').bottom&&r('ftMethodV42Tab').top>=r('programLibraryMine').bottom})()`) : true;
+shot('02_library_mine'); step('library_tabs', { variant: VARIANT, pageVariant, nav, navFills, secondRow, methodText });
+const tabs = ['programLibraryMine', 'programLibraryTemplates', 'programLibraryDiary', 'ftWorkoutImportBtn', ...(METHODOLOGY ? ['ftTreePreviewTab', 'ftMethodV42Tab'] : [])];
+if (JSON.stringify([...nav].sort()) !== JSON.stringify([...tabs].sort()) || methodText !== METHODOLOGY || !navFills || !secondRow || pageVariant !== VARIANT) fail('library tabs: ' + JSON.stringify({ nav, pageVariant, secondRow }));
 // Fresh install (owner 2026-10-31): «Мои» holds no preloaded programs, only the empty-state hint.
 const mine = await js(`({empty:!!document.querySelector('#programLibraryList .ft-mine-empty'),cards:document.querySelectorAll('#programLibraryList .ft-saved-program-entry').length})`);
 step('mine_fresh_install', mine);
 if (!mine?.empty || mine.cards) fail('«Мои» is not empty on a fresh install: ' + JSON.stringify(mine));
-if (!METHODOLOGY) {
-  // Diary (STAGE 1): Monday-first month grid, today selected, nothing written to storage.
+{
+  // Diary (STAGE 1, both builds): Monday-first month grid, today selected, nothing written to storage.
   const before = await js(`Object.keys(localStorage).sort().join()`);
   await click('programLibraryDiary'); await sleep(800);
   const diary = await js(`({week:[...document.querySelectorAll('.ft-diary-weekday')].length,days:document.querySelectorAll('.ft-diary-day').length,selected:document.querySelectorAll('.ft-diary-day.is-selected').length,overflow:document.querySelector('.ft-diary').scrollWidth-document.querySelector('.ft-diary').clientWidth,keys:Object.keys(localStorage).sort().join()})`);
@@ -144,12 +148,13 @@ await click('programLibraryTemplates'); await sleep(800);
 const folders = await js(`[...document.querySelectorAll('#programLibraryList .ft-library-folder')].map(b=>b.getAttribute('aria-label'))`);
 shot('03_library'); step('library_folders', { folders });
 if (!(folders?.length >= 5)) fail('library folders missing');
-if (!METHODOLOGY) {
-  // Play MVP «Бокс»: four folders, 149 workouts, no «Ранее добавленные».
+{
+  // «Бокс»: the Play MVP has four folders, 149 workouts, no «Ранее добавленные»; the methodology build also keeps
+  // «Ранее добавленные» (B01, B02, B05): five folders, 152.
   await js(`document.querySelectorAll('#programLibraryList .ft-library-folder')[1].click()`); await sleep(600);
   const boxing = await js(`[...document.querySelectorAll('#programLibraryList .ft-library-folder')].map(b=>b.getAttribute('aria-label'))`);
   shot('03a_boxing'); step('boxing_folders', { section: folders[1], boxing });
-  if (!/, 149$/.test(folders[1]) || boxing?.length !== 4 || boxing.some(l => /Ранее добавленные|Previously added/.test(l))) fail('Play MVP boxing folders: ' + JSON.stringify(boxing));
+  if (!new RegExp(`, ${METHODOLOGY ? 152 : 149}$`).test(folders[1]) || boxing?.length !== (METHODOLOGY ? 5 : 4) || boxing.some(l => /Ранее добавленные|Previously added/.test(l)) !== METHODOLOGY) fail('boxing folders: ' + JSON.stringify(boxing));
   await click('programLibraryBack'); await sleep(600);
 }
 await js(`document.querySelector('#programLibraryList .ft-library-folder').click()`); await sleep(600);
@@ -164,9 +169,9 @@ const libClosed = await js(`document.getElementById('programLibraryModal').hidde
 step('back_in_library', { upLevel, libClosed, foreground: foreground() });
 if (!upLevel.open || upLevel.folders < 5 || !libClosed || !foreground()) fail('Back in the library: expected folder → sections → closed');
 
-// Diary STAGE 2 (Play): «Сохранить» → «В дневник» → today → the assignment lands in the app's data folder (Filesystem plugin),
-// not in localStorage, and the calendar shows it.
-if (!METHODOLOGY) {
+// Diary STAGE 2 (both builds): «Сохранить» → «В дневник» → today → the assignment lands in the app's data folder (Filesystem
+// plugin), not in localStorage, and the calendar shows it.
+{
   await click('programSaveOpen'); await sleep(600);
   await js(`document.querySelector('#programSaveDest [data-value="diary"]').click()`); await sleep(600);
   await js(`document.querySelector('#programSaveCalendar .ft-diary-day.is-today').click()`); await sleep(400);
@@ -226,9 +231,9 @@ if (fgTwice || secs(twice.rem) === null || secs(twice.rem) >= secs(s2.rem)) fail
 report.speech = await js(`new Promise(ok=>{const s=globalThis.speechSynthesis;if(!s)return ok({available:false});setTimeout(()=>ok({available:true,voices:s.getVoices().map(v=>v.lang+' '+v.name).slice(0,20)}),1500)})`);
 step('speech', report.speech);
 
-// Billing plugin (Play MVP only): the Kotlin bridge answers; nothing is bought. The google_apis image has no Play Store,
+// Billing plugin (both builds: one native project): the Kotlin bridge answers; nothing is bought. The google_apis image has no Play Store,
 // so BILLING_UNAVAILABLE / SERVICE_UNAVAILABLE here is expected and recorded, not a failure.
-if (!METHODOLOGY) {
+{
   report.billing = await js(`(async()=>{const b=globalThis.Capacitor?.Plugins?.FtBilling;if(!b)return {plugin:false};const d=await b.deviceInfo();const q=await b.queryPurchases();const p=await b.getProducts({productIds:['ft_smoke_probe']});return {plugin:true,androidId:!!d.androidId,purchases:q.responseCode,products:p.responseCode}})()`);
   step('billing', report.billing);
   if (!report.billing?.plugin || !report.billing.androidId) fail('FtBilling plugin is not registered or has no ANDROID_ID');

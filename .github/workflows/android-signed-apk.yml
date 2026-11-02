@@ -141,8 +141,7 @@ jobs:
         uses: reactivecircus/android-emulator-runner@v2
         env:
           FT_UPGRADE_FROM: previous-0.2.192.apk previous-0.2.208.apk previous-0.2.213.apk
-          # Shared by both branches: the Play MVP hides Tree and Methodology, the methodology build shows them.
-          FT_VARIANT: ${{ startsWith(github.ref_name, 'release/play-mvp') && 'play' || 'methodology' }}
+          # Which build (Play MVP or methodology) the smoke reads from app/js/build-variant.js, not from the branch name.
         with:
           api-level: 36
           target: google_apis

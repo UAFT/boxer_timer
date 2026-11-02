@@ -42,16 +42,18 @@ test('Google Play MVP: My Programs start empty, library cards hide the book meth
   assert.doesNotMatch(view, /'Источник'/);
 });
 
-test('Google Play MVP 2026-10-31: «Бокс» has no «Ранее добавленные», counts come from the remaining data', async () => {
+test('Google Play MVP 2026-10-31: «Бокс» has no «Ранее добавленные»; the methodology build keeps it (B01, B02, B05)', async () => {
   const { LIBRARY, CATEGORIES, RETIRED_LIBRARY } = await import('../app/js/library/catalog.js');
   const { libraryLevel, UNFILED } = await import('../app/js/library/library-browser.js');
+  const { BUILD_VARIANT } = await import('../app/js/build-variant.js');
+  const methodology = BUILD_VARIANT === 'methodology';
   const sections = Object.fromEntries(libraryLevel(LIBRARY, CATEGORIES, {}).items.map(i => [i.key, i.count]));
-  assert.deepEqual(sections, { warmup: 4, boxing: 149, two_phase: 3, interval: 4, amrap: 4, afap: 4, emom: 4, tabata: 4, cardio: 4, abs: 4, cooldown: 2 });
+  assert.deepEqual(sections, { warmup: 4, boxing: methodology ? 152 : 149, two_phase: 3, interval: 4, amrap: 4, afap: 4, emom: 4, tabata: 4, cardio: 4, abs: 4, cooldown: 2 });
   const folders = libraryLevel(LIBRARY, CATEGORIES, { category: 'boxing' }).items.map(i => [i.label, i.count]);
-  assert.deepEqual(folders, [['Работа на мешке', 84], ['Работа перед зеркалом / Бой с тенью', 54], ['Работа с отягощением / Физподготовка', 18], ['Круговые тренировки', 2]]);
-  assert.ok(!folders.some(([label]) => label === UNFILED));
+  assert.deepEqual(folders, [['Работа на мешке', 84], ['Работа перед зеркалом / Бой с тенью', 54], ['Работа с отягощением / Физподготовка', 18], ['Круговые тренировки', 2],
+    ...(methodology ? [[UNFILED, 3]] : [])]);
   assert.deepEqual(RETIRED_LIBRARY.map(w => w.id), ['B01', 'B02', 'B05']);
-  assert.ok(!LIBRARY.some(w => RETIRED_LIBRARY.some(r => r.id === w.id)));
+  assert.equal(LIBRARY.filter(w => RETIRED_LIBRARY.some(r => r.id === w.id)).length, methodology ? 3 : 0);
 });
 
 test('Google Play MVP 2026-10-31: programs already on the phone survive the update unchanged', async () => {

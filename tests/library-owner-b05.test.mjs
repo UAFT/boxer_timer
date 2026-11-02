@@ -4,6 +4,7 @@ import { CATEGORIES, LIBRARY, RETIRED_LIBRARY, buildSteps } from '../app/js/libr
 import { stageForWorkout } from '../app/js/library/native-adapter.js';
 import { compileProgram } from '../app/js/core/program.js';
 import { clonePreset } from '../app/js/state/presets.js';
+import { BUILD_VARIANT } from '../app/js/build-variant.js';
 
 const names = [
   'Прямые удары', 'Боковые удары', 'Удары снизу', 'Защитные действия',
@@ -13,8 +14,10 @@ const names = [
 test('main workout category retains its identity and drops equipment restriction', () => {
   assert.equal(CATEGORIES.find(([id]) => id === 'boxing')?.[1], 'Бокс');
   // Play MVP 2026-10-31: the three pre-folder drafts left the library; they stay only for saved stage titles.
-  assert.equal(LIBRARY.filter(w => w.category === 'boxing' && w.mode !== 'boxing_sequence').length, 0);
-  assert.equal(LIBRARY.length, 186);
+  // The methodology build keeps them in the library (8676b65).
+  const methodology = BUILD_VARIANT === 'methodology';
+  assert.equal(LIBRARY.filter(w => w.category === 'boxing' && w.mode !== 'boxing_sequence').length, methodology ? 3 : 0);
+  assert.equal(LIBRARY.length, methodology ? 189 : 186);
   assert.equal(new Set(LIBRARY.map(w => w.id)).size, LIBRARY.length);
   assert.deepEqual(['B01','B02','B05'], RETIRED_LIBRARY.map(w => w.id));
 });

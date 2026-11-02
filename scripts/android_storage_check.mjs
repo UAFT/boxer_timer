@@ -130,23 +130,28 @@ if (outside.length) fail('backup holds more than the diaries and localStorage: '
 
 adb('shell', 'pm', 'uninstall', '--user', '0', PKG);
 const gone = adb('shell', `ls /data/data/${PKG} 2>&1`).trim();
+// A moment after the uninstall MediaProvider leaves the app's file in Documents to no one (owner_package_name NULL); a
+// reinstall before that would still own it. Waited for, so the resave below meets a file of an earlier installation.
+const owner = () => adb('shell', `content query --uri content://media/external/file --projection owner_package_name --where "_display_name='storage-check.ftdiary'"`).trim();
+let orphan = owner();
+for (let i = 0; i < 20 && orphan.includes('owner_package_name=' + PKG); i++) { await sleep(1500); orphan = owner(); }
 const reinstalled = adb('install', '-t', APK).trim().split('\n').pop();
 isolate();
 await sleep(5000); // the install-time restore
 const again = await connect();
 const restored = await again.js(`(async()=>({ls:localStorage.getItem('fighttech.storage-check'),diary:await ${call('readFile', { path: 'fighttech-diary-a.json', directory: 'DATA', encoding: 'utf8' })}}))()`);
-step('restore', { gone, reinstalled, restored: { ls: restored?.ls, diarySame: restored?.diary?.r?.data === DIARY } });
+step('restore', { gone, orphan, reinstalled, restored: { ls: restored?.ls, diarySame: restored?.diary?.r?.data === DIARY } });
 if (!(restored?.ls === TOKEN && restored?.diary?.r?.data === DIARY)) fail('restore after reinstall lost data: ' + JSON.stringify(restored));
 
 // After a reinstall the earlier file in Documents belongs to the previous installation (Android 11+): the plugin may not
 // overwrite it (recorded), and the app's own «Сохранить в файл» then saves the copy under a new name. Asserted where the
-// app's code loads (Android 13+); the API 29/30 images' WebView 74/83 cannot run it.
+// app's code loads (Android 11+); the API 29 image's WebView 74 cannot run it.
 const resave = await withPermission(again.js, call('writeFile', { path: FILE, data: b64, directory: 'DOCUMENTS', recursive: true }));
 const appSave = await again.js(`import('/js/sharing/file-transfer.js').then(m=>m.saveFile({data:${JSON.stringify(text)},name:'storage-check.ftdiary'}))
   .then(path=>({ok:true,path}),e=>({ok:false,error:String(e&&e.message||e)}))`);
 const appSaveSha = appSave?.ok ? adb('shell', `sha256sum '/sdcard/${appSave.path}' 2>/dev/null`).trim().split(/\s+/)[0] || null : null;
-step('resave_after_reinstall', { plugin: resave, app: appSave, appSaveSame: appSaveSha === sha(text) });
-if (report.api >= 33 && !(appSave?.ok && appSaveSha === sha(text))) fail('«Сохранить в файл» after a reinstall failed: ' + JSON.stringify(appSave));
+step('resave_after_reinstall', { plugin: resave, app: appSave, newName: appSave?.path !== 'Documents/' + FILE, appSaveSame: appSaveSha === sha(text) });
+if (report.api >= 30 && !(appSave?.ok && appSaveSha === sha(text))) fail('«Сохранить в файл» after a reinstall failed: ' + JSON.stringify(appSave));
 again.close();
 
 writeFileSync(`${OUT}/report.json`, JSON.stringify(report, null, 1));

@@ -30,6 +30,7 @@ import { renderPresetOrders } from './ui/preset-order.js';
 import { editableRestField } from './core/ladder-blocks.js';
 import { installLocalization, showEditable, editedText } from './i18n/locale.js';
 import { clonePreset } from './state/presets.js';
+import { BUILD_VARIANT } from './build-variant.js';
 import { compileProgram, startIndex, normalizeProgram, normalizeOptions, normalizeLibrary, syncStagesWithPreset, MAX_PROGRAM_ROUNDS, MAX_TITLE, tooLongMessage, LIBRARY_KEY, PROGRAM_OPTIONS_KEY, PRESET_NAMES, PROGRAM_KEY } from './core/program.js';
 import { renderStartFrom } from './ui/start-from.js';
 import { loadSoundProfile, saveSoundProfile, soundKeys, loadCountdownProfile, COUNTDOWN_SOUND_KEY } from './audio/sound-profile.js';
@@ -916,6 +917,9 @@ function renderProgram() {
   for (const card of list.querySelectorAll('.program-stage-card')) card.classList.toggle('is-current',Number(card.dataset.stage)===activeIndex);
 }
 function bindProgramLibrary() {
+  // The methodology build shows Tree and Methodology (hidden in the page for the Play MVP); its tab row is styled by it.
+  document.documentElement.dataset.variant=BUILD_VARIANT;
+  if(BUILD_VARIANT==='methodology')for(const id of ['ftTreePreviewTab','ftMethodV42Tab'])document.getElementById(id).hidden=false;
   const byId=id=>document.getElementById(id);
   const library=byId('programLibraryModal');
   const save=byId('programSaveModal');

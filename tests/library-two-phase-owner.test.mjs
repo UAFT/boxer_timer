@@ -7,6 +7,9 @@ import {clonePreset} from '../app/js/state/presets.js';
 import {stageTimingRows} from '../app/js/ui/stage-timing-rows.js';
 import {buildLadderPlanRows} from '../app/js/ui/ladder-plan-rows.js';
 import {timeClock} from '../app/js/ui/library-card-view.js';
+import {BUILD_VARIANT} from '../app/js/build-variant.js';
+// The methodology build keeps B01, B02, B05 («Ранее добавленные», 8676b65) in the library: three more workouts.
+const EXTRA=BUILD_VARIANT==='methodology'?3:0;
 
 const profiles=Object.fromEntries(['classic1','classic2','classic3','tabata2020x24'].map(id=>[id,clonePreset(id)]));
 const cases=[
@@ -18,7 +21,7 @@ test('new two-phase section and stable IDs, existing categories preserved',()=>{
  assert.deepEqual(CATEGORIES.find(([id])=>id==='two_phase'),['two_phase','Двухфазные']);
  assert.deepEqual(LIBRARY.filter(x=>x.category==='two_phase').map(x=>x.id),cases.map(x=>x.id));
  assert.equal(new Set(LIBRARY.map(x=>x.id)).size,LIBRARY.length);
- assert.equal(LIBRARY.length,186);
+ assert.equal(LIBRARY.length,186+EXTRA);
 });
 for(const item of cases){
  test(item.id+' uses real TWO_PHASE engine: per-round phases, names, rest and exact total',()=>{

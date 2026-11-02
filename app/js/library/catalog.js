@@ -1,4 +1,5 @@
 import { BOXING_LIBRARY, SHARED_SHADOW_BAG_IDS } from './boxing-149.js';
+import { BUILD_VARIANT } from '../build-variant.js';
 /* Editable launch library. Boxing entries are drafts: owner programs remain untouched. */
 const make = (id, category, name, mode, tasks, opts={}) => ({
   id, category, name, mode, tasks, rounds: opts.rounds || 1,
@@ -28,11 +29,16 @@ export const RETIRED_LIBRARY = [
   make('B02','boxing','Комплекс 2','interval',['Акцентированные одиночные','Любые двойки','Любые тройки','Серия, акцент корпус','Вольная работа','Вольная работа, акцент корпус'],{work:60,rest:30,note:''}),
   make('B05','boxing','Работа с гантелями','interval',['Прямые удары','Боковые удары','Удары снизу','Защитные действия','Свободный стиль в сильной стойке','Свободный стиль в слабой стойке','Ускорение'],{work:120,rest:60,equipment:'Гантели',source:'Owner-approved training 2026-10-21'})
 ];
+// The methodology build keeps them in the library as they were (8676b65), B01/B02 with their provenance note.
+const DRAFT_NOTE = 'Черновая копия заданий со скриншота; оригинальная личная программа не меняется.';
+const METHODOLOGY_DRAFTS = BUILD_VARIANT === 'methodology'
+  ? RETIRED_LIBRARY.map(w => w.id === 'B05' ? w : { ...w, note: DRAFT_NOTE }) : [];
 export const LIBRARY = [
   make('W01','warmup','Скакалка','interval',['Свободная скакалка'],{rounds:3,work:180,rest:60}),
   make('W02','warmup','Суставная гимнастика','interval',['Плечи и руки','Таз и корпус','Колени и голеностоп','Лёгкие движения'],{work:60,rest:0}),
   make('W03','warmup','Работа ног','interval',['Шаги вперёд и назад','Шаги в стороны','Движение по кругу','Свободные передвижения'],{work:60,rest:0}),
   make('W04','warmup','Динамическая разминка','interval',['Лёгкий бег','Движения руками','Приставные шаги','Лёгкий бой с тенью'],{work:60,rest:0}),
+  ...METHODOLOGY_DRAFTS,
   makeTwoPhase('TP01','Сила + лёгкость','Кувалда',5,60,60,{equipment:'Кувалда'}),
   makeTwoPhase('TP02','Сила + лёгкость 2','Медицинбол',5,60,60,{equipment:'Медицинбол'}),
   makeTwoPhase('TP03','Сила + лёгкость — микс','Кувалда',6,30,40,{

@@ -6,6 +6,9 @@ import {libraryLevel} from '../app/js/library/library-browser.js';
 import {compileProgram} from '../app/js/core/program.js';
 import {timeClock} from '../app/js/ui/library-card-view.js';
 import {renderLibraryWorkoutCard, planSummary} from '../app/js/ui/workout-plan-view.js';
+import {BUILD_VARIANT} from '../app/js/build-variant.js';
+// The methodology build keeps B01, B02, B05 («Ранее добавленные», 8676b65) in the library: three more workouts.
+const EXTRA=BUILD_VARIANT==='methodology'?3:0;
 
 function mockDoc(){
  const element=tag=>{const el={tag,className:'',textContent:'',title:'',hidden:false,disabled:false,attributes:{},children:[],
@@ -29,7 +32,7 @@ test('folder counters: bold, far right, no parentheses, counted from the data',(
  assert.match(css,/\.ft-library-count\{margin-left:auto;font-weight:800/);
  const root=libraryLevel(LIBRARY,CATEGORIES,{});
  for(const item of root.items)assert.equal(item.count,LIBRARY.filter(w=>w.category===item.key).length);
- assert.equal(root.items.find(i=>i.key==='boxing').count,149);
+ assert.equal(root.items.find(i=>i.key==='boxing').count,149+EXTRA);
 });
 
 test('bag workout card: compact line from real rounds, no task list, plan in playback order without final rest',()=>{
@@ -97,7 +100,7 @@ test('plus adds once and only on its own tap; expanding never adds; disabled sta
 });
 
 test('every library workout renders a card whose plan matches its compiled rounds',()=>{
- assert.equal(LIBRARY.length,186);
+ assert.equal(LIBRARY.length,186+EXTRA);
  for(const w of LIBRARY){
   const rounds=roundsOf(w),c=card(w);
   c.children[0].onclick();
