@@ -79,7 +79,8 @@ const ws = new WebSocket(target.webSocketDebuggerUrl);
 await new Promise((ok, no) => { ws.onopen = ok; ws.onerror = no; });
 let seq = 0; const waiting = new Map();
 ws.onmessage = m => { const d = JSON.parse(m.data); waiting.get(d.id)?.(d); waiting.delete(d.id); };
-const js = expr => new Promise(ok => { const id = ++seq; waiting.set(id, d => ok(d.result?.result?.value)); ws.send(JSON.stringify({ id, method: 'Runtime.evaluate', params: { expression: expr, returnByValue: true, awaitPromise: true } })); });
+// A call that never answers (renderer hung, JS dialog) resolves null after 60 s, so the report is still written.
+const js = expr => new Promise(ok => { const id = ++seq; const t = setTimeout(() => { report.failures.push('no answer from the page: ' + expr.slice(0, 80)); ok(null); }, 60000); waiting.set(id, d => { clearTimeout(t); ok(d.result?.result?.value); }); ws.send(JSON.stringify({ id, method: 'Runtime.evaluate', params: { expression: expr, returnByValue: true, awaitPromise: true } })); });
 const click = id => js(`document.getElementById(${JSON.stringify(id)}).click()`);
 for (let i = 0; i < 60 && !(await js(`document.visibilityState==='visible'&&!!document.getElementById('startBtn')&&document.readyState==='complete'`)); i++) { if (i % 10 === 9) launch(); await sleep(1000); }
 await sleep(2000);
@@ -348,7 +349,7 @@ if (!METHODOLOGY) {
   // the in-app dialog, run the diary workout with its stage metronome (30/60 BPM from STAGE 4): every metronome and tick
   // sound must be the bundled B pair (140 / 95 ms), no click (240 / 180 ms), in a running AudioContext.
   await click('settingsBtn'); await sleep(800);
-  const soundDefault = await js(`(()=>{const g=document.getElementById('ftMetronomeSound');g.scrollIntoView({block:'center'});return {stored:localStorage.getItem('fighttech.metronome.sound.v1'),checked:[...g.querySelectorAll('input[type=radio]')].find(r=>r.checked)?.value,toneHidden:document.getElementById('ftMetronomeSoundTone').hidden,texts:[...g.querySelectorAll('.ft-radio-row span')].map(s=>s.textContent)}})()`);
+  const soundDefault = await js(`(()=>{const g=document.getElementById('ftMetronomeSound');g.scrollIntoView({block:'center'});return {stored:localStorage.getItem('fighttech.metronome.sound.v1'),countdown:localStorage.getItem('fighttech.countdown.sound.v1'),checked:[...g.querySelectorAll('input[type=radio]')].find(r=>r.checked)?.value,toneHidden:document.getElementById('ftMetronomeSoundTone').hidden,texts:[...g.querySelectorAll('.ft-radio-row span')].map(s=>s.textContent)}})()`);
   shot('18_sound_default');
   await js(`(()=>{document.getElementById('ftMetronomeSoundElectronic').click();document.querySelector('#ftMetronomeSoundTone .ft-choice-trigger').click();return true})()`); await sleep(800);
   const toneDialog = await js(`(()=>[...document.querySelectorAll('#ftChoiceDialog [role=option]')].map(o=>o.textContent))()`);
@@ -367,7 +368,10 @@ if (!METHODOLOGY) {
   const heard = await js(`(()=>{const d=window.__snd,c=x=>d.filter(v=>v===x).length;return {strong:c(140),weak:c(95),click:c(240)+c(180),all:d.length,running:window.__ctx.every(s=>s==='running')}})()`);
   step('metronome_sound_profile', { soundDefault, toneDialog, soundChosen, heard });
   if (!(soundDefault?.stored === null && soundDefault.checked === 'click' && soundDefault.toneHidden)) fail('after the update the metronome sound is not the original clicks: ' + JSON.stringify(soundDefault));
-  if (!(toneDialog?.length === 3 && /"tone":"B"/.test(soundChosen?.stored || '') && heard?.strong >= 6 && heard.click === 0 && heard.running)) fail('electronic tone B not chosen or not played on the device: ' + JSON.stringify({ toneDialog, soundChosen, heard }));
+  // The countdown keeps its own choice (written on the first start of this build from the 0.2.208 state = clicks):
+  // the metronome beats are B (140 ms), the 4-3-2-1 and warning ticks stay clicks.
+  if (!(/"kind":"click"/.test(soundDefault?.countdown || ''))) fail('countdown choice not frozen on first start: ' + JSON.stringify(soundDefault));
+  if (!(toneDialog?.length === 3 && /"tone":"B"/.test(soundChosen?.stored || '') && heard?.strong >= 6 && heard.click >= 1 && heard.running)) fail('electronic tone B not chosen or not played on the device: ' + JSON.stringify({ toneDialog, soundChosen, heard }));
   // G (2026-11-02): several diaries. ⋮ opens the regular dialog; a new diary gets its own files and becomes active;
   // «Сохранить дневник в файл» writes Documents/Fight Tech/*.ftdiary (no permission); «Отправить» opens the Android
   // Sharesheet (closed with Back = cancelled, nothing changes); deleting the new diary removes its files; «Мой дневник»
@@ -378,7 +382,7 @@ if (!METHODOLOGY) {
   const mainBefore = await js(mainFiles);
   await js(`(()=>{document.getElementById('programLibraryOpen').click();document.getElementById('programLibraryDiary').click();return true})()`); await sleep(1000);
   await js(`(()=>{const m=document.getElementById('programDeleteConfirmModal');if(!m.hidden)document.getElementById('programDeleteConfirmCancel').click();return true})()`); await sleep(500);
-  const menuG = await js(`(()=>({menu:!!document.querySelector('.ft-diary-legend #ftDiariesOpen'),today:!!document.querySelector('.ft-diary-calendar .ft-diary-today'),name:document.querySelector('.ft-diary-current')?.textContent}))()`);
+  const menuG = await js(`(()=>({menu:!!document.querySelector('.ft-diary-legend #ftDiariesOpen'),today:!!document.getElementById('ftDiariesOpen')?.closest('.ft-diary-legend')?.querySelector('.ft-diary-today'),name:document.querySelector('.ft-diary-current')?.textContent}))()`);
   await click('ftDiariesOpen'); await sleep(600);
   const dlgG = await js(`(()=>{const d=document.querySelector('.ft-diaries-dialog');const r=d.getBoundingClientRect();return {role:d.getAttribute('role'),centred:Math.abs((r.top+r.bottom)/2-innerHeight/2)<innerHeight*0.15&&innerHeight-r.bottom>20,items:document.querySelectorAll('.ft-diaries-item').length}})()`);
   shot('21_diaries_dialog');

@@ -86,6 +86,8 @@ metronome.setSoundProfile(soundProfile);
 installSoundProfileSettings(document, { name: 'ftMetronomeSound', get: () => soundProfile, set: next => { soundProfile = next; saveSoundProfile(next); metronome.setSoundProfile(next); } });
 // «Сигналы отсчёта»: the prestart 4-3-2-1 and the end-of-phase warning, independent of the metronome.
 let countdownProfile = loadCountdownProfile();
+// First start of this build: the inherited choice is written down, so from now on the countdown no longer follows the metronome.
+if (localStorage.getItem(COUNTDOWN_SOUND_KEY) === null) saveSoundProfile(countdownProfile, localStorage, COUNTDOWN_SOUND_KEY);
 installSoundProfileSettings(document, { name: 'ftCountdownSound', label: { ru: 'Электронный отсчёт', en: 'Electronic countdown' },
   get: () => countdownProfile, set: next => { countdownProfile = next; saveSoundProfile(next, localStorage, COUNTDOWN_SOUND_KEY); } });
 

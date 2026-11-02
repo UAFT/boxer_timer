@@ -2,7 +2,7 @@
 
 > **2026-11-02:** «Общее» is compact (circle markers, no frame per option) and has three rows:
 > «Сигналы отсчёта» (own clicks / electronic A·B·C choice, `fighttech.countdown.sound.v1`) — the prestart 4-3-2-1 and
-> the `warning-tick`; «Сигналы метронома» (this document) — metronome accent/subdivision only; «Гонг» · «Стандартный»
+> the `warning-tick`; on the first start of this build the inherited choice is written to its key, so later metronome changes never move it; «Сигналы метронома» (this document) — metronome accent/subdivision only; «Гонг» · «Стандартный»
 > (static, the `cue_*` files). Nothing stored for the countdown = it follows the metronome profile, exactly what 0.2.208
 > played, so an update changes nothing. Samples are still bundled and played as delivered (no equalising, no boost).
 

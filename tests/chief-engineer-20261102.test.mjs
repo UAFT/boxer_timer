@@ -147,3 +147,8 @@ test('G4: replace = backup first, then one commit; a failed backup or write leav
   assert.equal(await replaceDiary(fresh, b, backup, 'Дима'), 'ok');
   assert.deepEqual((await openDiary(b)).sessions, before.sessions);
 });
+
+test('A: the first start of this build writes the inherited countdown choice down (later metronome changes do not move it)', () => {
+  const app = readFileSync(new URL('../app/js/app.js', import.meta.url), 'utf8');
+  assert.match(app, /let countdownProfile = loadCountdownProfile\(\);\n[^\n]*\nif \(localStorage\.getItem\(COUNTDOWN_SOUND_KEY\) === null\) saveSoundProfile\(countdownProfile, localStorage, COUNTDOWN_SOUND_KEY\);/);
+});
