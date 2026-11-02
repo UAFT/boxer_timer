@@ -41,6 +41,7 @@ const pairs = [
 ['Оформить подписку','Subscribe'],['Восстановить покупки','Restore purchases'],
 ['Управление в Google Play','Manage in Google Play'],
 ['Тестовая сборка: доступ не ограничивается.','Test build: access is not restricted.'],
+['Конфиденциальность','Privacy'],['Политика конфиденциальности','Privacy Policy'],
 ['в месяц','per month'],['в год','per year'],
 ['Режим интервалов','Interval mode'],['Схема','Mode'],
 ['Лестница: каждый следующий раунд и отдых могут становиться длиннее или короче на выбранный шаг. Количество раундов, длительность первого раунда и исходное время отдыха задаются на главном экране выбранного профиля.','Ladder: each subsequent round and rest can get longer or shorter by the chosen step. Set rounds, initial work and rest on the preset main screen.'],

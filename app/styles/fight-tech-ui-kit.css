@@ -129,6 +129,10 @@ body.program-timer-collapsed .timer-reveal-toggle .timer-disclosure-icon{color:v
 .ft-subscription-actions{display:flex;flex-wrap:wrap;gap:var(--ft-space-2)}
 .ft-subscription-actions button{min-height:var(--ft-touch-target);padding:9px 13px;background:var(--ft-raised);color:var(--ft-ink);border:1px solid var(--ft-line);border-radius:var(--ft-radius-control);box-shadow:var(--ft-shadow);font-weight:700}
 .ft-subscription-actions #ftSubscriptionPurchase{background:var(--ft-steel-gradient);border-color:var(--ft-steel);color:#fff}
+/* An external page (opens the browser): a text link, not a button; the whole line is the touch target. */
+.ft-privacy-card{display:grid;gap:var(--ft-space-1)}
+.ft-privacy-link{display:flex;align-items:center;min-height:var(--ft-touch-target);color:var(--ft-steel);font-size:14px;font-weight:700;text-decoration:underline;text-underline-offset:3px}
+.ft-privacy-link:focus-visible{outline:3px solid #6f9691;outline-offset:2px;border-radius:var(--ft-radius-control)}
 .settings-stepper-value,.ladder-preview-row{background:var(--ft-card);color:var(--ft-ink)}
 .ladder-preview-row strong{background:var(--ft-steel-gradient);color:#fff}
 .ladder-preview-row strong:last-child{background:var(--ft-well);color:var(--ft-ink)}

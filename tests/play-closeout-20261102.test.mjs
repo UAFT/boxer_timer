@@ -58,3 +58,20 @@ test('outside the Android app (no Play billing plugin) the entitlement server is
   assert.match(app, /const offline = \(\) => Promise\.reject\(new TypeError\('no billing outside the Android app'\)\);/);
   assert.match(app, /createBillingAccess\(\{ plugin, appVersion: 'play-mvp', fetch: plugin \? undefined : offline \}\)/);
 });
+
+test('privacy policy: a link in Settings (RU + EN) to the address given to Google Play; it opens outside the app', async () => {
+  const html = read('app/index.html');
+  const link = html.match(/<a class="ft-privacy-link" id="ftPrivacyLink" href="([^"]+)" target="_blank" rel="noopener">([^<]+)<\/a>/);
+  assert.ok(link, 'link present');
+  assert.equal(link[1], 'https://andarfighttech.com/fight-tech/privacy-policy.html');
+  assert.equal(link[2], 'Политика конфиденциальности');
+  const settings = html.slice(html.indexOf('id="settingsModal"'), html.indexOf('id="ftBackHint"'));
+  // In Settings, right before Subscription, which stays the last section (owner, 2026-11-01; billing-ui.test.mjs).
+  const privacy = settings.indexOf('id="ftPrivacyLink"'), subscription = settings.indexOf('id="ftSubscriptionCard"');
+  assert.ok(privacy > 0 && subscription > privacy && settings.slice(privacy, subscription).split('<section').length === 2, 'just before Subscription');
+  globalThis.localStorage ??= { getItem() { return null; }, setItem() {} };
+  const { translateText } = await import('../app/js/i18n/locale.js');
+  assert.equal(translateText('Политика конфиденциальности', 'en'), 'Privacy Policy');
+  assert.equal(translateText('Конфиденциальность', 'en'), 'Privacy');
+  assert.ok(existsSync(new URL('../app/styles/fight-tech-ui-kit.css', import.meta.url)) && /\.ft-privacy-link\{[^}]*min-height:var\(--ft-touch-target\)/.test(read('app/styles/fight-tech-ui-kit.css')));
+});
