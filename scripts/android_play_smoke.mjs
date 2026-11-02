@@ -4,8 +4,8 @@
 //    Library → add a workout, start, screen lock, Home, Back. Timer time is compared with wall time,
 //    and a 1 s JS heartbeat shows whether the page kept running while locked / in the background.
 // Usage: node scripts/android_play_smoke.mjs <release.apk> <debug.apk> <out_dir>
-import { execFileSync } from 'node:child_process';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { execFileSync, spawn } from 'node:child_process';
+import { mkdirSync, writeFileSync, openSync, appendFileSync } from 'node:fs';
 
 const PKG = 'com.andarfighttech.boxertimer';
 const METHODOLOGY = process.env.FT_VARIANT === 'methodology';
@@ -61,7 +61,10 @@ if (UPGRADE_FROM) {
     || !seeded || before.diary !== seeded || after.diary !== seeded || afterRun.diary !== seeded || afterRun.crashes.length) fail('upgrade over the previous APK lost data or did not install');
 }
 
-adb('install', '-r', RELEASE); adb('logcat', '-c'); launch();
+adb('install', '-r', RELEASE); adb('logcat', '-c');
+// Streamed to disk as it happens: if the emulator dies mid-run, what led up to it is still in the artifact.
+{ const fd = openSync(`${OUT}/logcat_stream.txt`, 'a'); spawn('adb', ['logcat', '-v', 'time'], { stdio: ['ignore', fd, fd], detached: true }).unref(); }
+launch();
 const t0 = Date.now(); let painted = 0;
 while (Date.now() - t0 < 120000) { const size = execFileSync('adb', ['exec-out', 'screencap', '-p'], { maxBuffer: 64 << 20 }).length; if (size > 20000) { painted = size; break; } await sleep(2000); }
 const dumpsys = adb('shell', 'dumpsys', 'package', PKG);
@@ -80,7 +83,7 @@ await new Promise((ok, no) => { ws.onopen = ok; ws.onerror = no; });
 let seq = 0; const waiting = new Map();
 ws.onmessage = m => { const d = JSON.parse(m.data); waiting.get(d.id)?.(d); waiting.delete(d.id); };
 // A call that never answers (renderer hung, JS dialog) resolves null after 60 s, so the report is still written.
-const js = expr => new Promise(ok => { const id = ++seq; const t = setTimeout(() => { report.failures.push('no answer from the page: ' + expr.slice(0, 80)); ok(null); }, 60000); waiting.set(id, d => { clearTimeout(t); ok(d.result?.result?.value); }); ws.send(JSON.stringify({ id, method: 'Runtime.evaluate', params: { expression: expr, returnByValue: true, awaitPromise: true } })); });
+const js = expr => new Promise(ok => { const id = ++seq; const t = setTimeout(() => { report.failures.push('no answer from the page: ' + expr.slice(0, 80)); appendFileSync(`${OUT}/hang.txt`, new Date().toISOString() + ' ' + expr.slice(0, 120) + '\n' + adb('shell', 'top', '-b', '-n', '1', '-m', '15') + adb('shell', 'cat', '/proc/meminfo').split('\n').slice(0, 5).join('\n') + '\n\n'); ok(null); }, 60000); waiting.set(id, d => { clearTimeout(t); ok(d.result?.result?.value); }); ws.send(JSON.stringify({ id, method: 'Runtime.evaluate', params: { expression: expr, returnByValue: true, awaitPromise: true } })); });
 const click = id => js(`document.getElementById(${JSON.stringify(id)}).click()`);
 for (let i = 0; i < 60 && !(await js(`document.visibilityState==='visible'&&!!document.getElementById('startBtn')&&document.readyState==='complete'`)); i++) { if (i % 10 === 9) launch(); await sleep(1000); }
 await sleep(2000);
