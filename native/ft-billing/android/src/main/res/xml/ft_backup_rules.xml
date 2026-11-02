@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 6–11: Auto Backup and device transfer. Only the user's data: the diary files (files/) and the WebView
+     localStorage (settings, «Мои», the list of diaries). Not WebView caches, cookies or Capacitor's own preferences. -->
+<full-backup-content>
+    <include domain="file" path="." />
+    <include domain="root" path="app_webview/Default/Local Storage/" />
+    <include domain="root" path="app_webview/Local Storage/" />
+</full-backup-content>
